@@ -14,62 +14,106 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Users {
   id            String    @id @default(uuid()) @db.Uuid
   name          String
   email         String
-  email_verified Boolean   @default(false)
+  emailVerified Boolean   @default(false) @map("email_verified")
   image         String?
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  sessions      Sessions[]
+  accounts      Accounts[]
 
   @@unique([email])
   @@map("users")
 }
 
-model Session {
+model Sessions {
   id        String   @id @default(uuid()) @db.Uuid
-  expires_at DateTime
+  expiresAt DateTime @map("expires_at")
   token     String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  ip_address String?
-  user_agent String?
-  user_id    String   @db.Uuid
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @db.Uuid @map("user_id")
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
   @@map("sessions")
 }
 
-model Account {
+model Accounts {
   id                    String    @id @default(uuid()) @db.Uuid
-  account_id             String
-  provider_id            String
-  user_id                String   @db.Uuid
-  user                  User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  access_token           String?
-  refresh_token          String?
-  id_token               String?
-  access_token_expires_at  DateTime?
-  refresh_token_expires_at DateTime?
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @db.Uuid @map("user_id")
+  user                  Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
   password              String?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   @@map("accounts")
 }
 
-model Verification {
+model Verifications {
   id         String   @id @default(uuid()) @db.Uuid
   identifier String
   value      String
-  expires_at  DateTime
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("verifications")
+}
+
+model CountryDescription {
+  id          String   @id @default(uuid()) @db.Uuid
+  language    String
+  description String
+  country     Country  @relation(fields: [country_id], references: [id])
+  country_id  String   @db.Uuid @map("country_id")
+
+  @@unique([country_id, language])
+  @@map("country_descriptions")
+}
+
+model Country {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @unique
+  flag                  String
+  region                String
+  difficulty            String
+  difficulty_score      Int      @map("difficulty_score")
+  descriptions          CountryDescription[]
+  visa_options          String[] @map("visa_options")
+  processing_time       String   @map("processing_time")
+  investment_required   String   @map("investment_required")
+  language_requirement  String   @map("language_requirement")
+  job_market            String   @map("job_market")
+  benefits              String[]
+  challenges            String[]
+  popular_cities        String[] @map("popular_cities")
+  created_at            DateTime @default(now()) @map("created_at")
+  updated_at            DateTime @updatedAt @map("updated_at")
+  background_image      String   @map("background_image")
+
+  @@map("countries")
+}
+
+model Suggestions {
+  id String @id @default(uuid()) @db.Uuid
+  suggestions_answer Json @map("suggestions_answer")
+  embeddings Unsupported("vector")?
+
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+  @@map("suggestions")
 }
