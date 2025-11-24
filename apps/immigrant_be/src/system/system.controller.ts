@@ -41,18 +41,4 @@ export class SystemController {
       language,
     });
   }
-
-  @Post('/plans')
-  @ApiOperation({
-    summary: 'Create a new plan',
-    description: 'Creates a new plan',
-  })
-  @ApiBody({ type: SuggestionsDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Plan created successfully',
-  })
-  createPlan() {
-    return this.systemService.createPlan();
-  }
 }

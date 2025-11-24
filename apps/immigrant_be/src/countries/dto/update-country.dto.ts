@@ -5,6 +5,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Nome do país',
     example: 'Canadá',
+    type: String,
     required: false,
   })
   @IsString()
@@ -14,6 +15,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'URL da bandeira do país',
     example: 'https://example.com/canada-flag.png',
+    type: String,
     required: false,
   })
   @IsString()
@@ -23,6 +25,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Região do país',
     example: 'América do Norte',
+    type: String,
     required: false,
   })
   @IsString()
@@ -32,6 +35,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Nível de dificuldade para imigração',
     example: 'Médio',
+    type: String,
     required: false,
   })
   @IsString()
@@ -42,6 +46,7 @@ export class UpdateCountryDto {
     description: 'Pontuação de dificuldade (0-10)',
     example: 6,
     minimum: 0,
+    type: Number,
     required: false,
   })
   @IsInt()
@@ -63,6 +68,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Tempo de processamento do visto',
     example: '6-12 meses',
+    type: String,
     required: false,
   })
   @IsString()
@@ -72,6 +78,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Investimento necessário',
     example: 'CAD 13,000 - 25,000',
+    type: String,
     required: false,
   })
   @IsString()
@@ -81,6 +88,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Requisitos de idioma',
     example: 'IELTS 6.0 ou superior',
+    type: String,
     required: false,
   })
   @IsString()
@@ -90,6 +98,7 @@ export class UpdateCountryDto {
   @ApiProperty({
     description: 'Mercado de trabalho',
     example: 'Fortalecimento em tecnologia e saúde',
+    type: String,
     required: false,
   })
   @IsString()

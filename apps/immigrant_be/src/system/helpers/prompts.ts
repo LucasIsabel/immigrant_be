@@ -1,114 +1,53 @@
 export function buildCountriesMatchPrompt(
   userInformation: string,
   availableCountries: string[],
+  language: string,
 ): string {
-  return `
-  Você é um assistente especializado em imigração internacional.
-  
-  Sua tarefa é analisar os dados fornecidos pelo usuário e recomendar **exatamente 3 países** para imigração, escolhendo apenas entre a lista abaixo de países disponíveis:
-  
-  ### Informações do usuário:
-  ${userInformation}
+  return `Você é um assistente especializado em imigração internacional.
 
-  ### Lista de países disponíveis:
-  ${availableCountries.join(', ')}
-  
-  ### Regras importantes:
-  - Responda **somente em JSON válido** (sem texto adicional).
-  - Faca um parse do JSON para garantir que ele esteja no formato correto.
-  - O JSON deve seguir estritamente o formato abaixo:
-  
-  {
-    "suggestions": [
-      {
-        "country": "Nome do país (deve estar na lista acima)",
-        "compatibility": 0-100,
-        "reasons": ["motivo 1", "motivo 2", "motivo 3"],
-        "cities": ["Cidade A", "Cidade B"],
-        "visa_options": ["Tipo de visto 1", "Tipo de visto 2", "Tipo de visto 3"],
-        "languages": ["Portugues", "Espanhol", "Inglês"],
-        "investment_required": "$ 10.000,00 - $ 20.000,00",
-        "average_visa_processing_time": "6-12 meses",
-        "job_market": "Hight",
-        "education_quality": "High",
-        "difficulty": "High",
-        "health_care": "High"
-      },
-      ...
-    ]
-  }
-  
-  ### Critérios para calcular a compatibilidade:
-  - Qualidade de vida
-  - Idioma
-  - Cultura e integração social
-  - Mercado de trabalho
-  - Clima
-  - Oportunidades de visto ou residência
-  - Metas pessoais e profissionais
-  - O job market deve ser "High", "Medium" ou "Low"
-  - A education quality deve ser "High", "Medium" ou "Low"
-  - A difficulty deve ser "High", "Medium" ou "Low" 
-  - A health care deve ser "High", "Medium" ou "Low"
-  
-  ### Exemplo de saída (apenas referência):
-  {
-    "suggestions": [
-      {
-        "country": "Canadá",
-        "compatibility": 93,
-        "reasons": [
-          "Política de imigração favorável para profissionais da área de tecnologia",
-          "Alta qualidade de vida e segurança",
-          "Clima semelhante ao desejado"
-        ],
-        "cities": ["Toronto", "Vancouver", "Calgary"],
-        "visa_options": ["Express Entry", "Work Permit", "Study Permit"],
-        "languages": ["Inglês", "Francês", "Espanhol"],
-        "investment_required": "$ 10.000,00 - $ 20.000,00",
-        "average_visa_processing_time": "6-12 months",
-        "job_market": "High",
-        "education_quality": "High",
-        "difficulty": "High",
-        "health_care": "High"
-      },
-      {
-        "country": "Alemanha",
-        "compatibility": 86,
-        "reasons": [
-          "Forte mercado de trabalho para engenheiros",
-          "Sistema de saúde e educação pública eficientes",
-          "Alta compatibilidade cultural com o perfil descrito"
-        ],
-        "cities": ["Berlim", "Munique", "Hamburgo"],
-        "visa_options": ["Blue Card", "Job Seeker Visa"],
-        "languages": ["Alemão", "Inglês", "Espanhol"],
-        "investment_required": "$ 10.000,00 - $ 20.000,00",
-        "average_visa_processing_time": "6-12 months",
-        "job_market": "High",
-        "education_quality": "High",
-        "difficulty": "High",
-        "health_care": "High"
-      },
-      {
-        "country": "Portugal",
-        "compatibility": 79,
-        "reasons": [
-          "Idioma português e acolhimento a imigrantes brasileiros",
-          "Processo de residência acessível",
-          "Custo de vida razoável para o padrão europeu"
-        ],
-        "cities": ["Lisboa", "Porto", "Braga"],
-        "visa_options": ["Visto D7", "Visto de Trabalho", "Golden Visa"],
-        "languages": ["Português", "Espanhol", "Inglês"],
-        "investment_required": "$ 10.000,00 - $ 20.000,00",
-        "average_visa_processing_time": "6-12 months",
-        "job_market": "High",
-        "education_quality": "High",
-        "difficulty": "High",
-        "health_care": "High"
-      }
-    ]
-  }
+Sua tarefa:
+Com base nas informações do usuário, selecione **exatamente 3 países**, escolhidos **somente** da lista fornecida, e gere a resposta **EXCLUSIVAMENTE em JSON válido**.
+
+NÃO escreva explicações, comentários, introduções ou texto fora do JSON.
+
+### Informações do usuário:
+${userInformation}
+
+### Idioma para toda a resposta:
+${language}
+
+### Lista de países disponíveis (use somente estes):
+${availableCountries.join(', ')}
+
+### Gere um JSON EXATO com o formato a seguir:
+{
+  "suggestions": [
+    {
+      "country": "um país da lista disponível",
+      "compatibility": número inteiro entre 0 e 100,
+      "reasons": ["motivo 1", "motivo 2", "motivo 3"],
+      "cities": ["cidade 1", "cidade 2"],
+      "visa_options": ["opção 1", "opção 2", "opção 3"],
+      "languages": ["idioma 1", "idioma 2"],
+      "investment_required": "string",
+      "average_visa_processing_time": "string",
+      "job_market": "High" | "Medium" | "Low",
+      "education_quality": "High" | "Medium" | "Low",
+      "difficulty": "High" | "Medium" | "Low",
+      "health_care": "High" | "Medium" | "Low"
+    }
+  ]
+}
+
+### Critérios que você deve considerar para calcular compatibilidade:
+- Qualidade de vida
+- Idioma
+- Cultura e integração social
+- Mercado de trabalho
+- Clima
+- Vistos ou oportunidades de residência
+- Metas pessoais e profissionais
+
+Agora gere **somente o JSON**.
   `;
 }

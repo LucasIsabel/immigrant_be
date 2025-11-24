@@ -24,6 +24,7 @@ model Users {
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   sessions      Sessions[]
   accounts      Accounts[]
+  plans         Plans[]
 
   @@unique([email])
   @@map("users")
@@ -85,6 +86,20 @@ model CountryDescription {
   @@map("country_descriptions")
 }
 
+model ImmigrationVisaType {
+  id          String   @id @default(uuid()) @db.Uuid
+  category    String
+  description String
+  source      String
+  country     Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  country_id  String   @db.Uuid @map("country_id")
+  steps Json @map("steps") @default("[]")
+  plans Plans[]
+
+  @@index([country_id])
+  @@map("immigration_visa_types")
+}
+
 model Country {
   id                    String   @id @default(uuid()) @db.Uuid
   name                  String   @unique
@@ -93,6 +108,7 @@ model Country {
   difficulty            String
   difficulty_score      Int      @map("difficulty_score")
   descriptions          CountryDescription[]
+  immigration_visa_types ImmigrationVisaType[]
   visa_options          String[] @map("visa_options")
   processing_time       String   @map("processing_time")
   investment_required   String   @map("investment_required")
@@ -104,16 +120,58 @@ model Country {
   created_at            DateTime @default(now()) @map("created_at")
   updated_at            DateTime @updatedAt @map("updated_at")
   background_image      String   @map("background_image")
+  plans                 Plans[]
 
   @@map("countries")
 }
 
 model Suggestions {
   id String @id @default(uuid()) @db.Uuid
-  suggestions_answer Json @map("suggestions_answer")
-  embeddings Unsupported("vector")?
-
+  embeddings Unsupported("vector")? @map("embeddings")
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
+  plans Plans[]
+  suggestion_languages Suggestion_languages[]
+  
   @@map("suggestions")
+}
+
+model Suggestion_languages {
+  id String @id @default(uuid()) @db.Uuid
+  language String
+  content Json @map("content")
+  suggestion_id String @db.Uuid @map("suggestion_id")
+  suggestion Suggestions @relation(fields: [suggestion_id], references: [id], onDelete: Cascade)
+  
+  @@unique([suggestion_id, language])
+  @@map("suggestion_languages")
+}
+
+model Plans {
+  id String @id @default(uuid()) @db.Uuid
+  user_id String @db.Uuid @map("user_id")
+  user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  suggestion_id String? @db.Uuid @map("suggestion_id")
+  suggestion Suggestions? @relation(fields: [suggestion_id], references: [id], onDelete: SetNull)
+  country_id String? @db.Uuid @map("country_id")
+  country Country? @relation(fields: [country_id], references: [id], onDelete: SetNull)
+  steps Json @map("steps") @default("[]")
+  steps_completed Json @map("steps_completed") @default("[]")
+  steps_remaining Json @map("steps_remaining") @default("[]")
+  documents Json @map("documents") @default("[]")
+  selected_suggestion Json? @map("selected_suggestion")
+  status String @default("draft") @map("status")
+  name String? @map("name")
+  notes String? @map("notes")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+  progress Float @default(0) @map("progress")
+  description String? @map("description")
+  selected_visa_type_id String? @db.Uuid @map("selected_visa_type_id")
+  selected_visa_type ImmigrationVisaType? @relation(fields: [selected_visa_type_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([country_id])
+  @@map("plans")
 }

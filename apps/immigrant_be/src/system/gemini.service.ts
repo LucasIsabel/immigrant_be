@@ -1,4 +1,8 @@
-import { GoogleGenAI } from '@google/genai';
+import {
+  GenerativeModel,
+  GoogleGenerativeAI,
+  TaskType,
+} from '@google/generative-ai';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CountryService } from '../countries/country.service';
@@ -30,7 +34,9 @@ export type SuggestionsType = z.infer<typeof suggestionsSchema>;
 
 @Injectable()
 export class GeminiService {
-  private client: GoogleGenAI;
+  private model: GenerativeModel;
+  private embeddingModel: GenerativeModel;
+  private genAI: GoogleGenerativeAI;
 
   constructor(
     private readonly configService: ConfigService,
@@ -42,14 +48,18 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY is not configured');
     }
 
-    this.client = new GoogleGenAI({
-      apiKey,
+    this.genAI = new GoogleGenerativeAI(apiKey);
+
+    this.model = this.genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+    });
+
+    this.embeddingModel = this.genAI.getGenerativeModel({
+      model: 'gemini-embedding-001',
     });
   }
 
   async generateSuggestions(userInformation: string, language: string) {
-    console.log(language);
-
     const countriesList = await this.countryService.findAllNames();
 
     const availableCountries = countriesList.map((country) => country.name);
@@ -57,14 +67,16 @@ export class GeminiService {
     const prompt = buildCountriesMatchPrompt(
       userInformation,
       availableCountries,
+      language,
     );
 
-    const response = await this.client.models.generateContent({
-      contents: [prompt],
-      model: 'gemini-2.0-flash',
-    });
+    const {
+      response: { text },
+    } = await this.model.generateContent(prompt);
 
-    const parsedResponse = this.parseSuggestionsResponse(response?.text);
+    const response = text();
+
+    const parsedResponse = this.parseSuggestionsResponse(response);
 
     return parsedResponse;
   }
@@ -90,12 +102,40 @@ export class GeminiService {
     try {
       return JSON.parse(cleaned) as SuggestionsType;
     } catch (err) {
-      throw new Error('String não é um JSON válido: ' + err.message);
+      throw new Error('String não é um JSON válido: ' + err);
     }
   }
 
   extractJson(text: string): string | null {
     const match = text.match(/\{[\s\S]*\}/);
     return match ? match[0] : null;
+  }
+
+  async generateEmbeddings(text: string) {
+    const response = await this.embeddingModel.embedContent({
+      content: {
+        role: 'user',
+        parts: [{ text }],
+      },
+      taskType: TaskType.RETRIEVAL_DOCUMENT,
+      outputDimensionality: 768,
+    } as any);
+
+    console.log('response', response);
+
+    if (!response?.embedding?.values) {
+      return null;
+    }
+
+    const normalizedEmbedding = this.normalizeEmbedding(
+      response.embedding.values,
+    );
+
+    return normalizedEmbedding;
+  }
+
+  normalizeEmbedding(vec: number[]): number[] {
+    const norm = Math.sqrt(vec.reduce((sum, val) => sum + val ** 2, 0));
+    return vec.map((v) => v / norm);
   }
 }

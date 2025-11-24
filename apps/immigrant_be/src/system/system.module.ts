@@ -4,10 +4,11 @@ import { SystemController } from './system.controller';
 import { DatabaseModule } from '@app/database';
 import { GeminiService } from './gemini.service';
 import { CountryModule } from '../countries/country.module';
+import { SystemRepository } from './system.repository';
 
 @Module({
   imports: [DatabaseModule, CountryModule],
-  providers: [SystemService, GeminiService],
+  providers: [SystemService, GeminiService, SystemRepository],
   controllers: [SystemController],
 })
 export class SystemModule {}

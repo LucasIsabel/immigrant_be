@@ -22,6 +22,7 @@ import {
 import { CountryService } from './country.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
+import { CountryDto } from './dto/country.dto';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @ApiTags('Countries')
@@ -38,27 +39,7 @@ export class CountryController {
   @ApiBody({ type: CreateCountryDto })
   @ApiCreatedResponse({
     description: 'Country created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        flag: { type: 'string' },
-        region: { type: 'string' },
-        difficulty: { type: 'string' },
-        difficultyScore: { type: 'number' },
-        visaOptions: { type: 'array', items: { type: 'string' } },
-        processingTime: { type: 'string' },
-        investmentRequired: { type: 'string' },
-        languageRequirement: { type: 'string' },
-        jobMarket: { type: 'string' },
-        benefits: { type: 'array', items: { type: 'string' } },
-        challenges: { type: 'array', items: { type: 'string' } },
-        popularCities: { type: 'array', items: { type: 'string' } },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
+    type: CountryDto,
   })
   create(@Body() createCountryDto: CreateCountryDto) {
     return this.countryService.create(createCountryDto);
@@ -72,42 +53,7 @@ export class CountryController {
   @ApiResponse({
     status: 200,
     description: 'Countries retrieved successfully',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          flag: { type: 'string' },
-          region: { type: 'string' },
-          difficulty: { type: 'string' },
-          difficultyScore: { type: 'number' },
-          visaOptions: { type: 'array', items: { type: 'string' } },
-          processingTime: { type: 'string' },
-          investmentRequired: { type: 'string' },
-          languageRequirement: { type: 'string' },
-          jobMarket: { type: 'string' },
-          benefits: { type: 'array', items: { type: 'string' } },
-          challenges: { type: 'array', items: { type: 'string' } },
-          popularCities: { type: 'array', items: { type: 'string' } },
-          descriptions: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'string' },
-                language: { type: 'string' },
-                description: { type: 'string' },
-                countryId: { type: 'string' },
-              },
-            },
-          },
-          createdAt: { type: 'string', format: 'date-time' },
-          updatedAt: { type: 'string', format: 'date-time' },
-        },
-      },
-    },
+    type: [CountryDto],
   })
   @AllowAnonymous()
   findAll() {
@@ -127,27 +73,7 @@ export class CountryController {
   @ApiResponse({
     status: 200,
     description: 'Country found successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        flag: { type: 'string' },
-        region: { type: 'string' },
-        difficulty: { type: 'string' },
-        difficultyScore: { type: 'number' },
-        visaOptions: { type: 'array', items: { type: 'string' } },
-        processingTime: { type: 'string' },
-        investmentRequired: { type: 'string' },
-        languageRequirement: { type: 'string' },
-        jobMarket: { type: 'string' },
-        benefits: { type: 'array', items: { type: 'string' } },
-        challenges: { type: 'array', items: { type: 'string' } },
-        popularCities: { type: 'array', items: { type: 'string' } },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
+    type: CountryDto,
   })
   @ApiNotFoundResponse({
     description: 'Country not found',
@@ -170,27 +96,7 @@ export class CountryController {
   @ApiResponse({
     status: 200,
     description: 'Country updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'number' },
-        name: { type: 'string' },
-        flag: { type: 'string' },
-        region: { type: 'string' },
-        difficulty: { type: 'string' },
-        difficultyScore: { type: 'number' },
-        visaOptions: { type: 'array', items: { type: 'string' } },
-        processingTime: { type: 'string' },
-        investmentRequired: { type: 'string' },
-        languageRequirement: { type: 'string' },
-        jobMarket: { type: 'string' },
-        benefits: { type: 'array', items: { type: 'string' } },
-        challenges: { type: 'array', items: { type: 'string' } },
-        popularCities: { type: 'array', items: { type: 'string' } },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
+    type: CountryDto,
   })
   @ApiNotFoundResponse({
     description: 'Country not found',

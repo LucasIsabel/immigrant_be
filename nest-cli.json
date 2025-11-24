@@ -37,6 +37,15 @@
         "tsConfigPath": "apps/immigrant_be/tsconfig.app.json"
       }
     },
+    "microservice": {
+      "type": "application",
+      "root": "apps/microservice",
+      "entryFile": "main",
+      "sourceRoot": "apps/microservice/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/microservice/tsconfig.app.json"
+      }
+    },
     "webhooks": {
       "type": "application",
       "root": "apps/webhooks",

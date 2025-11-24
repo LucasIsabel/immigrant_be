@@ -12,12 +12,14 @@ export class Steps {
   @ApiProperty({
     enum: StepType,
     description: 'Tipo de pergunta do formulário',
+    type: String,
   })
   @IsEnum(StepType)
   type: StepType;
 
   @ApiProperty({
     description: 'Resposta do usuário para a pergunta',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -38,6 +40,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Name of the recommended country',
     example: 'Canada',
+    type: String,
   })
   @IsString()
   country: string;
@@ -47,6 +50,7 @@ export class SuggestionItem {
     example: 85,
     minimum: 0,
     maximum: 100,
+    type: Number,
   })
   @IsNumber()
   compatibility: number;
@@ -85,6 +89,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'URL or path to the country background image',
     example: 'https://example.com/canada-background.jpg',
+    type: String,
   })
   @IsString()
   country_background: string;
@@ -92,13 +97,24 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Country flag emoji or flag image URL',
     example: '🇨🇦',
+    type: String,
   })
   @IsString()
   country_flag: string;
 
   @ApiProperty({
+    description: 'ID of the country',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @IsString()
+  @IsNotEmpty()
+  country_id: string;
+
+  @ApiProperty({
     description: 'Investment required for immigration',
     example: '$ 10.000,00 - $ 20.000,00',
+    type: String,
   })
   @IsString()
   investment_required: string;
@@ -106,6 +122,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Average visa processing time',
     example: '6-12 months',
+    type: String,
   })
   @IsString()
   average_visa_processing_time: string;
@@ -113,6 +130,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Job market',
     example: 'High',
+    type: String,
   })
   @IsString()
   job_market: string;
@@ -120,6 +138,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Education quality',
     example: 'High',
+    type: String,
   })
   @IsString()
   education_quality: string;
@@ -127,6 +146,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Difficulty',
     example: 'High',
+    type: String,
   })
   @IsString()
   difficulty: string;
@@ -134,6 +154,7 @@ export class SuggestionItem {
   @ApiProperty({
     description: 'Health care',
     example: 'High',
+    type: String,
   })
   @IsString()
   health_care: string;
@@ -155,4 +176,12 @@ export class SuggestionsResponseDto {
   })
   @IsArray()
   suggestions: SuggestionItem[];
+  @ApiProperty({
+    description: 'ID of the suggestion',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @IsString()
+  @IsNotEmpty()
+  suggestion_id: string;
 }

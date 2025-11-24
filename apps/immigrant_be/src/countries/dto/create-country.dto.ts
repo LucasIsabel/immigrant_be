@@ -5,6 +5,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Nome do país',
     example: 'Canadá',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -13,6 +14,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'URL da bandeira do país',
     example: 'https://example.com/canada-flag.png',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -21,6 +23,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Região do país',
     example: 'América do Norte',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -29,6 +32,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Nível de dificuldade para imigração',
     example: 'Médio',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -38,6 +42,7 @@ export class CreateCountryDto {
     description: 'Pontuação de dificuldade (0-10)',
     example: 6,
     minimum: 0,
+    type: Number,
   })
   @IsInt()
   @Min(0)
@@ -55,6 +60,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Tempo de processamento do visto',
     example: '6-12 meses',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -63,6 +69,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Investimento necessário',
     example: 'CAD 13,000 - 25,000',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -71,6 +78,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Requisitos de idioma',
     example: 'IELTS 6.0 ou superior',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -79,6 +87,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Mercado de trabalho',
     example: 'Fortalecimento em tecnologia e saúde',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
@@ -118,6 +127,7 @@ export class CreateCountryDto {
   @ApiProperty({
     description: 'Imagem de fundo do país',
     example: 'https://example.com/canada-background.png',
+    type: String,
   })
   @IsString()
   @IsNotEmpty()
