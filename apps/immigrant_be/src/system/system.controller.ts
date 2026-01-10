@@ -4,15 +4,35 @@ import {
   ApiInternalServerErrorResponse,
   ApiOperation,
   ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { SystemService } from './system.service';
-import { Body, Controller, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Query,
+  Session,
+  Sse,
+  HttpStatus,
+} from '@nestjs/common';
 import { SuggestionsDto, SuggestionsResponseDto } from './dto/suggestions.dto';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, type UserSession } from '@thallesp/nestjs-better-auth';
+import { map, defer, repeat, filter } from 'rxjs';
+import { EventsService } from './events.service';
+import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
+import { ImmigrationVisaTypeDto } from '../users/dto/plan-response.dto';
 
+@ApiTags('System')
 @Controller('system')
 export class SystemController {
-  constructor(private readonly systemService: SystemService) {}
+  constructor(
+    private readonly systemService: SystemService,
+    private readonly eventsService: EventsService,
+  ) {}
 
   @Post('/suggestions')
   @ApiOperation({
@@ -20,8 +40,15 @@ export class SystemController {
     description: 'Retrieves a list of suggestions for a given query',
   })
   @ApiBody({ type: SuggestionsDto })
+  @ApiQuery({
+    name: 'language',
+    description: 'Language code for the response (e.g., en, pt, es)',
+    example: 'en',
+    type: String,
+    required: false,
+  })
   @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'Suggestions created successfully',
     type: SuggestionsResponseDto,
   })
@@ -40,5 +67,77 @@ export class SystemController {
       steps: suggestionsDto.steps,
       language,
     });
+  }
+
+  @Sse('/sse')
+  @ApiOperation({
+    summary: 'Server-Sent Events for notifications',
+    description:
+      'Establishes a Server-Sent Events connection to receive real-time notifications for the authenticated user',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'SSE connection established successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - User not authenticated',
+  })
+  notification(@Session() session: UserSession) {
+    const { user } = session;
+
+    return defer(() => this.eventsService.getEvents(user?.id)).pipe(
+      repeat({ delay: 1000 }),
+      filter((result) => {
+        if (!result || !result.id) {
+          return false;
+        }
+
+        return Boolean(result.id) || Object.keys(result.id).length > 0;
+      }),
+      map((data) => ({ data, type: 'message' })),
+    );
+  }
+
+  @Post('/country/:id/visa-type')
+  @ApiOperation({
+    summary: 'Get best visa types for a country',
+    description:
+      'Retrieves the best visa types for a specific country based on user details',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Country ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @ApiBody({
+    type: UserDetailsQueryDto,
+    description: 'User details to filter visa types',
+    required: false,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Visa types retrieved successfully',
+    type: ImmigrationVisaTypeDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid country ID or request parameters',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error',
+  })
+  selectedBestVisaType(
+    @Session() user: UserSession,
+    @Body() userDetails: UserDetailsQueryDto,
+    @Param('id') countryId: string,
+    @Query('language') language?: string,
+  ) {
+    return this.systemService.getSelectedBestVisaType(
+      user,
+      userDetails,
+      countryId,
+      language,
+    );
   }
 }

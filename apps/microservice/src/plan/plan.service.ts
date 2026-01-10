@@ -3,7 +3,11 @@ import { CreatePlanDto } from './dto/plan.dto';
 
 @Injectable()
 export class PlanService {
-  createPlan(createPlanDto: CreatePlanDto) {
-    console.log('createPlanDto', createPlanDto);
+  async createPlan(createPlanDto: CreatePlanDto) {
+    return await Promise.resolve({
+      success: true,
+      message: 'Plan created successfully',
+      planId: createPlanDto.id,
+    });
   }
 }

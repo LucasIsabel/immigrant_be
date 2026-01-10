@@ -2,7 +2,7 @@ import { PrismaService } from '@app/database';
 import { Injectable } from '@nestjs/common';
 import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
-import { ImmigrationVisaType, Plans } from 'generated/prisma';
+import { ImmigrationVisaType, Plans, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
 import { formatPlanResponse } from './utils/formatter';
 
@@ -143,5 +143,15 @@ export class UserRepository {
     const visaTypes = await this.getVisaTypes(updatedPlan.country_id);
 
     return formatPlanResponse(updatedPlan, visaTypes);
+  }
+
+  async getUserById(userId: string): Promise<Users | null> {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId, emailVerified: true },
+    });
+    if (!user) {
+      return null;
+    }
+    return user;
   }
 }

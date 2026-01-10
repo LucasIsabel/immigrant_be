@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Post, Put, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { Session } from '@nestjs/common';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { type UserSession } from '@thallesp/nestjs-better-auth';
 import { UserService } from './user.service';
 import {
   ApiBody,
@@ -8,6 +17,9 @@ import {
   ApiResponse,
   ApiExtraModels,
   ApiParam,
+  ApiBadRequestResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CreateUserPlanDto } from './dto/create-user-plan.dto';
 import { UserPlanResponseDto } from './dto/user-plan-response.dto';
@@ -15,8 +27,10 @@ import {
   PlanResponseDto,
   ImmigrationVisaTypeDto,
 } from './dto/plan-response.dto';
+import { UserDetailsDto } from './dto/user-detail.dto';
 
-@ApiExtraModels(ImmigrationVisaTypeDto)
+@ApiTags('Users')
+@ApiExtraModels(ImmigrationVisaTypeDto, UserDetailsDto)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -27,9 +41,12 @@ export class UserController {
   })
   @ApiBody({ type: CreateUserPlanDto })
   @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'User plan created successfully',
     type: UserPlanResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request data or missing required fields',
   })
   @Post('/plan')
   createUserPlan(
@@ -49,9 +66,12 @@ export class UserController {
     description: 'Gets all user plans based on the authenticated user ID',
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'All user plans retrieved successfully',
     type: [UserPlanResponseDto],
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - User not authenticated',
   })
   @Get('/plan')
   getAllUserPlans(@Session() user: UserSession) {
@@ -62,10 +82,20 @@ export class UserController {
     summary: 'Get user plan by id',
     description: 'Gets a user plan by id based on the authenticated user ID',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'Plan ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.OK,
     description: 'User plan retrieved successfully',
     type: PlanResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Plan not found or does not belong to the user',
   })
   @Get('/plan/:id')
   getUserPlan(@Session() user: UserSession, @Param('id') id: string) {
@@ -78,37 +108,37 @@ export class UserController {
       'Selects a visa type for a specific plan. The plan must belong to the authenticated user.',
   })
   @ApiParam({
-    name: 'planId',
+    name: 'plan_id',
     description: 'ID of the plan to update',
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
-    name: 'visaTypeId',
+    name: 'visa_type_id',
     description: 'ID of the visa type to select',
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({
-    status: 200,
+    status: HttpStatus.CREATED,
     description: 'Visa type selected successfully',
-    type: PlanResponseDto,
   })
   @ApiResponse({
-    status: 404,
+    status: HttpStatus.NOT_FOUND,
     description: 'Plan not found or does not belong to the user',
   })
   @ApiResponse({
-    status: 400,
+    status: HttpStatus.BAD_REQUEST,
     description:
       'Invalid visa type ID or visa type does not belong to the plan country',
   })
-  @Put('/plan/:planId/visa-type/:visaTypeId')
+  @HttpCode(HttpStatus.CREATED)
+  @Put('/plan/:plan_id/visa-type/:visa_type_id')
   async selectVisaType(
     @Session() user: UserSession,
-    @Param('planId') planId: string,
-    @Param('visaTypeId') visaTypeId: string,
-  ): Promise<PlanResponseDto> {
-    return await this.userService.selectVisaType(user, planId, visaTypeId);
+    @Param('plan_id') plan_id: string,
+    @Param('visa_type_id') visaTypeId: string,
+  ): Promise<void> {
+    await this.userService.selectVisaType(user, plan_id, visaTypeId);
   }
 }

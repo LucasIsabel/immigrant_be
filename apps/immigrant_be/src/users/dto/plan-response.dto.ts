@@ -136,7 +136,7 @@ export class PlanResponseDto {
 
   @ApiProperty({
     description: 'Visa type of the plan',
-    type: [ImmigrationVisaTypeDto],
+    type: () => ImmigrationVisaTypeDto,
     isArray: true,
   })
   @IsArray()
@@ -160,11 +160,10 @@ export class PlanResponseDto {
 
   @ApiProperty({
     description: 'Selected visa type of the plan',
-    example: 'Work Visa',
-    type: String,
+    type: () => ImmigrationVisaTypeDto,
     required: false,
   })
-  selected_visa_type: string | undefined;
+  selected_visa_type: ImmigrationVisaTypeDto | undefined;
 
   @ApiProperty({
     description: 'Steps of the plan',

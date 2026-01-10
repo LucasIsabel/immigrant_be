@@ -6,7 +6,10 @@ import {
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CountryService } from '../countries/country.service';
-import { buildCountriesMatchPrompt } from './helpers/prompts';
+import {
+  buildBestVisaTypePrompt,
+  buildCountriesMatchPrompt,
+} from './helpers/prompts';
 import { z } from 'zod';
 
 export const suggestionsSchema = z.object({
@@ -51,7 +54,7 @@ export class GeminiService {
     this.genAI = new GoogleGenerativeAI(apiKey);
 
     this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash-lite',
     });
 
     this.embeddingModel = this.genAI.getGenerativeModel({
@@ -69,6 +72,34 @@ export class GeminiService {
       availableCountries,
       language,
     );
+
+    const {
+      response: { text },
+    } = await this.model.generateContent(prompt);
+
+    const response = text();
+
+    const parsedResponse = this.parseSuggestionsResponse(response);
+
+    return parsedResponse;
+  }
+
+  async generateVisaSuggestion(
+    userDetails: {
+      profession?: string;
+      country_origin?: string;
+      plan_period?: string;
+      isCustomCountry?: boolean;
+    },
+    immigrationVisaTypes: Array<{
+      id: string;
+      category: string;
+      description: string;
+      source: string;
+      steps: unknown;
+    }>,
+  ) {
+    const prompt = buildBestVisaTypePrompt(userDetails, immigrationVisaTypes);
 
     const {
       response: { text },

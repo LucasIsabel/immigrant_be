@@ -5,13 +5,8 @@
       "type": "node",
       "request": "launch",
       "name": "Debug NestJS App",
-      "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v22.20.0/bin/node",
-      "runtimeArgs": [
-        "${workspaceFolder}/node_modules/.bin/nest",
-        "start",
-        "--debug",
-        "--watch"
-      ],
+      "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v22.20.0/bin/pnpm",
+      "runtimeArgs": ["run", "start:debug"],
       "restart": true,
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",

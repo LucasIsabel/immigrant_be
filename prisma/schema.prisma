@@ -25,6 +25,7 @@ model Users {
   sessions      Sessions[]
   accounts      Accounts[]
   plans         Plans[]
+  events Events[]
 
   @@unique([email])
   @@map("users")
@@ -121,6 +122,7 @@ model Country {
   updated_at            DateTime @updatedAt @map("updated_at")
   background_image      String   @map("background_image")
   plans                 Plans[]
+  visa_type_recommendations VisaTypeRecommendations[]
 
   @@map("countries")
 }
@@ -128,6 +130,7 @@ model Country {
 model Suggestions {
   id String @id @default(uuid()) @db.Uuid
   embeddings Unsupported("vector")? @map("embeddings")
+  parameters Json @map("parameters")
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
   plans Plans[]
@@ -174,4 +177,42 @@ model Plans {
   @@index([status])
   @@index([country_id])
   @@map("plans")
+}
+
+enum NotificationStatus {
+  pending
+  delivered
+  failed
+}
+
+model Events {
+  id            String               @id @default(uuid())
+  user_id String @db.Uuid @map("user_id")
+  user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type          String
+  title         String?
+  message       String?
+  payload       Json? 
+  status        NotificationStatus   @default(pending)
+  created_at     DateTime             @default(now())
+  updated_at     DateTime             @updatedAt
+
+  @@index([user_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model VisaTypeRecommendations {
+  id                    String   @id @default(uuid()) @db.Uuid
+  country_id            String   @db.Uuid @map("country_id")
+  country                Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  gemini_response       Json     @map("gemini_response")
+  embeddings            Unsupported("vector")? @map("embeddings")
+  parameters            Json     @map("parameters")
+  user_details          Json     @map("user_details")
+  created_at            DateTime @default(now()) @map("created_at")
+  updated_at            DateTime @updatedAt @map("updated_at")
+
+  @@index([country_id])
+  @@map("visa_type_recommendations")
 }

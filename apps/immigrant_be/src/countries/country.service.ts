@@ -52,4 +52,12 @@ export class CountryService {
 
     return this.countryRepository.remove(id);
   }
+
+  async getVisaTypes(countryId: string) {
+    return this.countryRepository.getVisaTypes(countryId);
+  }
+
+  async getCountryById(id: string) {
+    return await this.countryRepository.getById(id);
+  }
 }

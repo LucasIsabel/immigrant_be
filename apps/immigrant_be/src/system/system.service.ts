@@ -9,6 +9,8 @@ import {
 import { CountryService } from '../countries/country.service';
 import { SystemRepository } from './system.repository';
 import { Suggestions } from 'generated/prisma';
+import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
+import { UserSession } from '@thallesp/nestjs-better-auth';
 
 @Injectable()
 export class SystemService {
@@ -39,10 +41,6 @@ export class SystemService {
         this.jsonToEmbeddingArrayOfObjects(steps, language),
       );
 
-      console.log(suggestions);
-
-      debugger;
-
       if (suggestions && suggestions.length > 0) {
         const data = await this.getSuggestionAccordingToLanguage(
           suggestions[0].id,
@@ -58,6 +56,7 @@ export class SystemService {
         prompt,
         language,
       );
+      console.log('response', response);
 
       const answerSuggestions = await Promise.all(
         response?.suggestions?.map(async (suggestion) => {
@@ -83,11 +82,14 @@ export class SystemService {
         language,
       );
 
+      console.log('suggestion', suggestion);
+
       return {
         suggestions: answerSuggestions,
         suggestion_id: suggestion?.suggestion_id || '',
       };
-    } catch {
+    } catch (error) {
+      console.error('Error creating suggestions:', error);
       return {
         suggestions: [],
         suggestion_id: '',
@@ -220,5 +222,69 @@ export class SystemService {
       suggestionId,
       language,
     );
+  };
+
+  // async selectVisaType(
+  //   user: UserSession,
+  //   plan_id: string,
+  //   visa_type_id: string,
+  // ): Promise<void> {
+  //   try {
+  //     const selectedPlan = await this.systemRepository.getUserPlan(
+  //       user,
+  //       plan_id,
+  //     );
+
+  //     if (!selectedPlan) {
+  //       throw new NotFoundException(
+  //         'Plan not found or does not belong to the user',
+  //       );
+  //     }
+
+  //     await this.systemRepository.selectVisaType(user, plan_id, visa_type_id);
+
+  //     await this.planQueue.add(
+  //       PROCESS_CREATE_PLAN,
+  //       {
+  //         content: {
+  //           user: user.user,
+  //           plan_id: plan_id,
+  //           visa_type_id: visa_type_id,
+  //         },
+  //       },
+  //       { priority: 1 },
+  //     );
+  //   } catch (error) {
+  //     if (error.message === 'Plan not found or does not belong to the user') {
+  //       throw new NotFoundException(error.message);
+  //     }
+  //     if (
+  //       error.message ===
+  //       'Visa type not found or does not belong to the plan country'
+  //     ) {
+  //       throw new BadRequestException(error.message);
+  //     }
+  //     throw error;
+  //   }
+  // }
+
+  getSelectedBestVisaType = async (
+    user: UserSession,
+    userDetails: UserDetailsQueryDto,
+    countryId: string,
+    language = 'en',
+  ) => {
+    try {
+      const country = await this.countryService.getCountryById(countryId);
+
+      const embeddings = await this.geminiService.generateEmbeddings(
+        this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
+      );
+
+      return null;
+    } catch (error) {
+      console.error('Error getting selected best visa type:', error);
+      return null;
+    }
   };
 }

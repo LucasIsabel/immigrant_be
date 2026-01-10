@@ -1,17 +1,19 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
-import { Plans } from 'generated/prisma';
+import { Plans, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { PLAN_QUEUE } from '@app/config/constants';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    @InjectQueue(PLAN_QUEUE) private readonly planQueue: Queue,
+  ) {}
 
   async createUserPlan({
     user,
@@ -45,22 +47,19 @@ export class UserService {
 
   async selectVisaType(
     user: UserSession,
-    planId: string,
-    visaTypeId: string,
-  ): Promise<PlanResponseDto> {
-    try {
-      return await this.userRepository.selectVisaType(user, planId, visaTypeId);
-    } catch (error) {
-      if (error.message === 'Plan not found or does not belong to the user') {
-        throw new NotFoundException(error.message);
-      }
-      if (
-        error.message ===
-        'Visa type not found or does not belong to the plan country'
-      ) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
+    plan_id: string,
+    visa_type_id: string,
+  ): Promise<boolean> {
+    return await Promise.resolve(true);
+  }
+
+  async getUserById(userId: string): Promise<Users | null> {
+    const user = await this.userRepository.getUserById(userId);
+
+    if (!user) {
+      return null;
     }
+
+    return user;
   }
 }

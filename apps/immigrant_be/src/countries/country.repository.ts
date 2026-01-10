@@ -69,4 +69,20 @@ export class CountryRepository {
       where: { id },
     });
   }
+
+  async getVisaTypes(countryId: string) {
+    return this.prisma.immigrationVisaType.findMany({
+      where: { country_id: countryId },
+    });
+  }
+
+  async getById(id: string) {
+    return this.prisma.country.findUnique({
+      where: { id },
+      include: {
+        descriptions: true,
+        immigration_visa_types: true,
+      },
+    });
+  }
 }

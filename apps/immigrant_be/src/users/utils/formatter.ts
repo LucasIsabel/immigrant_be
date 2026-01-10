@@ -68,8 +68,6 @@ export const formatPlanResponse = (
 ): PlanResponseDto => {
   const suggestion = getSuggestionSchema(data.selected_suggestion);
 
-  debugger;
-
   return {
     progress: data.progress ?? 0,
     start_date: data.created_at ?? new Date(),
@@ -84,7 +82,16 @@ export const formatPlanResponse = (
     visa_types: formatVisaTypes(visaTypes),
     flag: data.country?.flag,
     country_name: data.country?.name,
-    selected_visa_type: data.selected_visa_type?.category,
+    selected_visa_type: data.selected_visa_type
+      ? {
+          id: data.selected_visa_type.id,
+          category: data.selected_visa_type.category,
+          description: data.selected_visa_type.description,
+          source: data.selected_visa_type.source,
+          country_id: data.selected_visa_type.country_id,
+          steps: data.selected_visa_type.steps,
+        }
+      : undefined,
     questions: data.steps,
   };
 };
