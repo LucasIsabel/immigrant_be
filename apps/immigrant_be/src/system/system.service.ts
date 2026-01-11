@@ -10,8 +10,6 @@ import { CountryService } from '../countries/country.service';
 import { SystemRepository } from './system.repository';
 import { Suggestions } from 'generated/prisma';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
-import { UserSession } from '@thallesp/nestjs-better-auth';
-
 @Injectable()
 export class SystemService {
   constructor(
@@ -26,8 +24,10 @@ export class SystemService {
 
   async createSuggestions({
     steps,
+    parameters,
     language = 'en',
   }: SuggestionsDto & {
+    parameters: SuggestionsDto;
     language?: string;
   }): Promise<SuggestionsResponseDto> {
     try {
@@ -37,18 +37,52 @@ export class SystemService {
         prompt += this.getUserAnswerBasedOnStepType(step);
       });
 
-      const suggestions = await this.getSuggestionsWithEmbeddings(
-        this.jsonToEmbeddingArrayOfObjects(steps, language),
-      );
+      // const suggestions = await this.getSuggestionsWithEmbeddings(
+      //   this.jsonToEmbeddingArrayOfObjects(steps, language),
+      // );
 
-      if (suggestions && suggestions.length > 0) {
+      const suggestions =
+        await this.getSuggestionsAccordingToParameters(parameters);
+
+      if (suggestions) {
         const data = await this.getSuggestionAccordingToLanguage(
-          suggestions[0].id,
+          suggestions.id,
           language,
         );
 
         if (data) {
           return data;
+        } else {
+          const geminiResponse = await this.geminiService.generateSuggestions(
+            prompt,
+            language,
+          );
+
+          const geminiAnswerSuggestions = await Promise.all(
+            geminiResponse?.suggestions?.map(async (suggestion) => {
+              const country = await this.getCountryDetails(suggestion.country);
+
+              return {
+                ...suggestion,
+                country_id: country?.id || '',
+                country_background: country?.background_image || '',
+                country_flag: country?.flag || '',
+                investment_required: country?.investment_required || '',
+              };
+            }) || [],
+          );
+
+          const suggestion =
+            await this.systemRepository.createSuggestionLanguages(
+              suggestions.id,
+              language,
+              JSON.stringify(geminiAnswerSuggestions),
+            );
+
+          return {
+            suggestions: geminiAnswerSuggestions,
+            suggestion_id: suggestion?.suggestion_id || '',
+          };
         }
       }
 
@@ -56,7 +90,6 @@ export class SystemService {
         prompt,
         language,
       );
-      console.log('response', response);
 
       const answerSuggestions = await Promise.all(
         response?.suggestions?.map(async (suggestion) => {
@@ -79,6 +112,7 @@ export class SystemService {
       const suggestion = await this.systemRepository.createSuggestions(
         answerSuggestions,
         embeddings,
+        parameters,
         language,
       );
 
@@ -159,6 +193,14 @@ export class SystemService {
     }
   }
 
+  async getSuggestionsAccordingToParameters(
+    parameters: SuggestionsDto,
+  ): Promise<Suggestions | null> {
+    return await this.systemRepository.getRawSuggestionsWithParameters(
+      parameters,
+    );
+  }
+
   jsonToEmbeddingObject(
     obj: Record<string, any>,
     prefix = '',
@@ -224,52 +266,7 @@ export class SystemService {
     );
   };
 
-  // async selectVisaType(
-  //   user: UserSession,
-  //   plan_id: string,
-  //   visa_type_id: string,
-  // ): Promise<void> {
-  //   try {
-  //     const selectedPlan = await this.systemRepository.getUserPlan(
-  //       user,
-  //       plan_id,
-  //     );
-
-  //     if (!selectedPlan) {
-  //       throw new NotFoundException(
-  //         'Plan not found or does not belong to the user',
-  //       );
-  //     }
-
-  //     await this.systemRepository.selectVisaType(user, plan_id, visa_type_id);
-
-  //     await this.planQueue.add(
-  //       PROCESS_CREATE_PLAN,
-  //       {
-  //         content: {
-  //           user: user.user,
-  //           plan_id: plan_id,
-  //           visa_type_id: visa_type_id,
-  //         },
-  //       },
-  //       { priority: 1 },
-  //     );
-  //   } catch (error) {
-  //     if (error.message === 'Plan not found or does not belong to the user') {
-  //       throw new NotFoundException(error.message);
-  //     }
-  //     if (
-  //       error.message ===
-  //       'Visa type not found or does not belong to the plan country'
-  //     ) {
-  //       throw new BadRequestException(error.message);
-  //     }
-  //     throw error;
-  //   }
-  // }
-
   getSelectedBestVisaType = async (
-    user: UserSession,
     userDetails: UserDetailsQueryDto,
     countryId: string,
     language = 'en',
@@ -281,7 +278,46 @@ export class SystemService {
         this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
       );
 
-      return null;
+      const bestVisaTypeRecommendation =
+        await this.systemRepository.getBestVisaTypeRecommendation(
+          countryId,
+          userDetails,
+          language,
+        );
+
+      if (bestVisaTypeRecommendation) {
+        const geminiResponse = bestVisaTypeRecommendation.gemini_response as {
+          recommended_visa_type_id?: string;
+          explanations?: string;
+        };
+
+        return {
+          id: geminiResponse?.recommended_visa_type_id || '',
+          explanations: geminiResponse?.explanations || '',
+        };
+      }
+
+      const geminiResponse = await this.geminiService.generateVisaSuggestion(
+        userDetails,
+        country?.immigration_visa_types || [],
+      );
+
+      if (!geminiResponse) {
+        return null;
+      }
+
+      await this.systemRepository.createVisaTypeRecommendation(
+        countryId,
+        geminiResponse,
+        embeddings || null,
+        userDetails,
+        language,
+      );
+
+      return {
+        id: geminiResponse?.recommended_visa_type_id || '',
+        explanations: geminiResponse?.explanations || '',
+      };
     } catch (error) {
       console.error('Error getting selected best visa type:', error);
       return null;

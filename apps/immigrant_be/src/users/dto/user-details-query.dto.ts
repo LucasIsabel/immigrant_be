@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsBoolean } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class UserDetailsQueryDto {
   @ApiProperty({
@@ -28,13 +28,4 @@ export class UserDetailsQueryDto {
   })
   @IsString()
   plan_period?: string;
-
-  @ApiProperty({
-    description: 'English level of the user',
-    example: true,
-    type: String,
-    required: false,
-  })
-  @IsBoolean()
-  isCustomCountry?: boolean;
 }

@@ -6,8 +6,14 @@ import {
   Suggestions,
   VisaTypeRecommendations,
 } from 'generated/prisma';
-import { SuggestionItem, SuggestionsResponseDto } from './dto/suggestions.dto';
+import {
+  SuggestionItem,
+  SuggestionsDto,
+  SuggestionsResponseDto,
+} from './dto/suggestions.dto';
 import { EventResponseDto } from './dto/event.dto';
+import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
+import { VisaRecommendationType } from './gemini.service';
 
 @Injectable()
 export class SystemRepository {
@@ -16,6 +22,7 @@ export class SystemRepository {
   async createSuggestions(
     suggestions: Prisma.InputJsonValue,
     embeddings: number[] | null,
+    parameters: SuggestionsDto,
     language: string,
   ): Promise<{ suggestion_id: string }> {
     try {
@@ -26,23 +33,27 @@ export class SystemRepository {
           Array<{
             id: string;
             embeddings: string;
+            parameters: unknown;
             created_at: Date;
             updated_at: Date;
           }>
         >(
-          `INSERT INTO suggestions (id, embeddings, created_at, updated_at)
+          `INSERT INTO suggestions (id, embeddings, created_at, updated_at, parameters)
            VALUES (
              gen_random_uuid(),
              $1::vector,
              NOW(),
-             NOW()
+             NOW(),
+             $2::jsonb
            )
            RETURNING 
              id,
              embeddings::text as embeddings,
              created_at,
-             updated_at`,
+             updated_at,
+             parameters`,
           embeddingsString,
+          parameters,
         );
 
         const suggestionsForLanguage = await this.createSuggestionLanguages(
@@ -57,7 +68,9 @@ export class SystemRepository {
       }
 
       throw new Error('No embeddings provided');
-    } catch {
+    } catch (error) {
+      console.error('Error creating suggestions:', error);
+
       throw new Error('Error creating suggestions');
     }
   }
@@ -103,6 +116,7 @@ export class SystemRepository {
           id: string;
           suggestions_answer: unknown;
           embeddings: string;
+          parameters: unknown;
           similarity: number;
           created_at: Date;
           updated_at: Date;
@@ -141,6 +155,7 @@ export class SystemRepository {
 
       return filteredResult.map((row) => ({
         id: row.id,
+        parameters: row.parameters,
         suggestions_answer: row.suggestions_answer,
         embeddings: null,
         created_at: row.created_at,
@@ -244,9 +259,10 @@ export class SystemRepository {
 
   async createVisaTypeRecommendation(
     country_id: string,
-    gemini_response: string,
+    gemini_response: VisaRecommendationType,
     embeddings: number[] | null,
-    user_details: string,
+    parameters: UserDetailsQueryDto,
+    language: string,
   ): Promise<{ visa_type_recommendation_id: string }> {
     try {
       if (!embeddings || embeddings.length === 0) {
@@ -274,7 +290,8 @@ export class SystemRepository {
           country_id,
           gemini_response,
           embeddings,
-          user_details,
+          parameters,
+          language,
           created_at,
           updated_at
         )
@@ -284,6 +301,7 @@ export class SystemRepository {
           $2::jsonb,
           $3::vector,
           $4::jsonb,
+          $5::text,
           NOW(),
           NOW()
         )
@@ -295,7 +313,8 @@ export class SystemRepository {
         country_id,
         gemini_response,
         embeddingsString,
-        user_details,
+        parameters,
+        language,
       );
 
       return {
@@ -336,6 +355,8 @@ export class SystemRepository {
         country_id,
         gemini_response,
         embeddings::text as embeddings,
+        parameters,
+        language,
         user_details,
         1 - (embeddings <=> $1::vector) as similarity,
         created_at,
@@ -352,7 +373,8 @@ export class SystemRepository {
           country_id: string;
           gemini_response: unknown;
           embeddings: string;
-          user_details: unknown;
+          parameters: unknown;
+          language: string;
           similarity: number;
           created_at: Date;
           updated_at: Date;
@@ -394,7 +416,8 @@ export class SystemRepository {
         country_id: row.country_id,
         gemini_response: row.gemini_response,
         embeddings: null,
-        user_details: row.user_details,
+        parameters: row?.parameters,
+        language: row.language,
         created_at: row.created_at,
         updated_at: row.updated_at,
       })) as VisaTypeRecommendations[];
@@ -405,5 +428,38 @@ export class SystemRepository {
       );
       return null;
     }
+  }
+
+  async getRawSuggestionsWithParameters(
+    parameters: SuggestionsDto,
+  ): Promise<Suggestions | null> {
+    try {
+      return await this.prisma.suggestions.findFirst({
+        where: {
+          parameters: {
+            equals: parameters as unknown as Prisma.InputJsonValue,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error getting raw suggestions with parameters:', error);
+      return null;
+    }
+  }
+
+  async getBestVisaTypeRecommendation(
+    country_id: string,
+    parameters: UserDetailsQueryDto,
+    language: string,
+  ): Promise<VisaTypeRecommendations | null> {
+    return await this.prisma.visaTypeRecommendations.findFirst({
+      where: {
+        country_id,
+        parameters: {
+          equals: parameters as unknown as Prisma.InputJsonValue,
+        },
+        language,
+      },
+    });
   }
 }

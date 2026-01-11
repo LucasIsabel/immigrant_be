@@ -35,6 +35,13 @@ export const suggestionsSchema = z.object({
 
 export type SuggestionsType = z.infer<typeof suggestionsSchema>;
 
+export const visaRecommendationSchema = z.object({
+  recommended_visa_type_id: z.string().uuid(),
+  explanations: z.string(),
+});
+
+export type VisaRecommendationType = z.infer<typeof visaRecommendationSchema>;
+
 @Injectable()
 export class GeminiService {
   private model: GenerativeModel;
@@ -89,7 +96,6 @@ export class GeminiService {
       profession?: string;
       country_origin?: string;
       plan_period?: string;
-      isCustomCountry?: boolean;
     },
     immigrationVisaTypes: Array<{
       id: string;
@@ -107,7 +113,7 @@ export class GeminiService {
 
     const response = text();
 
-    const parsedResponse = this.parseSuggestionsResponse(response);
+    const parsedResponse = this.parseVisaRecommendationResponse(response);
 
     return parsedResponse;
   }
@@ -137,32 +143,57 @@ export class GeminiService {
     }
   }
 
+  parseVisaRecommendationResponse(
+    raw: string | undefined,
+  ): VisaRecommendationType | null {
+    try {
+      if (!raw) {
+        return null;
+      }
+      const cleaned = raw
+        .replace(/^```json\s*/i, '')
+        .replace(/```$/i, '')
+        .trim();
+
+      const parsed = JSON.parse(cleaned);
+      return visaRecommendationSchema.parse(parsed);
+    } catch (error) {
+      console.error('Error parsing visa recommendation response:', error);
+      return null;
+    }
+  }
+
   extractJson(text: string): string | null {
     const match = text.match(/\{[\s\S]*\}/);
     return match ? match[0] : null;
   }
 
   async generateEmbeddings(text: string) {
-    const response = await this.embeddingModel.embedContent({
-      content: {
-        role: 'user',
-        parts: [{ text }],
-      },
-      taskType: TaskType.RETRIEVAL_DOCUMENT,
-      outputDimensionality: 768,
-    } as any);
+    try {
+      const response = await this.embeddingModel.embedContent({
+        content: {
+          role: 'user',
+          parts: [{ text }],
+        },
+        taskType: TaskType.RETRIEVAL_DOCUMENT,
+        outputDimensionality: 768,
+      } as any);
 
-    console.log('response', response);
+      console.log('response', response);
 
-    if (!response?.embedding?.values) {
+      if (!response?.embedding?.values) {
+        return null;
+      }
+
+      const normalizedEmbedding = this.normalizeEmbedding(
+        response.embedding.values,
+      );
+
+      return normalizedEmbedding;
+    } catch (error) {
+      console.error('Error generating embeddings:', error);
       return null;
     }
-
-    const normalizedEmbedding = this.normalizeEmbedding(
-      response.embedding.values,
-    );
-
-    return normalizedEmbedding;
   }
 
   normalizeEmbedding(vec: number[]): number[] {

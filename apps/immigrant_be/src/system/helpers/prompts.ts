@@ -57,7 +57,6 @@ export function buildBestVisaTypePrompt(
     profession?: string;
     country_origin?: string;
     plan_period?: string;
-    isCustomCountry?: boolean;
   },
   immigrationVisaTypes: Array<{
     id: string;
@@ -69,7 +68,7 @@ export function buildBestVisaTypePrompt(
 ): string {
   const userInfoText = `
 - Profession: ${userDetails.profession || 'Not specified'}
-- Country of Origin: ${userDetails.country_origin || 'Not specified'}
+- Continent of Origin: ${userDetails.country_origin || 'Not specified'}
 - Plan Period: ${userDetails.plan_period || 'Not specified'}
 `.trim();
 
@@ -85,10 +84,10 @@ ${index + 1}. Visa Type ID: ${visa.id}
     )
     .join('\n');
 
-  return `You are an expert immigration consultant specializing in visa type recommendations.
+  const finalPrompt = `You are an expert immigration consultant specializing in visa type recommendations.
 
 Your task:
-Based on the user's information and the available visa types for the selected country, analyze and recommend the **best matching visa type** from the provided list. Return your response **EXCLUSIVELY as valid JSON** with only the recommended visa type ID.
+Based on the user's information and the available visa types for the selected country, analyze and recommend the **best matching visa type** from the provided list. Return your response **EXCLUSIVELY as valid JSON** with the recommended visa type ID and a clear explanation of why this visa type was chosen.
 
 DO NOT write explanations, comments, introductions, or any text outside the JSON.
 
@@ -100,7 +99,8 @@ ${visaTypesText}
 
 ### Generate an EXACT JSON with the following format:
 {
-  "recommended_visa_type_id": "the UUID of the best matching visa type from the list above"
+  "recommended_visa_type_id": "the UUID of the best matching visa type from the list above",
+  "explanations": "a clear and detailed explanation (2-4 sentences) explaining why you chose this specific visa type. The explanation should reference the user's profile (profession, continent of origin, plan period) and how it aligns with the visa type's requirements, category, and steps. Mention which criteria were most relevant in making this recommendation."
 }
 
 ### Criteria you must consider when recommending:
@@ -109,14 +109,18 @@ ${visaTypesText}
 3. **Eligibility Likelihood**: How likely the user is to meet the specific requirements based on their profile
 4. **Visa Category Relevance**: How relevant the visa category is to the user's immigration goals
 5. **Steps Complexity**: Consider the complexity and feasibility of the visa application steps
-6. **Country of Origin**: Any specific advantages or considerations based on the user's country of origin
+6. **Continent of Origin**: Any specific advantages or considerations based on the user's continent of origin
 
 ### Important Rules:
 - You MUST select a visa type ID from the provided list above
-- Return ONLY the JSON object with the recommended_visa_type_id field
+- Return ONLY the JSON object with both recommended_visa_type_id and explanations fields
+- The explanations field must provide a clear, detailed reasoning (2-4 sentences) that connects the user's profile to the selected visa type
 - Consider all available visa types before making your recommendation
 - If multiple visa types are equally suitable, choose the one with simpler requirements or faster processing
+- Your explanation should be specific and reference the user's profession, continent of origin, plan period, and how they relate to the visa type's characteristics
 
 Now generate **ONLY the JSON**.
   `;
+
+  return finalPrompt;
 }

@@ -209,9 +209,9 @@ model VisaTypeRecommendations {
   gemini_response       Json     @map("gemini_response")
   embeddings            Unsupported("vector")? @map("embeddings")
   parameters            Json     @map("parameters")
-  user_details          Json     @map("user_details")
   created_at            DateTime @default(now()) @map("created_at")
   updated_at            DateTime @updatedAt @map("updated_at")
+  language              String 
 
   @@index([country_id])
   @@map("visa_type_recommendations")

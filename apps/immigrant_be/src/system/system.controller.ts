@@ -24,7 +24,7 @@ import { AllowAnonymous, type UserSession } from '@thallesp/nestjs-better-auth';
 import { map, defer, repeat, filter } from 'rxjs';
 import { EventsService } from './events.service';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
-import { ImmigrationVisaTypeDto } from '../users/dto/plan-response.dto';
+import { VisaRecommendationResponseDto } from './dto/visa-recommendation-response.dto';
 
 @ApiTags('System')
 @Controller('system')
@@ -65,6 +65,7 @@ export class SystemController {
   ) {
     return this.systemService.createSuggestions({
       steps: suggestionsDto.steps,
+      parameters: suggestionsDto,
       language,
     });
   }
@@ -118,8 +119,8 @@ export class SystemController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Visa types retrieved successfully',
-    type: ImmigrationVisaTypeDto,
+    description: 'Visa type recommendation retrieved successfully',
+    type: VisaRecommendationResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'Invalid country ID or request parameters',
@@ -128,13 +129,11 @@ export class SystemController {
     description: 'Internal server error',
   })
   selectedBestVisaType(
-    @Session() user: UserSession,
     @Body() userDetails: UserDetailsQueryDto,
     @Param('id') countryId: string,
     @Query('language') language?: string,
   ) {
     return this.systemService.getSelectedBestVisaType(
-      user,
       userDetails,
       countryId,
       language,
