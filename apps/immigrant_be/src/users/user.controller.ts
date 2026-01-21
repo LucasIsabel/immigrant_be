@@ -5,6 +5,7 @@ import {
   Post,
   Put,
   Param,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import {
   ApiExtraModels,
   ApiParam,
   ApiBadRequestResponse,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -119,6 +121,12 @@ export class UserController {
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiQuery({
+    name: 'language',
+    description: 'Language to resolve visa steps (default: en)',
+    required: false,
+    type: String,
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Visa type selected successfully',
@@ -138,7 +146,8 @@ export class UserController {
     @Session() user: UserSession,
     @Param('plan_id') plan_id: string,
     @Param('visa_type_id') visaTypeId: string,
-  ): Promise<void> {
-    await this.userService.selectVisaType(user, plan_id, visaTypeId);
+    @Query('language') language?: string,
+  ): Promise<{ id: string } | null> {
+    return this.userService.selectVisaType(user, plan_id, visaTypeId, language);
   }
 }

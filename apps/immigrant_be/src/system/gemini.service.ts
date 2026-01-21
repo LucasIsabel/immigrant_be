@@ -102,10 +102,14 @@ export class GeminiService {
       category: string;
       description: string;
       source: string;
-      steps: unknown;
     }>,
+    language: string,
   ) {
-    const prompt = buildBestVisaTypePrompt(userDetails, immigrationVisaTypes);
+    const prompt = buildBestVisaTypePrompt(
+      userDetails,
+      immigrationVisaTypes,
+      language,
+    );
 
     const {
       response: { text },

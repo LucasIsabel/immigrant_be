@@ -94,8 +94,8 @@ model ImmigrationVisaType {
   source      String
   country     Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
   country_id  String   @db.Uuid @map("country_id")
-  steps Json @map("steps") @default("[]")
   plans Plans[]
+  visa_steps VisaSteps[]
 
   @@index([country_id])
   @@map("immigration_visa_types")
@@ -215,4 +215,16 @@ model VisaTypeRecommendations {
 
   @@index([country_id])
   @@map("visa_type_recommendations")
+}
+
+model VisaSteps {
+  id String @id @default(uuid()) @db.Uuid
+  language String
+  steps Json @default("[]")
+  visa_type_id String @db.Uuid @map("visa_type_id")
+  visa_type ImmigrationVisaType @relation(fields: [visa_type_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  @@map("visa_steps")
 }

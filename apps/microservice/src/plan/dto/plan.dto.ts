@@ -1,7 +1,6 @@
 export class CreatePlanDto {
-  id: string;
-  name: string;
-  description: string;
-  created_at: Date;
-  updated_at: Date;
+  plan_id: string;
+  visa_type_id: string;
+  language: string;
+  user_id: string;
 }

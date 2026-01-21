@@ -14,10 +14,10 @@ export class PlanQueueProcessor extends WorkerHost {
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
-    console.log('========================================', job);
-
     switch (job.name) {
       case PROCESS_CREATE_PLAN: {
+        console.log('========================================', job.data);
+
         const data = await this.planService.createPlan(job.data);
         console.log('========================================', data);
         break;

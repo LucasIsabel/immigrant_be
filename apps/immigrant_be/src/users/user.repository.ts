@@ -1,8 +1,12 @@
 import { PrismaService } from '@app/database';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
-import { ImmigrationVisaType, Plans, Users } from 'generated/prisma';
+import { ImmigrationVisaType, Plans, Prisma, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
 import { formatPlanResponse } from './utils/formatter';
 
@@ -91,7 +95,7 @@ export class UserRepository {
     user: UserSession,
     planId: string,
     visaTypeId: string,
-  ): Promise<PlanResponseDto> {
+  ): Promise<Plans> {
     // First, verify that the plan belongs to the user
     const plan = await this.prisma.plans.findFirst({
       where: {
@@ -104,45 +108,58 @@ export class UserRepository {
     });
 
     if (!plan) {
-      throw new Error('Plan not found or does not belong to the user');
+      throw new NotFoundException(
+        'Plan not found or does not belong to the user',
+      );
     }
 
     // Verify that the visa type exists and belongs to the plan's country
-    if (plan.country_id) {
-      const visaType = await this.prisma.immigrationVisaType.findFirst({
-        where: {
-          id: visaTypeId,
-          country_id: plan.country_id,
-        },
-      });
+    if (!plan.country_id) {
+      throw new BadRequestException('Plan does not have an associated country');
+    }
 
-      if (!visaType) {
-        throw new Error(
-          'Visa type not found or does not belong to the plan country',
-        );
-      }
+    const visaType = await this.prisma.immigrationVisaType.findFirst({
+      where: {
+        id: visaTypeId,
+        country_id: plan.country_id,
+      },
+    });
+
+    if (!visaType) {
+      throw new BadRequestException(
+        'Visa type not found or does not belong to the plan country',
+      );
     }
 
     // Update the plan with the selected visa type
-    const updatedPlan = await this.prisma.plans.update({
+    return this.prisma.plans.update({
       where: {
         id: planId,
       },
       data: {
         selected_visa_type_id: visaTypeId,
       },
-      include: {
-        suggestion: true,
-        country: true,
-        user: true,
-        selected_visa_type: true,
+    });
+  }
+
+  async getVisaStepsByRecommendation(visaTypeId: string, language: string) {
+    return this.prisma.visaSteps.findFirst({
+      where: {
+        visa_type_id: visaTypeId,
+        language,
       },
     });
+  }
 
-    // Get visa types for the response
-    const visaTypes = await this.getVisaTypes(updatedPlan.country_id);
-
-    return formatPlanResponse(updatedPlan, visaTypes);
+  async updatePlanSteps(planId: string, steps: Prisma.InputJsonValue) {
+    return this.prisma.plans.update({
+      where: {
+        id: planId,
+      },
+      data: {
+        steps,
+      },
+    });
   }
 
   async getUserById(userId: string): Promise<Users | null> {

@@ -63,8 +63,8 @@ export function buildBestVisaTypePrompt(
     category: string;
     description: string;
     source: string;
-    steps: unknown;
   }>,
+  language: string,
 ): string {
   const userInfoText = `
 - Profession: ${userDetails.profession || 'Not specified'}
@@ -79,7 +79,6 @@ ${index + 1}. Visa Type ID: ${visa.id}
    Category: ${visa.category}
    Description: ${visa.description}
    Source: ${visa.source}
-   Steps: ${JSON.stringify(visa.steps)}
 `,
     )
     .join('\n');
@@ -100,7 +99,7 @@ ${visaTypesText}
 ### Generate an EXACT JSON with the following format:
 {
   "recommended_visa_type_id": "the UUID of the best matching visa type from the list above",
-  "explanations": "a clear and detailed explanation (2-4 sentences) explaining why you chose this specific visa type. The explanation should reference the user's profile (profession, continent of origin, plan period) and how it aligns with the visa type's requirements, category, and steps. Mention which criteria were most relevant in making this recommendation."
+  "explanations": "a clear and detailed explanation (2-4 sentences) explaining why you chose this specific visa type. The explanation should reference the user's profile (profession, continent of origin, plan period) and how it aligns with the visa type's requirements, category, and steps. Mention which criteria were most relevant in making this recommendation. IMPORTANT: In the explanations field, you MUST ONLY mention the visa type's category name (e.g., 'Work Visa', 'Student Visa', 'Skilled Worker Visa'). NEVER include the visa type ID, UUID, source URL, or any technical identifiers. Use only the category name in a natural, conversational way."
 }
 
 ### Criteria you must consider when recommending:
@@ -115,9 +114,13 @@ ${visaTypesText}
 - You MUST select a visa type ID from the provided list above
 - Return ONLY the JSON object with both recommended_visa_type_id and explanations fields
 - The explanations field must provide a clear, detailed reasoning (2-4 sentences) that connects the user's profile to the selected visa type
+- The explanations field must be in the language: ${language}
+- **CRITICAL**: In the explanations field, you MUST ONLY reference the visa type by its category name (e.g., "Work Visa", "Student Visa", "Skilled Worker Visa"). 
+- **FORBIDDEN in explanations field**: Never include the visa type ID, UUID, source URL, steps details, or any technical identifiers. Only use the category name.
 - Consider all available visa types before making your recommendation
 - If multiple visa types are equally suitable, choose the one with simpler requirements or faster processing
 - Your explanation should be specific and reference the user's profession, continent of origin, plan period, and how they relate to the visa type's characteristics
+- Write the explanation in a natural, conversational tone, mentioning only the visa category name when referring to the recommended visa type
 
 Now generate **ONLY the JSON**.
   `;

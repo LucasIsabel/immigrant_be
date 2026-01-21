@@ -43,47 +43,79 @@ export class ImmigrationVisaTypeDto {
     type: String,
   })
   country_id: string;
-
-  @ApiProperty({
-    description: 'Steps required for this visa type',
-    example: [],
-    type: Array,
-  })
-  steps: Prisma.JsonValue;
 }
 
 export class PlanResponseDto {
   @ApiProperty({
-    description: 'Progress of the plan',
-    example: 0.5,
-    type: Number,
-    required: false,
+    description: 'Unique identifier for the plan',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
   })
-  progress: number | undefined;
+  id: string;
 
   @ApiProperty({
-    description: 'Start date of the plan',
-    example: '2025-01-15T10:30:00Z',
-    type: Date,
-    required: false,
+    description: 'User ID who owns the plan',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
   })
-  start_date: Date | undefined;
+  user_id: string;
 
   @ApiProperty({
-    description: 'Estimated end date of the plan',
-    example: '1 year',
+    description: 'Suggestion ID associated with the plan',
+    example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
     required: false,
+    nullable: true,
   })
-  estimated_end_date: string | undefined;
+  suggestion_id: string | null | undefined;
 
   @ApiProperty({
-    description: 'Time to complete the plan',
-    example: 10,
+    description: 'Country ID associated with the plan',
+    example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
     required: false,
+    nullable: true,
   })
-  time_to_complete: string | undefined;
+  country_id: string | null | undefined;
+
+  @ApiProperty({
+    description: 'Steps of the plan',
+    example: [
+      { type: 'country', answer: 'Canada' },
+      { type: 'visa', answer: 'Express Entry' },
+    ],
+    type: Array,
+  })
+  steps: Prisma.JsonValue;
+
+  @ApiProperty({
+    description: 'Completed steps of the plan',
+    example: [],
+    type: Array,
+  })
+  steps_completed: Prisma.JsonValue;
+
+  @ApiProperty({
+    description: 'Remaining steps of the plan',
+    example: [],
+    type: Array,
+  })
+  steps_remaining: Prisma.JsonValue;
+
+  @ApiProperty({
+    description: 'Documents required for the plan',
+    example: [],
+    type: Array,
+  })
+  documents: Prisma.JsonValue;
+
+  @ApiProperty({
+    description: 'Selected suggestion details',
+    type: Object,
+    required: false,
+    nullable: true,
+  })
+  selected_suggestion: Prisma.JsonValue | null | undefined;
 
   @ApiProperty({
     description: 'Status of the plan',
@@ -92,6 +124,46 @@ export class PlanResponseDto {
     type: String,
   })
   status: PlanStatus;
+
+  @ApiProperty({
+    description: 'Name of the plan',
+    example: 'My Immigration Plan',
+    type: String,
+    required: false,
+    nullable: true,
+  })
+  name: string | null | undefined;
+
+  @ApiProperty({
+    description: 'Notes about the plan',
+    example: 'Need to gather documents',
+    type: String,
+    required: false,
+    nullable: true,
+  })
+  notes: string | null | undefined;
+
+  @ApiProperty({
+    description: 'Plan creation date',
+    example: '2025-01-15T10:30:00Z',
+    type: Date,
+  })
+  created_at: Date;
+
+  @ApiProperty({
+    description: 'Plan last update date',
+    example: '2025-01-15T10:30:00Z',
+    type: Date,
+  })
+  updated_at: Date;
+
+  @ApiProperty({
+    description: 'Progress of the plan',
+    example: 0.5,
+    type: Number,
+    required: false,
+  })
+  progress: number | undefined;
 
   @ApiProperty({
     description: 'Description of the plan',
@@ -103,60 +175,22 @@ export class PlanResponseDto {
   description: string | null | undefined;
 
   @ApiProperty({
-    description: 'Target of the plan',
-    example: 'This is a target of the plan',
+    description: 'Selected visa type ID of the plan',
+    example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
     required: false,
+    nullable: true,
   })
-  target: string | undefined;
-
-  @ApiProperty({
-    description: 'Budget of the plan',
-    example: 'This is a budget of the plan',
-    type: String,
-    required: false,
-  })
-  budget: string | undefined;
-
-  @ApiProperty({
-    description: 'English level of the plan',
-    example: 'This is a english level of the plan',
-    type: String,
-    required: false,
-  })
-  english_level: string | undefined;
-
-  @ApiProperty({
-    description: 'Family members of the plan',
-    example: 1,
-    type: String,
-    required: false,
-  })
-  family_members: string | undefined;
+  selected_visa_type_id: string | null | undefined;
 
   @ApiProperty({
     description: 'Visa type of the plan',
     type: () => ImmigrationVisaTypeDto,
     isArray: true,
+    required: false,
   })
   @IsArray()
-  visa_types: ImmigrationVisaTypeDto[];
-
-  @ApiProperty({
-    description: 'Flag of the country',
-    example: '',
-    type: String,
-    required: false,
-  })
-  flag: string | undefined;
-
-  @ApiProperty({
-    description: 'Name of the country',
-    example: 'Canada',
-    type: String,
-    required: false,
-  })
-  country_name: string | undefined;
+  visa_types: ImmigrationVisaTypeDto[] | undefined;
 
   @ApiProperty({
     description: 'Selected visa type of the plan',
@@ -164,14 +198,4 @@ export class PlanResponseDto {
     required: false,
   })
   selected_visa_type: ImmigrationVisaTypeDto | undefined;
-
-  @ApiProperty({
-    description: 'Steps of the plan',
-    example: [
-      { type: 'country', answer: 'Canada' },
-      { type: 'visa', answer: 'Express Entry' },
-    ],
-    type: Array,
-  })
-  questions: Prisma.JsonValue;
 }

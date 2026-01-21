@@ -278,6 +278,8 @@ export class SystemService {
         this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
       );
 
+      console.log('language', language);
+
       const bestVisaTypeRecommendation =
         await this.systemRepository.getBestVisaTypeRecommendation(
           countryId,
@@ -300,6 +302,7 @@ export class SystemService {
       const geminiResponse = await this.geminiService.generateVisaSuggestion(
         userDetails,
         country?.immigration_visa_types || [],
+        language,
       );
 
       if (!geminiResponse) {
