@@ -5,79 +5,33 @@
       "type": "node",
       "request": "launch",
       "name": "Debug NestJS App",
-      "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v22.20.0/bin/pnpm",
-      "runtimeArgs": ["run", "start:debug"],
-      "restart": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"],
-      "sourceMaps": true,
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "NODE_ENV": "development",
-        "PORT": "3000",
-        "PATH": "${env:HOME}/.nvm/versions/node/v22.20.0/bin:${env:PATH}"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug NestJS App (via pnpm)",
-      "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v22.20.0/bin/pnpm",
-      "runtimeArgs": ["run", "start:debug"],
-      "restart": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"],
-      "sourceMaps": true,
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "NODE_ENV": "development",
-        "PORT": "3000",
-        "PATH": "${env:HOME}/.nvm/versions/node/v22.20.0/bin:${env:PATH}"
-      }
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach to NestJS",
-      "port": 9229,
-      "restart": true,
-      "skipFiles": ["<node_internals>/**"],
-      "sourceMaps": true,
-      "resolveSourceMapLocations": [
-        "${workspaceFolder}/**",
-        "!**/node_modules/**"
-      ],
-      "localRoot": "${workspaceFolder}",
-      "remoteRoot": "${workspaceFolder}"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Current TS File",
+      "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v22.20.0/bin/node",
       "runtimeArgs": [
+        "--inspect-brk=9229",
         "-r",
         "ts-node/register",
         "-r",
         "tsconfig-paths/register"
       ],
-      "args": ["${file}"],
-      "cwd": "${workspaceFolder}",
+      "args": ["${workspaceFolder}/apps/immigrant_be/src/main.ts"],
+      "restart": false,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
         "!**/node_modules/**"
-      ]
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/apps/immigrant_be/tsconfig.app.json",
+        "TS_NODE_TRANSPILE_ONLY": "true",
+        "TS_NODE_FILES": "true",
+        "PATH": "${env:HOME}/.nvm/versions/node/v22.20.0/bin:${env:PATH}"
+      },
+      "outputCapture": "std"
     }
   ]
 }
