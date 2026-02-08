@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import {
   NotificationStatus,
@@ -17,6 +17,8 @@ import { VisaRecommendationType } from './gemini.service';
 
 @Injectable()
 export class SystemRepository {
+  private readonly logger = new Logger(SystemRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async createSuggestions(
@@ -46,7 +48,7 @@ export class SystemRepository {
              NOW(),
              $2::jsonb
            )
-           RETURNING 
+           RETURNING
              id,
              embeddings::text as embeddings,
              created_at,
@@ -69,8 +71,10 @@ export class SystemRepository {
 
       throw new Error('No embeddings provided');
     } catch (error) {
-      console.error('Error creating suggestions:', error);
-
+      this.logger.error(
+        'Error creating suggestions',
+        error instanceof Error ? error.stack : undefined,
+      );
       throw new Error('Error creating suggestions');
     }
   }
@@ -80,91 +84,82 @@ export class SystemRepository {
     similarityThreshold: number = 0.99,
     limit: number = 1,
   ): Promise<Suggestions[] | null> {
-    try {
-      if (!embeddings || embeddings.length === 0) {
-        console.log('No embeddings provided');
-        return null;
-      }
+    if (!embeddings || embeddings.length === 0) {
+      this.logger.debug('No embeddings provided');
+      return null;
+    }
 
-      if (embeddings.length !== 768) {
-        console.error(
-          `Invalid embedding dimension: expected 768, got ${embeddings.length}`,
-        );
-        return null;
-      }
-
-      const embeddingsString = `[${embeddings.join(',')}]`;
-
-      console.log(
-        `Searching for suggestions with similarity threshold: ${similarityThreshold}`,
+    if (embeddings.length !== 768) {
+      this.logger.warn(
+        `Invalid embedding dimension: expected 768, got ${embeddings.length}`,
       );
+      return null;
+    }
 
-      const query = `SELECT 
+    const embeddingsString = `[${embeddings.join(',')}]`;
+
+    this.logger.debug(
+      `Searching for suggestions with similarity threshold: ${similarityThreshold}`,
+    );
+
+    const query = `SELECT
         id,
         embeddings::text as embeddings,
         1 - (embeddings <=> $1::vector) as similarity,
         created_at,
         updated_at
-      FROM suggestions 
-      WHERE embeddings IS NOT NULL 
+      FROM suggestions
+      WHERE embeddings IS NOT NULL
         AND 1 - (embeddings <=> $1::vector) >= $2
       ORDER BY embeddings <=> $1::vector
       LIMIT $3`;
 
-      const result = await this.prisma.$queryRawUnsafe<
-        Array<{
-          id: string;
-          suggestions_answer: unknown;
-          embeddings: string;
-          parameters: unknown;
-          similarity: number;
-          created_at: Date;
-          updated_at: Date;
-        }>
-      >(query, embeddingsString, similarityThreshold, limit);
+    const result = await this.prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        suggestions_answer: unknown;
+        embeddings: string;
+        parameters: unknown;
+        similarity: number;
+        created_at: Date;
+        updated_at: Date;
+      }>
+    >(query, embeddingsString, similarityThreshold, limit);
 
-      if (!result || result.length === 0) {
-        console.log(
-          `No suggestions found with similarity >= ${similarityThreshold}`,
-        );
-        return null;
-      }
-
-      console.log(
-        `Query returned ${result.length} results. Similarities:`,
-        result.map((r) => ({
-          id: r.id.substring(0, 8) + '...',
-          similarity: parseFloat(r.similarity.toFixed(4)),
-        })),
+    if (!result || result.length === 0) {
+      this.logger.debug(
+        `No suggestions found with similarity >= ${similarityThreshold}`,
       );
-
-      const filteredResult = result.filter(
-        (row) => row.similarity >= similarityThreshold && row.similarity > 0,
-      );
-
-      if (filteredResult.length === 0) {
-        console.log(
-          `After filtering, no results with similarity >= ${similarityThreshold}`,
-        );
-        return null;
-      }
-
-      console.log(
-        `Returning ${filteredResult.length} filtered suggestions with similarity >= ${similarityThreshold}`,
-      );
-
-      return filteredResult.map((row) => ({
-        id: row.id,
-        parameters: row.parameters,
-        suggestions_answer: row.suggestions_answer,
-        embeddings: null,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      })) as Suggestions[];
-    } catch (error) {
-      console.error('Error getting raw suggestions with embeddings:', error);
       return null;
     }
+
+    this.logger.debug(
+      `Query returned ${result.length} results`,
+    );
+
+    const filteredResult = result.filter(
+      (row) => row.similarity >= similarityThreshold && row.similarity > 0,
+    );
+
+    if (filteredResult.length === 0) {
+      this.logger.debug(
+        `After filtering, no results with similarity >= ${similarityThreshold}`,
+      );
+      return null;
+    }
+
+    this.logger.debug(
+      `Returning ${filteredResult.length} filtered suggestions`,
+    );
+
+    return filteredResult.map((row) => ({
+      id: row.id,
+      parameters: row.parameters,
+      suggestions_answer: row.suggestions_answer,
+      embeddings: null,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    })) as Suggestions[];
   }
 
   async createSuggestionLanguages(
@@ -208,7 +203,10 @@ export class SystemRepository {
         suggestion_id: updated.id,
       };
     } catch (error) {
-      console.error('Error creating suggestion languages:', error);
+      this.logger.error(
+        'Error creating suggestion languages',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }
@@ -305,7 +303,7 @@ export class SystemRepository {
           NOW(),
           NOW()
         )
-        RETURNING 
+        RETURNING
           id,
           embeddings::text as embeddings,
           created_at,
@@ -321,7 +319,10 @@ export class SystemRepository {
         visa_type_recommendation_id: result[0].id,
       };
     } catch (error) {
-      console.error('Error creating visa type recommendation:', error);
+      this.logger.error(
+        'Error creating visa type recommendation',
+        error instanceof Error ? error.stack : undefined,
+      );
       throw new Error('Error creating visa type recommendation');
     }
   }
@@ -331,26 +332,25 @@ export class SystemRepository {
     similarityThreshold: number = 0.99,
     limit: number = 1,
   ): Promise<VisaTypeRecommendations[] | null> {
-    try {
-      if (!embeddings || embeddings.length === 0) {
-        console.log('No embeddings provided');
-        return null;
-      }
+    if (!embeddings || embeddings.length === 0) {
+      this.logger.debug('No embeddings provided for visa type recommendations');
+      return null;
+    }
 
-      if (embeddings.length !== 768) {
-        console.error(
-          `Invalid embedding dimension: expected 768, got ${embeddings.length}`,
-        );
-        return null;
-      }
-
-      const embeddingsString = `[${embeddings.join(',')}]`;
-
-      console.log(
-        `Searching for visa type recommendations with similarity threshold: ${similarityThreshold}`,
+    if (embeddings.length !== 768) {
+      this.logger.warn(
+        `Invalid embedding dimension: expected 768, got ${embeddings.length}`,
       );
+      return null;
+    }
 
-      const query = `SELECT 
+    const embeddingsString = `[${embeddings.join(',')}]`;
+
+    this.logger.debug(
+      `Searching for visa type recommendations with similarity threshold: ${similarityThreshold}`,
+    );
+
+    const query = `SELECT
         id,
         country_id,
         gemini_response,
@@ -361,73 +361,60 @@ export class SystemRepository {
         1 - (embeddings <=> $1::vector) as similarity,
         created_at,
         updated_at
-      FROM visa_type_recommendations 
-      WHERE embeddings IS NOT NULL 
+      FROM visa_type_recommendations
+      WHERE embeddings IS NOT NULL
         AND 1 - (embeddings <=> $1::vector) >= $2
       ORDER BY embeddings <=> $1::vector
       LIMIT $3`;
 
-      const result = await this.prisma.$queryRawUnsafe<
-        Array<{
-          id: string;
-          country_id: string;
-          gemini_response: unknown;
-          embeddings: string;
-          parameters: unknown;
-          language: string;
-          similarity: number;
-          created_at: Date;
-          updated_at: Date;
-        }>
-      >(query, embeddingsString, similarityThreshold, limit);
+    const result = await this.prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        country_id: string;
+        gemini_response: unknown;
+        embeddings: string;
+        parameters: unknown;
+        language: string;
+        similarity: number;
+        created_at: Date;
+        updated_at: Date;
+      }>
+    >(query, embeddingsString, similarityThreshold, limit);
 
-      if (!result || result.length === 0) {
-        console.log(
-          `No visa type recommendations found with similarity >= ${similarityThreshold}`,
-        );
-        return null;
-      }
-
-      console.log(
-        `Query returned ${result.length} results. Similarities:`,
-        result.map((r) => ({
-          id: r.id.substring(0, 8) + '...',
-          similarity: parseFloat(r.similarity.toFixed(4)),
-        })),
-      );
-
-      const filteredResult = result.filter(
-        (row) => row.similarity >= similarityThreshold && row.similarity > 0,
-      );
-
-      if (filteredResult.length === 0) {
-        console.log(
-          `After filtering, no results with similarity >= ${similarityThreshold}`,
-        );
-        return null;
-      }
-
-      console.log(
-        `Returning ${filteredResult.length} filtered visa type recommendations with similarity >= ${similarityThreshold}`,
-      );
-
-      return filteredResult.map((row) => ({
-        id: row.id,
-        country_id: row.country_id,
-        gemini_response: row.gemini_response,
-        embeddings: null,
-        parameters: row?.parameters,
-        language: row.language,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-      })) as VisaTypeRecommendations[];
-    } catch (error) {
-      console.error(
-        'Error getting raw visa type recommendations with embeddings:',
-        error,
+    if (!result || result.length === 0) {
+      this.logger.debug(
+        `No visa type recommendations found with similarity >= ${similarityThreshold}`,
       );
       return null;
     }
+
+    this.logger.debug(`Query returned ${result.length} results`);
+
+    const filteredResult = result.filter(
+      (row) => row.similarity >= similarityThreshold && row.similarity > 0,
+    );
+
+    if (filteredResult.length === 0) {
+      this.logger.debug(
+        `After filtering, no results with similarity >= ${similarityThreshold}`,
+      );
+      return null;
+    }
+
+    this.logger.debug(
+      `Returning ${filteredResult.length} filtered visa type recommendations`,
+    );
+
+    return filteredResult.map((row) => ({
+      id: row.id,
+      country_id: row.country_id,
+      gemini_response: row.gemini_response,
+      embeddings: null,
+      parameters: row?.parameters,
+      language: row.language,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    })) as VisaTypeRecommendations[];
   }
 
   async getRawSuggestionsWithParameters(
@@ -442,7 +429,10 @@ export class SystemRepository {
         },
       });
     } catch (error) {
-      console.error('Error getting raw suggestions with parameters:', error);
+      this.logger.error(
+        'Error getting raw suggestions with parameters',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }

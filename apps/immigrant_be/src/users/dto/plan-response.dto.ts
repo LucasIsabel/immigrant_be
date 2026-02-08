@@ -8,7 +8,8 @@ export enum PlanStatus {
   COMPLETED = 'completed',
 }
 
-export class ImmigrationVisaTypeDto {
+/** Visa type as embedded in plan responses (avoids Swagger duplicate with ImmigrationVisaTypeDto from immigration-visa-type module). */
+export class PlanImmigrationVisaTypeDto {
   @ApiProperty({
     description: 'Unique identifier for the visa type',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -185,17 +186,17 @@ export class PlanResponseDto {
 
   @ApiProperty({
     description: 'Visa type of the plan',
-    type: () => ImmigrationVisaTypeDto,
+    type: () => PlanImmigrationVisaTypeDto,
     isArray: true,
     required: false,
   })
   @IsArray()
-  visa_types: ImmigrationVisaTypeDto[] | undefined;
+  visa_types: PlanImmigrationVisaTypeDto[] | undefined;
 
   @ApiProperty({
     description: 'Selected visa type of the plan',
-    type: () => ImmigrationVisaTypeDto,
+    type: () => PlanImmigrationVisaTypeDto,
     required: false,
   })
-  selected_visa_type: ImmigrationVisaTypeDto | undefined;
+  selected_visa_type: PlanImmigrationVisaTypeDto | undefined;
 }

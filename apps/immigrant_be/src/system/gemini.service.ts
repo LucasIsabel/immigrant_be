@@ -3,7 +3,7 @@ import {
   GoogleGenerativeAI,
   TaskType,
 } from '@google/generative-ai';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CountryService } from '../countries/country.service';
 import {
@@ -44,6 +44,7 @@ export type VisaRecommendationType = z.infer<typeof visaRecommendationSchema>;
 
 @Injectable()
 export class GeminiService {
+  private readonly logger = new Logger(GeminiService.name);
   private model: GenerativeModel;
   private embeddingModel: GenerativeModel;
   private genAI: GoogleGenerativeAI;
@@ -129,7 +130,7 @@ export class GeminiService {
       }
       return this.formatToValidJson(raw);
     } catch (error) {
-      console.error('Error parsing model response:', error);
+      this.logger.error('Error parsing model response', error instanceof Error ? error.stack : undefined);
       return null;
     }
   }
@@ -162,7 +163,7 @@ export class GeminiService {
       const parsed = JSON.parse(cleaned);
       return visaRecommendationSchema.parse(parsed);
     } catch (error) {
-      console.error('Error parsing visa recommendation response:', error);
+      this.logger.error('Error parsing visa recommendation response', error instanceof Error ? error.stack : undefined);
       return null;
     }
   }
@@ -183,7 +184,7 @@ export class GeminiService {
         outputDimensionality: 768,
       } as any);
 
-      console.log('response', response);
+      this.logger.debug('Embedding response received');
 
       if (!response?.embedding?.values) {
         return null;
@@ -195,7 +196,7 @@ export class GeminiService {
 
       return normalizedEmbedding;
     } catch (error) {
-      console.error('Error generating embeddings:', error);
+      this.logger.error('Error generating embeddings', error instanceof Error ? error.stack : undefined);
       return null;
     }
   }

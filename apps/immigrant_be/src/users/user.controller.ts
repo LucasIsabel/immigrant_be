@@ -27,12 +27,12 @@ import { CreateUserPlanDto } from './dto/create-user-plan.dto';
 import { UserPlanResponseDto } from './dto/user-plan-response.dto';
 import {
   PlanResponseDto,
-  ImmigrationVisaTypeDto,
+  PlanImmigrationVisaTypeDto,
 } from './dto/plan-response.dto';
 import { UserDetailsDto } from './dto/user-detail.dto';
 
 @ApiTags('Users')
-@ApiExtraModels(ImmigrationVisaTypeDto, UserDetailsDto)
+@ApiExtraModels(PlanImmigrationVisaTypeDto, UserDetailsDto)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}

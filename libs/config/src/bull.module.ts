@@ -1,18 +1,17 @@
 import { Module } from '@nestjs/common';
 import { BullModule as BullModuleNest } from '@nestjs/bullmq';
+import { env } from './env';
 
 @Module({
   imports: [
     BullModuleNest.forRoot({
       connection: {
-        host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT ?? '6379'),
-        password: process.env.REDIS_PASSWORD,
-        username: process.env.REDIS_USER,
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD,
+        username: env.REDIS_USER,
       },
     }),
   ],
-  providers: [],
-  exports: [],
 })
 export class BullMQConfigModule {}

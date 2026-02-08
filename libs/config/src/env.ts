@@ -4,8 +4,16 @@ export const envSchema = zod.object({
   DATABASE_URL: zod.string().min(1, 'DATABASE_URL is required'),
   PRIVATE_KEY: zod.string().min(1, 'PRIVATE_KEY is required'),
   GEMINI_API_KEY: zod.string().min(1, 'GEMINI_API_KEY is required'),
+  NODE_ENV: zod
+    .enum(['development', 'production', 'test'])
+    .default('development'),
   PORT_IMMIGRANT: zod.coerce.number().min(1, 'PORT_IMMIGRANT is required'),
-  PORT_WEBHOOKS: zod.coerce.number().min(1, 'PORT_WEBHOOKS is required'),
+  PORT_MICROSERVICE: zod.coerce.number().default(6000),
+  REDIS_HOST: zod.string().default('localhost'),
+  REDIS_PORT: zod.coerce.number().default(6379),
+  REDIS_USER: zod.string().optional(),
+  REDIS_PASSWORD: zod.string().optional(),
+  CORS_ORIGINS: zod.string().default('http://localhost:3001'),
 });
 
 export const env = envSchema.parse(process.env);

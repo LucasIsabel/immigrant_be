@@ -24,6 +24,7 @@ import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { CountryDto } from './dto/country.dto';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Countries')
 @Controller('countries')
@@ -31,6 +32,7 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   @Post()
+  @Roles('admin')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new country',
@@ -78,11 +80,13 @@ export class CountryController {
   @ApiNotFoundResponse({
     description: 'Country not found',
   })
+  @AllowAnonymous()
   findOne(@Param('id') id: string) {
     return this.countryService.findOne(id);
   }
 
   @Patch(':id')
+  @Roles('admin')
   @ApiOperation({
     summary: 'Update country information',
     description: 'Updates country information by its ID',
@@ -106,6 +110,7 @@ export class CountryController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete country',

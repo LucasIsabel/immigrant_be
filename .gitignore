@@ -61,3 +61,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 !.cursor/rules/*.mdc
 *.md
 *.mdc
+
+.claude/*

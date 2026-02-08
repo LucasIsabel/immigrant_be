@@ -3,23 +3,26 @@ import bcrypt from 'bcrypt';
 import { PrismaClient } from '../../../generated/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { env } from './env';
 
 const prisma = new PrismaClient();
+
+const corsOrigins = env.CORS_ORIGINS.split(',');
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
     usePlural: true,
-    debugLogs: process.env.NODE_ENV === 'development',
+    debugLogs: env.NODE_ENV === 'development',
   }),
-  origin: ['http://localhost:3000'],
+  origin: corsOrigins,
   allowedHeaders: ['Content-Type', 'Authorization'],
-  allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
-  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
+  allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedOrigins: corsOrigins,
+  trustedOrigins: corsOrigins,
   allowedCredentials: true,
   basePath: '/api/v1/auth',
-  secret: process.env.PRIVATE_KEY,
+  secret: env.PRIVATE_KEY,
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -33,7 +36,7 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 5, // 7 days
+      maxAge: 60 * 5, // 5 minutes
     },
   },
   advanced: {

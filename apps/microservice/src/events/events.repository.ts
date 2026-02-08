@@ -1,7 +1,9 @@
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { NotificationStatus } from 'generated/prisma';
 import { EventDto } from './dto/event.dto';
 
+@Injectable()
 export class EventsRepository {
   constructor(private readonly prisma: PrismaService) {}
 

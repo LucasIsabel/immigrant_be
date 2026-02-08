@@ -1,5 +1,9 @@
 import { GeminiService } from './gemini.service';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { StepType } from './dto/types.dto';
 import {
   Steps,
@@ -10,8 +14,11 @@ import { CountryService } from '../countries/country.service';
 import { SystemRepository } from './system.repository';
 import { Suggestions } from 'generated/prisma';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
+
 @Injectable()
 export class SystemService {
+  private readonly logger = new Logger(SystemService.name);
+
   constructor(
     private readonly geminiService: GeminiService,
     private readonly countryService: CountryService,
@@ -37,10 +44,6 @@ export class SystemService {
         prompt += this.getUserAnswerBasedOnStepType(step);
       });
 
-      // const suggestions = await this.getSuggestionsWithEmbeddings(
-      //   this.jsonToEmbeddingArrayOfObjects(steps, language),
-      // );
-
       const suggestions =
         await this.getSuggestionsAccordingToParameters(parameters);
 
@@ -58,29 +61,20 @@ export class SystemService {
             language,
           );
 
-          const geminiAnswerSuggestions = await Promise.all(
-            geminiResponse?.suggestions?.map(async (suggestion) => {
-              const country = await this.getCountryDetails(suggestion.country);
-
-              return {
-                ...suggestion,
-                country_id: country?.id || '',
-                country_background: country?.background_image || '',
-                country_flag: country?.flag || '',
-                investment_required: country?.investment_required || '',
-              };
-            }) || [],
-          );
+          const enrichedSuggestions =
+            await this.enrichSuggestionsWithCountryDetails(
+              geminiResponse?.suggestions || [],
+            );
 
           const suggestion =
             await this.systemRepository.createSuggestionLanguages(
               suggestions.id,
               language,
-              JSON.stringify(geminiAnswerSuggestions),
+              JSON.stringify(enrichedSuggestions),
             );
 
           return {
-            suggestions: geminiAnswerSuggestions,
+            suggestions: enrichedSuggestions,
             suggestion_id: suggestion?.suggestion_id || '',
           };
         }
@@ -91,44 +85,66 @@ export class SystemService {
         language,
       );
 
-      const answerSuggestions = await Promise.all(
-        response?.suggestions?.map(async (suggestion) => {
-          const country = await this.getCountryDetails(suggestion.country);
-
-          return {
-            ...suggestion,
-            country_id: country?.id || '',
-            country_background: country?.background_image || '',
-            country_flag: country?.flag || '',
-            investment_required: country?.investment_required || '',
-          };
-        }) || [],
-      );
+      const enrichedSuggestions =
+        await this.enrichSuggestionsWithCountryDetails(
+          response?.suggestions || [],
+        );
 
       const embeddings = await this.geminiService.generateEmbeddings(
         this.jsonToEmbeddingArrayOfObjects(steps, language),
       );
 
       const suggestion = await this.systemRepository.createSuggestions(
-        answerSuggestions,
+        enrichedSuggestions,
         embeddings,
         parameters,
         language,
       );
 
-      console.log('suggestion', suggestion);
+      this.logger.debug(`Suggestion created: ${suggestion?.suggestion_id}`);
 
       return {
-        suggestions: answerSuggestions,
+        suggestions: enrichedSuggestions,
         suggestion_id: suggestion?.suggestion_id || '',
       };
     } catch (error) {
-      console.error('Error creating suggestions:', error);
-      return {
-        suggestions: [],
-        suggestion_id: '',
-      };
+      this.logger.error(
+        'Error creating suggestions',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new InternalServerErrorException('Failed to create suggestions');
     }
+  }
+
+  private async enrichSuggestionsWithCountryDetails(
+    suggestions: Array<{ country: string; [key: string]: any }>,
+  ) : Promise<import('./dto/suggestions.dto').SuggestionItem[]> {
+    return Promise.all(
+      suggestions.map(async (suggestion) => {
+        const country = await this.getCountryDetails(suggestion.country);
+
+        // Build a full SuggestionItem with defaults for missing properties
+        const item: any = {
+          country: suggestion.country,
+          compatibility: typeof suggestion.compatibility === 'number' ? suggestion.compatibility : 0,
+          reasons: Array.isArray(suggestion.reasons) ? suggestion.reasons : [],
+          cities: Array.isArray(suggestion.cities) ? suggestion.cities : [],
+          visa_options: Array.isArray(suggestion.visa_options) ? suggestion.visa_options : [],
+          country_background: country?.background_image || suggestion.country_background || '',
+          country_flag: country?.flag || suggestion.country_flag || '',
+          country_id: country?.id || suggestion.country_id || '',
+          investment_required: country?.investment_required || suggestion.investment_required || '',
+          average_visa_processing_time: suggestion.average_visa_processing_time || '',
+          job_market: suggestion.job_market || '',
+          education_quality: suggestion.education_quality || '',
+          difficulty: suggestion.difficulty || '',
+          health_care: suggestion.health_care || '',
+          languages: Array.isArray(suggestion.languages) ? suggestion.languages : [],
+        };
+
+        return item as import('./dto/suggestions.dto').SuggestionItem;
+      }),
+    );
   }
 
   getUserAnswerBasedOnStepType = (step: Steps) => {
@@ -161,36 +177,30 @@ export class SystemService {
   async getSuggestionsWithEmbeddings(
     text: string,
   ): Promise<Suggestions[] | null> {
-    try {
-      console.log(
-        'Generating embeddings for text:',
-        text.substring(0, 100) + '...',
-      );
+    this.logger.debug(
+      `Generating embeddings for text: ${text.substring(0, 100)}...`,
+    );
 
-      const embeddings = await this.geminiService.generateEmbeddings(text);
+    const embeddings = await this.geminiService.generateEmbeddings(text);
 
-      if (!embeddings) {
-        console.log('No embeddings generated');
-        return null;
-      }
-
-      console.log(`Generated embeddings with dimension: ${embeddings.length}`);
-
-      const data = await this.systemRepository.getRawSuggestionsWithEmbeddings(
-        embeddings || null,
-      );
-
-      if (data && data.length > 0) {
-        console.log(`Found ${data.length} suggestions from database`);
-      } else {
-        console.log('No suggestions found in database');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching suggestions with embeddings:', error);
+    if (!embeddings) {
+      this.logger.debug('No embeddings generated');
       return null;
     }
+
+    this.logger.debug(`Generated embeddings with dimension: ${embeddings.length}`);
+
+    const data = await this.systemRepository.getRawSuggestionsWithEmbeddings(
+      embeddings || null,
+    );
+
+    if (data && data.length > 0) {
+      this.logger.debug(`Found ${data.length} suggestions from database`);
+    } else {
+      this.logger.debug('No suggestions found in database');
+    }
+
+    return data;
   }
 
   async getSuggestionsAccordingToParameters(
@@ -278,7 +288,7 @@ export class SystemService {
         this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
       );
 
-      console.log('language', language);
+      this.logger.debug(`Getting best visa type for country ${countryId}, language: ${language}`);
 
       const bestVisaTypeRecommendation =
         await this.systemRepository.getBestVisaTypeRecommendation(
@@ -322,8 +332,13 @@ export class SystemService {
         explanations: geminiResponse?.explanations || '',
       };
     } catch (error) {
-      console.error('Error getting selected best visa type:', error);
-      return null;
+      this.logger.error(
+        'Error getting selected best visa type',
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new InternalServerErrorException(
+        'Failed to get visa type recommendation',
+      );
     }
   };
 }

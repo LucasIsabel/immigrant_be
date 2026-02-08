@@ -1,6 +1,6 @@
 import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { buildVisaStepsPrompt } from './helpers/prompts';
 
@@ -14,6 +14,7 @@ export type VisaStepsType = z.infer<typeof visaStepsSchema>;
 
 @Injectable()
 export class GeminiService {
+  private readonly logger = new Logger(GeminiService.name);
   private model: GenerativeModel;
   private embeddingModel: GenerativeModel;
   private genAI: GoogleGenerativeAI;
@@ -68,7 +69,7 @@ export class GeminiService {
       const parsed = JSON.parse(cleaned);
       return visaStepsSchema.parse(parsed);
     } catch (error) {
-      console.error('Error parsing visa steps response:', error);
+      this.logger.error('Error parsing visa steps response', error instanceof Error ? error.stack : undefined);
       return null;
     }
   }

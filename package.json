@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/immigrant_be/test/jest-e2e.json",
-    "start:all": "concurrently \"nest start immigrant_match_be --watch\" \"nest start webhooks --watch\" \"nest start microservice --watch\""
+    "start:all": "concurrently \"nest start immigrant_be --watch\" \"nest start microservice --watch\""
   },
   "dependencies": {
     "@google/generative-ai": "0.24.1",
@@ -30,6 +30,8 @@
     "@nestjs/microservices": "11.1.9",
     "@nestjs/platform-express": "11.0.1",
     "@nestjs/swagger": "11.2.1",
+    "@nestjs/terminus": "11.0.0",
+    "@nestjs/throttler": "6.5.0",
     "@prisma/client": "6.18.0",
     "@thallesp/nestjs-better-auth": "2.1.0",
     "@types/bcrypt": "6.0.0",

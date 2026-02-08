@@ -20,8 +20,10 @@ import { VisaStepsService } from './visa-steps.service';
 import { CreateVisaStepsDto } from './dto/create-visa-steps.dto';
 import { UpdateVisaStepsDto } from './dto/update-visa-steps.dto';
 import { VisaStepsDto } from './dto/visa-steps.dto';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('VisaSteps')
+@Roles('admin')
 @Controller('admin/visa-steps')
 export class VisaStepsController {
   constructor(private readonly visaStepsService: VisaStepsService) {}

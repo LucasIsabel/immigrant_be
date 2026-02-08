@@ -45,15 +45,6 @@
       "compilerOptions": {
         "tsConfigPath": "apps/microservice/tsconfig.app.json"
       }
-    },
-    "webhooks": {
-      "type": "application",
-      "root": "apps/webhooks",
-      "entryFile": "main",
-      "sourceRoot": "apps/webhooks/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/webhooks/tsconfig.app.json"
-      }
     }
   }
 }

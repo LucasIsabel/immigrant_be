@@ -25,6 +25,8 @@ import { ImmigrationVisaTypeService } from './immigration-visa-type.service';
 import { CreateImmigrationVisaTypeDto } from './dto/create-immigration-visa-type.dto';
 import { UpdateImmigrationVisaTypeDto } from './dto/update-immigration-visa-type.dto';
 import { ImmigrationVisaTypeDto } from './dto/immigration-visa-type.dto';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Immigration Visa Types')
 @Controller('immigration-visa-types')
@@ -34,6 +36,7 @@ export class ImmigrationVisaTypeController {
   ) {}
 
   @Post()
+  @Roles('admin')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new immigration visa type',
@@ -57,6 +60,7 @@ export class ImmigrationVisaTypeController {
   }
 
   @Get()
+  @AllowAnonymous()
   @ApiOperation({
     summary: 'Get all immigration visa types',
     description: 'Retrieves all immigration visa types, optionally filtered by country_id',
@@ -80,6 +84,7 @@ export class ImmigrationVisaTypeController {
   }
 
   @Get(':id')
+  @AllowAnonymous()
   @ApiOperation({
     summary: 'Get immigration visa type by ID',
     description: 'Retrieves a specific immigration visa type by its ID',
@@ -103,6 +108,7 @@ export class ImmigrationVisaTypeController {
   }
 
   @Patch(':id')
+  @Roles('admin')
   @ApiOperation({
     summary: 'Update immigration visa type',
     description: 'Updates immigration visa type information by its ID',
@@ -141,6 +147,7 @@ export class ImmigrationVisaTypeController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete immigration visa type',

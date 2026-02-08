@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreatePlanDto } from './dto/plan.dto';
 import { PlanRepository } from './plan.repository';
 import { VisaStepsService } from './visa-steps.service';
 
 @Injectable()
 export class PlanService {
+  private readonly logger = new Logger(PlanService.name);
+
   constructor(
     private readonly planRepository: PlanRepository,
     private readonly visaStepsService: VisaStepsService,
@@ -29,7 +31,7 @@ export class PlanService {
       createPlanDto.language,
     );
 
-    console.log('========================================', visaSteps);
+    this.logger.debug(`Visa steps generated for type ${createPlanDto.visa_type_id}`);
 
     return await Promise.resolve({
       success: true,

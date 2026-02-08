@@ -2,7 +2,7 @@ import { ImmigrationVisaType, Prisma } from 'generated/prisma';
 import {
   PlanResponseDto,
   PlanStatus,
-  ImmigrationVisaTypeDto,
+  PlanImmigrationVisaTypeDto,
 } from '../dto/plan-response.dto';
 type PlanWithRelations = Prisma.PlansGetPayload<{
   include: {
@@ -15,7 +15,7 @@ type PlanWithRelations = Prisma.PlansGetPayload<{
 
 const formatVisaTypes = (
   visaTypes: ImmigrationVisaType[],
-): ImmigrationVisaTypeDto[] => {
+): PlanImmigrationVisaTypeDto[] => {
   return visaTypes.map((visaType) => ({
     id: visaType.id,
     category: visaType.category,
