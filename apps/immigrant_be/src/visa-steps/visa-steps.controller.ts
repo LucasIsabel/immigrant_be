@@ -15,15 +15,22 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiCookieAuth,
+  ApiForbiddenResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { VisaStepsService } from './visa-steps.service';
 import { CreateVisaStepsDto } from './dto/create-visa-steps.dto';
 import { UpdateVisaStepsDto } from './dto/update-visa-steps.dto';
 import { VisaStepsDto } from './dto/visa-steps.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @ApiTags('VisaSteps')
-@Roles('admin')
+@Roles(UserRole.ADMIN)
+@ApiCookieAuth('better-auth.session_token')
+@ApiUnauthorizedResponse({ description: 'Authentication required' })
+@ApiForbiddenResponse({ description: 'Admin role required' })
 @Controller('admin/visa-steps')
 export class VisaStepsController {
   constructor(private readonly visaStepsService: VisaStepsService) {}

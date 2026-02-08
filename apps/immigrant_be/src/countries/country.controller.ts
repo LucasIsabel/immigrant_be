@@ -18,6 +18,9 @@ import {
   ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiCookieAuth,
+  ApiForbiddenResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CountryService } from './country.service';
 import { CreateCountryDto } from './dto/create-country.dto';
@@ -25,6 +28,7 @@ import { UpdateCountryDto } from './dto/update-country.dto';
 import { CountryDto } from './dto/country.dto';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @ApiTags('Countries')
 @Controller('countries')
@@ -32,8 +36,9 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   @Post()
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.CREATED)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Create a new country',
     description: 'Creates a new country with immigration information',
@@ -43,6 +48,8 @@ export class CountryController {
     description: 'Country created successfully',
     type: CountryDto,
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   create(@Body() createCountryDto: CreateCountryDto) {
     return this.countryService.create(createCountryDto);
   }
@@ -86,7 +93,8 @@ export class CountryController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Update country information',
     description: 'Updates country information by its ID',
@@ -105,13 +113,16 @@ export class CountryController {
   @ApiNotFoundResponse({
     description: 'Country not found',
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   update(@Param('id') id: string, @Body() updateCountryDto: UpdateCountryDto) {
     return this.countryService.update(id, updateCountryDto);
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Delete country',
     description: 'Deletes a country by its ID',
@@ -127,6 +138,8 @@ export class CountryController {
   @ApiNotFoundResponse({
     description: 'Country not found',
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   remove(@Param('id') id: string) {
     return this.countryService.remove(id);
   }

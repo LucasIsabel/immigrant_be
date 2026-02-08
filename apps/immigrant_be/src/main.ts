@@ -29,6 +29,12 @@ async function bootstrap() {
     .setTitle('Immigrant API')
     .setDescription('The Immigrant API documentation')
     .setVersion('1.0')
+    .addCookieAuth('better-auth.session_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'better-auth.session_token',
+      description: 'Session cookie from Better Auth',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

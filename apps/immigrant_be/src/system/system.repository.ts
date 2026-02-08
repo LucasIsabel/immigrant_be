@@ -243,7 +243,7 @@ export class SystemRepository {
   async getEvents(userId: string): Promise<EventResponseDto | null> {
     const result = await this.prisma.events.findFirst({
       where: {
-        user_id: userId,
+        userId: userId,
         status: NotificationStatus.pending,
       },
     });
@@ -252,7 +252,17 @@ export class SystemRepository {
       return null;
     }
 
-    return result as EventResponseDto;
+    return {
+      id: result.id,
+      type: result.type,
+      message: result.message,
+      title: result.title,
+      status: result.status,
+      user_id: result.userId,
+      created_at: result.createdAt,
+      updated_at: result.updatedAt,
+      payload: result.payload,
+    } as EventResponseDto;
   }
 
   async createVisaTypeRecommendation(

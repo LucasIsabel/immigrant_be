@@ -20,6 +20,9 @@ import {
   ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiCookieAuth,
+  ApiForbiddenResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ImmigrationVisaTypeService } from './immigration-visa-type.service';
 import { CreateImmigrationVisaTypeDto } from './dto/create-immigration-visa-type.dto';
@@ -27,6 +30,7 @@ import { UpdateImmigrationVisaTypeDto } from './dto/update-immigration-visa-type
 import { ImmigrationVisaTypeDto } from './dto/immigration-visa-type.dto';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @ApiTags('Immigration Visa Types')
 @Controller('immigration-visa-types')
@@ -36,11 +40,13 @@ export class ImmigrationVisaTypeController {
   ) {}
 
   @Post()
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.CREATED)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Create a new immigration visa type',
-    description: 'Creates a new immigration visa type with category, description, source, and country association',
+    description:
+      'Creates a new immigration visa type with category, description, source, and country association',
   })
   @ApiBody({ type: CreateImmigrationVisaTypeDto })
   @ApiCreatedResponse({
@@ -55,6 +61,8 @@ export class ImmigrationVisaTypeController {
     status: HttpStatus.NOT_FOUND,
     description: 'Country not found',
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   create(@Body() createImmigrationVisaTypeDto: CreateImmigrationVisaTypeDto) {
     return this.immigrationVisaTypeService.create(createImmigrationVisaTypeDto);
   }
@@ -63,7 +71,8 @@ export class ImmigrationVisaTypeController {
   @AllowAnonymous()
   @ApiOperation({
     summary: 'Get all immigration visa types',
-    description: 'Retrieves all immigration visa types, optionally filtered by country_id',
+    description:
+      'Retrieves all immigration visa types, optionally filtered by country_id',
   })
   @ApiQuery({
     name: 'country_id',
@@ -108,7 +117,8 @@ export class ImmigrationVisaTypeController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Update immigration visa type',
     description: 'Updates immigration visa type information by its ID',
@@ -136,6 +146,8 @@ export class ImmigrationVisaTypeController {
     status: HttpStatus.NOT_FOUND,
     description: 'Country not found (if country_id is being updated)',
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   update(
     @Param('id') id: string,
     @Body() updateImmigrationVisaTypeDto: UpdateImmigrationVisaTypeDto,
@@ -147,8 +159,9 @@ export class ImmigrationVisaTypeController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiCookieAuth('better-auth.session_token')
   @ApiOperation({
     summary: 'Delete immigration visa type',
     description: 'Deletes an immigration visa type by its ID',
@@ -165,6 +178,8 @@ export class ImmigrationVisaTypeController {
   @ApiNotFoundResponse({
     description: 'Immigration visa type not found',
   })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
   remove(@Param('id') id: string) {
     return this.immigrationVisaTypeService.remove(id);
   }
