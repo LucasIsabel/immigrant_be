@@ -12,7 +12,7 @@ import {
 } from './dto/suggestions.dto';
 import { CountryService } from '../countries/country.service';
 import { SystemRepository } from './system.repository';
-import { Suggestions } from 'generated/prisma';
+import { Prisma, Suggestions } from 'generated/prisma';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
 
 @Injectable()
@@ -95,7 +95,7 @@ export class SystemService {
       );
 
       const suggestion = await this.systemRepository.createSuggestions(
-        enrichedSuggestions,
+        enrichedSuggestions as unknown as Prisma.InputJsonValue,
         embeddings,
         parameters,
         language,
