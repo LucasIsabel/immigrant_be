@@ -25,8 +25,6 @@ export class HealthController {
   @ApiOperation({ summary: 'Readiness check (database connectivity)' })
   @HealthCheck()
   readiness() {
-    return this.health.check([
-      () => this.prismaHealth.isHealthy('database'),
-    ]);
+    return this.health.check([() => this.prismaHealth.isHealthy('database')]);
   }
 }

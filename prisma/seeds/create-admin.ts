@@ -16,12 +16,12 @@ async function createAdmin() {
     console.log(`Admin user ${adminEmail} already exists`);
 
     // Atualizar para admin se não for
-    if (existing.role !== 'admin') {
+    if (!existing.roles.includes('admin')) {
       await prisma.users.update({
         where: { id: existing.id },
-        data: { role: 'admin' },
+        data: { roles: { push: 'admin' } },
       });
-      console.log(`Updated ${adminEmail} to admin role`);
+      console.log(`Updated ${adminEmail} to include admin role`);
     }
     return;
   }
@@ -33,7 +33,7 @@ async function createAdmin() {
     data: {
       email: adminEmail,
       name: 'Administrator',
-      role: 'admin',
+      roles: ['user', 'admin'],
       emailVerified: true,
     },
   });

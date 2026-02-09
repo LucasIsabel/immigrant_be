@@ -130,7 +130,10 @@ export class GeminiService {
       }
       return this.formatToValidJson(raw);
     } catch (error) {
-      this.logger.error('Error parsing model response', error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        'Error parsing model response',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }
@@ -163,7 +166,10 @@ export class GeminiService {
       const parsed = JSON.parse(cleaned);
       return visaRecommendationSchema.parse(parsed);
     } catch (error) {
-      this.logger.error('Error parsing visa recommendation response', error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        'Error parsing visa recommendation response',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }
@@ -196,7 +202,10 @@ export class GeminiService {
 
       return normalizedEmbedding;
     } catch (error) {
-      this.logger.error('Error generating embeddings', error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        'Error generating embeddings',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }

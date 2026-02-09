@@ -133,9 +133,7 @@ export class SystemRepository {
       return null;
     }
 
-    this.logger.debug(
-      `Query returned ${result.length} results`,
-    );
+    this.logger.debug(`Query returned ${result.length} results`);
 
     const filteredResult = result.filter(
       (row) => row.similarity >= similarityThreshold && row.similarity > 0,

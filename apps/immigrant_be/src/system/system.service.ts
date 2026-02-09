@@ -118,7 +118,7 @@ export class SystemService {
 
   private async enrichSuggestionsWithCountryDetails(
     suggestions: Array<{ country: string; [key: string]: any }>,
-  ) : Promise<import('./dto/suggestions.dto').SuggestionItem[]> {
+  ): Promise<import('./dto/suggestions.dto').SuggestionItem[]> {
     return Promise.all(
       suggestions.map(async (suggestion) => {
         const country = await this.getCountryDetails(suggestion.country);
@@ -126,20 +126,32 @@ export class SystemService {
         // Build a full SuggestionItem with defaults for missing properties
         const item: any = {
           country: suggestion.country,
-          compatibility: typeof suggestion.compatibility === 'number' ? suggestion.compatibility : 0,
+          compatibility:
+            typeof suggestion.compatibility === 'number'
+              ? suggestion.compatibility
+              : 0,
           reasons: Array.isArray(suggestion.reasons) ? suggestion.reasons : [],
           cities: Array.isArray(suggestion.cities) ? suggestion.cities : [],
-          visa_options: Array.isArray(suggestion.visa_options) ? suggestion.visa_options : [],
-          country_background: country?.background_image || suggestion.country_background || '',
+          visa_options: Array.isArray(suggestion.visa_options)
+            ? suggestion.visa_options
+            : [],
+          country_background:
+            country?.background_image || suggestion.country_background || '',
           country_flag: country?.flag || suggestion.country_flag || '',
           country_id: country?.id || suggestion.country_id || '',
-          investment_required: country?.investment_required || suggestion.investment_required || '',
-          average_visa_processing_time: suggestion.average_visa_processing_time || '',
+          investment_required:
+            country?.investment_required ||
+            suggestion.investment_required ||
+            '',
+          average_visa_processing_time:
+            suggestion.average_visa_processing_time || '',
           job_market: suggestion.job_market || '',
           education_quality: suggestion.education_quality || '',
           difficulty: suggestion.difficulty || '',
           health_care: suggestion.health_care || '',
-          languages: Array.isArray(suggestion.languages) ? suggestion.languages : [],
+          languages: Array.isArray(suggestion.languages)
+            ? suggestion.languages
+            : [],
         };
 
         return item as import('./dto/suggestions.dto').SuggestionItem;
@@ -188,7 +200,9 @@ export class SystemService {
       return null;
     }
 
-    this.logger.debug(`Generated embeddings with dimension: ${embeddings.length}`);
+    this.logger.debug(
+      `Generated embeddings with dimension: ${embeddings.length}`,
+    );
 
     const data = await this.systemRepository.getRawSuggestionsWithEmbeddings(
       embeddings || null,
@@ -288,7 +302,9 @@ export class SystemService {
         this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
       );
 
-      this.logger.debug(`Getting best visa type for country ${countryId}, language: ${language}`);
+      this.logger.debug(
+        `Getting best visa type for country ${countryId}, language: ${language}`,
+      );
 
       const bestVisaTypeRecommendation =
         await this.systemRepository.getBestVisaTypeRecommendation(

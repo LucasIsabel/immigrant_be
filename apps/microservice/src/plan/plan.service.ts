@@ -31,7 +31,9 @@ export class PlanService {
       createPlanDto.language,
     );
 
-    this.logger.debug(`Visa steps generated for type ${createPlanDto.visa_type_id}`);
+    this.logger.debug(
+      `Visa steps generated for type ${createPlanDto.visa_type_id}`,
+    );
 
     return await Promise.resolve({
       success: true,

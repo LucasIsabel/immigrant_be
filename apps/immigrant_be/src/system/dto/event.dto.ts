@@ -140,7 +140,3 @@ export class EventResponseDto {
   })
   updated_at: Date;
 }
-
-
-
-

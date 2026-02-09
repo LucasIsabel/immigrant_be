@@ -39,7 +39,10 @@ export class GeminiBaseService {
       .trim();
   }
 
-  parseJsonResponse<T>(raw: string | undefined, schema: z.ZodType<T>): T | null {
+  parseJsonResponse<T>(
+    raw: string | undefined,
+    schema: z.ZodType<T>,
+  ): T | null {
     try {
       if (!raw) {
         return null;

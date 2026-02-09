@@ -69,7 +69,10 @@ export class GeminiService {
       const parsed = JSON.parse(cleaned);
       return visaStepsSchema.parse(parsed);
     } catch (error) {
-      this.logger.error('Error parsing visa steps response', error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        'Error parsing visa steps response',
+        error instanceof Error ? error.stack : undefined,
+      );
       return null;
     }
   }

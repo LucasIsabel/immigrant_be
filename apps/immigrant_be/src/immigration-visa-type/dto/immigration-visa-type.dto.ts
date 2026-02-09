@@ -25,7 +25,8 @@ export class ImmigrationVisaTypeDto {
 
   @ApiProperty({
     description: 'Source URL or reference for the visa type information',
-    example: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-309',
+    example:
+      'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-309',
     type: String,
   })
   source: string;

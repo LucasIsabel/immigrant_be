@@ -18,10 +18,10 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
@@ -36,14 +36,14 @@ export class RolesGuard implements CanActivate {
 
     const user = await this.prisma.users.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { roles: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    const hasRole = requiredRoles.some((role) => user.role === role);
+    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
 
     if (!hasRole) {
       throw new ForbiddenException(
