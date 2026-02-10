@@ -20,13 +20,17 @@ model Users {
   email         String
   emailVerified Boolean   @default(false) @map("email_verified")
   image         String?
+  isActive      Boolean   @default(true) @map("is_active")
+  banned        Boolean   @default(false)
+  banReason     String?   @map("ban_reason")
+  banExpires    DateTime? @map("ban_expires")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   sessions      Sessions[]
   accounts      Accounts[]
   plans         Plans[]
-  events Events[]
-  userRoles UserRoles[]
+  events        Events[]
+  userRoles     UserRoles[]
 
   @@unique([email])
   @@map("users")

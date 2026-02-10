@@ -1,6 +1,20 @@
+const mockGetSession = jest.fn();
+
 jest.mock('@app/database', () => ({
   PrismaService: jest.fn(),
   DatabaseModule: jest.fn(),
+}));
+
+jest.mock('@app/config/auth', () => ({
+  auth: {
+    api: {
+      getSession: (...args: unknown[]) => mockGetSession(...args),
+    },
+  },
+}));
+
+jest.mock('better-auth/node', () => ({
+  fromNodeHeaders: jest.fn((headers) => headers),
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -11,7 +25,7 @@ import { RolesGuard } from './roles.guard';
 import { UserRole } from '../enums/user-role.enum';
 
 const mockReflector = {
-  getAllAndOverride: jest.fn(),
+  get: jest.fn(),
 };
 
 const mockPrismaService = {
@@ -25,7 +39,7 @@ function createMockContext(session?: { user?: { id?: string } }): ExecutionConte
     getHandler: jest.fn(),
     getClass: jest.fn(),
     switchToHttp: () => ({
-      getRequest: () => ({ session }),
+      getRequest: () => ({ session, headers: {} }),
       getResponse: jest.fn(),
       getNext: jest.fn(),
     }),
@@ -59,7 +73,7 @@ describe('RolesGuard', () => {
   });
 
   it('should allow when no @Roles() decorator is present', async () => {
-    reflector.getAllAndOverride.mockReturnValue(undefined);
+    reflector.get.mockReturnValue(undefined);
 
     const context = createMockContext();
     const result = await guard.canActivate(context);
@@ -69,7 +83,7 @@ describe('RolesGuard', () => {
   });
 
   it('should allow when @Roles() has empty array', async () => {
-    reflector.getAllAndOverride.mockReturnValue([]);
+    reflector.get.mockReturnValue([]);
 
     const context = createMockContext();
     const result = await guard.canActivate(context);
@@ -78,7 +92,8 @@ describe('RolesGuard', () => {
   });
 
   it('should throw UnauthorizedException when no session', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    reflector.get.mockReturnValue([UserRole.ADMIN]);
+    mockGetSession.mockResolvedValue(null);
 
     const context = createMockContext(undefined);
 
@@ -88,7 +103,8 @@ describe('RolesGuard', () => {
   });
 
   it('should throw UnauthorizedException when session has no user id', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    reflector.get.mockReturnValue([UserRole.ADMIN]);
+    mockGetSession.mockResolvedValue(null);
 
     const context = createMockContext({ user: {} });
 
@@ -98,7 +114,7 @@ describe('RolesGuard', () => {
   });
 
   it('should throw UnauthorizedException when user not found in database', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    reflector.get.mockReturnValue([UserRole.ADMIN]);
     prisma.users.findUnique.mockResolvedValue(null);
 
     const context = createMockContext({ user: { id: 'user-id' } });
@@ -109,7 +125,7 @@ describe('RolesGuard', () => {
   });
 
   it('should allow when user has the required role', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    reflector.get.mockReturnValue([UserRole.ADMIN]);
     prisma.users.findUnique.mockResolvedValue({
       userRoles: [{ role: { name: 'admin' } }],
     });
@@ -125,7 +141,7 @@ describe('RolesGuard', () => {
   });
 
   it('should allow when user has one of multiple required roles', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN, UserRole.USER]);
+    reflector.get.mockReturnValue([UserRole.ADMIN, UserRole.USER]);
     prisma.users.findUnique.mockResolvedValue({
       userRoles: [{ role: { name: 'user' } }],
     });
@@ -137,7 +153,7 @@ describe('RolesGuard', () => {
   });
 
   it('should throw ForbiddenException when user lacks the required role', async () => {
-    reflector.getAllAndOverride.mockReturnValue([UserRole.ADMIN]);
+    reflector.get.mockReturnValue([UserRole.ADMIN]);
     prisma.users.findUnique.mockResolvedValue({
       userRoles: [{ role: { name: 'user' } }],
     });

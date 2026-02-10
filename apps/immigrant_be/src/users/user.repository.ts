@@ -9,6 +9,7 @@ import { UserSession } from '@thallesp/nestjs-better-auth';
 import { ImmigrationVisaType, Plans, Prisma, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
 import { formatPlanResponse } from './utils/formatter';
+import { ListUsersQueryDto, UserSortBy } from './dto/list-users-query.dto';
 
 @Injectable()
 export class UserRepository {
@@ -170,5 +171,159 @@ export class UserRepository {
       return null;
     }
     return user;
+  }
+
+  // ── Admin User Management ─────────────────────────────────
+
+  async findAllPaginated(query: ListUsersQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UsersWhereInput = {};
+
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (query.isActive !== undefined) {
+      where.isActive = query.isActive;
+    }
+
+    if (query.banned !== undefined) {
+      where.banned = query.banned;
+    }
+
+    const sortField = this.mapSortByToField(query.sortBy);
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.users.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortField]: query.sortDirection ?? 'desc' },
+        include: {
+          userRoles: {
+            include: {
+              role: true,
+            },
+          },
+        },
+      }),
+      this.prisma.users.count({ where }),
+    ]);
+
+    return { data, total, page, limit };
+  }
+
+  async findByIdWithRoles(id: string) {
+    return this.prisma.users.findUnique({
+      where: { id },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateUser(
+    id: string,
+    data: { name?: string; email?: string; image?: string },
+  ) {
+    return this.prisma.users.update({
+      where: { id },
+      data,
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deleteUser(id: string) {
+    return this.prisma.users.delete({
+      where: { id },
+    });
+  }
+
+  async setActiveStatus(id: string, isActive: boolean) {
+    return this.prisma.users.update({
+      where: { id },
+      data: { isActive },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async banUser(id: string, banReason?: string, banExpires?: Date) {
+    return this.prisma.users.update({
+      where: { id },
+      data: {
+        banned: true,
+        banReason: banReason ?? null,
+        banExpires: banExpires ?? null,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async unbanUser(id: string) {
+    return this.prisma.users.update({
+      where: { id },
+      data: {
+        banned: false,
+        banReason: null,
+        banExpires: null,
+      },
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findByEmail(email: string) {
+    return this.prisma.users.findUnique({
+      where: { email },
+    });
+  }
+
+  private mapSortByToField(
+    sortBy?: UserSortBy,
+  ): string {
+    switch (sortBy) {
+      case UserSortBy.NAME:
+        return 'name';
+      case UserSortBy.EMAIL:
+        return 'email';
+      case UserSortBy.UPDATED_AT:
+        return 'updatedAt';
+      case UserSortBy.CREATED_AT:
+      default:
+        return 'createdAt';
+    }
   }
 }

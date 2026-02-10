@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@app/database';
+import { auth } from '@app/config/auth';
+import { fromNodeHeaders } from 'better-auth/node';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '../enums/user-role.enum';
 
@@ -18,17 +20,29 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+    const handlerRoles = this.reflector.get<UserRole[]>(
       ROLES_KEY,
-      [context.getHandler(), context.getClass()],
+      context.getHandler(),
     );
+    const classRoles = this.reflector.get<UserRole[]>(
+      ROLES_KEY,
+      context.getClass(),
+    );
+
+    const requiredRoles = handlerRoles ?? classRoles;
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
-    const session = request.session;
+
+    // Get session from request (set by AuthGuard) or fetch it directly
+    const session = request.session?.user?.id
+      ? request.session
+      : await auth.api.getSession({
+          headers: fromNodeHeaders(request.headers),
+        });
 
     if (!session?.user?.id) {
       throw new UnauthorizedException('Authentication required');
@@ -43,13 +57,9 @@ export class RolesGuard implements CanActivate {
       throw new UnauthorizedException('User not found');
     }
 
-    const userRoleNames = user.userRoles.map(
-      (userRole) => userRole.role.name,
-    );
+    const userRoleNames = user.userRoles.map((userRole) => userRole.role.name);
 
-    const hasRole = requiredRoles.some((role) =>
-      userRoleNames.includes(role),
-    );
+    const hasRole = requiredRoles.some((role) => userRoleNames.includes(role));
 
     if (!hasRole) {
       throw new ForbiddenException(
