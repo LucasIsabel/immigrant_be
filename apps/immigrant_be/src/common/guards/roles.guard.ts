@@ -36,14 +36,20 @@ export class RolesGuard implements CanActivate {
 
     const user = await this.prisma.users.findUnique({
       where: { id: session.user.id },
-      select: { roles: true },
+      select: { userRoles: { select: { role: { select: { name: true } } } } },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
+    const userRoleNames = user.userRoles.map(
+      (userRole) => userRole.role.name,
+    );
+
+    const hasRole = requiredRoles.some((role) =>
+      userRoleNames.includes(role),
+    );
 
     if (!hasRole) {
       throw new ForbiddenException(

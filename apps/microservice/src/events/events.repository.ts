@@ -10,7 +10,7 @@ export class EventsRepository {
   async getEvents(userId: string): Promise<EventDto | null> {
     const result = await this.prisma.events.findFirst({
       where: {
-        user_id: userId,
+        userId,
         status: NotificationStatus.pending,
       },
     });

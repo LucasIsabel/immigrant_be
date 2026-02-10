@@ -11,6 +11,7 @@ import { VisaStepsModule } from './visa-steps/visa-steps.module';
 import { ImmigrationVisaTypeModule } from './immigration-visa-type/immigration-visa-type.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { HealthModule } from './health/health.module';
+import { RoleModule } from './roles/role.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HealthModule } from './health/health.module';
     DatabaseModule,
     BullMQConfigModule,
     HealthModule,
+    RoleModule,
   ],
   providers: [
     {
