@@ -311,9 +311,7 @@ export class UserRepository {
     });
   }
 
-  private mapSortByToField(
-    sortBy?: UserSortBy,
-  ): string {
+  private mapSortByToField(sortBy?: UserSortBy): string {
     switch (sortBy) {
       case UserSortBy.NAME:
         return 'name';

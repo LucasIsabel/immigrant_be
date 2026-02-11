@@ -30,7 +30,13 @@ const mockUser = {
     {
       id: 'ur-1',
       assignedAt: new Date(),
-      role: { id: 'r-1', name: 'user', description: null, createdAt: new Date(), updatedAt: new Date() },
+      role: {
+        id: 'r-1',
+        name: 'user',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     },
   ],
 };
@@ -152,7 +158,9 @@ describe('UserService - Admin Methods', () => {
       repository.findByIdWithRoles.mockResolvedValue(mockUser);
       repository.updateUser.mockResolvedValue(updated);
 
-      const result = await service.updateUser('user-id-1', { name: 'Jane Doe' });
+      const result = await service.updateUser('user-id-1', {
+        name: 'Jane Doe',
+      });
 
       expect(result.name).toBe('Jane Doe');
       expect(repository.updateUser).toHaveBeenCalledWith('user-id-1', {
@@ -201,9 +209,9 @@ describe('UserService - Admin Methods', () => {
     });
 
     it('should throw BadRequestException when admin tries to delete themselves', async () => {
-      await expect(
-        service.deleteUser('admin-id', 'admin-id'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.deleteUser('admin-id', 'admin-id')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
@@ -226,7 +234,10 @@ describe('UserService - Admin Methods', () => {
       const result = await service.activateUser('user-id-2');
 
       expect(result.isActive).toBe(true);
-      expect(repository.setActiveStatus).toHaveBeenCalledWith('user-id-2', true);
+      expect(repository.setActiveStatus).toHaveBeenCalledWith(
+        'user-id-2',
+        true,
+      );
     });
 
     it('should throw ConflictException when user is already active', async () => {
@@ -257,7 +268,10 @@ describe('UserService - Admin Methods', () => {
       const result = await service.deactivateUser('user-id-1');
 
       expect(result.isActive).toBe(false);
-      expect(repository.setActiveStatus).toHaveBeenCalledWith('user-id-1', false);
+      expect(repository.setActiveStatus).toHaveBeenCalledWith(
+        'user-id-1',
+        false,
+      );
     });
 
     it('should throw ConflictException when user is already inactive', async () => {
@@ -314,9 +328,9 @@ describe('UserService - Admin Methods', () => {
     });
 
     it('should throw BadRequestException when admin tries to ban themselves', async () => {
-      await expect(
-        service.banUser('admin-id', {}, 'admin-id'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.banUser('admin-id', {}, 'admin-id')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw ConflictException when user is already banned', async () => {

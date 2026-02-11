@@ -2,15 +2,13 @@
 
 NestJS + TypeScript monorepo | PostgreSQL (Prisma) | BullMQ (Redis) | Google Generative AI
 
-## Scope Restriction
+## Workflow
 
-**This agent is a PLANNING-ONLY agent.** Its sole responsibilities are:
-
-1. **Create the planning** — analyze the task, read docs, understand the codebase
-2. **Create the spec file** — write a detailed spec in `plans/IMB-XX-description-spec.md`
-3. **Create Jira tasks** — break the spec into Jira issues in the IMB project
-
-**DO NOT write, edit, or modify any source code, tests, migrations, or configuration files.** Code execution and implementation are handled by a separate agent. If asked to implement, remind the user that this agent is planning-only.
+1. **Plan** — for multi-file tasks, read `docs/planning-agent.md` and create a spec in `plans/IMB-XX-description-spec.md`
+2. **Implement** — write code following the Critical Rules below and the relevant agent docs
+3. **Test** — run `pnpm lint && pnpm test` and fix all failures before proceeding
+4. **Review** — read `docs/review-and-commit.md` and self-review all changes
+5. **Commit** — `IMB-XX: description` (present tense), stage only related files
 
 ## Structure
 
@@ -74,9 +72,31 @@ pnpm format         # Format
 - _"Próxima task"_ — list pending issues
 - _"Create a Jira task for [description]"_ — read `docs/jira-create-task-agent.md` first, then create issue
 
-## Docs (read when needed)
+## Docs (read on trigger)
 
-- `docs/planning-agent.md` — Implementation plan structure (MUST read before planning)
-- `docs/project-specifications.md` — Full specs
-- `docs/architecture-dev-agent.md` — Module boundaries, patterns
-- `docs/jira-create-task-agent.md` — Jira task creation guidelines
+### Planning & Project Management
+
+| Doc | Read when... |
+|-----|-------------|
+| `docs/planning-agent.md` | Starting any task that touches 3+ files, or adding a new feature/module/endpoint |
+| `docs/jira-create-task-agent.md` | Creating or breaking down Jira issues in the IMB project |
+| `docs/project-specifications.md` | Needing full context on the monorepo architecture, data layer, or tooling |
+
+### Development
+
+| Doc | Read when... |
+|-----|-------------|
+| `docs/backend-dev-agent.md` | Creating or refactoring NestJS modules, controllers, services, DTOs, or providers |
+| `docs/api-dev-agent.md` | Designing REST endpoints, adding Swagger decorators, or handling pagination/status codes |
+| `docs/architecture-dev-agent.md` | Making decisions about module boundaries, shared libs, or feature-first layout |
+| `docs/database-dev-agent.md` | Changing Prisma schema, creating migrations, optimizing queries, or adding indexes |
+| `docs/security-dev-agent.md` | Implementing auth guards, session handling, input validation, or CORS |
+| `docs/prompt-engineering-agent.md` | Writing or refining AI prompts for Gemini, GPT, or Grok integrations |
+
+### Quality & Delivery
+
+| Doc | Read when... |
+|-----|-------------|
+| `docs/testing-dev-agent.md` | Writing or updating unit, integration, or E2E tests |
+| `docs/performance-dev-agent.md` | Investigating slow endpoints, adding caching/Redis, optimizing queries, or tuning BullMQ |
+| `docs/review-and-commit.md` | Self-reviewing code before commit, or following the commit workflow |

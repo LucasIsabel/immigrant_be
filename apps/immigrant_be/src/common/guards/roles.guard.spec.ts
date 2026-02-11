@@ -18,7 +18,11 @@ jest.mock('better-auth/node', () => ({
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@app/database';
 import { RolesGuard } from './roles.guard';
@@ -34,7 +38,9 @@ const mockPrismaService = {
   },
 };
 
-function createMockContext(session?: { user?: { id?: string } }): ExecutionContext {
+function createMockContext(session?: {
+  user?: { id?: string };
+}): ExecutionContext {
   return {
     getHandler: jest.fn(),
     getClass: jest.fn(),

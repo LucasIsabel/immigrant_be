@@ -90,9 +90,9 @@ describe('RoleService', () => {
     it('should throw ConflictException if name already exists', async () => {
       repository.findByName.mockResolvedValue(mockRole);
 
-      await expect(
-        service.create({ name: 'editor' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create({ name: 'editor' })).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -124,9 +124,9 @@ describe('RoleService', () => {
     it('should throw NotFoundException if role not found', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(
-        service.findById('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findById('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -157,7 +157,11 @@ describe('RoleService', () => {
 
     it('should throw ConflictException if new name already exists', async () => {
       repository.findById.mockResolvedValue(mockRole);
-      repository.findByName.mockResolvedValue({ ...mockRole, id: 'other-id', name: 'taken-name' });
+      repository.findByName.mockResolvedValue({
+        ...mockRole,
+        id: 'other-id',
+        name: 'taken-name',
+      });
 
       await expect(
         service.update('role-id-1', { name: 'taken-name' }),
@@ -181,17 +185,17 @@ describe('RoleService', () => {
     it('should throw NotFoundException if role not found', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(
-        service.delete('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.delete('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException for protected role', async () => {
       repository.findById.mockResolvedValue(mockProtectedRole);
 
-      await expect(
-        service.delete('role-id-2'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.delete('role-id-2')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
