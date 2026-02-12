@@ -13,7 +13,7 @@ import {
 } from './dto/suggestions.dto';
 import { EventResponseDto } from './dto/event.dto';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
-import { VisaRecommendationType } from './gemini.service';
+import { VisaRecommendationType } from '@app/ai';
 
 @Injectable()
 export class SystemRepository {

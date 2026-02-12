@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PlanRepository } from './plan.repository';
-import { GeminiService, VisaStepsType } from './gemini.service';
+import { GeminiService } from './gemini.service';
+import { VisaStepsType } from '@app/ai';
 
 @Injectable()
 export class VisaStepsService {

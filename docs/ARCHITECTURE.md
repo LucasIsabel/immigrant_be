@@ -189,25 +189,37 @@ pnpm prisma db seed          # Popular dados iniciais
 ### Arquitetura
 
 ```
-libs/ai/
-└── GeminiBaseService        # Classe base com client Gemini configurado
+libs/ai/                              # Biblioteca compartilhada de IA
+├── gemini-base.service.ts            # Classe base: client Gemini, parseJsonResponse(),
+│                                     #   generateEmbeddings(), normalizeEmbedding()
+├── schemas/                          # Zod schemas centralizados
+│   ├── suggestions.schema.ts         # SuggestionsType
+│   ├── visa-recommendation.schema.ts # VisaRecommendationType
+│   └── visa-steps.schema.ts          # VisaStepsType
+└── prompts/                          # Templates de prompts centralizados
+    ├── countries-match.prompt.ts
+    ├── best-visa-type.prompt.ts
+    └── visa-steps.prompt.ts
 
 apps/immigrant_be/src/system/
-├── gemini.service.ts        # Extends GeminiBaseService
+├── gemini.service.ts          # Extends GeminiBaseService
 │   ├── generateSuggestions()         # Sugestões de país
-│   ├── generateVisaRecommendation()  # Recomendação de tipo de visto
-│   └── generateEmbeddings()          # Vetores para busca por similaridade
-│
-├── helpers/prompts.ts       # Templates de prompts
-└── system.service.ts        # Orquestração (chama Gemini + enriquece com dados)
+│   ├── generateVisaSuggestion()      # Recomendação de tipo de visto
+│   └── (herdados) generateEmbeddings(), normalizeEmbedding()
+└── system.service.ts          # Orquestração (chama Gemini + enriquece com dados)
+
+apps/microservice/src/plan/
+└── gemini.service.ts          # Extends GeminiBaseService
+    └── generateVisaSteps()           # Gera checklist de etapas do visto
 ```
 
 ### Padrões para IA
 
 - Modelo de geração: `gemini-2.5-flash-lite`
 - Modelo de embeddings: `gemini-embedding-001`
-- **Validação obrigatória** das respostas via **Zod schemas**
-- Prompts centralizados em `helpers/prompts.ts`
+- **Herança**: Ambos os apps estendem `GeminiBaseService` de `@app/ai` — sem código duplicado de inicialização, parsing ou embeddings
+- **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
+- **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
 
 ---
 
