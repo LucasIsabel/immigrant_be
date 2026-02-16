@@ -147,7 +147,7 @@ export class UserController {
     @Param('plan_id') plan_id: string,
     @Param('visa_type_id') visaTypeId: string,
     @Query('language') language?: string,
-  ): Promise<{ id: string } | null> {
+  ): Promise<{ id: string }> {
     return this.userService.selectVisaType(user, plan_id, visaTypeId, language);
   }
 }

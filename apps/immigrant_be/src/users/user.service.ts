@@ -9,9 +9,6 @@ import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { Plans, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { PLAN_QUEUE, PROCESS_CREATE_PLAN } from '@app/config/constants';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
@@ -19,10 +16,7 @@ import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly userRepository: UserRepository,
-    @InjectQueue(PLAN_QUEUE) private readonly planQueue: Queue,
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async createUserPlan({
     user,
@@ -81,33 +75,28 @@ export class UserService {
     plan_id: string,
     visa_type_id: string,
     language?: string,
-  ): Promise<{ id: string } | null> {
+  ): Promise<{ id: string }> {
     const selectedLanguage = language ?? 'en';
 
-    const updatedPlan = await this.userRepository.selectVisaType(
-      user,
-      plan_id,
-      visa_type_id,
-    );
+    await this.userRepository.selectVisaType(user, plan_id, visa_type_id);
 
     const visaSteps = await this.userRepository.getVisaStepsByRecommendation(
       visa_type_id,
       selectedLanguage,
     );
 
-    if (visaSteps?.steps) {
-      await this.userRepository.updatePlanSteps(plan_id, visaSteps.steps);
-      return { id: plan_id };
+    if (!visaSteps?.steps) {
+      throw new NotFoundException(
+        'Visa steps not found for the selected visa type and language',
+      );
     }
 
-    await this.planQueue.add(PROCESS_CREATE_PLAN, {
-      plan_id: updatedPlan.id,
-      visa_type_id,
-      language: selectedLanguage,
-      user_id: user.user.id,
-    });
+    await this.userRepository.updatePlanStepsRemaining(
+      plan_id,
+      visaSteps.steps,
+    );
 
-    return null;
+    return { id: plan_id };
   }
 
   async getUserById(userId: string): Promise<Users | null> {

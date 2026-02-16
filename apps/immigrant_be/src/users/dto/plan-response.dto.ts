@@ -90,16 +90,76 @@ export class PlanResponseDto {
   steps: Prisma.JsonValue;
 
   @ApiProperty({
-    description: 'Completed steps of the plan',
-    example: [],
-    type: Array,
+    description:
+      'Completed steps of the plan, grouped by category. Each category contains an array of step items that have been checked off.',
+    example: {
+      core_documents: [
+        {
+          name: 'Valid passport (applicant and sponsor)',
+          required: true,
+          priority: 1,
+          notes:
+            'Passport must be valid for the duration of the visa process and stay.',
+          checked: true,
+        },
+      ],
+      health_and_character: [
+        {
+          name: 'Medical examination results',
+          required: true,
+          priority: 1,
+          notes: 'Must be completed with an approved panel physician.',
+          checked: true,
+        },
+      ],
+    },
+    type: Object,
+    nullable: true,
   })
   steps_completed: Prisma.JsonValue;
 
   @ApiProperty({
-    description: 'Remaining steps of the plan',
-    example: [],
-    type: Array,
+    description:
+      'Remaining steps of the plan, grouped by category. Each category contains an array of step items.',
+    example: {
+      core_documents: [
+        {
+          name: 'Valid passport (applicant and sponsor)',
+          required: true,
+          priority: 1,
+          notes:
+            'Passport must be valid for the duration of the visa process and stay.',
+          checked: false,
+        },
+        {
+          name: 'Completed visa application form',
+          required: true,
+          priority: 1,
+          notes:
+            'Correct form depending on family, partner, or dependent visa subclass.',
+          checked: false,
+        },
+      ],
+      health_and_character: [
+        {
+          name: 'Medical examination results',
+          required: true,
+          priority: 1,
+          notes: 'Must be completed with an approved panel physician.',
+          checked: false,
+        },
+        {
+          name: 'Police clearance certificates',
+          required: true,
+          priority: 1,
+          notes:
+            'Required for all countries lived in for 12 months or more.',
+          checked: false,
+        },
+      ],
+    },
+    type: Object,
+    nullable: true,
   })
   steps_remaining: Prisma.JsonValue;
 

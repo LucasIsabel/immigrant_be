@@ -9,10 +9,8 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
-import { PLAN_QUEUE } from '@app/config/constants';
 
 const mockUser = {
   id: 'user-id-1',
@@ -69,12 +67,8 @@ const mockUserRepository = {
   getUserPlan: jest.fn(),
   selectVisaType: jest.fn(),
   getVisaStepsByRecommendation: jest.fn(),
-  updatePlanSteps: jest.fn(),
+  updatePlanStepsRemaining: jest.fn(),
   getUserById: jest.fn(),
-};
-
-const mockQueue = {
-  add: jest.fn(),
 };
 
 describe('UserService - Admin Methods', () => {
@@ -86,7 +80,6 @@ describe('UserService - Admin Methods', () => {
       providers: [
         UserService,
         { provide: UserRepository, useValue: mockUserRepository },
-        { provide: getQueueToken(PLAN_QUEUE), useValue: mockQueue },
       ],
     }).compile();
 

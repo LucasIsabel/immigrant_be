@@ -152,13 +152,13 @@ export class UserRepository {
     });
   }
 
-  async updatePlanSteps(planId: string, steps: Prisma.InputJsonValue) {
+  async updatePlanStepsRemaining(planId: string, steps: Prisma.InputJsonValue) {
     return this.prisma.plans.update({
       where: {
         id: planId,
       },
       data: {
-        steps,
+        steps_remaining: steps,
       },
     });
   }
