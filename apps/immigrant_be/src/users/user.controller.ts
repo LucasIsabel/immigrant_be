@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Put,
   Param,
@@ -14,6 +15,7 @@ import { type UserSession } from '@thallesp/nestjs-better-auth';
 import { UserService } from './user.service';
 import {
   ApiBody,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiExtraModels,
@@ -30,6 +32,7 @@ import {
   PlanImmigrationVisaTypeDto,
 } from './dto/plan-response.dto';
 import { UserDetailsDto } from './dto/user-detail.dto';
+import { MarkStepDto } from './dto/mark-step.dto';
 
 @ApiTags('Users')
 @ApiExtraModels(PlanImmigrationVisaTypeDto, UserDetailsDto)
@@ -149,5 +152,26 @@ export class UserController {
     @Query('language') language?: string,
   ): Promise<{ id: string }> {
     return this.userService.selectVisaType(user, plan_id, visaTypeId, language);
+  }
+
+  @ApiOperation({ summary: 'Mark a step as completed or remaining' })
+  @ApiParam({ name: 'plan_id', type: String })
+  @ApiBody({ type: MarkStepDto })
+  @ApiOkResponse({
+    description: 'Step updated',
+    schema: { example: { id: 'uuid' } },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Plan or step not found',
+  })
+  @HttpCode(HttpStatus.OK)
+  @Patch('/plan/:plan_id/step')
+  async markStep(
+    @Session() session: UserSession,
+    @Param('plan_id') plan_id: string,
+    @Body() dto: MarkStepDto,
+  ): Promise<{ id: string }> {
+    return this.userService.markStep(session, plan_id, dto);
   }
 }

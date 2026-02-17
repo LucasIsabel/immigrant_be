@@ -163,6 +163,24 @@ export class UserRepository {
     });
   }
 
+  async getUserPlanRaw(user: UserSession, plan_id: string): Promise<Plans | null> {
+    return this.prisma.plans.findUnique({
+      where: { id: plan_id, user_id: user.user.id },
+    });
+  }
+
+  async updatePlanStepProgress(
+    planId: string,
+    steps_remaining: Prisma.InputJsonValue,
+    steps_completed: Prisma.InputJsonValue,
+    progress: number,
+  ) {
+    return this.prisma.plans.update({
+      where: { id: planId },
+      data: { steps_remaining, steps_completed, progress },
+    });
+  }
+
   async getUserById(userId: string): Promise<Users | null> {
     const user = await this.prisma.users.findUnique({
       where: { id: userId, emailVerified: true },

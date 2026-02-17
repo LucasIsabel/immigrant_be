@@ -13,6 +13,7 @@ import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
+import { MarkStepDto } from './dto/mark-step.dto';
 
 @Injectable()
 export class UserService {
@@ -94,6 +95,74 @@ export class UserService {
     await this.userRepository.updatePlanStepsRemaining(
       plan_id,
       visaSteps.steps,
+    );
+
+    return { id: plan_id };
+  }
+
+  async markStep(
+    user: UserSession,
+    plan_id: string,
+    dto: MarkStepDto,
+  ): Promise<{ id: string }> {
+    const plan = await this.userRepository.getUserPlanRaw(user, plan_id);
+    if (!plan) {
+      throw new NotFoundException(
+        'Plan not found or does not belong to the user',
+      );
+    }
+
+    const { category, step_name, completed } = dto;
+
+    const remaining =
+      (plan.steps_remaining as Record<string, any[]> | null) ?? {};
+    const completedSteps =
+      (plan.steps_completed as Record<string, any[]> | null) ?? {};
+
+    if (completed) {
+      const categoryItems = remaining[category] ?? [];
+      const idx = categoryItems.findIndex((s) => s.name === step_name);
+      if (idx === -1) {
+        throw new NotFoundException(
+          `Step "${step_name}" not found in remaining for category "${category}"`,
+        );
+      }
+      const [step] = categoryItems.splice(idx, 1);
+      step.checked = true;
+      if (!completedSteps[category]) completedSteps[category] = [];
+      completedSteps[category].push(step);
+      remaining[category] = categoryItems;
+    } else {
+      const categoryItems = completedSteps[category] ?? [];
+      const idx = categoryItems.findIndex((s) => s.name === step_name);
+      if (idx === -1) {
+        throw new NotFoundException(
+          `Step "${step_name}" not found in completed for category "${category}"`,
+        );
+      }
+      const [step] = categoryItems.splice(idx, 1);
+      step.checked = false;
+      if (!remaining[category]) remaining[category] = [];
+      remaining[category].push(step);
+      completedSteps[category] = categoryItems;
+    }
+
+    const totalRemaining = Object.values(remaining).reduce(
+      (acc, arr) => acc + arr.length,
+      0,
+    );
+    const totalCompleted = Object.values(completedSteps).reduce(
+      (acc, arr) => acc + arr.length,
+      0,
+    );
+    const total = totalRemaining + totalCompleted;
+    const progress = total > 0 ? totalCompleted / total : 0;
+
+    await this.userRepository.updatePlanStepProgress(
+      plan_id,
+      remaining,
+      completedSteps,
+      progress,
     );
 
     return { id: plan_id };
