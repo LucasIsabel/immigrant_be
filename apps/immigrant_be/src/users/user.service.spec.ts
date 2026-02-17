@@ -286,3 +286,125 @@ describe('UserService - markStep', () => {
     expect(progress).toBe(0.5);
   });
 });
+
+describe('UserService - completeAllSteps', () => {
+  let service: UserService;
+  let repository: typeof mockUserRepository;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserService,
+        { provide: UserRepository, useValue: mockUserRepository },
+      ],
+    }).compile();
+
+    service = module.get<UserService>(UserService);
+    repository = module.get(UserRepository);
+
+    jest.clearAllMocks();
+  });
+
+  it('should throw NotFoundException when plan is not found', async () => {
+    repository.getUserPlanRaw.mockResolvedValue(null);
+
+    await expect(
+      service.completeAllSteps(mockSession, 'plan-id-1'),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(repository.updatePlanStepProgress).not.toHaveBeenCalled();
+  });
+
+  it('should move all remaining steps to completed with checked=true and progress=1', async () => {
+    const plan = makePlan();
+    repository.getUserPlanRaw.mockResolvedValue(plan);
+    repository.updatePlanStepProgress.mockResolvedValue(undefined);
+
+    const result = await service.completeAllSteps(mockSession, 'plan-id-1');
+
+    expect(result).toEqual({ id: 'plan-id-1' });
+
+    const [planId, remaining, completedSteps, progress] =
+      repository.updatePlanStepProgress.mock.calls[0];
+
+    expect(planId).toBe('plan-id-1');
+    expect(remaining).toEqual({});
+    expect(progress).toBe(1);
+
+    // All steps from core_documents should be in completedSteps with checked=true
+    expect(completedSteps.core_documents).toHaveLength(2);
+    expect(completedSteps.core_documents[0]).toMatchObject({ name: 'Valid passport', checked: true });
+    expect(completedSteps.core_documents[1]).toMatchObject({ name: 'Birth certificate', checked: true });
+
+    // All steps from health_and_character should be in completedSteps with checked=true
+    expect(completedSteps.health_and_character).toHaveLength(1);
+    expect(completedSteps.health_and_character[0]).toMatchObject({ name: 'Police check', checked: true });
+  });
+
+  it('should be idempotent when steps_remaining is already empty', async () => {
+    const plan = makePlan({
+      steps_remaining: {},
+      steps_completed: {
+        core_documents: [
+          { name: 'Valid passport', required: true, priority: 1, notes: '', checked: true },
+        ],
+      },
+      progress: 1,
+    });
+    repository.getUserPlanRaw.mockResolvedValue(plan);
+    repository.updatePlanStepProgress.mockResolvedValue(undefined);
+
+    const result = await service.completeAllSteps(mockSession, 'plan-id-1');
+
+    expect(result).toEqual({ id: 'plan-id-1' });
+
+    const [planId, remaining, completedSteps, progress] =
+      repository.updatePlanStepProgress.mock.calls[0];
+
+    expect(planId).toBe('plan-id-1');
+    expect(remaining).toEqual({});
+    expect(progress).toBe(1);
+    // Existing completed steps should remain unchanged
+    expect(completedSteps.core_documents).toHaveLength(1);
+    expect(completedSteps.core_documents[0]).toMatchObject({ name: 'Valid passport', checked: true });
+  });
+
+  it('should migrate steps from multiple categories correctly', async () => {
+    const plan = makePlan({
+      steps_remaining: {
+        cat_a: [
+          { name: 'Step A1', checked: false },
+          { name: 'Step A2', checked: false },
+        ],
+        cat_b: [
+          { name: 'Step B1', checked: false },
+        ],
+      },
+      steps_completed: {
+        cat_a: [
+          { name: 'Step A0', checked: true },
+        ],
+      },
+    });
+    repository.getUserPlanRaw.mockResolvedValue(plan);
+    repository.updatePlanStepProgress.mockResolvedValue(undefined);
+
+    await service.completeAllSteps(mockSession, 'plan-id-1');
+
+    const [, remaining, completedSteps, progress] =
+      repository.updatePlanStepProgress.mock.calls[0];
+
+    expect(remaining).toEqual({});
+    expect(progress).toBe(1);
+
+    // cat_a: existing completed step + 2 migrated steps
+    expect(completedSteps.cat_a).toHaveLength(3);
+    expect(completedSteps.cat_a[0]).toMatchObject({ name: 'Step A0', checked: true });
+    expect(completedSteps.cat_a[1]).toMatchObject({ name: 'Step A1', checked: true });
+    expect(completedSteps.cat_a[2]).toMatchObject({ name: 'Step A2', checked: true });
+
+    // cat_b: 1 migrated step
+    expect(completedSteps.cat_b).toHaveLength(1);
+    expect(completedSteps.cat_b[0]).toMatchObject({ name: 'Step B1', checked: true });
+  });
+});

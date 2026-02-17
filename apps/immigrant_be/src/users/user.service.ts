@@ -168,6 +168,39 @@ export class UserService {
     return { id: plan_id };
   }
 
+  async completeAllSteps(
+    user: UserSession,
+    plan_id: string,
+  ): Promise<{ id: string }> {
+    const plan = await this.userRepository.getUserPlanRaw(user, plan_id);
+    if (!plan) {
+      throw new NotFoundException(
+        'Plan not found or does not belong to the user',
+      );
+    }
+
+    const remaining =
+      (plan.steps_remaining as Record<string, any[]> | null) ?? {};
+    const completedSteps =
+      (plan.steps_completed as Record<string, any[]> | null) ?? {};
+
+    for (const [category, items] of Object.entries(remaining)) {
+      if (!completedSteps[category]) completedSteps[category] = [];
+      for (const step of items) {
+        completedSteps[category].push({ ...step, checked: true });
+      }
+    }
+
+    await this.userRepository.updatePlanStepProgress(
+      plan_id,
+      {},
+      completedSteps,
+      1,
+    );
+
+    return { id: plan_id };
+  }
+
   async getUserById(userId: string): Promise<Users | null> {
     const user = await this.userRepository.getUserById(userId);
 

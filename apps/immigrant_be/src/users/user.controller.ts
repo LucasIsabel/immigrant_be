@@ -174,4 +174,20 @@ export class UserController {
   ): Promise<{ id: string }> {
     return this.userService.markStep(session, plan_id, dto);
   }
+
+  @ApiOperation({ summary: 'Migrate all remaining steps to completed' })
+  @ApiParam({ name: 'plan_id', type: String })
+  @ApiOkResponse({
+    description: 'All steps migrated to completed',
+    schema: { example: { id: 'uuid' } },
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Plan not found' })
+  @HttpCode(HttpStatus.OK)
+  @Patch('/plan/:plan_id/steps/complete-all')
+  async completeAllSteps(
+    @Session() session: UserSession,
+    @Param('plan_id') plan_id: string,
+  ): Promise<{ id: string }> {
+    return this.userService.completeAllSteps(session, plan_id);
+  }
 }
