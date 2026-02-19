@@ -30,6 +30,7 @@ export class SystemRepository {
     try {
       if (embeddings && embeddings.length > 0) {
         const embeddingsString = `[${embeddings.join(',')}]`;
+        const parametersJson = this.normalizeParametersToJson(parameters);
 
         const result = await this.prisma.$queryRawUnsafe<
           Array<{
@@ -55,7 +56,7 @@ export class SystemRepository {
              updated_at,
              parameters`,
           embeddingsString,
-          parameters,
+          parametersJson,
         );
 
         const suggestionsForLanguage = await this.createSuggestionLanguages(
@@ -425,17 +426,66 @@ export class SystemRepository {
     })) as VisaTypeRecommendations[];
   }
 
+  /**
+   * Normalizes parameters to a canonical JSON string (sorted keys) so that
+   * the same logical parameters always produce the same string for DB comparison.
+   * PostgreSQL jsonb equality is semantic, but when storing we pass an object
+   * and when querying we need to match; canonical form avoids mismatches from key order.
+   */
+  private normalizeParametersToJson(parameters: SuggestionsDto): string {
+    function canonicalize(value: unknown): unknown {
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+      ) {
+        const obj = value as Record<string, unknown>;
+        return Object.keys(obj)
+          .sort()
+          .reduce(
+            (acc, key) => {
+              acc[key] = canonicalize(obj[key]);
+              return acc;
+            },
+            {} as Record<string, unknown>,
+          );
+      }
+      if (Array.isArray(value)) return value.map(canonicalize);
+      return value;
+    }
+    return JSON.stringify(canonicalize(parameters));
+  }
+
   async getRawSuggestionsWithParameters(
     parameters: SuggestionsDto,
   ): Promise<Suggestions | null> {
     try {
-      return await this.prisma.suggestions.findFirst({
-        where: {
-          parameters: {
-            equals: parameters as unknown as Prisma.InputJsonValue,
-          },
-        },
-      });
+      const parametersJson = this.normalizeParametersToJson(parameters);
+      const rows = await this.prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          embeddings: string | null;
+          parameters: unknown;
+          created_at: Date;
+          updated_at: Date;
+        }>
+      >(
+        `SELECT id, embeddings::text as embeddings, parameters, created_at, updated_at
+         FROM suggestions
+         WHERE parameters::jsonb = $1::jsonb
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        parametersJson,
+      );
+      if (!rows.length) return null;
+      const row = rows[0];
+      return {
+        id: row.id,
+        embeddings: row.embeddings,
+        parameters: row.parameters as Prisma.InputJsonValue,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      } as Suggestions;
     } catch (error) {
       this.logger.error(
         'Error getting raw suggestions with parameters',

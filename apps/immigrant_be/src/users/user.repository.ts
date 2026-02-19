@@ -26,12 +26,17 @@ export class UserRepository {
     suggestion_id: string;
     steps: Array<Steps>;
   }): Promise<Plans> {
+    const stepsJson = JSON.parse(
+      JSON.stringify(steps),
+    ) as Prisma.InputJsonValue;
     return this.prisma.plans.create({
       data: {
         user_id: user.user.id,
         suggestion_id: suggestion_id,
         country_id: suggestion.country_id,
-        steps: JSON.parse(JSON.stringify(steps)),
+        steps: stepsJson,
+        steps_completed: [] as Prisma.InputJsonValue,
+        steps_remaining: stepsJson,
         selected_suggestion: JSON.parse(JSON.stringify(suggestion)),
       },
     });

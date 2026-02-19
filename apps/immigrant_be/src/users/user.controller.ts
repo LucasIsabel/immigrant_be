@@ -154,16 +154,30 @@ export class UserController {
     return this.userService.selectVisaType(user, plan_id, visaTypeId, language);
   }
 
-  @ApiOperation({ summary: 'Mark a step as completed or remaining' })
-  @ApiParam({ name: 'plan_id', type: String })
+  @ApiOperation({
+    summary: 'Update plan steps with full remaining and completed state',
+    description:
+      'Replaces the plan step state with the full `steps_remaining` and `steps_completed` objects sent by the client. ' +
+      'The server recalculates `progress` and persists the new state. ' +
+      'Sending the legacy fields `category`, `step_name`, or `completed` will result in a 400 Bad Request.',
+  })
+  @ApiParam({
+    name: 'plan_id',
+    description: 'ID of the plan to update',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiBody({ type: MarkStepDto })
   @ApiOkResponse({
-    description: 'Step updated',
-    schema: { example: { id: 'uuid' } },
+    description: 'Plan steps updated and progress recalculated',
+    schema: { example: { id: '123e4567-e89b-12d3-a456-426614174000' } },
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed — `steps_remaining` or `steps_completed` is missing or not an object',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Plan or step not found',
+    description: 'Plan not found or does not belong to the user',
   })
   @HttpCode(HttpStatus.OK)
   @Patch('/plan/:plan_id/step')

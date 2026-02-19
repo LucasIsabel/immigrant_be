@@ -112,46 +112,13 @@ export class UserService {
       );
     }
 
-    const { category, step_name, completed } = dto;
+    const { steps_remaining, steps_completed } = dto;
 
-    const remaining =
-      (plan.steps_remaining as Record<string, any[]> | null) ?? {};
-    const completedSteps =
-      (plan.steps_completed as Record<string, any[]> | null) ?? {};
-
-    if (completed) {
-      const categoryItems = remaining[category] ?? [];
-      const idx = categoryItems.findIndex((s) => s.name === step_name);
-      if (idx === -1) {
-        throw new NotFoundException(
-          `Step "${step_name}" not found in remaining for category "${category}"`,
-        );
-      }
-      const [step] = categoryItems.splice(idx, 1);
-      step.checked = true;
-      if (!completedSteps[category]) completedSteps[category] = [];
-      completedSteps[category].push(step);
-      remaining[category] = categoryItems;
-    } else {
-      const categoryItems = completedSteps[category] ?? [];
-      const idx = categoryItems.findIndex((s) => s.name === step_name);
-      if (idx === -1) {
-        throw new NotFoundException(
-          `Step "${step_name}" not found in completed for category "${category}"`,
-        );
-      }
-      const [step] = categoryItems.splice(idx, 1);
-      step.checked = false;
-      if (!remaining[category]) remaining[category] = [];
-      remaining[category].push(step);
-      completedSteps[category] = categoryItems;
-    }
-
-    const totalRemaining = Object.values(remaining).reduce(
+    const totalRemaining = Object.values(steps_remaining).reduce(
       (acc, arr) => acc + arr.length,
       0,
     );
-    const totalCompleted = Object.values(completedSteps).reduce(
+    const totalCompleted = Object.values(steps_completed).reduce(
       (acc, arr) => acc + arr.length,
       0,
     );
@@ -160,8 +127,8 @@ export class UserService {
 
     await this.userRepository.updatePlanStepProgress(
       plan_id,
-      remaining,
-      completedSteps,
+      steps_remaining,
+      steps_completed,
       progress,
     );
 

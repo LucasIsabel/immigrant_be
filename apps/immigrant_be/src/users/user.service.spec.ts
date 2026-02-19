@@ -75,9 +75,8 @@ describe('UserService - markStep', () => {
     repository.getUserPlanRaw.mockResolvedValue(null);
 
     const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Valid passport',
-      completed: true,
+      steps_remaining: { core_documents: [{ name: 'Birth certificate', checked: false }] },
+      steps_completed: {},
     };
 
     await expect(
@@ -87,79 +86,20 @@ describe('UserService - markStep', () => {
     expect(repository.updatePlanStepProgress).not.toHaveBeenCalled();
   });
 
-  // ── Mark as completed ─────────────────────────────────────
+  // ── State passthrough ─────────────────────────────────────
 
-  it('should move a step from remaining to completed and set checked=true', async () => {
+  it('should persist the client-provided state directly to the repository', async () => {
     const plan = makePlan();
     repository.getUserPlanRaw.mockResolvedValue(plan);
     repository.updatePlanStepProgress.mockResolvedValue(undefined);
 
     const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Valid passport',
-      completed: true,
-    };
-
-    const result = await service.markStep(mockSession, 'plan-id-1', dto);
-
-    expect(result).toEqual({ id: 'plan-id-1' });
-
-    const [planId, remaining, completedSteps] =
-      repository.updatePlanStepProgress.mock.calls[0];
-
-    expect(planId).toBe('plan-id-1');
-    // Step should have been removed from remaining
-    expect(
-      (remaining.core_documents as any[]).find((s) => s.name === 'Valid passport'),
-    ).toBeUndefined();
-    // Step should appear in completedSteps with checked=true
-    const movedStep = (completedSteps.core_documents as any[]).find(
-      (s) => s.name === 'Valid passport',
-    );
-    expect(movedStep).toBeDefined();
-    expect(movedStep.checked).toBe(true);
-  });
-
-  it('should throw NotFoundException when step is not found in remaining', async () => {
-    const plan = makePlan();
-    repository.getUserPlanRaw.mockResolvedValue(plan);
-
-    const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Nonexistent step',
-      completed: true,
-    };
-
-    await expect(
-      service.markStep(mockSession, 'plan-id-1', dto),
-    ).rejects.toThrow(NotFoundException);
-
-    expect(repository.updatePlanStepProgress).not.toHaveBeenCalled();
-  });
-
-  // ── Mark as remaining ─────────────────────────────────────
-
-  it('should move a step from completed to remaining and set checked=false', async () => {
-    const plan = makePlan({
       steps_remaining: {
-        core_documents: [
-          { name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false },
-        ],
+        core_documents: [{ name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false }],
       },
       steps_completed: {
-        core_documents: [
-          { name: 'Valid passport', required: true, priority: 1, notes: '', checked: true },
-        ],
+        core_documents: [{ name: 'Valid passport', required: true, priority: 1, notes: '', checked: true }],
       },
-      progress: 0.5,
-    });
-    repository.getUserPlanRaw.mockResolvedValue(plan);
-    repository.updatePlanStepProgress.mockResolvedValue(undefined);
-
-    const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Valid passport',
-      completed: false,
     };
 
     const result = await service.markStep(mockSession, 'plan-id-1', dto);
@@ -170,61 +110,21 @@ describe('UserService - markStep', () => {
       repository.updatePlanStepProgress.mock.calls[0];
 
     expect(planId).toBe('plan-id-1');
-    // Step should appear in remaining with checked=false
-    const movedStep = (remaining.core_documents as any[]).find(
-      (s) => s.name === 'Valid passport',
-    );
-    expect(movedStep).toBeDefined();
-    expect(movedStep.checked).toBe(false);
-    // Step should have been removed from completed
-    expect(
-      (completedSteps.core_documents as any[]).find((s) => s.name === 'Valid passport'),
-    ).toBeUndefined();
-  });
-
-  it('should throw NotFoundException when step is not found in completed', async () => {
-    const plan = makePlan({
-      steps_remaining: {},
-      steps_completed: {
-        core_documents: [
-          { name: 'Birth certificate', required: true, priority: 2, notes: '', checked: true },
-        ],
-      },
-    });
-    repository.getUserPlanRaw.mockResolvedValue(plan);
-
-    const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Nonexistent step',
-      completed: false,
-    };
-
-    await expect(
-      service.markStep(mockSession, 'plan-id-1', dto),
-    ).rejects.toThrow(NotFoundException);
-
-    expect(repository.updatePlanStepProgress).not.toHaveBeenCalled();
+    expect(remaining).toEqual(dto.steps_remaining);
+    expect(completedSteps).toEqual(dto.steps_completed);
   });
 
   // ── Progress calculation ──────────────────────────────────
 
-  it('should calculate progress as 0 when no steps exist', async () => {
-    const plan = makePlan({
-      steps_remaining: {},
-      steps_completed: {
-        core_documents: [
-          { name: 'Valid passport', required: true, priority: 1, notes: '', checked: true },
-        ],
-      },
-    });
-    repository.getUserPlanRaw.mockResolvedValue(plan);
+  it('should calculate progress as 0 when steps_completed is empty', async () => {
+    repository.getUserPlanRaw.mockResolvedValue(makePlan());
     repository.updatePlanStepProgress.mockResolvedValue(undefined);
 
-    // Move the only completed step back to remaining → total stays 1, completed=0
     const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Valid passport',
-      completed: false,
+      steps_remaining: {
+        core_documents: [{ name: 'Valid passport', checked: false }],
+      },
+      steps_completed: {},
     };
 
     await service.markStep(mockSession, 'plan-id-1', dto);
@@ -233,22 +133,15 @@ describe('UserService - markStep', () => {
     expect(progress).toBe(0);
   });
 
-  it('should calculate progress as 1.0 when all steps are completed', async () => {
-    const plan = makePlan({
-      steps_remaining: {
-        core_documents: [
-          { name: 'Valid passport', required: true, priority: 1, notes: '', checked: false },
-        ],
-      },
-      steps_completed: {},
-    });
-    repository.getUserPlanRaw.mockResolvedValue(plan);
+  it('should calculate progress as 1 when steps_remaining is empty', async () => {
+    repository.getUserPlanRaw.mockResolvedValue(makePlan());
     repository.updatePlanStepProgress.mockResolvedValue(undefined);
 
     const dto: MarkStepDto = {
-      category: 'core_documents',
-      step_name: 'Valid passport',
-      completed: true,
+      steps_remaining: {},
+      steps_completed: {
+        core_documents: [{ name: 'Valid passport', checked: true }],
+      },
     };
 
     await service.markStep(mockSession, 'plan-id-1', dto);
@@ -257,33 +150,40 @@ describe('UserService - markStep', () => {
     expect(progress).toBe(1);
   });
 
-  it('should calculate partial progress correctly', async () => {
-    // 1 remaining (Birth certificate) + 1 remaining (Police check) = 2 total, 0 completed
-    // After completing Police check: 1 remaining + 1 completed = 2 total → progress = 1/2
-    const plan = makePlan({
-      steps_remaining: {
-        core_documents: [
-          { name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false },
-        ],
-        health_and_character: [
-          { name: 'Police check', required: true, priority: 1, notes: '', checked: false },
-        ],
-      },
-      steps_completed: {},
-    });
-    repository.getUserPlanRaw.mockResolvedValue(plan);
+  it('should calculate progress as 0 when both steps_remaining and steps_completed are empty', async () => {
+    repository.getUserPlanRaw.mockResolvedValue(makePlan());
     repository.updatePlanStepProgress.mockResolvedValue(undefined);
 
     const dto: MarkStepDto = {
-      category: 'health_and_character',
-      step_name: 'Police check',
-      completed: true,
+      steps_remaining: {},
+      steps_completed: {},
     };
 
     await service.markStep(mockSession, 'plan-id-1', dto);
 
     const progress = repository.updatePlanStepProgress.mock.calls[0][3];
-    expect(progress).toBe(0.5);
+    expect(progress).toBe(0);
+  });
+
+  it('should calculate partial progress correctly across multiple categories', async () => {
+    // 1 remaining + 2 completed = 3 total → progress = 2/3
+    repository.getUserPlanRaw.mockResolvedValue(makePlan());
+    repository.updatePlanStepProgress.mockResolvedValue(undefined);
+
+    const dto: MarkStepDto = {
+      steps_remaining: {
+        core_documents: [{ name: 'Birth certificate', checked: false }],
+      },
+      steps_completed: {
+        core_documents: [{ name: 'Valid passport', checked: true }],
+        health_and_character: [{ name: 'Police check', checked: true }],
+      },
+    };
+
+    await service.markStep(mockSession, 'plan-id-1', dto);
+
+    const progress = repository.updatePlanStepProgress.mock.calls[0][3];
+    expect(progress).toBeCloseTo(2 / 3);
   });
 });
 
