@@ -159,27 +159,26 @@ export class SystemService {
     );
   }
 
-  getUserAnswerBasedOnStepType = (step: Steps) => {
-    switch (step.type) {
-      case StepType.TARGET:
-        return `My main immigration goal is: ${step.answer}.`;
-      case StepType.ENGLISH:
-        return `My English fluency level is: ${step.answer}.`;
-      case StepType.BUDGET:
-        return `I have approximately ${step.answer} dollars available for immigration-related expenses.`;
-      case StepType.EDUCATION:
-        return `My highest level of education is: ${step.answer}.`;
-      case StepType.PROFESSIONAL:
-        return `I have around ${step.answer} years of professional work experience.`;
-      case StepType.CLIMATE:
-        return `I prefer a climate that is ${step.answer}.`;
-      case StepType.FAMILY:
-        return `Regarding family considerations, ${step.answer}.`;
-      case StepType.COUNTRY:
-        return `I am most interested in immigrating to countries like ${step.answer}.`;
-      default:
-        return '';
-    }
+  private static readonly STEP_TEMPLATES: Record<
+    StepType,
+    (answer: string) => string
+  > = {
+    [StepType.TARGET]: (a) => `My main immigration goal is: ${a}.`,
+    [StepType.ENGLISH]: (a) => `My English fluency level is: ${a}.`,
+    [StepType.BUDGET]: (a) =>
+      `I have approximately ${a} dollars available for immigration-related expenses.`,
+    [StepType.EDUCATION]: (a) => `My highest level of education is: ${a}.`,
+    [StepType.PROFESSIONAL]: (a) =>
+      `I have around ${a} years of professional work experience.`,
+    [StepType.CLIMATE]: (a) => `I prefer a climate that is ${a}.`,
+    [StepType.FAMILY]: (a) => `Regarding family considerations, ${a}.`,
+    [StepType.COUNTRY]: (a) =>
+      `I am most interested in immigrating to countries like ${a}.`,
+  };
+
+  getUserAnswerBasedOnStepType = (step: Steps): string => {
+    const template = SystemService.STEP_TEMPLATES[step.type];
+    return template ? template(step.answer) : '';
   };
 
   getCountryDetails = async (country: string) => {
