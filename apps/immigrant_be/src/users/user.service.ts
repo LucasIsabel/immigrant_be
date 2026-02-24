@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { UserRepository } from './user.repository';
 import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
@@ -14,6 +15,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
 import { MarkStepDto } from './dto/mark-step.dto';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
+import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 
 @Injectable()
 export class UserService {
@@ -258,7 +261,9 @@ export class UserService {
       throw new ConflictException('User is already inactive');
     }
 
-    return this.userRepository.setActiveStatus(id, false);
+    const result = await this.userRepository.setActiveStatus(id, false);
+    await this.userRepository.deleteSessionsByUserId(id);
+    return result;
   }
 
   async banUser(id: string, dto: BanUserDto, adminUserId: string) {
@@ -280,7 +285,9 @@ export class UserService {
       ? new Date(Date.now() + dto.banExpiresInSeconds * 1000)
       : undefined;
 
-    return this.userRepository.banUser(id, dto.banReason, banExpires);
+    const result = await this.userRepository.banUser(id, dto.banReason, banExpires);
+    await this.userRepository.deleteSessionsByUserId(id);
+    return result;
   }
 
   async unbanUser(id: string) {
@@ -295,5 +302,82 @@ export class UserService {
     }
 
     return this.userRepository.unbanUser(id);
+  }
+
+  async createAdminUser(dto: CreateAdminUserDto) {
+    const existing = await this.userRepository.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException('Email already in use');
+    }
+
+    const id = randomUUID();
+    const user = await this.userRepository.createUser({
+      id,
+      name: dto.name,
+      email: dto.email,
+      password: dto.password,
+    });
+
+    if (!user) {
+      throw new NotFoundException('Default role "user" not found');
+    }
+
+    return user;
+  }
+
+  async verifyUserEmail(id: string, verified: boolean) {
+    const user = await this.userRepository.findByIdWithRoles(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.emailVerified === verified) {
+      throw new ConflictException(
+        verified ? 'Email is already verified' : 'Email is already unverified',
+      );
+    }
+
+    return this.userRepository.setEmailVerified(id, verified);
+  }
+
+  async getUserSessions(id: string) {
+    const user = await this.userRepository.findByIdWithRoles(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.userRepository.findSessionsByUserId(id);
+  }
+
+  async revokeUserSessions(id: string) {
+    const user = await this.userRepository.findByIdWithRoles(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRepository.deleteSessionsByUserId(id);
+  }
+
+  async getMyProfile(userId: string) {
+    const user = await this.userRepository.findMeWithRoles(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateMyProfile(userId: string, dto: UpdateMyProfileDto) {
+    const user = await this.userRepository.findMeWithRoles(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.userRepository.updateMyProfile(userId, dto);
   }
 }

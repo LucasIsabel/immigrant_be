@@ -61,6 +61,12 @@ const mockUserRepository = {
   banUser: jest.fn(),
   unbanUser: jest.fn(),
   findByEmail: jest.fn(),
+  createUser: jest.fn(),
+  setEmailVerified: jest.fn(),
+  findSessionsByUserId: jest.fn(),
+  deleteSessionsByUserId: jest.fn(),
+  findMeWithRoles: jest.fn(),
+  updateMyProfile: jest.fn(),
   // Existing methods (needed for module creation)
   createUserPlan: jest.fn(),
   getAllUserPlans: jest.fn(),
@@ -253,18 +259,17 @@ describe('UserService - Admin Methods', () => {
   // ── deactivateUser ────────────────────────────────────────
 
   describe('deactivateUser', () => {
-    it('should deactivate an active user', async () => {
+    it('should deactivate an active user and revoke their sessions', async () => {
       const deactivated = { ...mockUser, isActive: false };
       repository.findByIdWithRoles.mockResolvedValue(mockUser);
       repository.setActiveStatus.mockResolvedValue(deactivated);
+      repository.deleteSessionsByUserId.mockResolvedValue({ count: 1 });
 
       const result = await service.deactivateUser('user-id-1');
 
       expect(result.isActive).toBe(false);
-      expect(repository.setActiveStatus).toHaveBeenCalledWith(
-        'user-id-1',
-        false,
-      );
+      expect(repository.setActiveStatus).toHaveBeenCalledWith('user-id-1', false);
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
     });
 
     it('should throw ConflictException when user is already inactive', async () => {
@@ -287,10 +292,11 @@ describe('UserService - Admin Methods', () => {
   // ── banUser ───────────────────────────────────────────────
 
   describe('banUser', () => {
-    it('should ban a user with reason', async () => {
+    it('should ban a user with reason and revoke their sessions', async () => {
       const banned = { ...mockUser, banned: true, banReason: 'Spamming' };
       repository.findByIdWithRoles.mockResolvedValue(mockUser);
       repository.banUser.mockResolvedValue(banned);
+      repository.deleteSessionsByUserId.mockResolvedValue({ count: 2 });
 
       const result = await service.banUser(
         'user-id-1',
@@ -300,12 +306,14 @@ describe('UserService - Admin Methods', () => {
 
       expect(result.banned).toBe(true);
       expect(result.banReason).toBe('Spamming');
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
     });
 
     it('should ban a user with expiry', async () => {
       const banned = { ...mockUser, banned: true };
       repository.findByIdWithRoles.mockResolvedValue(mockUser);
       repository.banUser.mockResolvedValue(banned);
+      repository.deleteSessionsByUserId.mockResolvedValue({ count: 0 });
 
       await service.banUser(
         'user-id-1',
@@ -371,6 +379,118 @@ describe('UserService - Admin Methods', () => {
       await expect(service.unbanUser('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  // ── createAdminUser ───────────────────────────────────────
+
+  describe('createAdminUser', () => {
+    const createDto = { name: 'New User', email: 'new@example.com', password: 'Str0ngPass!' };
+
+    it('should create a user successfully', async () => {
+      const created = { ...mockUser, ...createDto };
+      repository.findByEmail.mockResolvedValue(null);
+      repository.createUser.mockResolvedValue(created);
+
+      const result = await service.createAdminUser(createDto);
+
+      expect(repository.findByEmail).toHaveBeenCalledWith(createDto.email);
+      expect(repository.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({ name: createDto.name, email: createDto.email, password: createDto.password }),
+      );
+      expect(result).toEqual(created);
+    });
+
+    it('should throw ConflictException when email already in use', async () => {
+      repository.findByEmail.mockResolvedValue(mockUser);
+
+      await expect(service.createAdminUser(createDto)).rejects.toThrow(ConflictException);
+      expect(repository.createUser).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when default role "user" is not found', async () => {
+      repository.findByEmail.mockResolvedValue(null);
+      repository.createUser.mockResolvedValue(null);
+
+      await expect(service.createAdminUser(createDto)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── verifyUserEmail ───────────────────────────────────────
+
+  describe('verifyUserEmail', () => {
+    it('should verify email successfully', async () => {
+      const verified = { ...mockUser, emailVerified: true };
+      repository.findByIdWithRoles.mockResolvedValue({ ...mockUser, emailVerified: false });
+      repository.setEmailVerified.mockResolvedValue(verified);
+
+      const result = await service.verifyUserEmail('user-id-1', true);
+
+      expect(result.emailVerified).toBe(true);
+      expect(repository.setEmailVerified).toHaveBeenCalledWith('user-id-1', true);
+    });
+
+    it('should unverify email successfully', async () => {
+      const unverified = { ...mockUser, emailVerified: false };
+      repository.findByIdWithRoles.mockResolvedValue(mockUser);
+      repository.setEmailVerified.mockResolvedValue(unverified);
+
+      const result = await service.verifyUserEmail('user-id-1', false);
+
+      expect(result.emailVerified).toBe(false);
+      expect(repository.setEmailVerified).toHaveBeenCalledWith('user-id-1', false);
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      repository.findByIdWithRoles.mockResolvedValue(null);
+
+      await expect(service.verifyUserEmail('nonexistent', true)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException when email is already in the desired state', async () => {
+      repository.findByIdWithRoles.mockResolvedValue(mockUser); // emailVerified: true
+
+      await expect(service.verifyUserEmail('user-id-1', true)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ── getUserSessions ───────────────────────────────────────
+
+  describe('getUserSessions', () => {
+    it('should return sessions for a user', async () => {
+      const sessions = [{ id: 'session-1', userId: 'user-id-1', expiresAt: new Date(), createdAt: new Date() }];
+      repository.findByIdWithRoles.mockResolvedValue(mockUser);
+      repository.findSessionsByUserId.mockResolvedValue(sessions);
+
+      const result = await service.getUserSessions('user-id-1');
+
+      expect(result).toEqual(sessions);
+      expect(repository.findSessionsByUserId).toHaveBeenCalledWith('user-id-1');
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      repository.findByIdWithRoles.mockResolvedValue(null);
+
+      await expect(service.getUserSessions('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── revokeUserSessions ────────────────────────────────────
+
+  describe('revokeUserSessions', () => {
+    it('should revoke all sessions for a user', async () => {
+      repository.findByIdWithRoles.mockResolvedValue(mockUser);
+      repository.deleteSessionsByUserId.mockResolvedValue({ count: 3 });
+
+      await service.revokeUserSessions('user-id-1');
+
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      repository.findByIdWithRoles.mockResolvedValue(null);
+
+      await expect(service.revokeUserSessions('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });

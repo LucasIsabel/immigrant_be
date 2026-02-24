@@ -15,6 +15,7 @@ import { type UserSession } from '@thallesp/nestjs-better-auth';
 import { UserService } from './user.service';
 import {
   ApiBody,
+  ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
   ApiResponse,
@@ -33,12 +34,44 @@ import {
 } from './dto/plan-response.dto';
 import { UserDetailsDto } from './dto/user-detail.dto';
 import { MarkStepDto } from './dto/mark-step.dto';
+import { MyProfileResponseDto } from './dto/my-profile-response.dto';
+import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 
 @ApiTags('Users')
+@ApiCookieAuth('better-auth.session_token')
+@ApiUnauthorizedResponse({ description: 'Authentication required' })
 @ApiExtraModels(PlanImmigrationVisaTypeDto, UserDetailsDto)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  // ── Profile ───────────────────────────────────────────────
+
+  @Get('/me')
+  @ApiOperation({ summary: 'Get own profile' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Profile retrieved successfully',
+    type: MyProfileResponseDto,
+  })
+  getMyProfile(@Session() session: UserSession) {
+    return this.userService.getMyProfile(session.user.id);
+  }
+
+  @Patch('/me')
+  @ApiOperation({ summary: 'Update own profile (name and image only)' })
+  @ApiBody({ type: UpdateMyProfileDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Profile updated successfully',
+    type: MyProfileResponseDto,
+  })
+  updateMyProfile(
+    @Session() session: UserSession,
+    @Body() dto: UpdateMyProfileDto,
+  ) {
+    return this.userService.updateMyProfile(session.user.id, dto);
+  }
 
   @ApiOperation({
     summary: 'Create a user plan',

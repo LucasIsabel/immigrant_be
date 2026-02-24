@@ -34,6 +34,8 @@ import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
+import { UserSessionResponseDto } from './dto/user-session-response.dto';
 
 @ApiTags('Admin Users')
 @Roles(UserRole.ADMIN)
@@ -43,6 +45,23 @@ import { BanUserDto } from './dto/ban-user.dto';
 @Controller('admin/users')
 export class AdminUserController {
   constructor(private readonly userService: UserService) {}
+
+  // ── Create ────────────────────────────────────────────────
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a user manually (admin)' })
+  @ApiBody({ type: CreateAdminUserDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User created successfully',
+    type: AdminUserResponseDto,
+  })
+  @ApiConflictResponse({ description: 'Email already in use' })
+  @ApiNotFoundResponse({ description: 'Default role "user" not found' })
+  createUser(@Body() dto: CreateAdminUserDto) {
+    return this.userService.createAdminUser(dto);
+  }
 
   // ── List & Read ───────────────────────────────────────────
 
@@ -197,5 +216,80 @@ export class AdminUserController {
   @ApiConflictResponse({ description: 'User is not banned' })
   unban(@Param('id') id: string) {
     return this.userService.unbanUser(id);
+  }
+
+  // ── Email Verification ────────────────────────────────────
+
+  @Patch(':id/verify-email')
+  @ApiOperation({ summary: 'Mark user email as verified' })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Email verified successfully',
+    type: AdminUserResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiConflictResponse({ description: 'Email is already verified' })
+  verifyEmail(@Param('id') id: string) {
+    return this.userService.verifyUserEmail(id, true);
+  }
+
+  @Patch(':id/unverify-email')
+  @ApiOperation({ summary: 'Mark user email as unverified' })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Email unverified successfully',
+    type: AdminUserResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiConflictResponse({ description: 'Email is already unverified' })
+  unverifyEmail(@Param('id') id: string) {
+    return this.userService.verifyUserEmail(id, false);
+  }
+
+  // ── Sessions ──────────────────────────────────────────────
+
+  @Get(':id/sessions')
+  @ApiOperation({ summary: 'List active sessions of a user' })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sessions retrieved successfully',
+    type: [UserSessionResponseDto],
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  getSessions(@Param('id') id: string) {
+    return this.userService.getUserSessions(id);
+  }
+
+  @Delete(':id/sessions')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke all sessions of a user (forced logout)' })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    type: String,
+  })
+  @ApiNoContentResponse({ description: 'Sessions revoked successfully' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  revokeSessions(@Param('id') id: string) {
+    return this.userService.revokeUserSessions(id);
   }
 }

@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { ImmigrationVisaType, Plans, Prisma, Users } from 'generated/prisma';
@@ -327,6 +328,107 @@ export class UserRepository {
   async findByEmail(email: string) {
     return this.prisma.users.findUnique({
       where: { email },
+    });
+  }
+
+  async createUser(data: {
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+  }) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.users.create({
+        data: {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          emailVerified: false,
+        },
+      });
+
+      await tx.accounts.create({
+        data: {
+          userId: user.id,
+          accountId: user.id,
+          providerId: 'credential',
+          password: hashedPassword,
+        },
+      });
+
+      const defaultRole = await tx.roles.findUnique({
+        where: { name: 'user' },
+      });
+
+      if (!defaultRole) {
+        throw new Error('Default role "user" not found');
+      }
+
+      await tx.userRoles.create({
+        data: {
+          userId: user.id,
+          roleId: defaultRole.id,
+        },
+      });
+
+      return tx.users.findUnique({
+        where: { id: user.id },
+        include: {
+          userRoles: {
+            include: { role: true },
+          },
+        },
+      });
+    });
+  }
+
+  async setEmailVerified(id: string, verified: boolean) {
+    return this.prisma.users.update({
+      where: { id },
+      data: { emailVerified: verified },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
+
+  async findSessionsByUserId(userId: string) {
+    return this.prisma.sessions.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteSessionsByUserId(userId: string) {
+    return this.prisma.sessions.deleteMany({
+      where: { userId },
+    });
+  }
+
+  async findMeWithRoles(userId: string) {
+    return this.prisma.users.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
+
+  async updateMyProfile(userId: string, data: { name?: string; image?: string }) {
+    return this.prisma.users.update({
+      where: { id: userId },
+      data,
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
     });
   }
 
