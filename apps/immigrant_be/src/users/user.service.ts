@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
-import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
+import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { Plans, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
@@ -23,18 +23,15 @@ export class UserService {
     user,
     suggestion,
     suggestion_id,
-    steps,
   }: {
     user: UserSession;
     suggestion: SuggestionItem;
     suggestion_id: string;
-    steps: Array<Steps>;
   }): Promise<Plans> {
     return await this.userRepository.createUserPlan({
       user,
       suggestion,
       suggestion_id,
-      steps,
     });
   }
 

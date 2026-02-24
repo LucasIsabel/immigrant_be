@@ -190,7 +190,7 @@ model Plans {
   country_id String? @db.Uuid @map("country_id")
   country Country? @relation(fields: [country_id], references: [id], onDelete: SetNull)
   steps Json? @map("steps")
-  steps_completed Json @map("steps_completed")
+  steps_completed Json? @map("steps_completed")
   steps_remaining Json? @map("steps_remaining")
   documents Json @map("documents") @default("[]")
   selected_suggestion Json? @map("selected_suggestion")

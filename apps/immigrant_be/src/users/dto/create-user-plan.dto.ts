@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Steps, SuggestionItem } from '../../system/dto/suggestions.dto';
+import { SuggestionItem } from '../../system/dto/suggestions.dto';
 
 export class CreateUserPlanDto {
   @ApiProperty({
@@ -22,13 +22,6 @@ export class CreateUserPlanDto {
   @IsNotEmpty()
   suggestion_id: string;
 
-  @ApiProperty({
-    description: 'Language of the suggestion',
-    example: 'en',
-    type: String,
-  })
-  @IsNotEmpty()
-  @ValidateNested({ each: true })
-  @Type(() => Steps)
-  steps: Steps[];
+  @IsOptional()
+  steps?: unknown;
 }

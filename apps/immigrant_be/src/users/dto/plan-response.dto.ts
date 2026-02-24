@@ -116,7 +116,7 @@ export class PlanResponseDto {
     type: Object,
     nullable: true,
   })
-  steps_completed: Prisma.JsonValue;
+  steps_completed: Prisma.JsonValue | null;
 
   @ApiProperty({
     description:

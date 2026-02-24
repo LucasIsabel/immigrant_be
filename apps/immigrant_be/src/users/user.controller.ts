@@ -62,7 +62,6 @@ export class UserController {
       user,
       suggestion: createUserPlanDto.suggestion,
       suggestion_id: createUserPlanDto.suggestion_id,
-      steps: createUserPlanDto.steps,
     });
   }
 

@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Steps, SuggestionItem } from '../system/dto/suggestions.dto';
+import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { ImmigrationVisaType, Plans, Prisma, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
@@ -19,26 +19,19 @@ export class UserRepository {
     user,
     suggestion,
     suggestion_id,
-    steps,
   }: {
     user: UserSession;
     suggestion: SuggestionItem;
     suggestion_id: string;
-    steps: Array<Steps>;
   }): Promise<Plans> {
-    const stepsJson =
-      steps && steps.length > 0
-        ? (JSON.parse(JSON.stringify(steps)) as Prisma.InputJsonValue)
-        : Prisma.JsonNull;
-
     return this.prisma.plans.create({
       data: {
         user_id: user.user.id,
         suggestion_id: suggestion_id,
         country_id: suggestion.country_id,
-        steps: stepsJson,
-        steps_completed: [] as Prisma.InputJsonValue,
-        steps_remaining: stepsJson,
+        steps: Prisma.JsonNull,
+        steps_completed: Prisma.JsonNull,
+        steps_remaining: Prisma.JsonNull,
         selected_suggestion: JSON.parse(JSON.stringify(suggestion)),
       },
     });
@@ -166,6 +159,7 @@ export class UserRepository {
       },
       data: {
         steps_remaining: steps,
+        steps_completed: {} as Prisma.InputJsonValue,
       },
     });
   }
