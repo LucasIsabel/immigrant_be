@@ -98,7 +98,8 @@
     "moduleNameMapper": {
       "^@app/ai(|/.*)$": "<rootDir>/libs/ai/src/$1",
       "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
-      "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1"
+      "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+      "^generated/prisma(|/.*)$": "<rootDir>/generated/prisma$1"
     }
   }
 }
