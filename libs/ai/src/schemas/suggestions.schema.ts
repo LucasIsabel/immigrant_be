@@ -8,8 +8,9 @@ export const suggestionsSchema = z.object({
       reasons: z.array(z.string()),
       cities: z.array(z.string()),
       visa_options: z.array(z.string()),
-      country_background: z.string(),
-      country_flag: z.string(),
+      // Enriched from DB — Gemini does not return these
+      country_background: z.string().optional().default(''),
+      country_flag: z.string().optional().default(''),
       investment_required: z.string(),
       average_visa_processing_time: z.string(),
       job_market: z.string(),

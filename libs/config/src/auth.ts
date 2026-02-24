@@ -38,6 +38,28 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 60 * 5, // 5 minutes
     },
+    additionalFields: {
+      roles: {
+        type: 'string',
+        defaultValue: '[]',
+      },
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const userRoles = await prisma.userRoles.findMany({
+            where: { userId: session.userId },
+            select: { role: { select: { name: true } } },
+          });
+          const roleNames = userRoles.map((ur) => ur.role.name);
+          return {
+            data: { ...session, roles: JSON.stringify(roleNames) },
+          };
+        },
+      },
+    },
   },
   advanced: {
     database: {

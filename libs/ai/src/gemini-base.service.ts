@@ -35,7 +35,7 @@ export class GeminiBaseService {
   cleanJsonResponse(raw: string): string {
     return raw
       .replace(/^```json\s*/i, '')
-      .replace(/```$/i, '')
+      .replace(/```\s*$/i, '')
       .trim();
   }
 

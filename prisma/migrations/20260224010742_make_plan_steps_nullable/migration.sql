@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "plans" ALTER COLUMN "steps" DROP NOT NULL,
+ALTER COLUMN "steps" DROP DEFAULT,
+ALTER COLUMN "steps_remaining" DROP NOT NULL;

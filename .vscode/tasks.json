@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "nest: build immigrant_be",
+      "type": "shell",
+      "command": "pnpm run build",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "NODE_ENV": "development"
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}

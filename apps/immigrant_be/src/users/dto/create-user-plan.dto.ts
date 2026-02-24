@@ -28,7 +28,7 @@ export class CreateUserPlanDto {
     type: String,
   })
   @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => Array<Steps>)
+  @ValidateNested({ each: true })
+  @Type(() => Steps)
   steps: Steps[];
 }

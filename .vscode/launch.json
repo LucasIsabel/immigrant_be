@@ -5,14 +5,9 @@
       "type": "node",
       "request": "launch",
       "name": "Debug NestJS App",
-      "runtimeArgs": [
-        "--inspect-brk=9229",
-        "-r",
-        "ts-node/register",
-        "-r",
-        "tsconfig-paths/register"
-      ],
-      "args": ["${workspaceFolder}/apps/immigrant_be/src/main.ts"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--inspect-brk=9229"],
+      "program": "${workspaceFolder}/dist/apps/immigrant_be/main.js",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
@@ -23,15 +18,12 @@
         "!**/node_modules/**"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/**/*.js",
-        "${workspaceFolder}/apps/immigrant_be/src/**/*.ts"
+        "${workspaceFolder}/dist/**/*.js"
       ],
       "env": {
-        "NODE_ENV": "development",
-        "TS_NODE_PROJECT": "${workspaceFolder}/apps/immigrant_be/tsconfig.app.json",
-        "TS_NODE_TRANSPILE_ONLY": "true",
-        "TS_NODE_FILES": "true"
+        "NODE_ENV": "development"
       },
+      "preLaunchTask": "nest: build immigrant_be",
       "outputCapture": "std"
     },
     {
@@ -40,6 +32,7 @@
       "name": "Attach to NestJS",
       "port": 9229,
       "restart": true,
+      "cwd": "${workspaceFolder}",
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
       "sourceMaps": true,
       "resolveSourceMapLocations": [
@@ -47,9 +40,10 @@
         "!**/node_modules/**"
       ],
       "outFiles": [
-        "${workspaceFolder}/dist/**/*.js",
-        "${workspaceFolder}/apps/immigrant_be/src/**/*.ts"
-      ]
+        "${workspaceFolder}/dist/**/*.js"
+      ],
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}"
     }
   ]
 }

@@ -433,6 +433,9 @@ export class SystemRepository {
    * and when querying we need to match; canonical form avoids mismatches from key order.
    */
   private normalizeParametersToJson(parameters: SuggestionsDto): string {
+    // Convert to plain object first to avoid issues with class-transformer instances
+    const plain = JSON.parse(JSON.stringify(parameters));
+
     function canonicalize(value: unknown): unknown {
       if (
         value !== null &&
@@ -453,7 +456,7 @@ export class SystemRepository {
       if (Array.isArray(value)) return value.map(canonicalize);
       return value;
     }
-    return JSON.stringify(canonicalize(parameters));
+    return JSON.stringify(canonicalize(plain));
   }
 
   async getRawSuggestionsWithParameters(
