@@ -1,0 +1,129 @@
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { AiBlogRepository } from './ai-blog.repository';
+import { GenerateAiBlogPostDto } from './dto/generate-ai-blog-post.dto';
+import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
+import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
+import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
+
+@Injectable()
+export class AiBlogService {
+  private readonly logger = new Logger(AiBlogService.name);
+
+  constructor(
+    private readonly repository: AiBlogRepository,
+    @InjectQueue(AI_BLOG_QUEUE) private readonly aiBlogQueue: Queue,
+  ) {}
+
+  // ─── Generate ─────────────────────────────────────────────────────────────
+
+  async enqueueGeneration(dto: GenerateAiBlogPostDto) {
+    const job = await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
+      country_id: dto.country_id,
+      category_id: dto.category_id,
+    });
+    this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
+    return { job_id: job.id, message: 'Post gerado em fila. Verifique a fila de aprovação em instantes.' };
+  }
+
+  // ─── Pending Posts ────────────────────────────────────────────────────────
+
+  async findPendingPosts() {
+    return this.repository.findPendingAiPosts();
+  }
+
+  async approvePost(id: string) {
+    const post = await this.repository.findPostById(id);
+    if (!post) throw new NotFoundException('Post não encontrado');
+    return this.repository.approvePost(id);
+  }
+
+  async rejectPost(id: string) {
+    const post = await this.repository.findPostById(id);
+    if (!post) throw new NotFoundException('Post não encontrado');
+    return this.repository.deletePost(id);
+  }
+
+  // ─── Cron Jobs ────────────────────────────────────────────────────────────
+
+  async findAllCronJobs() {
+    return this.repository.findAllCronJobs();
+  }
+
+  async createCronJob(dto: CreateAiBlogCronDto) {
+    const cronJob = await this.repository.createCronJob(dto);
+
+    if (cronJob.is_active) {
+      const bullmqJobId = await this.registerRepeatableJob(cronJob.id, dto);
+      await this.repository.updateCronJob(cronJob.id, {}, bullmqJobId);
+      cronJob.bullmq_job_id = bullmqJobId;
+    }
+
+    return cronJob;
+  }
+
+  async updateCronJob(id: string, dto: UpdateAiBlogCronDto) {
+    const existing = await this.repository.findCronJobById(id);
+    if (!existing) throw new NotFoundException('Cron job não encontrado');
+
+    // Remove old repeatable job if it exists
+    if (existing.bullmq_job_id) {
+      await this.removeRepeatableJob(existing.bullmq_job_id, existing.cron_expr);
+    }
+
+    const updated = await this.repository.updateCronJob(id, dto, undefined);
+
+    const newIsActive = dto.is_active ?? existing.is_active;
+    const newCronExpr = dto.cron_expr ?? existing.cron_expr;
+    const newCountryId = dto.country_id ?? existing.country_id;
+    const newCategoryId = dto.category_id ?? existing.category_id;
+
+    if (newIsActive) {
+      const bullmqJobId = await this.registerRepeatableJob(id, {
+        country_id: newCountryId,
+        category_id: newCategoryId,
+        cron_expr: newCronExpr,
+      });
+      return this.repository.updateCronJob(id, {}, bullmqJobId);
+    }
+
+    return updated;
+  }
+
+  async deleteCronJob(id: string) {
+    const existing = await this.repository.findCronJobById(id);
+    if (!existing) throw new NotFoundException('Cron job não encontrado');
+
+    if (existing.bullmq_job_id) {
+      await this.removeRepeatableJob(existing.bullmq_job_id, existing.cron_expr);
+    }
+
+    return this.repository.deleteCronJob(id);
+  }
+
+  // ─── BullMQ Repeatable Helpers ────────────────────────────────────────────
+
+  private async registerRepeatableJob(
+    cronJobDbId: string,
+    dto: { country_id: string; category_id: string; cron_expr: string },
+  ): Promise<string> {
+    const job = await this.aiBlogQueue.add(
+      GENERATE_AI_BLOG_POST,
+      { country_id: dto.country_id, category_id: dto.category_id, cron_job_id: cronJobDbId },
+      { repeat: { pattern: dto.cron_expr } },
+    );
+    return job.id ?? `${GENERATE_AI_BLOG_POST}:${dto.cron_expr}`;
+  }
+
+  private async removeRepeatableJob(jobId: string, cronExpr: string) {
+    try {
+      await this.aiBlogQueue.removeRepeatable(GENERATE_AI_BLOG_POST, {
+        pattern: cronExpr,
+      });
+      this.logger.log(`Removed repeatable job ${jobId}`);
+    } catch (err) {
+      this.logger.warn(`Could not remove repeatable job ${jobId}: ${err}`);
+    }
+  }
+}

@@ -14,6 +14,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { HealthModule } from './health/health.module';
 import { RoleModule } from './roles/role.module';
 import { BlogModule } from './blog/blog.module';
+import { AiBlogModule } from './ai-blog/ai-blog.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { BlogModule } from './blog/blog.module';
     HealthModule,
     RoleModule,
     BlogModule,
+    AiBlogModule,
   ],
   providers: [
     {

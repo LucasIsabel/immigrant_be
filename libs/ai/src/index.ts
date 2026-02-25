@@ -15,3 +15,11 @@ export {
 export { buildCountriesMatchPrompt } from './prompts/countries-match.prompt';
 export { buildBestVisaTypePrompt } from './prompts/best-visa-type.prompt';
 export { buildVisaStepsPrompt } from './prompts/visa-steps.prompt';
+export {
+  blogPostAiSchema,
+  type BlogPostAiResponse,
+} from './schemas/blog-post.schema';
+export {
+  buildBlogPostPrompt,
+  type RssNewsItem,
+} from './prompts/blog-post.prompt';

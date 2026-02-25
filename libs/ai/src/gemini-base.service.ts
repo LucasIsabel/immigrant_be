@@ -86,6 +86,10 @@ export class GeminiBaseService {
     }
   }
 
+  async generateContent(prompt: string) {
+    return this.model.generateContent(prompt);
+  }
+
   normalizeEmbedding(vec: number[]): number[] {
     const norm = Math.sqrt(vec.reduce((sum, val) => sum + val ** 2, 0));
     return vec.map((v) => v / norm);

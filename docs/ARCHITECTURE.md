@@ -45,6 +45,7 @@ immigrant_be/
 │   │   │   ├── system/         # Módulo de IA/Gemini e sugestões
 │   │   │   ├── visa-steps/     # Módulo de etapas de visto
 │   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
+│   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -53,6 +54,7 @@ immigrant_be/
 │       │   ├── main.ts
 │       │   ├── microservice.module.ts
 │       │   ├── plan/           # Processamento de planos via BullMQ
+│       │   ├── ai-blog/        # Worker de geração de posts com IA
 │       │   └── events/         # Tratamento de eventos
 │       └── test/
 │
@@ -163,7 +165,8 @@ Users ─────────┬──── Sessions (1:N)
 Countries ─────┬──── CountryDescription (1:N) — multilíngue
                ├──── ImmigrationVisaType (1:N)
                ├──── VisaTypeRecommendations (1:N)
-               └──── Plans (1:N)
+               ├──── Plans (1:N)
+               └──── AiBlogCronJob (1:N) — cron jobs de geração automática
 
 Plans ─────────┬──── steps (JSON)
                ├──── documents (JSON)
@@ -179,6 +182,11 @@ BlogPost ──────────┬── BlogCategory (N:1)
 
 BlogPost status: DRAFT | PUBLISHED | ARCHIVED
 Slug e reading_time_min gerados automaticamente pelo Service
+is_ai_generated: Boolean — marca posts criados pelo AI Blog Generator
+
+AiBlogCronJob ─── Country (N:1) — país alvo
+               └── BullMQ repeatable job (bullmq_job_id)
+               Armazena: cron_expr, is_active, last_run_at
 ```
 
 ### Convenções do Schema
@@ -211,11 +219,13 @@ libs/ai/                              # Biblioteca compartilhada de IA
 ├── schemas/                          # Zod schemas centralizados
 │   ├── suggestions.schema.ts         # SuggestionsType
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
-│   └── visa-steps.schema.ts          # VisaStepsType
+│   ├── visa-steps.schema.ts          # VisaStepsType
+│   └── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
 └── prompts/                          # Templates de prompts centralizados
     ├── countries-match.prompt.ts
     ├── best-visa-type.prompt.ts
-    └── visa-steps.prompt.ts
+    ├── visa-steps.prompt.ts
+    └── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
 
 apps/immigrant_be/src/system/
 ├── gemini.service.ts          # Extends GeminiBaseService
@@ -227,6 +237,11 @@ apps/immigrant_be/src/system/
 apps/microservice/src/plan/
 └── gemini.service.ts          # Extends GeminiBaseService
     └── generateVisaSteps()           # Gera checklist de etapas do visto
+
+apps/microservice/src/ai-blog/
+└── ai-blog.service.ts         # Usa GeminiBaseService diretamente
+    ├── fetchGoogleNewsRss()          # Busca Google News RSS (sem API key)
+    └── generatePost()                # RSS → Gemini → BlogPost DRAFT
 ```
 
 ### Padrões para IA
@@ -274,8 +289,17 @@ App Principal (API)                    Microservice
 
 - **Redis** como broker de mensagens
 - **Microservice** roda como app separado (porta 6000)
-- Comunicação via filas nomeadas (ex: `plan-processing`)
+- Comunicação via filas nomeadas
 - Eventos notificam o frontend via **Server-Sent Events (SSE)**
+
+### Filas existentes
+
+| Fila | Constante | Jobs | Descrição |
+|---|---|---|---|
+| `plan_queue` | `PLAN_QUEUE` | `process_create_plan` | Geração de planos de imigração |
+| `ai_blog_queue` | `AI_BLOG_QUEUE` | `generate_ai_blog_post` | Geração de posts de blog com IA |
+
+A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
 
 ---
 
@@ -302,6 +326,10 @@ App Principal (API)                    Microservice
 | `/admin/blog/posts` | Blog (admin) | ADMIN |
 | `/admin/blog/categories` | Blog (admin) | ADMIN |
 | `/admin/blog/tags` | Blog (admin) | ADMIN |
+| `/admin/ai/blog/generate` | AI Blog | ADMIN |
+| `/admin/ai/blog/pending` | AI Blog | ADMIN |
+| `/admin/ai/blog/pending/:id/approve` | AI Blog | ADMIN |
+| `/admin/ai/blog/cron` | AI Blog | ADMIN |
 | `/health` | Health | Público |
 | `/health/ready` | Health | Público |
 
