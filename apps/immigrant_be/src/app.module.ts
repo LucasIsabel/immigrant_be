@@ -13,6 +13,7 @@ import { ImmigrationVisaTypeModule } from './immigration-visa-type/immigration-v
 import { RolesGuard } from './common/guards/roles.guard';
 import { HealthModule } from './health/health.module';
 import { RoleModule } from './roles/role.module';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { RoleModule } from './roles/role.module';
     EmailModule,
     HealthModule,
     RoleModule,
+    BlogModule,
   ],
   providers: [
     {

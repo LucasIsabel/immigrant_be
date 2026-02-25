@@ -44,6 +44,7 @@ immigrant_be/
 │   │   │   ├── roles/          # Módulo de RBAC
 │   │   │   ├── system/         # Módulo de IA/Gemini e sugestões
 │   │   │   ├── visa-steps/     # Módulo de etapas de visto
+│   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -169,6 +170,15 @@ Plans ─────────┬──── steps (JSON)
                └──── status: draft | active | completed
 
 ImmigrationVisaType ── VisaSteps (1:N) — por idioma
+
+Users ─────────────── BlogPost (1:N) — como autor
+
+BlogPost ──────────┬── BlogCategory (N:1)
+                   ├── BlogPostTag (1:N) ──── BlogTag (N:M)
+                   └── Country (N:1, opcional) — país em destaque
+
+BlogPost status: DRAFT | PUBLISHED | ARCHIVED
+Slug e reading_time_min gerados automaticamente pelo Service
 ```
 
 ### Convenções do Schema
@@ -285,6 +295,13 @@ App Principal (API)                    Microservice
 | `/system/suggestions` | System | Público |
 | `/system/visa-recommendation` | System | Autenticado |
 | `/system/sse` | System | Autenticado |
+| `/blog/posts` | Blog | Público |
+| `/blog/posts/:slug` | Blog | Público |
+| `/blog/categories` | Blog | Público |
+| `/blog/tags` | Blog | Público |
+| `/admin/blog/posts` | Blog (admin) | ADMIN |
+| `/admin/blog/categories` | Blog (admin) | ADMIN |
+| `/admin/blog/tags` | Blog (admin) | ADMIN |
 | `/health` | Health | Público |
 | `/health/ready` | Health | Público |
 

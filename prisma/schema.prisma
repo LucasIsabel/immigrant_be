@@ -31,6 +31,7 @@ model Users {
   plans         Plans[]
   events        Events[]
   userRoles     UserRoles[]
+  blog_posts    BlogPost[]
 
   @@unique([email])
   @@map("users")
@@ -154,8 +155,79 @@ model Country {
   background_image      String   @map("background_image")
   plans                 Plans[]
   visa_type_recommendations VisaTypeRecommendations[]
+  blog_posts            BlogPost[]
 
   @@map("countries")
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id               String         @id @default(uuid()) @db.Uuid
+  title            String
+  slug             String         @unique
+  excerpt          String
+  content          String         @db.Text
+  cover_image_url  String?        @map("cover_image_url")
+  status           BlogPostStatus @default(DRAFT)
+  reading_time_min Int?           @map("reading_time_min")
+  views_count      Int            @default(0) @map("views_count")
+  published_at     DateTime?      @map("published_at")
+  created_at       DateTime       @default(now()) @map("created_at")
+  updated_at       DateTime       @updatedAt @map("updated_at")
+
+  author_id           String       @db.Uuid @map("author_id")
+  author              Users        @relation(fields: [author_id], references: [id])
+
+  category_id         String       @db.Uuid @map("category_id")
+  category            BlogCategory @relation(fields: [category_id], references: [id])
+
+  featured_country_id String?      @db.Uuid @map("featured_country_id")
+  featured_country    Country?     @relation(fields: [featured_country_id], references: [id])
+
+  tags BlogPostTag[]
+
+  @@index([status, published_at])
+  @@index([slug])
+  @@index([category_id])
+  @@index([author_id])
+  @@map("blog_posts")
+}
+
+model BlogCategory {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String     @unique
+  slug       String     @unique
+  created_at DateTime   @default(now()) @map("created_at")
+  updated_at DateTime   @updatedAt @map("updated_at")
+  posts      BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id         String        @id @default(uuid()) @db.Uuid
+  name       String        @unique
+  slug       String        @unique
+  created_at DateTime      @default(now()) @map("created_at")
+  updated_at DateTime      @updatedAt @map("updated_at")
+  posts      BlogPostTag[]
+
+  @@map("blog_tags")
+}
+
+model BlogPostTag {
+  post_id String   @db.Uuid @map("post_id")
+  tag_id  String   @db.Uuid @map("tag_id")
+  post    BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  tag     BlogTag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([post_id, tag_id])
+  @@map("blog_post_tags")
 }
 
 model Suggestions {
