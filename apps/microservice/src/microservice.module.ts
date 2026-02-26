@@ -3,8 +3,9 @@ import { Module } from '@nestjs/common';
 import { PlanModule } from './plan/plan.module';
 import { EventsModule } from './events/events.module';
 import { AiBlogWorkerModule } from './ai-blog/ai-blog.module';
+import { BlogTranslationWorkerModule } from './blog-translation/blog-translation.module';
 
 @Module({
-  imports: [PlanModule, DatabaseModule, EventsModule, AiBlogWorkerModule],
+  imports: [PlanModule, DatabaseModule, EventsModule, AiBlogWorkerModule, BlogTranslationWorkerModule],
 })
 export class MicroserviceModule {}

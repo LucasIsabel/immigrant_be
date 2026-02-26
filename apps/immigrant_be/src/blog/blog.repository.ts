@@ -247,4 +247,43 @@ export class BlogRepository {
   async deleteAuthor(id: string) {
     return this.prisma.blogAuthor.delete({ where: { id } });
   }
+
+  // ─── Translations ─────────────────────────────────────────────────────────
+
+  async findTranslation(postId: string, locale: string) {
+    return this.prisma.blogPostTranslation.findUnique({
+      where: { post_id_locale: { post_id: postId, locale } },
+    });
+  }
+
+  async findAllTranslationsForPost(postId: string) {
+    return this.prisma.blogPostTranslation.findMany({
+      where: { post_id: postId },
+      orderBy: { locale: 'asc' },
+    });
+  }
+
+  async upsertTranslation(
+    postId: string,
+    locale: string,
+    data: { title: string; excerpt: string; content: string; translated_by: string },
+  ) {
+    return this.prisma.blogPostTranslation.upsert({
+      where: { post_id_locale: { post_id: postId, locale } },
+      create: {
+        post_id: postId,
+        locale,
+        title: data.title,
+        excerpt: data.excerpt,
+        content: data.content,
+        translated_by: data.translated_by,
+      },
+      update: {
+        title: data.title,
+        excerpt: data.excerpt,
+        content: data.content,
+        translated_by: data.translated_by,
+      },
+    });
+  }
 }

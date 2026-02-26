@@ -26,3 +26,11 @@ export {
   buildBlogCoverImagePrompt,
   type RssNewsItem,
 } from './prompts/blog-post.prompt';
+export {
+  blogTranslationAiSchema,
+  type BlogTranslationAiResponse,
+} from './schemas/blog-translation.schema';
+export {
+  buildBlogTranslationPrompt,
+  type BlogTranslationPromptOptions,
+} from './prompts/blog-translation.prompt';

@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import {
@@ -19,11 +20,14 @@ import {
   ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
+  ApiAcceptedResponse,
   ApiCookieAuth,
   ApiForbiddenResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Session } from '@thallesp/nestjs-better-auth';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BlogService } from './blog.service';
@@ -39,6 +43,9 @@ import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
 import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
 import { AdminBlogQueryDto } from './dto/blog-query.dto';
+import { UpsertBlogTranslationDto } from './dto/upsert-blog-translation.dto';
+import { BlogTranslationResponseDto } from './dto/blog-translation-response.dto';
+import { BLOG_TRANSLATION_QUEUE, TRANSLATE_BLOG_POST } from '@app/config/constants';
 
 @ApiTags('Admin Blog')
 @Controller('admin/blog')
@@ -47,7 +54,10 @@ import { AdminBlogQueryDto } from './dto/blog-query.dto';
 @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
 @ApiForbiddenResponse({ description: 'Requer role de administrador' })
 export class BlogAdminController {
-  constructor(private readonly blogService: BlogService) {}
+  constructor(
+    private readonly blogService: BlogService,
+    @InjectQueue(BLOG_TRANSLATION_QUEUE) private readonly translationQueue: Queue,
+  ) {}
 
   // ─── Posts ────────────────────────────────────────────────────────────────
 
@@ -108,6 +118,71 @@ export class BlogAdminController {
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
   deletePost(@Param('id') id: string) {
     return this.blogService.deletePost(id);
+  }
+
+  // ─── Translations ─────────────────────────────────────────────────────────
+
+  @Get('posts/:id/translations')
+  @ApiOperation({
+    summary: 'Listar traduções do post',
+    description: 'Retorna todas as traduções disponíveis para um post',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Traduções listadas',
+    type: [BlogTranslationResponseDto],
+  })
+  @ApiNotFoundResponse({ description: 'Post não encontrado' })
+  getPostTranslations(@Param('id') id: string) {
+    return this.blogService.getPostTranslations(id);
+  }
+
+  @Put('posts/:id/translations/:locale')
+  @ApiOperation({
+    summary: 'Criar ou atualizar tradução manual',
+    description: 'Upsert de tradução humana para um locale específico ("pt" | "en" | "es")',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiParam({ name: 'locale', description: 'Locale da tradução', example: 'en' })
+  @ApiBody({ type: UpsertBlogTranslationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tradução salva com sucesso',
+    type: BlogTranslationResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post não encontrado' })
+  upsertPostTranslation(
+    @Param('id') id: string,
+    @Param('locale') locale: string,
+    @Body() dto: UpsertBlogTranslationDto,
+  ) {
+    return this.blogService.upsertPostTranslation(id, locale, dto);
+  }
+
+  @Post('posts/:id/translations/enqueue')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Enfileirar tradução automática via IA',
+    description: 'Enfileira jobs de tradução para Português e Espanhol usando Gemini (a partir do conteúdo em inglês)',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiAcceptedResponse({ description: 'Jobs enfileirados com sucesso' })
+  @ApiNotFoundResponse({ description: 'Post não encontrado' })
+  async enqueueTranslation(@Param('id') id: string) {
+    // Validate post exists
+    await this.blogService.getPostTranslations(id);
+
+    const locales = ['pt', 'es'] as const;
+    await this.translationQueue.addBulk(
+      locales.map((locale) => ({
+        name: TRANSLATE_BLOG_POST,
+        data: { postId: id, targetLocale: locale },
+        opts: { removeOnComplete: 10, removeOnFail: 5 },
+      })),
+    );
+
+    return { message: 'Translation jobs enqueued', locales };
   }
 
   // ─── Categories ───────────────────────────────────────────────────────────

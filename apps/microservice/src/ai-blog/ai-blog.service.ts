@@ -89,6 +89,7 @@ export class AiBlogWorkerService {
         content: parsed.content,
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
+        original_locale: 'en',
         reading_time_min: readingTimeMin,
         author_id: authorId,
         display_author_id: data.display_author_id ?? null,

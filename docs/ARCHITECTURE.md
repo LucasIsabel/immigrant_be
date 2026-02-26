@@ -57,6 +57,7 @@ immigrant_be/
 │       │   ├── microservice.module.ts
 │       │   ├── plan/           # Processamento de planos via BullMQ
 │       │   ├── ai-blog/        # Worker de geração de posts com IA
+│       │   ├── blog-translation/ # Worker de tradução multilíngue de posts
 │       │   └── events/         # Tratamento de eventos
 │       └── test/
 │
@@ -186,11 +187,19 @@ Entidade independente: name, bio, avatar_url, website, twitter, linkedin
 BlogPost ──────────┬── BlogCategory (N:1)
                    ├── BlogPostTag (1:N) ──── BlogTag (N:M)
                    ├── Country (N:1, opcional) — país em destaque
-                   └── BlogAuthor (N:1, opcional) — display_author
+                   ├── BlogAuthor (N:1, opcional) — display_author
+                   └── BlogPostTranslation (1:N) — traduções por locale
 
 BlogPost status: DRAFT | PUBLISHED | ARCHIVED
 Slug e reading_time_min gerados automaticamente pelo Service
 is_ai_generated: Boolean — marca posts criados pelo AI Blog Generator
+original_locale: String (default "pt") — idioma original do post
+
+BlogPostTranslation — traduções de posts do blog
+  Campos: id, post_id, locale ("pt"|"en"|"es"), title, excerpt, content,
+          translated_by ("AI"|"HUMAN"), created_at, updated_at
+  Unique: (post_id, locale)
+  Cascade delete com BlogPost
 
 AiBlogCronJob ─── Country (N:1) — país alvo
                └── BullMQ repeatable job (bullmq_job_id)
@@ -228,12 +237,14 @@ libs/ai/                              # Biblioteca compartilhada de IA
 │   ├── suggestions.schema.ts         # SuggestionsType
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
 │   ├── visa-steps.schema.ts          # VisaStepsType
-│   └── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
+│   ├── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
+│   └── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
 └── prompts/                          # Templates de prompts centralizados
     ├── countries-match.prompt.ts
     ├── best-visa-type.prompt.ts
     ├── visa-steps.prompt.ts
-    └── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
+    ├── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
+    └── blog-translation.prompt.ts    # buildBlogTranslationPrompt() — preserva Markdown
 
 apps/immigrant_be/src/system/
 ├── gemini.service.ts          # Extends GeminiBaseService
@@ -352,15 +363,18 @@ App Principal (API)                    Microservice
 
 ### Filas existentes
 
-| Fila                  | Constante             | Jobs                     | Descrição                                    |
-| --------------------- | --------------------- | ------------------------ | -------------------------------------------- |
-| `plan_queue`          | `PLAN_QUEUE`          | `process_create_plan`    | Geração de planos de imigração               |
-| `ai_blog_queue`       | `AI_BLOG_QUEUE`       | `generate_ai_blog_post`  | Geração de posts de blog com IA              |
-| `ai_blog_image_queue` | `AI_BLOG_IMAGE_QUEUE` | `generate_ai_blog_image` | Geração assíncrona de imagem de capa do post |
+| Fila                     | Constante                | Jobs                                           | Descrição                                    |
+| ------------------------ | ------------------------ | ---------------------------------------------- | -------------------------------------------- |
+| `plan_queue`             | `PLAN_QUEUE`             | `process_create_plan`                          | Geração de planos de imigração               |
+| `ai_blog_queue`          | `AI_BLOG_QUEUE`          | `generate_ai_blog_post`                        | Geração de posts de blog com IA              |
+| `ai_blog_image_queue`    | `AI_BLOG_IMAGE_QUEUE`    | `generate_ai_blog_image`                       | Geração assíncrona de imagem de capa do post |
+| `blog_translation_queue` | `BLOG_TRANSLATION_QUEUE` | `translate_blog_post`, `translate_all_pending` | Tradução automática via Gemini (EN + ES)     |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
 
 A fila `ai_blog_image_queue` é enfileirada após a criação do post (DRAFT), permitindo que a geração de imagem ocorra de forma **assíncrona e independente**. O campo `cover_image_url` é `null` inicialmente e atualizado pelo consumer `AiBlogImageConsumer` via `prisma.blogPost.update()` assim que a imagem é gerada e enviada ao storage.
+
+A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_all_pending` às 03:00 UTC) registrado por `BlogTranslationCronService` via `OnModuleInit`. O job `translate_all_pending` busca todos os posts PUBLISHED sem tradução para EN e ES, e enfileira jobs individuais `translate_blog_post`. O endpoint `POST /admin/blog/posts/:id/translations/enqueue` permite acionar traduções sob demanda.
 
 ---
 
@@ -368,37 +382,40 @@ A fila `ai_blog_image_queue` é enfileirada após a criação do post (DRAFT), p
 
 ### Prefixo global: `/api/v1`
 
-| Prefixo                              | Módulo              | Acesso                              |
-| ------------------------------------ | ------------------- | ----------------------------------- |
-| `/auth/*`                            | better-auth         | Público                             |
-| `/users/plan`                        | Users               | Autenticado                         |
-| `/admin/users`                       | Users (admin)       | ADMIN                               |
-| `/admin/roles`                       | Roles               | ADMIN                               |
-| `/countries`                         | Countries           | Misto (CRUD admin, leitura pública) |
-| `/immigration-visa-types`            | ImmigrationVisaType | Misto                               |
-| `/visa-steps`                        | VisaSteps           | Misto                               |
-| `/system/suggestions`                | System              | Público                             |
-| `/system/visa-recommendation`        | System              | Autenticado                         |
-| `/system/sse`                        | System              | Autenticado                         |
-| `/blog/posts`                        | Blog                | Público                             |
-| `/blog/posts/admin`                  | Blog (admin inline) | ADMIN                               |
-| `/blog/posts/:slug`                  | Blog                | Público                             |
-| `/blog/categories`                   | Blog                | Público                             |
-| `/blog/tags`                         | Blog                | Público                             |
-| `/blog/authors`                      | Blog                | Público                             |
-| `/blog/authors/:id`                  | Blog                | Público                             |
-| `/admin/blog/posts`                  | Blog (admin)        | ADMIN                               |
-| `/admin/blog/categories`             | Blog (admin)        | ADMIN                               |
-| `/admin/blog/tags`                   | Blog (admin)        | ADMIN                               |
-| `/admin/blog/authors`                | Blog (admin)        | ADMIN                               |
-| `/admin/blog/authors/:id`            | Blog (admin)        | ADMIN                               |
-| `/admin/ai/blog/generate`            | AI Blog             | ADMIN                               |
-| `/admin/ai/blog/pending`             | AI Blog             | ADMIN                               |
-| `/admin/ai/blog/pending/:id/approve` | AI Blog             | ADMIN                               |
-| `/admin/ai/blog/cron`                | AI Blog             | ADMIN                               |
-| `/storage/upload`                    | Storage             | Autenticado                         |
-| `/health`                            | Health              | Público                             |
-| `/health/ready`                      | Health              | Público                             |
+| Prefixo                                      | Módulo                    | Acesso                              |
+| -------------------------------------------- | ------------------------- | ----------------------------------- |
+| `/auth/*`                                    | better-auth               | Público                             |
+| `/users/plan`                                | Users                     | Autenticado                         |
+| `/admin/users`                               | Users (admin)             | ADMIN                               |
+| `/admin/roles`                               | Roles                     | ADMIN                               |
+| `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública) |
+| `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                               |
+| `/visa-steps`                                | VisaSteps                 | Misto                               |
+| `/system/suggestions`                        | System                    | Público                             |
+| `/system/visa-recommendation`                | System                    | Autenticado                         |
+| `/system/sse`                                | System                    | Autenticado                         |
+| `/blog/posts`                                | Blog                      | Público                             |
+| `/blog/posts/admin`                          | Blog (admin inline)       | ADMIN                               |
+| `/blog/posts/:slug`                          | Blog                      | Público                             |
+| `/blog/categories`                           | Blog                      | Público                             |
+| `/blog/tags`                                 | Blog                      | Público                             |
+| `/blog/authors`                              | Blog                      | Público                             |
+| `/blog/authors/:id`                          | Blog                      | Público                             |
+| `/admin/blog/posts`                          | Blog (admin)              | ADMIN                               |
+| `/admin/blog/categories`                     | Blog (admin)              | ADMIN                               |
+| `/admin/blog/tags`                           | Blog (admin)              | ADMIN                               |
+| `/admin/blog/authors`                        | Blog (admin)              | ADMIN                               |
+| `/admin/blog/authors/:id`                    | Blog (admin)              | ADMIN                               |
+| `/admin/blog/posts/:id/translations`         | Blog Translations (admin) | ADMIN                               |
+| `/admin/blog/posts/:id/translations/:locale` | Blog Translations (admin) | ADMIN                               |
+| `/admin/blog/posts/:id/translations/enqueue` | Blog Translations (admin) | ADMIN                               |
+| `/admin/ai/blog/generate`                    | AI Blog                   | ADMIN                               |
+| `/admin/ai/blog/pending`                     | AI Blog                   | ADMIN                               |
+| `/admin/ai/blog/pending/:id/approve`         | AI Blog                   | ADMIN                               |
+| `/admin/ai/blog/cron`                        | AI Blog                   | ADMIN                               |
+| `/storage/upload`                            | Storage                   | Autenticado                         |
+| `/health`                                    | Health                    | Público                             |
+| `/health/ready`                              | Health                    | Público                             |
 
 ### Convenções de endpoints
 
@@ -474,6 +491,10 @@ Pipeline sequencial: **Lint → Test → Build**
 - Tabela `CountryDescription` com descrições por idioma
 - `VisaSteps` armazena etapas por idioma
 - Respostas de IA adaptadas ao idioma solicitado
+- **Blog Posts**: tabela `BlogPostTranslation` persiste traduções por locale (`pt` | `en` | `es`)
+  - Query param `?lang=en` nos endpoints públicos aplica overlay de tradução (fallback para PT se ausente)
+  - Admin pode gerenciar traduções manualmente (`PUT /admin/blog/posts/:id/translations/:locale`)
+  - Worker `blog-translation` gera traduções automáticas via Gemini (cron diário 03:00 UTC ou sob demanda)
 
 ---
 

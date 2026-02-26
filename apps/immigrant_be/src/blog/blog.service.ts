@@ -11,6 +11,7 @@ import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
 import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
 import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
+import { UpsertBlogTranslationDto } from './dto/upsert-blog-translation.dto';
 
 function slugify(text: string): string {
   return text
@@ -66,7 +67,11 @@ export class BlogService {
       tagSlug: query.tagSlug,
     });
 
-    return { data, total, page, limit };
+    const localized = query.lang
+      ? await Promise.all(data.map((post) => this.applyTranslation(post, query.lang!)))
+      : data;
+
+    return { data: localized, total, page, limit };
   }
 
   async findAdminPosts(query: AdminBlogQueryDto) {
@@ -85,14 +90,58 @@ export class BlogService {
     return { data, total, page, limit };
   }
 
-  async findPostBySlug(slug: string) {
+  async findPostBySlug(slug: string, lang?: string) {
     const post = await this.blogRepository.findPostBySlug(slug);
     if (!post) {
       throw new NotFoundException('Post não encontrado');
     }
     // Incrementa views de forma assíncrona sem bloquear a resposta
     void this.blogRepository.incrementViews(post.id);
-    return post;
+    return lang ? this.applyTranslation(post, lang) : post;
+  }
+
+  private async applyTranslation<T extends { id: string; title: string; excerpt: string; content: string }>(
+    post: T,
+    lang: string,
+  ): Promise<T> {
+    if (!lang || lang === 'pt') return post;
+
+    const translation = await this.blogRepository.findTranslation(post.id, lang);
+    if (!translation) return post;
+
+    return {
+      ...post,
+      title: translation.title,
+      excerpt: translation.excerpt,
+      content: translation.content,
+    };
+  }
+
+  // ─── Translations (admin) ─────────────────────────────────────────────────
+
+  async getPostTranslations(postId: string) {
+    const post = await this.blogRepository.findPostById(postId);
+    if (!post) {
+      throw new NotFoundException('Post não encontrado');
+    }
+    return this.blogRepository.findAllTranslationsForPost(postId);
+  }
+
+  async upsertPostTranslation(
+    postId: string,
+    locale: string,
+    dto: UpsertBlogTranslationDto,
+  ) {
+    const post = await this.blogRepository.findPostById(postId);
+    if (!post) {
+      throw new NotFoundException('Post não encontrado');
+    }
+    return this.blogRepository.upsertTranslation(postId, locale, {
+      title: dto.title,
+      excerpt: dto.excerpt,
+      content: dto.content,
+      translated_by: 'HUMAN',
+    });
   }
 
   async updatePost(id: string, dto: UpdateBlogPostDto) {

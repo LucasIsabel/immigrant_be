@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class BlogQueryDto {
   @ApiProperty({
@@ -45,6 +45,15 @@ export class BlogQueryDto {
   @IsOptional()
   @IsString()
   tagSlug?: string;
+
+  @ApiProperty({
+    description: 'Idioma do conteúdo retornado',
+    enum: ['pt', 'en', 'es'],
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['pt', 'en', 'es'])
+  lang?: string;
 }
 
 export class AdminBlogQueryDto extends BlogQueryDto {

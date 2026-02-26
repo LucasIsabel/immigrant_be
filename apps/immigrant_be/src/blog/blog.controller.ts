@@ -77,8 +77,11 @@ export class BlogController {
     type: BlogPostResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
-  findPostBySlug(@Param('slug') slug: string) {
-    return this.blogService.findPostBySlug(slug);
+  findPostBySlug(
+    @Param('slug') slug: string,
+    @Query('lang') lang?: string,
+  ) {
+    return this.blogService.findPostBySlug(slug, lang);
   }
 
   @Get('categories')
