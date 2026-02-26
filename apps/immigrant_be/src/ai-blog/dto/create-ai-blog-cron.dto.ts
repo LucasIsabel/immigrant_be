@@ -50,6 +50,15 @@ export class CreateAiBlogCronDto {
   author_id?: string;
 
   @ApiProperty({
+    description: 'ID do autor do blog (BlogAuthor) exibido nos posts gerados',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  display_author_id?: string;
+
+  @ApiProperty({
     description: 'Complexidade dos posts gerados',
     enum: PostComplexity,
     default: PostComplexity.SIMPLE,

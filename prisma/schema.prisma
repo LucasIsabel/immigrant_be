@@ -215,7 +215,8 @@ model BlogAuthor {
   linkedin   String?
   created_at DateTime   @default(now()) @map("created_at")
   updated_at DateTime   @updatedAt @map("updated_at")
-  posts      BlogPost[]
+  posts            BlogPost[]
+  ai_blog_cron_jobs AiBlogCronJob[]
 
   @@map("blog_authors")
 }
@@ -365,6 +366,8 @@ model AiBlogCronJob {
   last_run_at         DateTime? @map("last_run_at")
   bullmq_job_id       String?   @map("bullmq_job_id")
   author_id           String?   @db.Uuid @map("author_id")
+  display_author_id   String?   @db.Uuid @map("display_author_id")
+  display_author      BlogAuthor? @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
   complexity          String    @default("SIMPLE") @map("complexity")
   political_tone      String    @default("NEUTRAL") @map("political_tone")
   custom_instructions String?   @db.Text @map("custom_instructions")

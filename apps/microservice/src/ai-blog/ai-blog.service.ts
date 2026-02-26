@@ -19,6 +19,7 @@ export interface GenerateBlogPostJobData {
   category_id: string;
   cron_job_id?: string;
   author_id?: string;
+  display_author_id?: string;
   complexity?: PostComplexity;
   political_tone?: PoliticalTone;
   custom_instructions?: string;
@@ -90,6 +91,7 @@ export class AiBlogWorkerService {
         is_ai_generated: true,
         reading_time_min: readingTimeMin,
         author_id: authorId,
+        display_author_id: data.display_author_id ?? null,
         category_id: data.category_id,
         featured_country_id: data.country_id,
         tags: tagIds.length

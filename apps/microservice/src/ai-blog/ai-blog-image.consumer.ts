@@ -2,21 +2,32 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AiBlogImageWorkerService, GenerateBlogImageJobData } from './ai-blog-image.service';
-import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE } from '@app/config/constants';
+import { AiBlogRefineService } from './ai-blog-refine.service';
+import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE, REFINE_AI_BLOG_POST } from '@app/config/constants';
+
+type ImageQueueJobData = GenerateBlogImageJobData | { postId: string };
 
 @Processor(AI_BLOG_IMAGE_QUEUE)
 export class AiBlogImageConsumer extends WorkerHost {
   private readonly logger = new Logger(AiBlogImageConsumer.name);
 
-  constructor(private readonly aiBlogImageWorkerService: AiBlogImageWorkerService) {
+  constructor(
+    private readonly aiBlogImageWorkerService: AiBlogImageWorkerService,
+    private readonly refineService: AiBlogRefineService,
+  ) {
     super();
   }
 
-  async process(job: Job<GenerateBlogImageJobData>): Promise<void> {
+  async process(job: Job<ImageQueueJobData>): Promise<void> {
     switch (job.name) {
       case GENERATE_AI_BLOG_IMAGE: {
         this.logger.log(`Processando geração de imagem para post: ${job.data.postId}`);
-        await this.aiBlogImageWorkerService.generateAndAttachImage(job.data);
+        await this.aiBlogImageWorkerService.generateAndAttachImage(job.data as GenerateBlogImageJobData);
+        break;
+      }
+      case REFINE_AI_BLOG_POST: {
+        this.logger.log(`Processando refinamento de post: ${job.data.postId}`);
+        await this.refineService.refinePost({ postId: job.data.postId });
         break;
       }
       default:
@@ -25,12 +36,12 @@ export class AiBlogImageConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job): void {
+  onCompleted(job: Job<ImageQueueJobData>): void {
     this.logger.log(`Job de imagem concluído: ${job.id} (post: ${job.data.postId})`);
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error): void {
+  onFailed(job: Job<ImageQueueJobData>, error: Error): void {
     this.logger.error(
       `Job de imagem falhou: ${job.id} (post: ${job.data.postId}) — ${error.message}`,
       error.stack,

@@ -23,13 +23,13 @@ export interface BlogPostPromptOptions {
 
 const TONE_INSTRUCTIONS: Record<PoliticalTone, string> = {
   [PoliticalTone.NEUTRAL]:
-    'Mantenha tom objetivo, equilibrado e informativo.',
+    'Keep an objective, balanced and informative tone.',
   [PoliticalTone.PRO_IMMIGRATION]:
-    'Adote perspectiva favorável à imigração, enfatizando oportunidades, direitos e benefícios para imigrantes.',
+    'Adopt a pro-immigration perspective, emphasizing opportunities, rights and benefits for immigrants.',
   [PoliticalTone.CONSERVATIVE]:
-    'Adote tom cauteloso que enfatiza processos legais, desafios e procedimentos regulatórios.',
+    'Adopt a cautious tone that emphasizes legal processes, challenges and regulatory procedures.',
   [PoliticalTone.PROGRESSIVE]:
-    'Adote perspectiva progressista focada em justiça social, inclusão e direitos dos imigrantes.',
+    'Adopt a progressive perspective focused on social justice, inclusion and immigrant rights.',
 };
 
 function buildComplexityRequirements(complexity: PostComplexity): string {
@@ -37,12 +37,12 @@ function buildComplexityRequirements(complexity: PostComplexity): string {
     case PostComplexity.DETAILED:
       return `- The "content" should be at least 1000 words with rich structure (multiple ## and ### sections), more contextual explanations and concrete examples.
 - Include visual callouts throughout the text using this format:
-  > 📊 **[Visual sugerido]:** Descrição detalhada de gráfico ou infográfico relevante`;
+  > 📊 **[Visual sugerido]:** Detailed description of relevant chart or infographic`;
 
     case PostComplexity.COMPLEX:
       return `- The "content" should be at least 2000 words with maximum depth.
 - Include multiple visual callouts using this format:
-  > 📊 **[Visual sugerido]:** Descrição detalhada de gráfico ou infográfico relevante
+  > 📊 **[Visual sugerido]:** Detailed description of relevant chart or infographic
 - Include Markdown tables with comparative data where applicable.
 - Include statistical analysis sections.
 - Provide maximum depth on each topic covered.`;
@@ -88,31 +88,31 @@ export function buildBlogPostPrompt(
   const complexityRequirements = buildComplexityRequirements(complexity);
 
   const customSection = customInstructions?.trim()
-    ? `\n## Instruções adicionais\n${customInstructions.trim()}`
+    ? `\n## Additional instructions\n${customInstructions.trim()}`
     : '';
 
   return `
 You are an expert immigration journalist writing for an immigration platform targeted at people who want to move abroad.
 
-Based on the recent news headlines about immigration to **${countryName}** listed below, write a comprehensive, informative and engaging blog post in **Brazilian Portuguese (pt-BR)**.
+Based on the recent news headlines about immigration to **${countryName}** listed below, write a comprehensive, informative and engaging blog post in **English**.
 
 ## Recent News
 ${newsSummary}
 
 ## Requirements
-- **Language**: Brazilian Portuguese (pt-BR)
+- **Language**: English
 - **Tone**: ${toneInstruction}
 - **Content**: Synthesize the news into a coherent narrative with context. Do NOT just list the news items.
 - **Format**: Return a valid JSON object matching the schema below. The "content" field must be valid Markdown.
 ${complexityRequirements}
 - The "excerpt" must be a single engaging paragraph of 2–3 sentences summarizing the post.
-- "suggested_tags" must be 3–6 lowercase slug strings (e.g. "canada", "visto-trabalho", "imigração-2025").
+- "suggested_tags" must be 3–6 lowercase slug strings (e.g. "canada", "work-visa", "immigration-2025").
 ${customSection}
 ## JSON Schema
 {
-  "title": "string — compelling, SEO-friendly title in pt-BR",
-  "excerpt": "string — 2-3 sentence summary in pt-BR",
-  "content": "string — full Markdown post body in pt-BR",
+  "title": "string — compelling, SEO-friendly title in English",
+  "excerpt": "string — 2-3 sentence summary in English",
+  "content": "string — full Markdown post body in English",
   "suggested_tags": ["string"]
 }
 

@@ -101,8 +101,6 @@ export class GeminiBaseService {
         generationConfig: { responseModalities: ['IMAGE'] } as any,
       });
 
-      this.logger.debug('Image response received', response);
-
       const imagePart = response.response.candidates?.[0]?.content.parts.find(
         (p) => p.inlineData?.mimeType?.startsWith('image/'),
       );

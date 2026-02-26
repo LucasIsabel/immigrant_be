@@ -30,6 +30,15 @@ export class GenerateAiBlogPostDto {
   author_id?: string;
 
   @ApiProperty({
+    description: 'ID do autor do blog (BlogAuthor) exibido no post',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  display_author_id?: string;
+
+  @ApiProperty({
     description: 'Complexidade do post gerado',
     enum: PostComplexity,
     default: PostComplexity.SIMPLE,

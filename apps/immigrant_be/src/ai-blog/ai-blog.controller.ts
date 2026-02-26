@@ -103,6 +103,20 @@ export class AiBlogController {
     return this.aiBlogService.rejectPost(id);
   }
 
+  @Post('refine/:id')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Refinar post com imagens',
+    description:
+      'Enfileira o refinamento de um post DRAFT gerado por IA: substitui marcadores [Visual sugerido] por imagens geradas via Gemini.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiResponse({ status: 202, description: 'Refinamento enfileirado com sucesso' })
+  @ApiNotFoundResponse({ description: 'Post não encontrado ou não elegível para refinamento' })
+  enqueueRefinement(@Param('id') id: string) {
+    return this.aiBlogService.enqueueRefinement(id);
+  }
+
   // ─── Cron Jobs ────────────────────────────────────────────────────────────
 
   @Get('cron')

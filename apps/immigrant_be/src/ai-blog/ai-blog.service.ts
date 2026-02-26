@@ -7,7 +7,7 @@ import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
 import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
 import { BlogService } from '../blog/blog.service';
-import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
+import { AI_BLOG_QUEUE, AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_POST, REFINE_AI_BLOG_POST } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { PostComplexity, PoliticalTone } from '@app/ai';
 
@@ -19,6 +19,7 @@ export class AiBlogService {
     private readonly repository: AiBlogRepository,
     private readonly blogService: BlogService,
     @InjectQueue(AI_BLOG_QUEUE) private readonly aiBlogQueue: Queue,
+    @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
   ) {}
 
   // ─── Generate ─────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ export class AiBlogService {
       country_id: dto.country_id,
       category_id: dto.category_id,
       author_id: dto.author_id,
+      display_author_id: dto.display_author_id,
       complexity: dto.complexity ?? PostComplexity.SIMPLE,
       political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
       custom_instructions: dto.custom_instructions,
@@ -54,6 +56,19 @@ export class AiBlogService {
     return this.repository.deletePost(id);
   }
 
+  // ─── Refinement ────────────────────────────────────────────────────────────
+
+  async enqueueRefinement(id: string) {
+    const post = await this.repository.findPostById(id);
+    if (!post) throw new NotFoundException('Post não encontrado');
+    if (!post.is_ai_generated || post.status !== BlogPostStatus.DRAFT) {
+      throw new NotFoundException('Post deve estar em DRAFT e ser gerado por IA para refinamento');
+    }
+    const job = await this.aiBlogImageQueue.add(REFINE_AI_BLOG_POST, { postId: id });
+    this.logger.log(`Enqueued AI blog post refinement job: ${job.id} for post ${id}`);
+    return { job_id: job.id, message: 'Refinamento enfileirado. As imagens serão geradas em breve.' };
+  }
+
   async updatePendingPost(id: string, dto: UpdateBlogPostDto) {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
@@ -78,6 +93,7 @@ export class AiBlogService {
         category_id: dto.category_id,
         cron_expr: dto.cron_expr,
         author_id: dto.author_id,
+        display_author_id: dto.display_author_id,
         complexity: dto.complexity,
         political_tone: dto.political_tone,
         custom_instructions: dto.custom_instructions,
@@ -105,6 +121,7 @@ export class AiBlogService {
     const newCountryId = dto.country_id ?? existing.country_id;
     const newCategoryId = dto.category_id ?? existing.category_id;
     const newAuthorId = dto.author_id ?? existing.author_id ?? undefined;
+    const newDisplayAuthorId = dto.display_author_id ?? existing.display_author_id ?? undefined;
     const newComplexity = (dto.complexity ?? existing.complexity ?? PostComplexity.SIMPLE) as PostComplexity;
     const newPoliticalTone = (dto.political_tone ?? existing.political_tone ?? PoliticalTone.NEUTRAL) as PoliticalTone;
     const newCustomInstructions = dto.custom_instructions ?? existing.custom_instructions ?? undefined;
@@ -115,6 +132,7 @@ export class AiBlogService {
         category_id: newCategoryId,
         cron_expr: newCronExpr,
         author_id: newAuthorId,
+        display_author_id: newDisplayAuthorId,
         complexity: newComplexity,
         political_tone: newPoliticalTone,
         custom_instructions: newCustomInstructions,
@@ -145,6 +163,7 @@ export class AiBlogService {
       category_id: string;
       cron_expr: string;
       author_id?: string;
+      display_author_id?: string;
       complexity?: PostComplexity;
       political_tone?: PoliticalTone;
       custom_instructions?: string;
@@ -157,6 +176,7 @@ export class AiBlogService {
         category_id: dto.category_id,
         cron_job_id: cronJobDbId,
         author_id: dto.author_id,
+        display_author_id: dto.display_author_id,
         complexity: dto.complexity ?? PostComplexity.SIMPLE,
         political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
         custom_instructions: dto.custom_instructions,
