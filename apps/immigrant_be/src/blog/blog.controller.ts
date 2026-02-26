@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -9,7 +17,7 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { BlogService } from './blog.service';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
@@ -37,8 +45,14 @@ export class BlogController {
     description: 'Posts listados com sucesso',
     type: BlogPostListResponseDto,
   })
-  findPublishedPosts(@Query() query: BlogQueryDto) {
-    return this.blogService.findPublishedPosts(query);
+  findPublishedPosts(
+    @Query() query: BlogQueryDto,
+    @Session() session?: UserSession,
+  ) {
+    return this.blogService.findPublishedPosts(
+      query,
+      session?.user?.id,
+    );
   }
 
   @Get('posts/admin')
@@ -80,8 +94,13 @@ export class BlogController {
   findPostBySlug(
     @Param('slug') slug: string,
     @Query('lang') lang?: string,
+    @Session() session?: UserSession,
   ) {
-    return this.blogService.findPostBySlug(slug, lang);
+    return this.blogService.findPostBySlug(
+      slug,
+      lang,
+      session?.user?.id,
+    );
   }
 
   @Get('categories')
@@ -148,5 +167,29 @@ export class BlogController {
   @ApiNotFoundResponse({ description: 'Autor não encontrado' })
   findAuthorById(@Param('id') id: string) {
     return this.blogService.findAuthorById(id);
+  }
+
+  @Post('posts/:id/like')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER, UserRole.ADMIN)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Toggle like em post',
+    description:
+      'Alterna o like do usuário autenticado no post. Requer autenticação.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do post (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Like alternado com sucesso',
+    schema: { type: 'object', properties: { liked: { type: 'boolean' } } },
+  })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  toggleLike(@Param('id') id: string, @Session() session: UserSession) {
+    return this.blogService.togglePostLike(id, session.user.id);
   }
 }

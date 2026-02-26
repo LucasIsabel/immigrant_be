@@ -9,6 +9,9 @@ export interface RefineBlogPostJobData {
 
 const VISUAL_MARKER_REGEX = />\s*📊\s*\*\*\[Visual sugerido\]:\*\*\s*(.+)/g;
 
+const IMAGE_REALISM_SUFFIX =
+  ' Photorealistic, documentary style. Real human beings with natural skin tones and authentic expressions. Candid, lifelike moment. Avoid robotic, cartoon, or AI-generated artificial appearance.';
+
 @Injectable()
 export class AiBlogRefineService {
   private readonly logger = new Logger(AiBlogRefineService.name);
@@ -46,7 +49,8 @@ export class AiBlogRefineService {
       const fullMatch = match[0];
       const description = (match[1] ?? '').trim();
 
-      const imageBuffer = await this.gemini.generateImage(description);
+      const enrichedPrompt = description + IMAGE_REALISM_SUFFIX;
+      const imageBuffer = await this.gemini.generateImage(enrichedPrompt);
       if (!imageBuffer) {
         this.logger.warn(
           `Failed to generate image for marker ${i + 1} in post ${data.postId}: "${description.slice(0, 50)}..."`,

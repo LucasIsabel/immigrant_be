@@ -10,6 +10,7 @@ const POST_INCLUDE = {
   author: { select: { id: true, name: true, image: true } },
   category: true,
   tags: { include: { tag: true } },
+  _count: { select: { likes: true } },
 };
 
 @Injectable()
@@ -51,9 +52,21 @@ export class BlogRepository {
     take: number;
     categorySlug?: string;
     tagSlug?: string;
+    search?: string;
   }) {
+    const searchFilter = opts.search?.trim()
+      ? {
+          OR: [
+            { title: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
+            { excerpt: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
+            { content: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
     const where = {
       status: BlogPostStatus.PUBLISHED,
+      ...searchFilter,
       ...(opts.categorySlug && { category: { slug: opts.categorySlug } }),
       ...(opts.tagSlug && {
         tags: { some: { tag: { slug: opts.tagSlug } } },
@@ -265,6 +278,43 @@ export class BlogRepository {
   }
 
   // ─── Translations ─────────────────────────────────────────────────────────
+
+  async toggleLike(postId: string, userId: string): Promise<{ liked: boolean }> {
+    const existing = await this.prisma.blogPostLike.findUnique({
+      where: { post_id_user_id: { post_id: postId, user_id: userId } },
+    });
+    if (existing) {
+      await this.prisma.blogPostLike.delete({
+        where: { post_id_user_id: { post_id: postId, user_id: userId } },
+      });
+      return { liked: false };
+    }
+    await this.prisma.blogPostLike.create({
+      data: { post_id: postId, user_id: userId },
+    });
+    return { liked: true };
+  }
+
+  async getLikeCountsForPosts(postIds: string[]): Promise<Map<string, number>> {
+    if (postIds.length === 0) return new Map();
+    const counts = await this.prisma.blogPostLike.groupBy({
+      by: ['post_id'],
+      where: { post_id: { in: postIds } },
+      _count: { post_id: true },
+    });
+    const map = new Map<string, number>();
+    for (const c of counts) map.set(c.post_id, c._count.post_id);
+    return map;
+  }
+
+  async getLikedPostIdsForUser(postIds: string[], userId: string): Promise<Set<string>> {
+    if (postIds.length === 0) return new Set();
+    const likes = await this.prisma.blogPostLike.findMany({
+      where: { post_id: { in: postIds }, user_id: userId },
+      select: { post_id: true },
+    });
+    return new Set(likes.map((l) => l.post_id));
+  }
 
   async findTranslation(postId: string, locale: string) {
     return this.prisma.blogPostTranslation.findUnique({

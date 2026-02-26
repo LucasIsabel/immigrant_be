@@ -114,4 +114,18 @@ export class BlogPostResponseDto {
     nullable: true,
   })
   featured_country_id: string | null;
+
+  @ApiProperty({
+    description: 'Número de likes',
+    example: 42,
+    required: false,
+  })
+  likes_count?: number;
+
+  @ApiProperty({
+    description: 'Se o usuário atual deu like (requer autenticação)',
+    example: false,
+    required: false,
+  })
+  is_liked?: boolean;
 }

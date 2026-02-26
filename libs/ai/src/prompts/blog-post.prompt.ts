@@ -2,7 +2,13 @@ import { PostComplexity } from '../enums/post-complexity.enum';
 import { PoliticalTone } from '../enums/political-tone.enum';
 
 export function buildBlogCoverImagePrompt(title: string, countryName: string): string {
-  return `Generate a professional, high-quality editorial blog cover image for an article titled "${title}" about immigration to ${countryName}. Wide landscape format (16:9), photorealistic, cinematic lighting, no text overlays, no people's faces visible, suitable for a professional blog header.`;
+  return `Generate a professional, high-quality editorial blog cover image for an article titled "${title}" about immigration to ${countryName}.
+
+Style: Wide landscape format (16:9), photorealistic documentary style, natural cinematic lighting, no text overlays. Suitable for a professional blog header.
+
+People: Include real human beings — diverse individuals in authentic, candid moments (e.g. walking in a city, at an airport, in a park, at work). Natural skin tones, genuine expressions, relaxed body language. Show people from various angles; faces can be visible or shown from behind/side for a documentary feel. Avoid stiff poses, plastic skin, or AI-generated artificial appearance.
+
+Quality: Raw, authentic, like award-winning photojournalism. Avoid symmetrical compositions that look robotic, oversaturated colors, or uncanny valley effects.`;
 }
 
 export interface RssNewsItem {
@@ -32,17 +38,21 @@ const TONE_INSTRUCTIONS: Record<PoliticalTone, string> = {
     'Adopt a progressive perspective focused on social justice, inclusion and immigrant rights.',
 };
 
+const VISUAL_CALLOUT_INSTRUCTION = `Include visual callouts throughout the text using this format:
+  > 📊 **[Visual sugerido]:** [Description]
+- For images with people: describe diverse real humans in candid, authentic moments — documentary or photojournalism style. Include natural poses, realistic skin tones, everyday settings (e.g. airport, office, park, city street). Avoid stiff poses, cartoon style, or AI-looking artificial appearance.
+- For charts/infographics: describe clean, professional data visualizations.
+- Keep descriptions concrete and visual (what the scene or graphic shows), as they will be used to generate images.`;
+
 function buildComplexityRequirements(complexity: PostComplexity): string {
   switch (complexity) {
     case PostComplexity.DETAILED:
       return `- The "content" should be at least 1000 words with rich structure (multiple ## and ### sections), more contextual explanations and concrete examples.
-- Include visual callouts throughout the text using this format:
-  > 📊 **[Visual sugerido]:** Detailed description of relevant chart or infographic`;
+- ${VISUAL_CALLOUT_INSTRUCTION}`;
 
     case PostComplexity.COMPLEX:
       return `- The "content" should be at least 2000 words with maximum depth.
-- Include multiple visual callouts using this format:
-  > 📊 **[Visual sugerido]:** Detailed description of relevant chart or infographic
+- ${VISUAL_CALLOUT_INSTRUCTION}
 - Include Markdown tables with comparative data where applicable.
 - Include statistical analysis sections.
 - Provide maximum depth on each topic covered.`;

@@ -57,7 +57,7 @@ export class BlogService {
     );
   }
 
-  async findPublishedPosts(query: BlogQueryDto) {
+  async findPublishedPosts(query: BlogQueryDto, userId?: string) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
@@ -67,13 +67,28 @@ export class BlogService {
       take: limit,
       categorySlug: query.categorySlug,
       tagSlug: query.tagSlug,
+      search: query.search,
     });
 
     const localized = query.lang
       ? await Promise.all(data.map((post) => this.applyTranslation(post, query.lang!)))
       : data;
 
-    return { data: localized, total, page, limit };
+    const postIds = localized.map((p) => p.id);
+    const likedIds = userId
+      ? await this.blogRepository.getLikedPostIdsForUser(postIds, userId)
+      : new Set<string>();
+
+    const enriched = localized.map((post: any) => {
+      const { _count, ...rest } = post;
+      return {
+        ...rest,
+        likes_count: _count?.likes ?? 0,
+        is_liked: likedIds.has(post.id),
+      };
+    });
+
+    return { data: enriched, total, page, limit };
   }
 
   async findAdminPosts(query: AdminBlogQueryDto) {
@@ -92,21 +107,44 @@ export class BlogService {
     return { data, total, page, limit };
   }
 
-  async findPostBySlug(slug: string, lang?: string) {
+  async findPostBySlug(slug: string, lang?: string, userId?: string) {
     const post = await this.blogRepository.findPostBySlug(slug);
     if (!post) {
       throw new NotFoundException('Post não encontrado');
     }
-    // Incrementa views de forma assíncrona sem bloquear a resposta
     void this.blogRepository.incrementViews(post.id);
-    return lang ? this.applyTranslation(post, lang) : post;
+    const localized = lang ? await this.applyTranslation(post, lang) : post;
+    const likedIds = userId
+      ? await this.blogRepository.getLikedPostIdsForUser([post.id], userId)
+      : new Set<string>();
+    const { _count, ...rest } = localized as any;
+    return {
+      ...rest,
+      likes_count: _count?.likes ?? 0,
+      is_liked: likedIds.has(post.id),
+    };
   }
 
-  private async applyTranslation<T extends { id: string; title: string; excerpt: string; content: string }>(
-    post: T,
-    lang: string,
-  ): Promise<T> {
-    if (!lang || lang === 'pt') return post;
+  async togglePostLike(postId: string, userId: string) {
+    const post = await this.blogRepository.findPostById(postId);
+    if (!post) throw new NotFoundException('Post não encontrado');
+    if (post.status !== 'PUBLISHED') {
+      throw new NotFoundException('Post não encontrado');
+    }
+    return this.blogRepository.toggleLike(postId, userId);
+  }
+
+  private async applyTranslation<
+    T extends {
+      id: string;
+      title: string;
+      excerpt: string;
+      content: string;
+      original_locale?: string;
+    },
+  >(post: T, lang: string): Promise<T> {
+    const originalLocale = post.original_locale ?? 'en';
+    if (!lang || lang === originalLocale) return post;
 
     const translation = await this.blogRepository.findTranslation(post.id, lang);
     if (!translation) return post;

@@ -26,12 +26,13 @@ model Users {
   banExpires    DateTime? @map("ban_expires")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
-  sessions      Sessions[]
-  accounts      Accounts[]
-  plans         Plans[]
-  events        Events[]
-  userRoles     UserRoles[]
-  blog_posts    BlogPost[]
+  sessions        Sessions[]
+  accounts        Accounts[]
+  plans           Plans[]
+  events          Events[]
+  userRoles       UserRoles[]
+  blog_posts      BlogPost[]
+  blog_post_likes BlogPostLike[]
 
   @@unique([email])
   @@map("users")
@@ -195,9 +196,10 @@ model BlogPost {
 
   tags BlogPostTag[]
 
-  is_ai_generated  Boolean @default(false) @map("is_ai_generated")
-  original_locale  String  @default("en") @map("original_locale")
+  is_ai_generated  Boolean        @default(false) @map("is_ai_generated")
+  original_locale  String         @default("en") @map("original_locale")
   translations     BlogPostTranslation[]
+  likes            BlogPostLike[]
 
   @@index([status, published_at])
   @@index([slug])
@@ -222,6 +224,21 @@ model BlogPostTranslation {
   @@unique([post_id, locale])
   @@index([post_id])
   @@map("blog_post_translations")
+}
+
+model BlogPostLike {
+  id         String   @id @default(uuid()) @db.Uuid
+  post_id    String   @db.Uuid @map("post_id")
+  user_id    String   @db.Uuid @map("user_id")
+  created_at DateTime @default(now()) @map("created_at")
+
+  post BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id])
+  @@index([post_id])
+  @@index([user_id])
+  @@map("blog_post_likes")
 }
 
 model BlogAuthor {

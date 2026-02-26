@@ -54,6 +54,15 @@ export class BlogQueryDto {
   @IsOptional()
   @IsIn(['pt', 'en', 'es'])
   lang?: string;
+
+  @ApiProperty({
+    description: 'Busca por termo em título, excerpt ou conteúdo',
+    example: 'express entry',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
 
 export class AdminBlogQueryDto extends BlogQueryDto {
