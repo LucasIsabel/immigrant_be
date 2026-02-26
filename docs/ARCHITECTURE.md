@@ -285,17 +285,20 @@ apps/microservice/src/ai-blog/
 
 ```
 libs/storage/
-└── storage.service.ts        # StorageService: uploadFile(), deleteFile()
+└── storage.service.ts        # StorageService: uploadFile(), deleteFile(),
+                              #   listFiles(), listFolders()
                               # Usa @aws-sdk/client-s3 — S3-compatible API
 
 apps/immigrant_be/src/storage/
 ├── storage.module.ts         # Importa StorageLibModule de @app/storage
-├── storage.controller.ts     # POST /api/v1/storage/upload
+├── storage.controller.ts     # POST /api/v1/storage/upload (público, autenticado)
+├── admin-storage.controller.ts # Endpoints admin (ADMIN role)
 └── dto/
-    └── upload-response.dto.ts
+    ├── upload-response.dto.ts
+    └── storage-file-item.dto.ts
 ```
 
-### Endpoint de Upload
+### Endpoint de Upload (público)
 
 - `POST /api/v1/storage/upload` — `multipart/form-data`, campo `file`
 - Query param `folder` (default: `uploads`) — determina a pasta no bucket
@@ -304,6 +307,13 @@ apps/immigrant_be/src/storage/
 - Tipos permitidos: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `application/pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`
 - Resposta: `{ url, key, size, mimeType, originalName }`
 - Nomes de arquivo gerados com UUID para evitar colisão e path traversal
+
+### Endpoints Admin (`ADMIN` role)
+
+- `GET /api/v1/admin/storage/folders` — lista pastas únicas no bucket (prefixos comuns via `Delimiter: '/'`)
+- `GET /api/v1/admin/storage/files?folder=` — lista arquivos de uma pasta ou de todo o bucket
+- `POST /api/v1/admin/storage/upload?folder=` — upload sem restrição de mime, tamanho máximo **50 MB**
+- `DELETE /api/v1/admin/storage/file?key=` — deleta arquivo pelo key; retorna `204 No Content`
 
 ### URL Pública
 
