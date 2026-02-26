@@ -383,40 +383,41 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 
 ### Prefixo global: `/api/v1`
 
-| Prefixo                                      | Módulo                    | Acesso                              |
-| -------------------------------------------- | ------------------------- | ----------------------------------- |
-| `/auth/*`                                    | better-auth               | Público                             |
-| `/users/plan`                                | Users                     | Autenticado                         |
-| `/admin/users`                               | Users (admin)             | ADMIN                               |
-| `/admin/roles`                               | Roles                     | ADMIN                               |
-| `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública) |
-| `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                               |
-| `/visa-steps`                                | VisaSteps                 | Misto                               |
-| `/system/suggestions`                        | System                    | Público                             |
-| `/system/visa-recommendation`                | System                    | Autenticado                         |
-| `/system/sse`                                | System                    | Autenticado                         |
-| `/blog/posts`                                | Blog                      | Público                             |
-| `/blog/posts/admin`                          | Blog (admin inline)       | ADMIN                               |
-| `/blog/posts/:slug`                          | Blog                      | Público                             |
-| `/blog/categories`                           | Blog                      | Público                             |
-| `/blog/tags`                                 | Blog                      | Público                             |
-| `/blog/authors`                              | Blog                      | Público                             |
-| `/blog/authors/:id`                          | Blog                      | Público                             |
-| `/admin/blog/posts`                          | Blog (admin)              | ADMIN                               |
-| `/admin/blog/categories`                     | Blog (admin)              | ADMIN                               |
-| `/admin/blog/tags`                           | Blog (admin)              | ADMIN                               |
-| `/admin/blog/authors`                        | Blog (admin)              | ADMIN                               |
-| `/admin/blog/authors/:id`                    | Blog (admin)              | ADMIN                               |
-| `/admin/blog/posts/:id/translations`         | Blog Translations (admin) | ADMIN                               |
-| `/admin/blog/posts/:id/translations/:locale` | Blog Translations (admin) | ADMIN                               |
-| `/admin/blog/posts/:id/translations/enqueue` | Blog Translations (admin) | ADMIN                               |
-| `/admin/ai/blog/generate`                    | AI Blog                   | ADMIN                               |
-| `/admin/ai/blog/pending`                     | AI Blog                   | ADMIN                               |
-| `/admin/ai/blog/pending/:id/approve`         | AI Blog                   | ADMIN                               |
-| `/admin/ai/blog/cron`                        | AI Blog                   | ADMIN                               |
-| `/storage/upload`                            | Storage                   | Autenticado                         |
-| `/health`                                    | Health                    | Público                             |
-| `/health/ready`                              | Health                    | Público                             |
+| Prefixo                                      | Módulo                    | Acesso                                     |
+| -------------------------------------------- | ------------------------- | ------------------------------------------ |
+| `/auth/*`                                    | better-auth               | Público                                    |
+| `/users/plan`                                | Users                     | Autenticado                                |
+| `/users/plan/from-country`                   | Users                     | Autenticado (criar plano a partir de país) |
+| `/admin/users`                               | Users (admin)             | ADMIN                                      |
+| `/admin/roles`                               | Roles                     | ADMIN                                      |
+| `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública)        |
+| `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                                      |
+| `/visa-steps`                                | VisaSteps                 | Misto                                      |
+| `/system/suggestions`                        | System                    | Público                                    |
+| `/system/visa-recommendation`                | System                    | Autenticado                                |
+| `/system/sse`                                | System                    | Autenticado                                |
+| `/blog/posts`                                | Blog                      | Público                                    |
+| `/blog/posts/admin`                          | Blog (admin inline)       | ADMIN                                      |
+| `/blog/posts/:slug`                          | Blog                      | Público                                    |
+| `/blog/categories`                           | Blog                      | Público                                    |
+| `/blog/tags`                                 | Blog                      | Público                                    |
+| `/blog/authors`                              | Blog                      | Público                                    |
+| `/blog/authors/:id`                          | Blog                      | Público                                    |
+| `/admin/blog/posts`                          | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/categories`                     | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/tags`                           | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/authors`                        | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/authors/:id`                    | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/posts/:id/translations`         | Blog Translations (admin) | ADMIN                                      |
+| `/admin/blog/posts/:id/translations/:locale` | Blog Translations (admin) | ADMIN                                      |
+| `/admin/blog/posts/:id/translations/enqueue` | Blog Translations (admin) | ADMIN                                      |
+| `/admin/ai/blog/generate`                    | AI Blog                   | ADMIN                                      |
+| `/admin/ai/blog/pending`                     | AI Blog                   | ADMIN                                      |
+| `/admin/ai/blog/pending/:id/approve`         | AI Blog                   | ADMIN                                      |
+| `/admin/ai/blog/cron`                        | AI Blog                   | ADMIN                                      |
+| `/storage/upload`                            | Storage                   | Autenticado                                |
+| `/health`                                    | Health                    | Público                                    |
+| `/health/ready`                              | Health                    | Público                                    |
 
 ### Convenções de endpoints
 

@@ -27,6 +27,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { CreateUserPlanDto } from './dto/create-user-plan.dto';
+import { CreateUserPlanFromCountryDto } from './dto/create-user-plan-from-country.dto';
 import { UserPlanResponseDto } from './dto/user-plan-response.dto';
 import {
   PlanResponseDto,
@@ -96,6 +97,28 @@ export class UserController {
       suggestion: createUserPlanDto.suggestion,
       suggestion_id: createUserPlanDto.suggestion_id,
     });
+  }
+
+  @ApiOperation({
+    summary: 'Create a user plan from country selection',
+    description:
+      'Creates a user plan for an authenticated user by selecting a country directly, without a quiz suggestion',
+  })
+  @ApiBody({ type: CreateUserPlanFromCountryDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User plan created successfully',
+    type: UserPlanResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid country_id or country not found',
+  })
+  @Post('/plan/from-country')
+  createUserPlanFromCountry(
+    @Session() user: UserSession,
+    @Body() dto: CreateUserPlanFromCountryDto,
+  ) {
+    return this.userService.createUserPlanFromCountry(user, dto.country_id);
   }
 
   @ApiOperation({

@@ -23,12 +23,12 @@ export class UserRepository {
   }: {
     user: UserSession;
     suggestion: SuggestionItem;
-    suggestion_id: string;
+    suggestion_id: string | null;
   }): Promise<Plans> {
     return this.prisma.plans.create({
       data: {
         user_id: user.user.id,
-        suggestion_id: suggestion_id,
+        suggestion_id,
         country_id: suggestion.country_id,
         steps: Prisma.JsonNull,
         steps_completed: Prisma.JsonNull,

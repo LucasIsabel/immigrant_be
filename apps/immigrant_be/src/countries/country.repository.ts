@@ -39,6 +39,7 @@ export class CountryRepository {
       where: { id },
       include: {
         descriptions: true,
+        immigration_visa_types: true,
       },
     });
   }

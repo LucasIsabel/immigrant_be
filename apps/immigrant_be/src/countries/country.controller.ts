@@ -26,6 +26,7 @@ import { CountryService } from './country.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { CountryDto } from './dto/country.dto';
+import { CountryDetailDto } from './dto/country-detail.dto';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -72,17 +73,18 @@ export class CountryController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get country by ID',
-    description: 'Retrieves a specific country by its ID',
+    description:
+      'Retrieves a specific country by its ID, including immigration visa types',
   })
   @ApiParam({
     name: 'id',
     description: 'Country ID',
-    example: 1,
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({
     status: 200,
-    description: 'Country found successfully',
-    type: CountryDto,
+    description: 'Country found successfully with visa types',
+    type: CountryDetailDto,
   })
   @ApiNotFoundResponse({
     description: 'Country not found',

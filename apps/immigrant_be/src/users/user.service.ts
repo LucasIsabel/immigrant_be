@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UserRepository } from './user.repository';
+import { CountryService } from '../countries/country.service';
 import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { Plans, Users } from 'generated/prisma';
@@ -20,7 +21,10 @@ import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly countryService: CountryService,
+  ) {}
 
   async createUserPlan({
     user,
@@ -35,6 +39,37 @@ export class UserService {
       user,
       suggestion,
       suggestion_id,
+    });
+  }
+
+  async createUserPlanFromCountry(
+    user: UserSession,
+    country_id: string,
+  ): Promise<Plans> {
+    const country = await this.countryService.findOne(country_id);
+    const suggestion: SuggestionItem = {
+      country: country.name,
+      country_id: country.id,
+      country_flag: country.flag,
+      country_background: country.background_image,
+      cities: country.popular_cities ?? [],
+      visa_options: country.visa_options ?? [],
+      investment_required: country.investment_required,
+      average_visa_processing_time: country.processing_time,
+      job_market: country.job_market,
+      difficulty: country.difficulty,
+      compatibility: 0,
+      reasons: [],
+      education_quality: '',
+      health_care: '',
+      languages: country.language_requirement
+        ? [country.language_requirement]
+        : [],
+    };
+    return await this.userRepository.createUserPlan({
+      user,
+      suggestion,
+      suggestion_id: null,
     });
   }
 
