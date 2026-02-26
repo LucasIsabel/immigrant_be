@@ -3,9 +3,11 @@ import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from '@app/database';
 import { AiModule } from '@app/ai';
 import { StorageModule } from '@app/storage';
-import { AI_BLOG_QUEUE } from '@app/config/constants';
+import { AI_BLOG_QUEUE, AI_BLOG_IMAGE_QUEUE } from '@app/config/constants';
 import { AiBlogConsumer } from './ai-blog.consumer';
 import { AiBlogWorkerService } from './ai-blog.service';
+import { AiBlogImageConsumer } from './ai-blog-image.consumer';
+import { AiBlogImageWorkerService } from './ai-blog-image.service';
 
 @Module({
   imports: [
@@ -13,7 +15,8 @@ import { AiBlogWorkerService } from './ai-blog.service';
     AiModule,
     StorageModule,
     BullModule.registerQueue({ name: AI_BLOG_QUEUE }),
+    BullModule.registerQueue({ name: AI_BLOG_IMAGE_QUEUE }),
   ],
-  providers: [AiBlogConsumer, AiBlogWorkerService],
+  providers: [AiBlogConsumer, AiBlogWorkerService, AiBlogImageConsumer, AiBlogImageWorkerService],
 })
 export class AiBlogWorkerModule {}

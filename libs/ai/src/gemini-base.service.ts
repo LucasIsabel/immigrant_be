@@ -93,13 +93,15 @@ export class GeminiBaseService {
   async generateImage(prompt: string): Promise<Buffer | null> {
     try {
       const imageModel = this.genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-preview-image-generation',
+        model: 'gemini-2.5-flash-image',
       });
 
       const response = await imageModel.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { responseModalities: ['IMAGE'] } as any,
       });
+
+      this.logger.debug('Image response received', response);
 
       const imagePart = response.response.candidates?.[0]?.content.parts.find(
         (p) => p.inlineData?.mimeType?.startsWith('image/'),

@@ -29,6 +29,7 @@ import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
 import { AiBlogCronResponseDto } from './dto/ai-blog-cron-response.dto';
 import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
+import { PendingAiBlogPostResponseDto } from './dto/pending-ai-blog-post-response.dto';
 
 @ApiTags('AI Blog')
 @Controller('admin/ai/blog')
@@ -60,7 +61,7 @@ export class AiBlogController {
     summary: 'Listar posts pendentes de aprovação',
     description: 'Retorna posts DRAFT gerados por IA aguardando revisão',
   })
-  @ApiResponse({ status: 200, description: 'Posts listados com sucesso' })
+  @ApiResponse({ status: 200, description: 'Posts listados com sucesso', type: [PendingAiBlogPostResponseDto] })
   findPendingPosts() {
     return this.aiBlogService.findPendingPosts();
   }

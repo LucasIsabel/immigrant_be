@@ -252,7 +252,7 @@ apps/microservice/src/ai-blog/
 
 - Modelo de geração: `gemini-2.5-flash-lite`
 - Modelo de embeddings: `gemini-embedding-001`
-- Modelo de geração de imagens: `gemini-2.0-flash-preview-image-generation`
+- Modelo de geração de imagens: `gemini-2.5-flash-image`
 - **Herança**: Ambos os apps estendem `GeminiBaseService` de `@app/ai` — sem código duplicado de inicialização, parsing ou embeddings
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
@@ -342,8 +342,11 @@ App Principal (API)                    Microservice
 | --------------- | --------------- | ----------------------- | ------------------------------- |
 | `plan_queue`    | `PLAN_QUEUE`    | `process_create_plan`   | Geração de planos de imigração  |
 | `ai_blog_queue` | `AI_BLOG_QUEUE` | `generate_ai_blog_post` | Geração de posts de blog com IA |
+| `ai_blog_image_queue` | `AI_BLOG_IMAGE_QUEUE` | `generate_ai_blog_image` | Geração assíncrona de imagem de capa do post |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
+
+A fila `ai_blog_image_queue` é enfileirada após a criação do post (DRAFT), permitindo que a geração de imagem ocorra de forma **assíncrona e independente**. O campo `cover_image_url` é `null` inicialmente e atualizado pelo consumer `AiBlogImageConsumer` via `prisma.blogPost.update()` assim que a imagem é gerada e enviada ao storage.
 
 ---
 

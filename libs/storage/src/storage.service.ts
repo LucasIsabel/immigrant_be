@@ -1,7 +1,13 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
+import * as https from 'https';
 import { extname } from 'path';
 
 @Injectable()
@@ -12,18 +18,33 @@ export class StorageService {
   private readonly publicUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    const accountId = this.configService.getOrThrow<string>('CLOUDFLARE_R2_ACCOUNT_ID');
-    const accessKeyId = this.configService.getOrThrow<string>('CLOUDFLARE_R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.getOrThrow<string>('CLOUDFLARE_R2_SECRET_ACCESS_KEY');
+    const accountId = this.configService.getOrThrow<string>(
+      'CLOUDFLARE_R2_ACCOUNT_ID',
+    );
+    const accessKeyId = this.configService.getOrThrow<string>(
+      'CLOUDFLARE_R2_ACCESS_KEY_ID',
+    );
+    const secretAccessKey = this.configService.getOrThrow<string>(
+      'CLOUDFLARE_R2_SECRET_ACCESS_KEY',
+    );
 
-    this.bucket = this.configService.getOrThrow<string>('CLOUDFLARE_R2_BUCKET_NAME');
-    this.publicUrl = this.configService.getOrThrow<string>('CLOUDFLARE_R2_PUBLIC_URL');
+    this.bucket = this.configService.getOrThrow<string>(
+      'CLOUDFLARE_R2_BUCKET_NAME',
+    );
+    this.publicUrl = this.configService.getOrThrow<string>(
+      'CLOUDFLARE_R2_PUBLIC_URL',
+    );
 
     this.s3 = new S3Client({
       region: 'auto',
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId, secretAccessKey },
       forcePathStyle: false,
+      requestHandler: new NodeHttpHandler({
+        httpsAgent: new https.Agent({
+          minVersion: 'TLSv1.2',
+        }),
+      }),
     });
   }
 
@@ -33,6 +54,13 @@ export class StorageService {
     mimeType: string,
     folder: string,
   ): Promise<{ url: string; key: string }> {
+    this.logger.debug('Uploading file', {
+      buffer,
+      originalName,
+      mimeType,
+      folder,
+    });
+
     const ext = extname(originalName) || this.mimeToExt(mimeType);
     const filename = `${randomUUID()}${ext}`;
     const key = `${folder}/${filename}`;

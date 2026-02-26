@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '@app/database';
-import { GeminiBaseService, buildBlogPostPrompt, buildBlogCoverImagePrompt, blogPostAiSchema, type RssNewsItem } from '@app/ai';
-import { StorageService } from '@app/storage';
+import { GeminiBaseService, buildBlogPostPrompt, blogPostAiSchema, type RssNewsItem } from '@app/ai';
+import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -19,7 +21,7 @@ export class AiBlogWorkerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiBaseService,
-    private readonly storage: StorageService,
+    @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
   ) {}
 
   async generatePost(data: GenerateBlogPostJobData): Promise<void> {
@@ -57,31 +59,12 @@ export class AiBlogWorkerService {
     // Find or create tags from AI suggestions
     const tagIds = await this.ensureTags(parsed.suggested_tags);
 
-    // Generate cover image
-    let coverImageUrl: string | undefined;
-    try {
-      const imagePrompt = buildBlogCoverImagePrompt(parsed.title, country.name);
-      const imageBuffer = await this.gemini.generateImage(imagePrompt);
-      if (imageBuffer) {
-        const { url } = await this.storage.uploadFile(
-          imageBuffer,
-          `${slug}.jpg`,
-          'image/jpeg',
-          'blog',
-        );
-        coverImageUrl = url;
-      }
-    } catch (err) {
-      this.logger.warn(`Failed to generate cover image: ${err}`);
-    }
-
-    await this.prisma.blogPost.create({
+    const post = await this.prisma.blogPost.create({
       data: {
         title: parsed.title,
         slug,
         excerpt: parsed.excerpt,
         content: parsed.content,
-        cover_image_url: coverImageUrl,
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
         reading_time_min: readingTimeMin,
@@ -95,6 +78,13 @@ export class AiBlogWorkerService {
     });
 
     this.logger.log(`AI blog post created as DRAFT for: ${country.name}`);
+
+    await this.aiBlogImageQueue.add(GENERATE_AI_BLOG_IMAGE, {
+      postId: post.id,
+      slug: post.slug,
+      title: post.title,
+      countryName: country.name,
+    });
 
     // Update last_run_at on cron job if triggered by one
     if (data.cron_job_id) {
