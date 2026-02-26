@@ -190,6 +190,9 @@ model BlogPost {
   featured_country_id String?      @db.Uuid @map("featured_country_id")
   featured_country    Country?     @relation(fields: [featured_country_id], references: [id])
 
+  display_author_id String?      @db.Uuid @map("display_author_id")
+  display_author    BlogAuthor?  @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
+
   tags BlogPostTag[]
 
   is_ai_generated Boolean @default(false) @map("is_ai_generated")
@@ -198,7 +201,23 @@ model BlogPost {
   @@index([slug])
   @@index([category_id])
   @@index([author_id])
+  @@index([display_author_id])
   @@map("blog_posts")
+}
+
+model BlogAuthor {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String
+  bio        String?    @db.Text
+  avatar_url String?    @map("avatar_url")
+  website    String?
+  twitter    String?
+  linkedin   String?
+  created_at DateTime   @default(now()) @map("created_at")
+  updated_at DateTime   @updatedAt @map("updated_at")
+  posts      BlogPost[]
+
+  @@map("blog_authors")
 }
 
 model BlogCategory {
@@ -337,16 +356,20 @@ model VisaSteps {
 }
 
 model AiBlogCronJob {
-  id            String    @id @default(uuid()) @db.Uuid
-  country_id    String    @db.Uuid @map("country_id")
-  country       Country   @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  category_id   String    @db.Uuid @map("category_id")
-  cron_expr     String    @map("cron_expr")
-  is_active     Boolean   @default(true) @map("is_active")
-  last_run_at   DateTime? @map("last_run_at")
-  bullmq_job_id String?   @map("bullmq_job_id")
-  created_at    DateTime  @default(now()) @map("created_at")
-  updated_at    DateTime  @updatedAt @map("updated_at")
+  id                  String    @id @default(uuid()) @db.Uuid
+  country_id          String    @db.Uuid @map("country_id")
+  country             Country   @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  category_id         String    @db.Uuid @map("category_id")
+  cron_expr           String    @map("cron_expr")
+  is_active           Boolean   @default(true) @map("is_active")
+  last_run_at         DateTime? @map("last_run_at")
+  bullmq_job_id       String?   @map("bullmq_job_id")
+  author_id           String?   @db.Uuid @map("author_id")
+  complexity          String    @default("SIMPLE") @map("complexity")
+  political_tone      String    @default("NEUTRAL") @map("political_tone")
+  custom_instructions String?   @db.Text @map("custom_instructions")
+  created_at          DateTime  @default(now()) @map("created_at")
+  updated_at          DateTime  @updatedAt @map("updated_at")
 
   @@index([country_id])
   @@map("ai_blog_cron_jobs")

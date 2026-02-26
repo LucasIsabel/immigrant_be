@@ -16,6 +16,7 @@ import { BlogPostResponseDto } from './dto/blog-post-response.dto';
 import { BlogPostListResponseDto } from './dto/blog-post-list-response.dto';
 import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
+import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 
@@ -108,5 +109,41 @@ export class BlogController {
   })
   findAllTags() {
     return this.blogService.findAllTags();
+  }
+
+  @Get('authors')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Listar autores',
+    description: 'Retorna todos os autores do blog (público)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Autores listados com sucesso',
+    type: [BlogAuthorResponseDto],
+  })
+  findAllAuthors() {
+    return this.blogService.findAllAuthors();
+  }
+
+  @Get('authors/:id')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Buscar autor por ID',
+    description: 'Retorna um autor pelo ID (público)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do autor',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Autor encontrado',
+    type: BlogAuthorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Autor não encontrado' })
+  findAuthorById(@Param('id') id: string) {
+    return this.blogService.findAuthorById(id);
   }
 }

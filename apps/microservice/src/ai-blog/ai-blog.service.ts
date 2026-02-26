@@ -2,7 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@app/database';
-import { GeminiBaseService, buildBlogPostPrompt, blogPostAiSchema, type RssNewsItem } from '@app/ai';
+import {
+  GeminiBaseService,
+  buildBlogPostPrompt,
+  blogPostAiSchema,
+  PostComplexity,
+  PoliticalTone,
+  type RssNewsItem,
+} from '@app/ai';
 import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
@@ -11,6 +18,10 @@ export interface GenerateBlogPostJobData {
   country_id: string;
   category_id: string;
   cron_job_id?: string;
+  author_id?: string;
+  complexity?: PostComplexity;
+  political_tone?: PoliticalTone;
+  custom_instructions?: string;
 }
 
 @Injectable()
@@ -42,7 +53,14 @@ export class AiBlogWorkerService {
       return;
     }
 
-    const prompt = buildBlogPostPrompt(country.name, newsItems);
+    const prompt = buildBlogPostPrompt({
+      countryName: country.name,
+      newsItems,
+      complexity: data.complexity ?? PostComplexity.SIMPLE,
+      politicalTone: data.political_tone ?? PoliticalTone.NEUTRAL,
+      customInstructions: data.custom_instructions,
+    });
+
     const response = await this.gemini.generateContent(prompt);
     const rawText = response.response.text();
 
@@ -59,6 +77,9 @@ export class AiBlogWorkerService {
     // Find or create tags from AI suggestions
     const tagIds = await this.ensureTags(parsed.suggested_tags);
 
+    // Resolve author: use provided author_id if valid, else fallback to system admin
+    const authorId = await this.resolveAuthorId(data.author_id);
+
     const post = await this.prisma.blogPost.create({
       data: {
         title: parsed.title,
@@ -68,7 +89,7 @@ export class AiBlogWorkerService {
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
         reading_time_min: readingTimeMin,
-        author_id: await this.getSystemUserId(),
+        author_id: authorId,
         category_id: data.category_id,
         featured_country_id: data.country_id,
         tags: tagIds.length
@@ -134,6 +155,15 @@ export class AiBlogWorkerService {
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  private async resolveAuthorId(authorId?: string): Promise<string> {
+    if (authorId) {
+      const user = await this.prisma.users.findUnique({ where: { id: authorId } });
+      if (user) return user.id;
+      this.logger.warn(`Author with id ${authorId} not found, falling back to system admin`);
+    }
+    return this.getSystemUserId();
+  }
 
   private async ensureTags(suggestedTags: string[]): Promise<string[]> {
     const tagIds: string[] = [];

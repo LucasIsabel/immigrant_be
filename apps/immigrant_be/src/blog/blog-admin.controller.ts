@@ -31,10 +31,13 @@ import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
 import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
+import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
+import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
 import { BlogPostListResponseDto } from './dto/blog-post-list-response.dto';
 import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
+import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
 import { AdminBlogQueryDto } from './dto/blog-query.dto';
 
 @ApiTags('Admin Blog')
@@ -139,5 +142,82 @@ export class BlogAdminController {
   })
   createTag(@Body() dto: CreateBlogTagDto) {
     return this.blogService.createTag(dto);
+  }
+
+  // ─── Authors ─────────────────────────────────────────────────────────────────
+
+  @Post('authors')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Criar autor',
+    description: 'Cria um novo autor do blog',
+  })
+  @ApiBody({ type: CreateBlogAuthorDto })
+  @ApiCreatedResponse({
+    description: 'Autor criado com sucesso',
+    type: BlogAuthorResponseDto,
+  })
+  createAuthor(@Body() dto: CreateBlogAuthorDto) {
+    return this.blogService.createAuthor(dto);
+  }
+
+  @Get('authors')
+  @ApiOperation({
+    summary: 'Listar autores',
+    description: 'Retorna todos os autores do blog',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Autores listados com sucesso',
+    type: [BlogAuthorResponseDto],
+  })
+  findAllAuthors() {
+    return this.blogService.findAllAuthors();
+  }
+
+  @Get('authors/:id')
+  @ApiOperation({
+    summary: 'Buscar autor por ID',
+    description: 'Retorna um autor pelo ID',
+  })
+  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiResponse({
+    status: 200,
+    description: 'Autor encontrado',
+    type: BlogAuthorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Autor não encontrado' })
+  findAuthorById(@Param('id') id: string) {
+    return this.blogService.findAuthorById(id);
+  }
+
+  @Patch('authors/:id')
+  @ApiOperation({
+    summary: 'Atualizar autor',
+    description: 'Atualiza dados de um autor existente',
+  })
+  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiBody({ type: UpdateBlogAuthorDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Autor atualizado com sucesso',
+    type: BlogAuthorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Autor não encontrado' })
+  updateAuthor(@Param('id') id: string, @Body() dto: UpdateBlogAuthorDto) {
+    return this.blogService.updateAuthor(id, dto);
+  }
+
+  @Delete('authors/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remover autor',
+    description: 'Remove um autor do blog. Posts com display_author_id apontando para este autor terão o vínculo removido (SetNull).',
+  })
+  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiNoContentResponse({ description: 'Autor removido com sucesso' })
+  @ApiNotFoundResponse({ description: 'Autor não encontrado' })
+  deleteAuthor(@Param('id') id: string) {
+    return this.blogService.deleteAuthor(id);
   }
 }

@@ -1,4 +1,6 @@
 export { AiModule } from './ai.module';
+export { PostComplexity } from './enums/post-complexity.enum';
+export { PoliticalTone } from './enums/political-tone.enum';
 export { GeminiBaseService } from './gemini-base.service';
 export {
   suggestionsSchema,

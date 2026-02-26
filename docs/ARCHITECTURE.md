@@ -178,11 +178,15 @@ Plans ─────────┬──── steps (JSON)
 
 ImmigrationVisaType ── VisaSteps (1:N) — por idioma
 
-Users ─────────────── BlogPost (1:N) — como autor
+Users ─────────────── BlogPost (1:N) — como autor (quem publicou)
+
+BlogAuthor ─────────── BlogPost (1:N) — display_author (autor exibido no post, opcional)
+Entidade independente: name, bio, avatar_url, website, twitter, linkedin
 
 BlogPost ──────────┬── BlogCategory (N:1)
                    ├── BlogPostTag (1:N) ──── BlogTag (N:M)
-                   └── Country (N:1, opcional) — país em destaque
+                   ├── Country (N:1, opcional) — país em destaque
+                   └── BlogAuthor (N:1, opcional) — display_author
 
 BlogPost status: DRAFT | PUBLISHED | ARCHIVED
 Slug e reading_time_min gerados automaticamente pelo Service
@@ -348,10 +352,10 @@ App Principal (API)                    Microservice
 
 ### Filas existentes
 
-| Fila            | Constante       | Jobs                    | Descrição                       |
-| --------------- | --------------- | ----------------------- | ------------------------------- |
-| `plan_queue`    | `PLAN_QUEUE`    | `process_create_plan`   | Geração de planos de imigração  |
-| `ai_blog_queue` | `AI_BLOG_QUEUE` | `generate_ai_blog_post` | Geração de posts de blog com IA |
+| Fila                  | Constante             | Jobs                     | Descrição                                    |
+| --------------------- | --------------------- | ------------------------ | -------------------------------------------- |
+| `plan_queue`          | `PLAN_QUEUE`          | `process_create_plan`    | Geração de planos de imigração               |
+| `ai_blog_queue`       | `AI_BLOG_QUEUE`       | `generate_ai_blog_post`  | Geração de posts de blog com IA              |
 | `ai_blog_image_queue` | `AI_BLOG_IMAGE_QUEUE` | `generate_ai_blog_image` | Geração assíncrona de imagem de capa do post |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
@@ -381,9 +385,13 @@ A fila `ai_blog_image_queue` é enfileirada após a criação do post (DRAFT), p
 | `/blog/posts/:slug`                  | Blog                | Público                             |
 | `/blog/categories`                   | Blog                | Público                             |
 | `/blog/tags`                         | Blog                | Público                             |
+| `/blog/authors`                      | Blog                | Público                             |
+| `/blog/authors/:id`                  | Blog                | Público                             |
 | `/admin/blog/posts`                  | Blog (admin)        | ADMIN                               |
 | `/admin/blog/categories`             | Blog (admin)        | ADMIN                               |
 | `/admin/blog/tags`                   | Blog (admin)        | ADMIN                               |
+| `/admin/blog/authors`                | Blog (admin)        | ADMIN                               |
+| `/admin/blog/authors/:id`            | Blog (admin)        | ADMIN                               |
 | `/admin/ai/blog/generate`            | AI Blog             | ADMIN                               |
 | `/admin/ai/blog/pending`             | AI Blog             | ADMIN                               |
 | `/admin/ai/blog/pending/:id/approve` | AI Blog             | ADMIN                               |

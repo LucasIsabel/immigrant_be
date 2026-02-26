@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
+import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
+import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 
 const POST_INCLUDE = {
   author: { select: { id: true, name: true, image: true } },
@@ -201,5 +203,48 @@ export class BlogRepository {
 
   async findTagById(id: string) {
     return this.prisma.blogTag.findUnique({ where: { id } });
+  }
+
+  // ─── Authors ─────────────────────────────────────────────────────────────────
+
+  async createAuthor(dto: CreateBlogAuthorDto) {
+    return this.prisma.blogAuthor.create({
+      data: {
+        name: dto.name,
+        bio: dto.bio ?? null,
+        avatar_url: dto.avatar_url ?? null,
+        website: dto.website ?? null,
+        twitter: dto.twitter ?? null,
+        linkedin: dto.linkedin ?? null,
+      },
+    });
+  }
+
+  async findAllAuthors() {
+    return this.prisma.blogAuthor.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async findAuthorById(id: string) {
+    return this.prisma.blogAuthor.findUnique({ where: { id } });
+  }
+
+  async updateAuthor(id: string, dto: UpdateBlogAuthorDto) {
+    return this.prisma.blogAuthor.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.bio !== undefined && { bio: dto.bio }),
+        ...(dto.avatar_url !== undefined && { avatar_url: dto.avatar_url }),
+        ...(dto.website !== undefined && { website: dto.website }),
+        ...(dto.twitter !== undefined && { twitter: dto.twitter }),
+        ...(dto.linkedin !== undefined && { linkedin: dto.linkedin }),
+      },
+    });
+  }
+
+  async deleteAuthor(id: string) {
+    return this.prisma.blogAuthor.delete({ where: { id } });
   }
 }

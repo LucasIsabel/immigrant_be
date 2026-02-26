@@ -8,6 +8,8 @@ import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
 import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
+import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
+import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 
 function slugify(text: string): string {
@@ -161,5 +163,33 @@ export class BlogService {
 
   async findAllTags() {
     return this.blogRepository.findAllTags();
+  }
+
+  // ─── Authors ─────────────────────────────────────────────────────────────────
+
+  async createAuthor(dto: CreateBlogAuthorDto) {
+    return this.blogRepository.createAuthor(dto);
+  }
+
+  async findAllAuthors() {
+    return this.blogRepository.findAllAuthors();
+  }
+
+  async findAuthorById(id: string) {
+    const author = await this.blogRepository.findAuthorById(id);
+    if (!author) {
+      throw new NotFoundException('Autor não encontrado');
+    }
+    return author;
+  }
+
+  async updateAuthor(id: string, dto: UpdateBlogAuthorDto) {
+    await this.findAuthorById(id);
+    return this.blogRepository.updateAuthor(id, dto);
+  }
+
+  async deleteAuthor(id: string) {
+    await this.findAuthorById(id);
+    return this.blogRepository.deleteAuthor(id);
   }
 }

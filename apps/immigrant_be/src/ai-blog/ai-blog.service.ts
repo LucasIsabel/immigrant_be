@@ -9,6 +9,7 @@ import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
 import { BlogService } from '../blog/blog.service';
 import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
+import { PostComplexity, PoliticalTone } from '@app/ai';
 
 @Injectable()
 export class AiBlogService {
@@ -26,6 +27,10 @@ export class AiBlogService {
     const job = await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
       country_id: dto.country_id,
       category_id: dto.category_id,
+      author_id: dto.author_id,
+      complexity: dto.complexity ?? PostComplexity.SIMPLE,
+      political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
+      custom_instructions: dto.custom_instructions,
     });
     this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
     return { job_id: job.id, message: 'Post gerado em fila. Verifique a fila de aprovação em instantes.' };
@@ -68,7 +73,15 @@ export class AiBlogService {
     const cronJob = await this.repository.createCronJob(dto);
 
     if (cronJob.is_active) {
-      const bullmqJobId = await this.registerRepeatableJob(cronJob.id, dto);
+      const bullmqJobId = await this.registerRepeatableJob(cronJob.id, {
+        country_id: dto.country_id,
+        category_id: dto.category_id,
+        cron_expr: dto.cron_expr,
+        author_id: dto.author_id,
+        complexity: dto.complexity,
+        political_tone: dto.political_tone,
+        custom_instructions: dto.custom_instructions,
+      });
       await this.repository.updateCronJob(cronJob.id, {}, bullmqJobId);
       cronJob.bullmq_job_id = bullmqJobId;
     }
@@ -91,12 +104,20 @@ export class AiBlogService {
     const newCronExpr = dto.cron_expr ?? existing.cron_expr;
     const newCountryId = dto.country_id ?? existing.country_id;
     const newCategoryId = dto.category_id ?? existing.category_id;
+    const newAuthorId = dto.author_id ?? existing.author_id ?? undefined;
+    const newComplexity = (dto.complexity ?? existing.complexity ?? PostComplexity.SIMPLE) as PostComplexity;
+    const newPoliticalTone = (dto.political_tone ?? existing.political_tone ?? PoliticalTone.NEUTRAL) as PoliticalTone;
+    const newCustomInstructions = dto.custom_instructions ?? existing.custom_instructions ?? undefined;
 
     if (newIsActive) {
       const bullmqJobId = await this.registerRepeatableJob(id, {
         country_id: newCountryId,
         category_id: newCategoryId,
         cron_expr: newCronExpr,
+        author_id: newAuthorId,
+        complexity: newComplexity,
+        political_tone: newPoliticalTone,
+        custom_instructions: newCustomInstructions,
       });
       return this.repository.updateCronJob(id, {}, bullmqJobId);
     }
@@ -119,11 +140,27 @@ export class AiBlogService {
 
   private async registerRepeatableJob(
     cronJobDbId: string,
-    dto: { country_id: string; category_id: string; cron_expr: string },
+    dto: {
+      country_id: string;
+      category_id: string;
+      cron_expr: string;
+      author_id?: string;
+      complexity?: PostComplexity;
+      political_tone?: PoliticalTone;
+      custom_instructions?: string;
+    },
   ): Promise<string> {
     const job = await this.aiBlogQueue.add(
       GENERATE_AI_BLOG_POST,
-      { country_id: dto.country_id, category_id: dto.category_id, cron_job_id: cronJobDbId },
+      {
+        country_id: dto.country_id,
+        category_id: dto.category_id,
+        cron_job_id: cronJobDbId,
+        author_id: dto.author_id,
+        complexity: dto.complexity ?? PostComplexity.SIMPLE,
+        political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
+        custom_instructions: dto.custom_instructions,
+      },
       { repeat: { pattern: dto.cron_expr } },
     );
     return job.id ?? `${GENERATE_AI_BLOG_POST}:${dto.cron_expr}`;
