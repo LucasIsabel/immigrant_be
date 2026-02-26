@@ -7,7 +7,9 @@ import { BlogRepository } from './blog.repository';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
+import { UpdateBlogCategoryDto } from './dto/update-blog-category.dto';
 import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
+import { UpdateBlogTagDto } from './dto/update-blog-tag.dto';
 import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
 import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
@@ -199,6 +201,19 @@ export class BlogService {
     return this.blogRepository.findAllCategories();
   }
 
+  async updateCategory(id: string, dto: UpdateBlogCategoryDto) {
+    const category = await this.blogRepository.findCategoryById(id);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+    const slug = dto.name ? slugify(dto.name) : undefined;
+    return this.blogRepository.updateCategory(id, { name: dto.name, slug });
+  }
+
+  async deleteCategory(id: string) {
+    const category = await this.blogRepository.findCategoryById(id);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+    return this.blogRepository.deleteCategory(id);
+  }
+
   // ─── Tags ─────────────────────────────────────────────────────────────────
 
   async createTag(dto: CreateBlogTagDto) {
@@ -212,6 +227,19 @@ export class BlogService {
 
   async findAllTags() {
     return this.blogRepository.findAllTags();
+  }
+
+  async updateTag(id: string, dto: UpdateBlogTagDto) {
+    const tag = await this.blogRepository.findTagById(id);
+    if (!tag) throw new NotFoundException('Tag não encontrada');
+    const slug = dto.name ? slugify(dto.name) : undefined;
+    return this.blogRepository.updateTag(id, { name: dto.name, slug });
+  }
+
+  async deleteTag(id: string) {
+    const tag = await this.blogRepository.findTagById(id);
+    if (!tag) throw new NotFoundException('Tag não encontrada');
+    return this.blogRepository.deleteTag(id);
   }
 
   // ─── Authors ─────────────────────────────────────────────────────────────────

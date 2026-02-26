@@ -185,6 +185,14 @@ export class BlogRepository {
     return this.prisma.blogCategory.findUnique({ where: { id } });
   }
 
+  async updateCategory(id: string, data: { name?: string; slug?: string }) {
+    return this.prisma.blogCategory.update({ where: { id }, data });
+  }
+
+  async deleteCategory(id: string) {
+    return this.prisma.blogCategory.delete({ where: { id } });
+  }
+
   // ─── Tags ─────────────────────────────────────────────────────────────────
 
   async createTag(name: string, slug: string) {
@@ -203,6 +211,14 @@ export class BlogRepository {
 
   async findTagById(id: string) {
     return this.prisma.blogTag.findUnique({ where: { id } });
+  }
+
+  async updateTag(id: string, data: { name?: string; slug?: string }) {
+    return this.prisma.blogTag.update({ where: { id }, data });
+  }
+
+  async deleteTag(id: string) {
+    return this.prisma.blogTag.delete({ where: { id } });
   }
 
   // ─── Authors ─────────────────────────────────────────────────────────────────

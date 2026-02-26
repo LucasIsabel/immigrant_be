@@ -34,7 +34,9 @@ import { BlogService } from './blog.service';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
+import { UpdateBlogCategoryDto } from './dto/update-blog-category.dto';
 import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
+import { UpdateBlogTagDto } from './dto/update-blog-tag.dto';
 import { CreateBlogAuthorDto } from './dto/create-blog-author.dto';
 import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
@@ -202,6 +204,36 @@ export class BlogAdminController {
     return this.blogService.createCategory(dto);
   }
 
+  @Patch('categories/:id')
+  @ApiOperation({
+    summary: 'Atualizar categoria',
+    description: 'Atualiza dados de uma categoria existente. Slug recalculado automaticamente pelo nome.',
+  })
+  @ApiParam({ name: 'id', description: 'ID da categoria', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiBody({ type: UpdateBlogCategoryDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Categoria atualizada com sucesso',
+    type: BlogCategoryResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  updateCategory(@Param('id') id: string, @Body() dto: UpdateBlogCategoryDto) {
+    return this.blogService.updateCategory(id, dto);
+  }
+
+  @Delete('categories/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remover categoria',
+    description: 'Remove permanentemente uma categoria do blog',
+  })
+  @ApiParam({ name: 'id', description: 'ID da categoria', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiNoContentResponse({ description: 'Categoria removida com sucesso' })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  deleteCategory(@Param('id') id: string) {
+    return this.blogService.deleteCategory(id);
+  }
+
   // ─── Tags ─────────────────────────────────────────────────────────────────
 
   @Post('tags')
@@ -217,6 +249,36 @@ export class BlogAdminController {
   })
   createTag(@Body() dto: CreateBlogTagDto) {
     return this.blogService.createTag(dto);
+  }
+
+  @Patch('tags/:id')
+  @ApiOperation({
+    summary: 'Atualizar tag',
+    description: 'Atualiza dados de uma tag existente. Slug recalculado automaticamente pelo nome.',
+  })
+  @ApiParam({ name: 'id', description: 'ID da tag', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiBody({ type: UpdateBlogTagDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tag atualizada com sucesso',
+    type: BlogTagResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Tag não encontrada' })
+  updateTag(@Param('id') id: string, @Body() dto: UpdateBlogTagDto) {
+    return this.blogService.updateTag(id, dto);
+  }
+
+  @Delete('tags/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remover tag',
+    description: 'Remove permanentemente uma tag do blog',
+  })
+  @ApiParam({ name: 'id', description: 'ID da tag', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiNoContentResponse({ description: 'Tag removida com sucesso' })
+  @ApiNotFoundResponse({ description: 'Tag não encontrada' })
+  deleteTag(@Param('id') id: string) {
+    return this.blogService.deleteTag(id);
   }
 
   // ─── Authors ─────────────────────────────────────────────────────────────────
