@@ -114,8 +114,7 @@ export class UserService {
   ): Promise<{ id: string }> {
     const selectedLanguage = language ?? 'en';
 
-    await this.userRepository.selectVisaType(user, plan_id, visa_type_id);
-
+    // Validate visa steps exist before updating the plan
     const visaSteps = await this.userRepository.getVisaStepsByRecommendation(
       visa_type_id,
       selectedLanguage,
@@ -127,6 +126,7 @@ export class UserService {
       );
     }
 
+    await this.userRepository.selectVisaType(user, plan_id, visa_type_id);
     await this.userRepository.updatePlanStepsRemaining(
       plan_id,
       visaSteps.steps,
