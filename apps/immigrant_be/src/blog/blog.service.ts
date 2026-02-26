@@ -197,8 +197,8 @@ export class BlogService {
       }
     }
 
-    const slug = dto.title ? slugify(dto.title) : undefined;
-    const readingTimeMin = dto.content ? calcReadingTime(dto.content) : undefined;
+    const slug = dto.slug ?? (dto.title ? slugify(dto.title) : undefined);
+    const readingTimeMin = dto.reading_time_min ?? (dto.content ? calcReadingTime(dto.content) : undefined);
 
     let publishedAt: Date | null | undefined;
     if (dto.status === 'PUBLISHED' && !existing.published_at) {

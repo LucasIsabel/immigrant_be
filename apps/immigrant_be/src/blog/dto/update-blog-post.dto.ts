@@ -1,6 +1,8 @@
 import {
   IsArray,
+  IsInt,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
 } from 'class-validator';
@@ -70,6 +72,23 @@ export class UpdateBlogPostDto {
   @IsOptional()
   @IsUUID()
   featured_country_id?: string;
+
+  @ApiProperty({
+    description: 'Slug do post',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @ApiProperty({
+    description: 'Tempo de leitura em minutos',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  reading_time_min?: number;
 
   @ApiProperty({
     description: 'IDs das tags do post (substitui todas as tags atuais)',
