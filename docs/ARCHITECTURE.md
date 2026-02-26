@@ -8,23 +8,24 @@
 
 ## 1. Visão Geral
 
-O **Immigrant BE** é um backend construído com **NestJS** em formato **monorepo**, composto por duas aplicações e quatro bibliotecas compartilhadas. O sistema oferece funcionalidades de imigração com sugestões alimentadas por IA, controle de acesso baseado em roles (RBAC) e processamento assíncrono de jobs.
+O **Immigrant BE** é um backend construído com **NestJS** em formato **monorepo**, composto por duas aplicações e quatro bibliotecas compartilhadas. O sistema oferece funcionalidades de imigração com sugestões alimentadas por IA, controle de acesso baseado em roles (RBAC), processamento assíncrono de jobs e armazenamento de arquivos via Cloudflare R2.
 
 ### Stack Principal
 
-| Camada | Tecnologia |
-|---|---|
-| Framework | NestJS 11 |
-| Linguagem | TypeScript (ES2023, NodeNext) |
-| ORM | Prisma 6 |
-| Banco de dados | PostgreSQL 16 (com pgvector) |
-| Cache/Fila | Redis 7 + BullMQ |
-| Autenticação | better-auth (sessão via cookie) |
-| IA | Google Gemini API |
-| Documentação | Swagger (OpenAPI) |
-| Testes | Jest |
-| Runtime | Node.js 20 |
-| Package Manager | pnpm |
+| Camada                    | Tecnologia                      |
+| ------------------------- | ------------------------------- |
+| Framework                 | NestJS 11                       |
+| Linguagem                 | TypeScript (ES2023, NodeNext)   |
+| ORM                       | Prisma 6                        |
+| Banco de dados            | PostgreSQL 16 (com pgvector)    |
+| Cache/Fila                | Redis 7 + BullMQ                |
+| Autenticação              | better-auth (sessão via cookie) |
+| IA                        | Google Gemini API               |
+| Armazenamento de arquivos | Cloudflare R2 (S3-compatible)   |
+| Documentação              | Swagger (OpenAPI)               |
+| Testes                    | Jest                            |
+| Runtime                   | Node.js 20                      |
+| Package Manager           | pnpm                            |
 
 ---
 
@@ -46,6 +47,7 @@ immigrant_be/
 │   │   │   ├── visa-steps/     # Módulo de etapas de visto
 │   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
 │   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
+│   │   │   ├── storage/        # Módulo de upload de arquivos para R2
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -63,6 +65,7 @@ immigrant_be/
 │   ├── database/               # PrismaService (módulo global)
 │   ├── ai/                     # GeminiBaseService compartilhado
 │   └── email/                  # Envio de emails via Resend
+│   └── storage/                # StorageService (Cloudflare R2 via S3)
 │
 ├── prisma/
 │   ├── schema.prisma           # Schema do banco
@@ -80,12 +83,13 @@ immigrant_be/
 
 ### Path Aliases (tsconfig.json)
 
-| Alias | Caminho Real |
-|---|---|
-| `@app/ai/*` | `libs/ai/src/*` |
-| `@app/config/*` | `libs/config/src/*` |
+| Alias             | Caminho Real          |
+| ----------------- | --------------------- |
+| `@app/ai/*`       | `libs/ai/src/*`       |
+| `@app/config/*`   | `libs/config/src/*`   |
 | `@app/database/*` | `libs/database/src/*` |
-| `@app/email/*` | `libs/email/src/*` |
+| `@app/email/*`    | `libs/email/src/*`    |
+| `@app/storage/*`  | `libs/storage/src/*`  |
 
 ---
 
@@ -107,12 +111,12 @@ módulo/
 
 ### Responsabilidades de cada camada
 
-| Camada | Responsabilidade | NÃO deve fazer |
-|---|---|---|
+| Camada         | Responsabilidade                                                        | NÃO deve fazer                                      |
+| -------------- | ----------------------------------------------------------------------- | --------------------------------------------------- |
 | **Controller** | Receber HTTP, validar input via DTOs, chamar Service, retornar response | Conter lógica de negócio, acessar banco diretamente |
-| **Service** | Orquestrar lógica de negócio, aplicar regras, chamar Repository | Acessar PrismaClient diretamente, tratar HTTP |
-| **Repository** | Executar queries Prisma, mapear dados | Conter lógica de negócio, lançar HTTP exceptions |
-| **DTO** | Validar e tipar dados de entrada/saída | Conter lógica |
+| **Service**    | Orquestrar lógica de negócio, aplicar regras, chamar Repository         | Acessar PrismaClient diretamente, tratar HTTP       |
+| **Repository** | Executar queries Prisma, mapear dados                                   | Conter lógica de negócio, lançar HTTP exceptions    |
+| **DTO**        | Validar e tipar dados de entrada/saída                                  | Conter lógica                                       |
 
 ---
 
@@ -248,9 +252,11 @@ apps/microservice/src/ai-blog/
 
 - Modelo de geração: `gemini-2.5-flash-lite`
 - Modelo de embeddings: `gemini-embedding-001`
+- Modelo de geração de imagens: `gemini-2.0-flash-preview-image-generation`
 - **Herança**: Ambos os apps estendem `GeminiBaseService` de `@app/ai` — sem código duplicado de inicialização, parsing ou embeddings
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
+- `generateImage(prompt)` em `GeminiBaseService` — retorna `Buffer | null` com dados base64 decodificados
 
 ---
 
@@ -263,17 +269,55 @@ apps/microservice/src/ai-blog/
 
 ### Exportações
 
-| Export | Tipo | Descrição |
-|---|---|---|
-| `EmailModule` | Módulo NestJS | Módulo importável que registra `EmailService` |
-| `EmailService` | Service | Serviço injetável para envio de emails via Resend |
-| `sendEmail` | Função standalone | Envio de emails fora do contexto de DI do NestJS |
-| `buildVerificationEmail` | Função | Gera template HTML de verificação de email |
-| `buildResetPasswordEmail` | Função | Gera template HTML de reset de senha |
+| Export                    | Tipo              | Descrição                                         |
+| ------------------------- | ----------------- | ------------------------------------------------- |
+| `EmailModule`             | Módulo NestJS     | Módulo importável que registra `EmailService`     |
+| `EmailService`            | Service           | Serviço injetável para envio de emails via Resend |
+| `sendEmail`               | Função standalone | Envio de emails fora do contexto de DI do NestJS  |
+| `buildVerificationEmail`  | Função            | Gera template HTML de verificação de email        |
+| `buildResetPasswordEmail` | Função            | Gera template HTML de reset de senha              |
 
 ---
 
-## 7. Processamento Assíncrono (BullMQ)
+## 7. Armazenamento de Arquivos (Cloudflare R2)
+
+### Arquitetura
+
+```
+libs/storage/
+└── storage.service.ts        # StorageService: uploadFile(), deleteFile()
+                              # Usa @aws-sdk/client-s3 — S3-compatible API
+
+apps/immigrant_be/src/storage/
+├── storage.module.ts         # Importa StorageLibModule de @app/storage
+├── storage.controller.ts     # POST /api/v1/storage/upload
+└── dto/
+    └── upload-response.dto.ts
+```
+
+### Endpoint de Upload
+
+- `POST /api/v1/storage/upload` — `multipart/form-data`, campo `file`
+- Query param `folder` (default: `uploads`) — determina a pasta no bucket
+- Autenticado (sessão ativa, sem `@AllowAnonymous`)
+- Tamanho máximo: **10 MB**
+- Tipos permitidos: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `application/pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`
+- Resposta: `{ url, key, size, mimeType, originalName }`
+- Nomes de arquivo gerados com UUID para evitar colisão e path traversal
+
+### URL Pública
+
+```
+${CLOUDFLARE_R2_PUBLIC_URL}/${folder}/${uuid}.${ext}
+```
+
+### AI Blog Cover Images
+
+O `AiBlogWorkerService` injeta `StorageService` e, após gerar o conteúdo do post, chama `GeminiBaseService.generateImage()` para criar a imagem de capa. Se bem-sucedido, faz upload para o folder `blog/` e preenche `cover_image_url` no `BlogPost`. Falhas são logadas como `warn` — o post é criado sem imagem de capa em vez de abortar.
+
+---
+
+## 8. Processamento Assíncrono (BullMQ)
 
 ### Arquitetura
 
@@ -294,9 +338,9 @@ App Principal (API)                    Microservice
 
 ### Filas existentes
 
-| Fila | Constante | Jobs | Descrição |
-|---|---|---|---|
-| `plan_queue` | `PLAN_QUEUE` | `process_create_plan` | Geração de planos de imigração |
+| Fila            | Constante       | Jobs                    | Descrição                       |
+| --------------- | --------------- | ----------------------- | ------------------------------- |
+| `plan_queue`    | `PLAN_QUEUE`    | `process_create_plan`   | Geração de planos de imigração  |
 | `ai_blog_queue` | `AI_BLOG_QUEUE` | `generate_ai_blog_post` | Geração de posts de blog com IA |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
@@ -307,31 +351,33 @@ A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configur
 
 ### Prefixo global: `/api/v1`
 
-| Prefixo | Módulo | Acesso |
-|---|---|---|
-| `/auth/*` | better-auth | Público |
-| `/users/plan` | Users | Autenticado |
-| `/admin/users` | Users (admin) | ADMIN |
-| `/admin/roles` | Roles | ADMIN |
-| `/countries` | Countries | Misto (CRUD admin, leitura pública) |
-| `/immigration-visa-types` | ImmigrationVisaType | Misto |
-| `/visa-steps` | VisaSteps | Misto |
-| `/system/suggestions` | System | Público |
-| `/system/visa-recommendation` | System | Autenticado |
-| `/system/sse` | System | Autenticado |
-| `/blog/posts` | Blog | Público |
-| `/blog/posts/:slug` | Blog | Público |
-| `/blog/categories` | Blog | Público |
-| `/blog/tags` | Blog | Público |
-| `/admin/blog/posts` | Blog (admin) | ADMIN |
-| `/admin/blog/categories` | Blog (admin) | ADMIN |
-| `/admin/blog/tags` | Blog (admin) | ADMIN |
-| `/admin/ai/blog/generate` | AI Blog | ADMIN |
-| `/admin/ai/blog/pending` | AI Blog | ADMIN |
-| `/admin/ai/blog/pending/:id/approve` | AI Blog | ADMIN |
-| `/admin/ai/blog/cron` | AI Blog | ADMIN |
-| `/health` | Health | Público |
-| `/health/ready` | Health | Público |
+| Prefixo                              | Módulo              | Acesso                              |
+| ------------------------------------ | ------------------- | ----------------------------------- |
+| `/auth/*`                            | better-auth         | Público                             |
+| `/users/plan`                        | Users               | Autenticado                         |
+| `/admin/users`                       | Users (admin)       | ADMIN                               |
+| `/admin/roles`                       | Roles               | ADMIN                               |
+| `/countries`                         | Countries           | Misto (CRUD admin, leitura pública) |
+| `/immigration-visa-types`            | ImmigrationVisaType | Misto                               |
+| `/visa-steps`                        | VisaSteps           | Misto                               |
+| `/system/suggestions`                | System              | Público                             |
+| `/system/visa-recommendation`        | System              | Autenticado                         |
+| `/system/sse`                        | System              | Autenticado                         |
+| `/blog/posts`                        | Blog                | Público                             |
+| `/blog/posts/admin`                  | Blog (admin inline) | ADMIN                               |
+| `/blog/posts/:slug`                  | Blog                | Público                             |
+| `/blog/categories`                   | Blog                | Público                             |
+| `/blog/tags`                         | Blog                | Público                             |
+| `/admin/blog/posts`                  | Blog (admin)        | ADMIN                               |
+| `/admin/blog/categories`             | Blog (admin)        | ADMIN                               |
+| `/admin/blog/tags`                   | Blog (admin)        | ADMIN                               |
+| `/admin/ai/blog/generate`            | AI Blog             | ADMIN                               |
+| `/admin/ai/blog/pending`             | AI Blog             | ADMIN                               |
+| `/admin/ai/blog/pending/:id/approve` | AI Blog             | ADMIN                               |
+| `/admin/ai/blog/cron`                | AI Blog             | ADMIN                               |
+| `/storage/upload`                    | Storage             | Autenticado                         |
+| `/health`                            | Health              | Público                             |
+| `/health/ready`                      | Health              | Público                             |
 
 ### Convenções de endpoints
 
@@ -344,13 +390,13 @@ A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configur
 
 ## 9. Middleware Global
 
-| Ordem | Componente | Descrição |
-|---|---|---|
-| 1 | **CORS** | Múltiplas origens, credentials: true |
-| 2 | **ValidationPipe** | whitelist, transform, forbidNonWhitelisted |
-| 3 | **ThrottlerGuard** | Rate limiting (100/60s) |
-| 4 | **RolesGuard** | Verifica sessão + roles no banco |
-| 5 | **AllExceptionsFilter** | Padroniza respostas de erro com timestamp |
+| Ordem | Componente              | Descrição                                  |
+| ----- | ----------------------- | ------------------------------------------ |
+| 1     | **CORS**                | Múltiplas origens, credentials: true       |
+| 2     | **ValidationPipe**      | whitelist, transform, forbidNonWhitelisted |
+| 3     | **ThrottlerGuard**      | Rate limiting (100/60s)                    |
+| 4     | **RolesGuard**          | Verifica sessão + roles no banco           |
+| 5     | **AllExceptionsFilter** | Padroniza respostas de erro com timestamp  |
 
 ---
 
@@ -358,11 +404,11 @@ A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configur
 
 ### Estrutura
 
-| Tipo | Localização | Comando |
-|---|---|---|
-| Unitários | `*.spec.ts` junto ao arquivo | `pnpm test` |
-| E2E | `apps/*/test/*.e2e-spec.ts` | `pnpm test:e2e` |
-| Coverage | - | `pnpm test:cov` |
+| Tipo      | Localização                  | Comando         |
+| --------- | ---------------------------- | --------------- |
+| Unitários | `*.spec.ts` junto ao arquivo | `pnpm test`     |
+| E2E       | `apps/*/test/*.e2e-spec.ts`  | `pnpm test:e2e` |
+| Coverage  | -                            | `pnpm test:cov` |
 
 ### Padrões de teste
 
@@ -377,23 +423,24 @@ A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configur
 
 ### Dockerfile (Multi-stage)
 
-| Stage | Propósito |
-|---|---|
-| `deps` | Instala dependências com pnpm |
-| `build` | Gera Prisma client + compila TypeScript |
-| `production` | App principal — porta 3000 |
-| `microservice` | Processador de jobs — porta 6000 |
+| Stage          | Propósito                               |
+| -------------- | --------------------------------------- |
+| `deps`         | Instala dependências com pnpm           |
+| `build`        | Gera Prisma client + compila TypeScript |
+| `production`   | App principal — porta 3000              |
+| `microservice` | Processador de jobs — porta 6000        |
 
 ### Docker Compose (desenvolvimento)
 
-| Serviço | Porta | Imagem |
-|---|---|---|
-| PostgreSQL | 5434 | pgvector/pgvector:pg16 |
-| Redis | 6379 | redis:7-alpine |
+| Serviço    | Porta | Imagem                 |
+| ---------- | ----- | ---------------------- |
+| PostgreSQL | 5434  | pgvector/pgvector:pg16 |
+| Redis      | 6379  | redis:7-alpine         |
 
 ### CI/CD (GitHub Actions)
 
 Pipeline sequencial: **Lint → Test → Build**
+
 - Trigger: push/PR para `main`
 - Node 20 + pnpm
 - Services: PostgreSQL + Redis no runner
@@ -411,28 +458,33 @@ Pipeline sequencial: **Lint → Test → Build**
 
 ## 13. Variáveis de Ambiente Requeridas
 
-| Variável | Descrição |
-|---|---|
-| `DATABASE_URL` | Connection string PostgreSQL |
-| `PRIVATE_KEY` | Chave privada (base64) para auth |
-| `GEMINI_API_KEY` | API key do Google Gemini |
-| `NODE_ENV` | development / production / test |
-| `PORT_IMMIGRANT` | Porta da API (default: 3000) |
-| `PORT_MICROSERVICE` | Porta do microservice (default: 6000) |
-| `REDIS_HOST` | Host do Redis |
-| `REDIS_PORT` | Porta do Redis |
-| `REDIS_USER` | Usuário Redis (opcional) |
-| `REDIS_PASSWORD` | Senha Redis |
-| `CORS_ORIGINS` | Origens permitidas (separadas por vírgula) |
-| `RESEND_API_KEY` | Chave da API do Resend para envio de emails (obrigatória) |
-| `FRONTEND_URL` | URL base do frontend para links nos emails (default: `http://localhost:3001`) |
-| `EMAIL_FROM` | Endereço remetente dos emails (default: `ImmigrantMatch <onboarding@resend.dev>`) |
+| Variável                          | Descrição                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `DATABASE_URL`                    | Connection string PostgreSQL                                                      |
+| `PRIVATE_KEY`                     | Chave privada (base64) para auth                                                  |
+| `GEMINI_API_KEY`                  | API key do Google Gemini                                                          |
+| `NODE_ENV`                        | development / production / test                                                   |
+| `PORT_IMMIGRANT`                  | Porta da API (default: 3000)                                                      |
+| `PORT_MICROSERVICE`               | Porta do microservice (default: 6000)                                             |
+| `REDIS_HOST`                      | Host do Redis                                                                     |
+| `REDIS_PORT`                      | Porta do Redis                                                                    |
+| `REDIS_USER`                      | Usuário Redis (opcional)                                                          |
+| `REDIS_PASSWORD`                  | Senha Redis                                                                       |
+| `CORS_ORIGINS`                    | Origens permitidas (separadas por vírgula)                                        |
+| `RESEND_API_KEY`                  | Chave da API do Resend para envio de emails (obrigatória)                         |
+| `FRONTEND_URL`                    | URL base do frontend para links nos emails (default: `http://localhost:3001`)     |
+| `EMAIL_FROM`                      | Endereço remetente dos emails (default: `ImmigrantMatch <onboarding@resend.dev>`) |
+| `CLOUDFLARE_R2_ACCESS_KEY_ID`     | Access Key ID do token S3 do R2                                                   |
+| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Secret Access Key do token S3 do R2                                               |
+| `CLOUDFLARE_R2_ACCOUNT_ID`        | Account ID da conta Cloudflare                                                    |
+| `CLOUDFLARE_R2_BUCKET_NAME`       | Nome do bucket R2 (ex: `immigrant`)                                               |
+| `CLOUDFLARE_R2_PUBLIC_URL`        | URL pública do bucket R2                                                          |
 
 ---
 
 ## 14. Regras para Alteração da Arquitetura
 
-> **Estas regras são obrigatórias para todos os agentes e desenvolvedores.**
+**Estas regras são obrigatórias para todos os agentes e desenvolvedores.**
 
 1. **Novo módulo de feature**: Adicionar na seção 2 (Estrutura) e na seção 8 (Rotas). Seguir o padrão Controller → Service → Repository → Prisma da seção 3.
 

@@ -21,5 +21,6 @@ export {
 } from './schemas/blog-post.schema';
 export {
   buildBlogPostPrompt,
+  buildBlogCoverImagePrompt,
   type RssNewsItem,
 } from './prompts/blog-post.prompt';

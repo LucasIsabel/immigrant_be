@@ -5,7 +5,10 @@ import { AiBlogRepository } from './ai-blog.repository';
 import { GenerateAiBlogPostDto } from './dto/generate-ai-blog-post.dto';
 import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
+import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
+import { BlogService } from '../blog/blog.service';
 import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
+import { BlogPostStatus } from '../../../../generated/prisma';
 
 @Injectable()
 export class AiBlogService {
@@ -13,6 +16,7 @@ export class AiBlogService {
 
   constructor(
     private readonly repository: AiBlogRepository,
+    private readonly blogService: BlogService,
     @InjectQueue(AI_BLOG_QUEUE) private readonly aiBlogQueue: Queue,
   ) {}
 
@@ -43,6 +47,15 @@ export class AiBlogService {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
     return this.repository.deletePost(id);
+  }
+
+  async updatePendingPost(id: string, dto: UpdateBlogPostDto) {
+    const post = await this.repository.findPostById(id);
+    if (!post) throw new NotFoundException('Post não encontrado');
+    if (!post.is_ai_generated || post.status !== BlogPostStatus.DRAFT) {
+      throw new NotFoundException('Post não está na fila de aprovação');
+    }
+    return this.blogService.updatePost(id, dto);
   }
 
   // ─── Cron Jobs ────────────────────────────────────────────────────────────

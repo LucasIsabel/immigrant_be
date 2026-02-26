@@ -28,6 +28,7 @@ import { GenerateAiBlogPostDto } from './dto/generate-ai-blog-post.dto';
 import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
 import { AiBlogCronResponseDto } from './dto/ai-blog-cron-response.dto';
+import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
 
 @ApiTags('AI Blog')
 @Controller('admin/ai/blog')
@@ -74,6 +75,18 @@ export class AiBlogController {
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
   approvePost(@Param('id') id: string) {
     return this.aiBlogService.approvePost(id);
+  }
+
+  @Patch('pending/:id')
+  @ApiOperation({
+    summary: 'Editar post pendente de aprovação',
+    description: 'Atualiza campos de um post DRAFT gerado por IA antes da aprovação',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiResponse({ status: 200, description: 'Post atualizado com sucesso' })
+  @ApiNotFoundResponse({ description: 'Post não encontrado ou não está em DRAFT' })
+  updatePendingPost(@Param('id') id: string, @Body() dto: UpdateBlogPostDto) {
+    return this.aiBlogService.updatePendingPost(id, dto);
   }
 
   @Delete('pending/:id')

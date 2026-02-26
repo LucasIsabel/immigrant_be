@@ -90,6 +90,33 @@ export class GeminiBaseService {
     return this.model.generateContent(prompt);
   }
 
+  async generateImage(prompt: string): Promise<Buffer | null> {
+    try {
+      const imageModel = this.genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash-preview-image-generation',
+      });
+
+      const response = await imageModel.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['IMAGE'] } as any,
+      });
+
+      const imagePart = response.response.candidates?.[0]?.content.parts.find(
+        (p) => p.inlineData?.mimeType?.startsWith('image/'),
+      );
+
+      if (!imagePart?.inlineData) return null;
+
+      return Buffer.from(imagePart.inlineData.data, 'base64');
+    } catch (error) {
+      this.logger.error(
+        'Error generating image',
+        error instanceof Error ? error.stack : undefined,
+      );
+      return null;
+    }
+  }
+
   normalizeEmbedding(vec: number[]): number[] {
     const norm = Math.sqrt(vec.reduce((sum, val) => sum + val ** 2, 0));
     return vec.map((v) => v / norm);

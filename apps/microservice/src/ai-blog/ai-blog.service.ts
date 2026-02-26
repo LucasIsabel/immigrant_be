@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { GeminiBaseService } from '@app/ai';
-import {
-  buildBlogPostPrompt,
-  blogPostAiSchema,
-  type RssNewsItem,
-} from '@app/ai';
+import { GeminiBaseService, buildBlogPostPrompt, buildBlogCoverImagePrompt, blogPostAiSchema, type RssNewsItem } from '@app/ai';
+import { StorageService } from '@app/storage';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -23,6 +19,7 @@ export class AiBlogWorkerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gemini: GeminiBaseService,
+    private readonly storage: StorageService,
   ) {}
 
   async generatePost(data: GenerateBlogPostJobData): Promise<void> {
@@ -60,12 +57,31 @@ export class AiBlogWorkerService {
     // Find or create tags from AI suggestions
     const tagIds = await this.ensureTags(parsed.suggested_tags);
 
+    // Generate cover image
+    let coverImageUrl: string | undefined;
+    try {
+      const imagePrompt = buildBlogCoverImagePrompt(parsed.title, country.name);
+      const imageBuffer = await this.gemini.generateImage(imagePrompt);
+      if (imageBuffer) {
+        const { url } = await this.storage.uploadFile(
+          imageBuffer,
+          `${slug}.jpg`,
+          'image/jpeg',
+          'blog',
+        );
+        coverImageUrl = url;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate cover image: ${err}`);
+    }
+
     await this.prisma.blogPost.create({
       data: {
         title: parsed.title,
         slug,
         excerpt: parsed.excerpt,
         content: parsed.content,
+        cover_image_url: coverImageUrl,
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
         reading_time_min: readingTimeMin,

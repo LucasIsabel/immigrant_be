@@ -5,14 +5,19 @@ import {
   ApiResponse,
   ApiParam,
   ApiNotFoundResponse,
+  ApiCookieAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { BlogService } from './blog.service';
-import { BlogQueryDto } from './dto/blog-query.dto';
+import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
 import { BlogPostListResponseDto } from './dto/blog-post-list-response.dto';
 import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @ApiTags('Blog')
 @Controller('blog')
@@ -33,6 +38,25 @@ export class BlogController {
   })
   findPublishedPosts(@Query() query: BlogQueryDto) {
     return this.blogService.findPublishedPosts(query);
+  }
+
+  @Get('posts/admin')
+  @Roles(UserRole.ADMIN)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Listar todos os posts (admin)',
+    description:
+      'Retorna todos os posts independente do status, com filtros opcionais',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Posts listados com sucesso',
+    type: BlogPostListResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Requer role de administrador' })
+  findAdminPosts(@Query() query: AdminBlogQueryDto) {
+    return this.blogService.findAdminPosts(query);
   }
 
   @Get('posts/:slug')

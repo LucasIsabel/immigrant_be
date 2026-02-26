@@ -1,3 +1,7 @@
+export function buildBlogCoverImagePrompt(title: string, countryName: string): string {
+  return `Generate a professional, high-quality editorial blog cover image for an article titled "${title}" about immigration to ${countryName}. Wide landscape format (16:9), photorealistic, cinematic lighting, no text overlays, no people's faces visible, suitable for a professional blog header.`;
+}
+
 export interface RssNewsItem {
   title: string;
   description?: string;

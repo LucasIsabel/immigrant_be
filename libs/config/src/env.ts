@@ -17,6 +17,11 @@ export const envSchema = zod.object({
   RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
   FRONTEND_URL: zod.string().default('http://localhost:3001'),
   EMAIL_FROM: zod.string().default('ImmigrantMatch <onboarding@resend.dev>'),
+  CLOUDFLARE_R2_ACCESS_KEY_ID: zod.string().min(1),
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: zod.string().min(1),
+  CLOUDFLARE_R2_ACCOUNT_ID: zod.string().min(1),
+  CLOUDFLARE_R2_BUCKET_NAME: zod.string().min(1),
+  CLOUDFLARE_R2_PUBLIC_URL: zod.string().url(),
 });
 
 export const env = envSchema.parse(process.env);

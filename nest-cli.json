@@ -31,12 +31,12 @@
       "sourceRoot": "libs/ai/src",
       "compilerOptions": { "tsConfigPath": "libs/ai/tsconfig.lib.json" }
     },
-    "email": {
+    "storage": {
       "type": "library",
-      "root": "libs/email",
+      "root": "libs/storage",
       "entryFile": "index",
-      "sourceRoot": "libs/email/src",
-      "compilerOptions": { "tsConfigPath": "libs/email/tsconfig.lib.json" }
+      "sourceRoot": "libs/storage/src",
+      "compilerOptions": { "tsConfigPath": "libs/storage/tsconfig.lib.json" }
     },
     "immigrant_be": {
       "type": "application",
