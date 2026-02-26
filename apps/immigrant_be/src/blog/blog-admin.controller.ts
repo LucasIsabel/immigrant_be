@@ -25,7 +25,7 @@ import {
   ApiForbiddenResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Session } from '@thallesp/nestjs-better-auth';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -171,15 +171,21 @@ export class BlogAdminController {
   @ApiParam({ name: 'id', description: 'ID do post' })
   @ApiAcceptedResponse({ description: 'Jobs enfileirados com sucesso' })
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
-  async enqueueTranslation(@Param('id') id: string) {
+  async enqueueTranslation(@Param('id') id: string, @Session() session: UserSession) {
     // Validate post exists
     await this.blogService.getPostTranslations(id);
 
     const locales = ['pt', 'es'] as const;
+    const requestedByUserId = session?.user?.id;
+
     await this.translationQueue.addBulk(
       locales.map((locale) => ({
         name: TRANSLATE_BLOG_POST,
-        data: { postId: id, targetLocale: locale },
+        data: {
+          postId: id,
+          targetLocale: locale,
+          requestedByUserId: requestedByUserId ?? undefined,
+        },
         opts: { removeOnComplete: 10, removeOnFail: 5 },
       })),
     );

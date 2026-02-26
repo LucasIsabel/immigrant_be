@@ -4,6 +4,7 @@ import { DatabaseModule } from '@app/database';
 import { AiModule } from '@app/ai';
 import { BullMQConfigModule } from '@app/config/bull.module';
 import { BLOG_TRANSLATION_QUEUE } from '@app/config/constants';
+import { EventsModule } from '../events/events.module';
 import { BlogTranslationConsumer } from './blog-translation.consumer';
 import { BlogTranslationWorkerService } from './blog-translation.service';
 import { BlogTranslationCronService } from './blog-translation-cron.service';
@@ -13,6 +14,7 @@ import { BlogTranslationCronService } from './blog-translation-cron.service';
     DatabaseModule,
     AiModule,
     BullMQConfigModule,
+    EventsModule,
     BullModule.registerQueue({ name: BLOG_TRANSLATION_QUEUE }),
   ],
   providers: [

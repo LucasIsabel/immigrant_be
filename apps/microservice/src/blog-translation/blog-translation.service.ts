@@ -13,6 +13,7 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export interface TranslatePostJobData {
   postId: string;
   targetLocale: SupportedLocale;
+  requestedByUserId?: string;
 }
 
 export interface PendingTranslation {

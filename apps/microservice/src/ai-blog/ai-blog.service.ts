@@ -23,6 +23,8 @@ export interface GenerateBlogPostJobData {
   complexity?: PostComplexity;
   political_tone?: PoliticalTone;
   custom_instructions?: string;
+  /** User who triggered generation (for SSE notification) */
+  requestedByUserId?: string;
 }
 
 @Injectable()
@@ -108,6 +110,7 @@ export class AiBlogWorkerService {
       slug: post.slug,
       title: post.title,
       countryName: country.name,
+      requestedByUserId: data.requestedByUserId,
     });
 
     // Update last_run_at on cron job if triggered by one

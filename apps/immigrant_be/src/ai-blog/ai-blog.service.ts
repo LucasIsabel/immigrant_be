@@ -24,7 +24,7 @@ export class AiBlogService {
 
   // ─── Generate ─────────────────────────────────────────────────────────────
 
-  async enqueueGeneration(dto: GenerateAiBlogPostDto) {
+  async enqueueGeneration(dto: GenerateAiBlogPostDto, requestedByUserId?: string) {
     const job = await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
       country_id: dto.country_id,
       category_id: dto.category_id,
@@ -33,6 +33,7 @@ export class AiBlogService {
       complexity: dto.complexity ?? PostComplexity.SIMPLE,
       political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
       custom_instructions: dto.custom_instructions,
+      requestedByUserId: requestedByUserId ?? undefined,
     });
     this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
     return { job_id: job.id, message: 'Post gerado em fila. Verifique a fila de aprovação em instantes.' };
@@ -58,13 +59,16 @@ export class AiBlogService {
 
   // ─── Refinement ────────────────────────────────────────────────────────────
 
-  async enqueueRefinement(id: string) {
+  async enqueueRefinement(id: string, requestedByUserId?: string) {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
     if (!post.is_ai_generated || post.status !== BlogPostStatus.DRAFT) {
       throw new NotFoundException('Post deve estar em DRAFT e ser gerado por IA para refinamento');
     }
-    const job = await this.aiBlogImageQueue.add(REFINE_AI_BLOG_POST, { postId: id });
+    const job = await this.aiBlogImageQueue.add(REFINE_AI_BLOG_POST, {
+      postId: id,
+      requestedByUserId: requestedByUserId ?? undefined,
+    });
     this.logger.log(`Enqueued AI blog post refinement job: ${job.id} for post ${id}`);
     return { job_id: job.id, message: 'Refinamento enfileirado. As imagens serão geradas em breve.' };
   }

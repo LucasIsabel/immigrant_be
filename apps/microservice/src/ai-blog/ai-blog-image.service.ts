@@ -8,6 +8,8 @@ export interface GenerateBlogImageJobData {
   slug: string;
   title: string;
   countryName: string;
+  /** User who triggered (for SSE notification) */
+  requestedByUserId?: string;
 }
 
 @Injectable()

@@ -264,6 +264,44 @@ export class SystemRepository {
     } as EventResponseDto;
   }
 
+  /**
+   * Fetches the first pending event for the user and marks it as delivered
+   * in a single transaction to avoid duplicate delivery across SSE connections.
+   */
+  async getAndConsumeNextEvent(userId: string): Promise<EventResponseDto | null> {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const event = await tx.events.findFirst({
+        where: {
+          userId,
+          status: NotificationStatus.pending,
+        },
+      });
+
+      if (!event) return null;
+
+      await tx.events.update({
+        where: { id: event.id },
+        data: { status: NotificationStatus.delivered },
+      });
+
+      return event;
+    });
+
+    if (!result) return null;
+
+    return {
+      id: result.id,
+      type: result.type,
+      message: result.message,
+      title: result.title,
+      status: NotificationStatus.delivered,
+      user_id: result.userId,
+      created_at: result.createdAt,
+      updated_at: result.updatedAt,
+      payload: result.payload,
+    } as EventResponseDto;
+  }
+
   async createVisaTypeRecommendation(
     country_id: string,
     gemini_response: VisaRecommendationType,

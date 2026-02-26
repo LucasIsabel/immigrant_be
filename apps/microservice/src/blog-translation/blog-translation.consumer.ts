@@ -5,6 +5,7 @@ import {
   BlogTranslationWorkerService,
   TranslatePostJobData,
 } from './blog-translation.service';
+import { EventsService } from '../events/events.service';
 import {
   BLOG_TRANSLATION_QUEUE,
   TRANSLATE_BLOG_POST,
@@ -17,6 +18,7 @@ export class BlogTranslationConsumer extends WorkerHost {
 
   constructor(
     private readonly translationService: BlogTranslationWorkerService,
+    private readonly eventsService: EventsService,
     @InjectQueue(BLOG_TRANSLATION_QUEUE) private readonly queue: Queue,
   ) {
     super();
@@ -30,6 +32,16 @@ export class BlogTranslationConsumer extends WorkerHost {
           `Translating post ${data.postId} → ${data.targetLocale} (job: ${job.id})`,
         );
         await this.translationService.translatePost(data);
+
+        if (data.requestedByUserId) {
+          await this.eventsService.emit({
+            userId: data.requestedByUserId,
+            type: 'blog_translation_completed',
+            title: 'Tradução concluída',
+            message: `Tradução do post para ${data.targetLocale.toUpperCase()} concluída.`,
+            payload: { postId: data.postId, locale: data.targetLocale },
+          });
+        }
         break;
       }
 

@@ -85,18 +85,14 @@ export class SystemController {
     description: 'Unauthorized - User not authenticated',
   })
   notification(@Session() session: UserSession) {
-    const { user } = session;
+    const userId = session?.user?.id;
 
-    return defer(() => this.eventsService.getEvents(user?.id)).pipe(
+    return defer(() =>
+      userId ? this.eventsService.getAndConsumeNextEvent(userId) : Promise.resolve(null),
+    ).pipe(
       repeat({ delay: 1000 }),
-      filter((result) => {
-        if (!result || !result.id) {
-          return false;
-        }
-
-        return Boolean(result.id) || Object.keys(result.id).length > 0;
-      }),
-      map((data) => ({ data, type: 'message' })),
+      filter((result): result is NonNullable<typeof result> => Boolean(result?.id)),
+      map((event) => ({ data: JSON.stringify(event), type: 'message' as const })),
     );
   }
 

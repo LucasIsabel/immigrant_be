@@ -352,14 +352,15 @@ App Principal (API)                    Microservice
       ├── Adiciona job na fila ────────►    ├── Consome jobs
       │   via BullMQ                        │   via processors
       │                                     │
-      └── SSE endpoint ◄────────────── └── Emite eventos
-          /api/v1/system/sse               via Redis pub/sub
+      └── SSE endpoint ◄────────────── └── Emite eventos (insert em `events`)
+          /api/v1/system/sse               API faz poll + marca delivered
 ```
 
 - **Redis** como broker de mensagens
 - **Microservice** roda como app separado (porta 6000)
 - Comunicação via filas nomeadas
 - Eventos notificam o frontend via **Server-Sent Events (SSE)**
+- Ao concluir um job, o consumer grava um registro na tabela `events` (status `pending`). O endpoint `/system/sse` faz polling a cada 1s, consume o evento (marca `delivered`) e envia ao cliente. O frontend exibe toast com título e mensagem da tarefa concluída.
 
 ### Filas existentes
 

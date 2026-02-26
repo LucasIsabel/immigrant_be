@@ -9,4 +9,12 @@ export class EventsService {
   async getEvents(userId: string): Promise<EventResponseDto | null> {
     return await this.systemRepository.getEvents(userId);
   }
+
+  /**
+   * Fetches and consumes the next pending event for the user.
+   * Used by SSE to deliver each event exactly once.
+   */
+  async getAndConsumeNextEvent(userId: string): Promise<EventResponseDto | null> {
+    return await this.systemRepository.getAndConsumeNextEvent(userId);
+  }
 }

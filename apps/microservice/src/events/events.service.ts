@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventsRepository } from './events.repository';
+import { EventsRepository, type CreateEventInput } from './events.repository';
 import { EventDto } from './dto/event.dto';
 
 @Injectable()
@@ -8,5 +8,13 @@ export class EventsService {
 
   async getEvents(userId: string): Promise<EventDto | null> {
     return await this.eventsRepository.getEvents(userId);
+  }
+
+  /**
+   * Emits an event to be delivered via SSE to the user.
+   * Called by queue consumers when a task completes.
+   */
+  async emit(input: CreateEventInput): Promise<void> {
+    await this.eventsRepository.createEvent(input);
   }
 }

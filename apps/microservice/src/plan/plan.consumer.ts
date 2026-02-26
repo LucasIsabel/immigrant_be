@@ -23,6 +23,16 @@ export class PlanQueueProcessor extends WorkerHost {
         this.logger.log(`Processing plan creation job: ${job.id}`);
         const data = await this.planService.createPlan(job.data);
         this.logger.log(`Plan creation completed: ${data.planId}`);
+
+        if (data.success && job.data.user_id) {
+          await this.eventsService.emit({
+            userId: job.data.user_id,
+            type: 'plan_completed',
+            title: 'Plano criado',
+            message: 'Seu plano de imigração foi criado com sucesso.',
+            payload: { planId: data.planId },
+          });
+        }
         break;
       }
     }

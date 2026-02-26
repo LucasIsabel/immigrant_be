@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
@@ -50,8 +51,8 @@ export class AiBlogController {
       'Enfileira a geração de um post de blog com IA para o país informado. O post ficará em DRAFT na fila de aprovação.',
   })
   @ApiResponse({ status: 202, description: 'Geração enfileirada com sucesso' })
-  generate(@Body() dto: GenerateAiBlogPostDto) {
-    return this.aiBlogService.enqueueGeneration(dto);
+  generate(@Body() dto: GenerateAiBlogPostDto, @Session() session: UserSession) {
+    return this.aiBlogService.enqueueGeneration(dto, session?.user?.id);
   }
 
   // ─── Pending Posts ────────────────────────────────────────────────────────
@@ -113,8 +114,8 @@ export class AiBlogController {
   @ApiParam({ name: 'id', description: 'ID do post' })
   @ApiResponse({ status: 202, description: 'Refinamento enfileirado com sucesso' })
   @ApiNotFoundResponse({ description: 'Post não encontrado ou não elegível para refinamento' })
-  enqueueRefinement(@Param('id') id: string) {
-    return this.aiBlogService.enqueueRefinement(id);
+  enqueueRefinement(@Param('id') id: string, @Session() session: UserSession) {
+    return this.aiBlogService.enqueueRefinement(id, session?.user?.id);
   }
 
   // ─── Cron Jobs ────────────────────────────────────────────────────────────
