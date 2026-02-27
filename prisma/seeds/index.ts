@@ -1,6 +1,5 @@
 import { PrismaClient } from '../../generated/prisma';
 import { seedCountries } from './countries.seed';
-import { seedVisaSteps } from './visa_steps.seed';
 import { seedBlogCategories } from './blog-categories.seed';
 
 const prisma = new PrismaClient();
@@ -8,7 +7,6 @@ const prisma = new PrismaClient();
 async function main() {
   try {
     await seedCountries();
-    await seedVisaSteps();
     await seedBlogCategories();
     console.log('Database seeded successfully');
   } catch (error) {
