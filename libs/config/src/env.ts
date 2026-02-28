@@ -14,6 +14,9 @@ export const envSchema = zod.object({
   REDIS_USER: zod.string().optional(),
   REDIS_PASSWORD: zod.string().optional(),
   CORS_ORIGINS: zod.string().default('http://localhost:3001'),
+  RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
+  FRONTEND_URL: zod.string().default('http://localhost:3001'),
+  EMAIL_FROM: zod.string().default('ImmigrantMatch <onboarding@resend.dev>'),
 });
 
 export const env = envSchema.parse(process.env);

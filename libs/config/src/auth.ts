@@ -4,6 +4,9 @@ import { PrismaClient } from '../../../generated/prisma';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env } from './env';
+import { sendEmail } from '@app/email/send-email';
+import { buildVerificationEmail } from '@app/email/templates/verification.template';
+import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
 
 const prisma = new PrismaClient();
 
@@ -25,11 +28,25 @@ export const auth = betterAuth({
   secret: env.PRIVATE_KEY,
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
+    autoSignIn: false,
+    requireEmailVerification: true,
     password: {
       hash: (password: string) => bcrypt.hash(password, 10),
       verify: ({ password, hash }: { password: string; hash: string }) =>
         bcrypt.compare(password, hash),
+    },
+    sendResetPassword: async ({ user, url }) => {
+      const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${new URL(url).searchParams.get('token')}`;
+      const { subject, html } = buildResetPasswordEmail('en', resetUrl, user.name);
+      await sendEmail({ to: user.email, subject, html });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      const { subject, html } = buildVerificationEmail('en', url, user.name);
+      await sendEmail({ to: user.email, subject, html });
     },
   },
   session: {

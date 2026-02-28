@@ -8,7 +8,7 @@
 
 ## 1. Visão Geral
 
-O **Immigrant BE** é um backend construído com **NestJS** em formato **monorepo**, composto por duas aplicações e três bibliotecas compartilhadas. O sistema oferece funcionalidades de imigração com sugestões alimentadas por IA, controle de acesso baseado em roles (RBAC) e processamento assíncrono de jobs.
+O **Immigrant BE** é um backend construído com **NestJS** em formato **monorepo**, composto por duas aplicações e quatro bibliotecas compartilhadas. O sistema oferece funcionalidades de imigração com sugestões alimentadas por IA, controle de acesso baseado em roles (RBAC) e processamento assíncrono de jobs.
 
 ### Stack Principal
 
@@ -58,7 +58,8 @@ immigrant_be/
 ├── libs/                       # Bibliotecas compartilhadas
 │   ├── config/                 # Configuração da app + setup do better-auth
 │   ├── database/               # PrismaService (módulo global)
-│   └── ai/                     # GeminiBaseService compartilhado
+│   ├── ai/                     # GeminiBaseService compartilhado
+│   └── email/                  # Envio de emails via Resend
 │
 ├── prisma/
 │   ├── schema.prisma           # Schema do banco
@@ -81,6 +82,7 @@ immigrant_be/
 | `@app/ai/*` | `libs/ai/src/*` |
 | `@app/config/*` | `libs/config/src/*` |
 | `@app/database/*` | `libs/database/src/*` |
+| `@app/email/*` | `libs/email/src/*` |
 
 ---
 
@@ -121,6 +123,10 @@ módulo/
 - Cache de cookie: **5 minutos**
 - Hash de senha: **bcrypt** (salt rounds: 10)
 - Suporte a múltiplos providers via tabela `Accounts`
+- **Verificação de email** habilitada no signup (`requireEmailVerification: true`, `sendOnSignUp: true`)
+- **Auto sign-in** após verificação (`autoSignInAfterVerification: true`)
+- **Reset de senha** via email (`sendResetPassword`)
+- Emails enviados via **Resend** (lib `@app/email`)
 
 ### Autorização (RBAC)
 
@@ -220,6 +226,25 @@ apps/microservice/src/plan/
 - **Herança**: Ambos os apps estendem `GeminiBaseService` de `@app/ai` — sem código duplicado de inicialização, parsing ou embeddings
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
+
+---
+
+## 6.1. Envio de Emails (Resend)
+
+### Arquitetura
+
+- **Localização**: `libs/email/`
+- **Descrição**: Lib de envio de emails via Resend. Contém módulo NestJS (`EmailModule`, `EmailService`), função standalone `sendEmail()` para uso fora do DI, e templates HTML multilíngue (EN/PT-BR/ES) para verificação de email e reset de senha.
+
+### Exportações
+
+| Export | Tipo | Descrição |
+|---|---|---|
+| `EmailModule` | Módulo NestJS | Módulo importável que registra `EmailService` |
+| `EmailService` | Service | Serviço injetável para envio de emails via Resend |
+| `sendEmail` | Função standalone | Envio de emails fora do contexto de DI do NestJS |
+| `buildVerificationEmail` | Função | Gera template HTML de verificação de email |
+| `buildResetPasswordEmail` | Função | Gera template HTML de reset de senha |
 
 ---
 
@@ -354,6 +379,9 @@ Pipeline sequencial: **Lint → Test → Build**
 | `REDIS_USER` | Usuário Redis (opcional) |
 | `REDIS_PASSWORD` | Senha Redis |
 | `CORS_ORIGINS` | Origens permitidas (separadas por vírgula) |
+| `RESEND_API_KEY` | Chave da API do Resend para envio de emails (obrigatória) |
+| `FRONTEND_URL` | URL base do frontend para links nos emails (default: `http://localhost:3001`) |
+| `EMAIL_FROM` | Endereço remetente dos emails (default: `ImmigrantMatch <onboarding@resend.dev>`) |
 
 ---
 
