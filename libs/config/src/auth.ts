@@ -7,6 +7,7 @@ import { env } from './env';
 import { sendEmail } from '@app/email/send-email';
 import { buildVerificationEmail } from '@app/email/templates/verification.template';
 import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
+import { sendVerificationEmail } from './email';
 
 const prisma = new PrismaClient();
 
@@ -37,17 +38,25 @@ export const auth = betterAuth({
     },
     sendResetPassword: async ({ user, url }) => {
       const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${new URL(url).searchParams.get('token')}`;
-      const { subject, html } = buildResetPasswordEmail('en', resetUrl, user.name);
+      const { subject, html } = buildResetPasswordEmail(
+        'en',
+        resetUrl,
+        user.name,
+      );
       await sendEmail({ to: user.email, subject, html });
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      const { subject, html } = buildVerificationEmail('en', url, user.name);
-      await sendEmail({ to: user.email, subject, html });
+      await sendVerificationEmail({
+        to: user.email,
+        subject: 'Verifique seu email',
+        url,
+      });
     },
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

@@ -131,10 +131,12 @@ módulo/
 - Cache de cookie: **5 minutos**
 - Hash de senha: **bcrypt** (salt rounds: 10)
 - Suporte a múltiplos providers via tabela `Accounts`
-- **Verificação de email** habilitada no signup (`requireEmailVerification: true`, `sendOnSignUp: true`)
-- **Auto sign-in** após verificação (`autoSignInAfterVerification: true`)
-- **Reset de senha** via email (`sendResetPassword`)
-- Emails enviados via **Resend** (lib `@app/email`)
+- **Verificação de email**: Obrigatória para login. Usuário só pode fazer login após verificar o email.
+  - `autoSignIn: false` — cadastro não cria sessão; usuário é redirecionado para página de verificação
+  - `requireEmailVerification: true` — login retorna 403 se email não verificado
+  - `sendOnSignUp: true` / `sendOnSignIn: true` — email de verificação enviado no cadastro e reenviado ao tentar login sem verificar
+  - `autoSignInAfterVerification: true` — ao clicar no link do email, usuário é logado automaticamente
+  - Envio de email via **Resend** (`libs/config/src/email.ts`). Env vars: `RESEND_API_KEY`, `EMAIL_FROM`
 
 ### Autorização (RBAC)
 
@@ -502,27 +504,26 @@ Pipeline sequencial: **Lint → Test → Build**
 
 ## 13. Variáveis de Ambiente Requeridas
 
-| Variável                          | Descrição                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| `DATABASE_URL`                    | Connection string PostgreSQL                                                      |
-| `PRIVATE_KEY`                     | Chave privada (base64) para auth                                                  |
-| `GEMINI_API_KEY`                  | API key do Google Gemini                                                          |
-| `NODE_ENV`                        | development / production / test                                                   |
-| `PORT_IMMIGRANT`                  | Porta da API (default: 3000)                                                      |
-| `PORT_MICROSERVICE`               | Porta do microservice (default: 6000)                                             |
-| `REDIS_HOST`                      | Host do Redis                                                                     |
-| `REDIS_PORT`                      | Porta do Redis                                                                    |
-| `REDIS_USER`                      | Usuário Redis (opcional)                                                          |
-| `REDIS_PASSWORD`                  | Senha Redis                                                                       |
-| `CORS_ORIGINS`                    | Origens permitidas (separadas por vírgula)                                        |
-| `RESEND_API_KEY`                  | Chave da API do Resend para envio de emails (obrigatória)                         |
-| `FRONTEND_URL`                    | URL base do frontend para links nos emails (default: `http://localhost:3001`)     |
-| `EMAIL_FROM`                      | Endereço remetente dos emails (default: `ImmigrantMatch <onboarding@resend.dev>`) |
-| `CLOUDFLARE_R2_ACCESS_KEY_ID`     | Access Key ID do token S3 do R2                                                   |
-| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Secret Access Key do token S3 do R2                                               |
-| `CLOUDFLARE_R2_ACCOUNT_ID`        | Account ID da conta Cloudflare                                                    |
-| `CLOUDFLARE_R2_BUCKET_NAME`       | Nome do bucket R2 (ex: `immigrant`)                                               |
-| `CLOUDFLARE_R2_PUBLIC_URL`        | URL pública do bucket R2                                                          |
+| Variável                          | Descrição                                             |
+| --------------------------------- | ----------------------------------------------------- |
+| `DATABASE_URL`                    | Connection string PostgreSQL                          |
+| `PRIVATE_KEY`                     | Chave privada (base64) para auth                      |
+| `GEMINI_API_KEY`                  | API key do Google Gemini                              |
+| `NODE_ENV`                        | development / production / test                       |
+| `PORT_IMMIGRANT`                  | Porta da API (default: 3000)                          |
+| `PORT_MICROSERVICE`               | Porta do microservice (default: 6000)                 |
+| `REDIS_HOST`                      | Host do Redis                                         |
+| `REDIS_PORT`                      | Porta do Redis                                        |
+| `REDIS_USER`                      | Usuário Redis (opcional)                              |
+| `REDIS_PASSWORD`                  | Senha Redis                                           |
+| `CORS_ORIGINS`                    | Origens permitidas (separadas por vírgula)            |
+| `CLOUDFLARE_R2_ACCESS_KEY_ID`     | Access Key ID do token S3 do R2                       |
+| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Secret Access Key do token S3 do R2                   |
+| `CLOUDFLARE_R2_ACCOUNT_ID`        | Account ID da conta Cloudflare                        |
+| `CLOUDFLARE_R2_BUCKET_NAME`       | Nome do bucket R2 (ex: `immigrant`)                   |
+| `CLOUDFLARE_R2_PUBLIC_URL`        | URL pública do bucket R2                              |
+| `RESEND_API_KEY`                  | API key do Resend para envio de emails de verificação |
+| `EMAIL_FROM`                      | Email remetente (domínio verificado no Resend)        |
 
 ---
 

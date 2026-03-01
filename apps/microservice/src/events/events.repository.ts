@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { NotificationStatus } from 'generated/prisma';
+import { NotificationStatus, Prisma } from 'generated/prisma';
 import { EventDto } from './dto/event.dto';
 
 export interface CreateEventInput {
@@ -33,7 +33,7 @@ export class EventsRepository {
         type: input.type,
         title: input.title ?? null,
         message: input.message ?? null,
-        payload: (input.payload ?? null) as object | null,
+        payload: input.payload ?? Prisma.DbNull,
         status: NotificationStatus.pending,
       },
     });

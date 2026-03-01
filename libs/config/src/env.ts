@@ -23,6 +23,8 @@ export const envSchema = zod.object({
   CLOUDFLARE_R2_BUCKET_NAME: zod.string().min(1),
   CLOUDFLARE_R2_PUBLIC_URL: zod.string().url(),
   CLOUDFLARE_ENDPOINT: zod.string().url(),
+  RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
+  EMAIL_FROM: zod.string().email('EMAIL_FROM must be a valid email'),
 });
 
 export const env = envSchema.parse(process.env);
