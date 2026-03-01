@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { VisaStepsService } from './visa-steps.service';
 import { CreateVisaStepsDto } from './dto/create-visa-steps.dto';
+import { TranslateVisaStepsDto } from './dto/translate-visa-steps.dto';
 import { UpdateVisaStepsDto } from './dto/update-visa-steps.dto';
 import { VisaStepsDto } from './dto/visa-steps.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -48,6 +49,22 @@ export class VisaStepsController {
   })
   create(@Body() dto: CreateVisaStepsDto) {
     return this.visaStepsService.create(dto);
+  }
+
+  @Post('translate')
+  @ApiOperation({
+    summary: 'Translate visa steps',
+    description:
+      'Translates visa steps JSON to Portuguese or Spanish using AI',
+  })
+  @ApiBody({ type: TranslateVisaStepsDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Translated steps',
+    schema: { type: 'object' },
+  })
+  async translate(@Body() dto: TranslateVisaStepsDto) {
+    return this.visaStepsService.translate(dto);
   }
 
   @Get()

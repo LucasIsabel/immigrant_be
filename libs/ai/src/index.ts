@@ -34,3 +34,11 @@ export {
   buildBlogTranslationPrompt,
   type BlogTranslationPromptOptions,
 } from './prompts/blog-translation.prompt';
+export {
+  visaStepsTranslationAiSchema,
+  type VisaStepsTranslationAiResponse,
+} from './schemas/visa-steps-translation.schema';
+export {
+  buildVisaStepsTranslationPrompt,
+  type VisaStepsTranslationPromptOptions,
+} from './prompts/visa-steps-translation.prompt';

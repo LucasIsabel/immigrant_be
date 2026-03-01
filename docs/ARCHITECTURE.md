@@ -395,6 +395,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública)        |
 | `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                                      |
 | `/visa-steps`                                | VisaSteps                 | Misto                                      |
+| `/admin/visa-steps/translate`                | VisaSteps (tradução)      | ADMIN                                      |
 | `/system/suggestions`                        | System                    | Público                                    |
 | `/system/visa-recommendation`                | System                    | Autenticado                                |
 | `/system/sse`                                | System                    | Autenticado                                |
