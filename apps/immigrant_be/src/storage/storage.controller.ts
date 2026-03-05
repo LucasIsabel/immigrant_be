@@ -38,10 +38,17 @@ export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_FILE_SIZE } }),
+  )
   @ApiOperation({ summary: 'Upload de arquivo para R2' })
   @ApiConsumes('multipart/form-data')
-  @ApiQuery({ name: 'folder', required: false, description: 'Pasta de destino no bucket', example: 'uploads' })
+  @ApiQuery({
+    name: 'folder',
+    required: false,
+    description: 'Pasta de destino no bucket',
+    example: 'uploads',
+  })
   @ApiBody({
     schema: {
       type: 'object',
