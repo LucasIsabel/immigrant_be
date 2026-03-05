@@ -33,7 +33,7 @@ export class EventsRepository {
         type: input.type,
         title: input.title ?? null,
         message: input.message ?? null,
-        payload: input.payload ?? Prisma.DbNull,
+        payload: (input.payload as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
         status: NotificationStatus.pending,
       },
     });
