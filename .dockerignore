@@ -9,3 +9,7 @@ coverage
 docs
 *.md
 .github
+**/*.spec.ts
+**/test
+**/.cursor
+tasks

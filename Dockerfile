@@ -12,7 +12,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN pnpm build
+RUN pnpm build && npx nest build microservice
 
 # Stage 3: Production - Main API
 FROM node:20-alpine AS production
@@ -24,7 +24,7 @@ COPY --from=build /app/generated ./generated
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
 EXPOSE 3000
-CMD ["node", "dist/apps/immigrant_be/main"]
+CMD ["node", "dist/apps/immigrant_be/main.js"]
 
 # Stage 4: Production - Microservice
 FROM node:20-alpine AS microservice
@@ -36,4 +36,4 @@ COPY --from=build /app/generated ./generated
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
 EXPOSE 6000
-CMD ["node", "dist/apps/microservice/main"]
+CMD ["node", "dist/apps/microservice/main.js"]
