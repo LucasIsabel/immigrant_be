@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { env } from '@app/config/env';
@@ -38,14 +38,16 @@ async function bootstrap() {
 
   SwaggerModule.setup('api/v1/docs', app, document);
 
-  const corsOrigins = env.CORS_ORIGINS.split(',');
+  // const corsOrigins =
+  //   env.CORS_ORIGINS?.trim() === '*' ? true : env.CORS_ORIGINS.split(',');
+
   app.enableCors({
-    origin: corsOrigins,
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
 
-  await app.listen(env.PORT_IMMIGRANT);
+  await app.listen(env.PORT_IMMIGRANT || 3000);
 }
 bootstrap();
