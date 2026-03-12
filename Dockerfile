@@ -14,7 +14,7 @@ COPY . .
 RUN npx prisma generate
 RUN pnpm build && npx nest build microservice
 
-# Stage 3: Production - Main API
+# Stage 3: Production - API + Microservice (single container)
 FROM node:20-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
@@ -23,17 +23,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/generated ./generated
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
+COPY scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
 EXPOSE 3000
-CMD ["node", "dist/apps/immigrant_be/main.js"]
-
-# Stage 4: Production - Microservice
-FROM node:20-alpine AS microservice
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/generated ./generated
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/package.json ./package.json
-EXPOSE 6000
-CMD ["node", "dist/apps/microservice/main.js"]
+CMD ["./scripts/start.sh"]

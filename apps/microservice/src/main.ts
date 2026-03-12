@@ -3,11 +3,12 @@ import { MicroserviceModule } from './microservice.module';
 
 async function bootstrap() {
   try {
-    const app = await NestFactory.create(MicroserviceModule, {
-      bodyParser: false,
-    });
+    const app = await NestFactory.createApplicationContext(MicroserviceModule);
+    app.enableShutdownHooks();
 
-    await app.listen(process.env.PORT_MICROSERVICE ?? 3000);
+    process.on('SIGTERM', () => {
+      void app.close().then(() => process.exit(0));
+    });
   } catch {
     process.exit(1);
   }
