@@ -91,5 +91,16 @@ export const auth = betterAuth({
     database: {
       generateId: false,
     },
+    crossSubDomainCookies: {
+      enabled: true,
+      additionalCookies: ['better-auth.session_token'],
+      domain: '.immigrantmatch.com',
+    },
+    defaultCookieAttributes: {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    },
   },
 });
