@@ -6,10 +6,7 @@ import { env } from './env';
   imports: [
     BullModuleNest.forRoot({
       connection: {
-        host: env.REDIS_HOST,
-        port: env.REDIS_PORT,
-        password: env.REDIS_PASSWORD,
-        username: env.REDIS_USER,
+        url: env.REDIS_URL,
       },
     }),
   ],

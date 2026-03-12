@@ -23,6 +23,7 @@ export const envSchema = zod.object({
   CLOUDFLARE_R2_BUCKET_NAME: zod.string().min(1),
   CLOUDFLARE_R2_PUBLIC_URL: zod.string().url(),
   CLOUDFLARE_ENDPOINT: zod.string().url(),
+  REDIS_URL: zod.string().url(),
 });
 
 export const env = envSchema.parse(process.env);
