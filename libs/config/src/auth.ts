@@ -5,7 +5,6 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env } from './env';
 import { sendEmail } from '@app/email/send-email';
-import { buildVerificationEmail } from '@app/email/templates/verification.template';
 import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
 import { sendVerificationEmail } from './email';
 
@@ -92,7 +91,7 @@ export const auth = betterAuth({
       generateId: false,
     },
     crossSubDomainCookies: {
-      enabled: true,
+      enabled: env.NODE_ENV === 'production',
       additionalCookies: ['better-auth.session_token'],
       domain: '.immigrantmatch.com',
     },
