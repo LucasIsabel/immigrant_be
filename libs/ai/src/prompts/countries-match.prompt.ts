@@ -48,6 +48,9 @@ ${availableCountries.join(', ')}
 - Vistos ou oportunidades de residência
 - Metas pessoais e profissionais
 
+### Regra de diversificação:
+O usuário mencionou interesse em um ou mais países específicos. **Evite** incluir esses países nas 3 recomendações, pois o objetivo é apresentar alternativas que o usuário talvez não tenha considerado. A única exceção é se o perfil do usuário se encaixar excepcionalmente bem nesse país em **todos** os critérios objetivos — nesse caso, inclua-o com uma explicação clara do motivo.
+
 Agora gere **somente o JSON**.
   `;
 }

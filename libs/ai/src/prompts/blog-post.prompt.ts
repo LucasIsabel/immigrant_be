@@ -1,14 +1,17 @@
 import { PostComplexity } from '../enums/post-complexity.enum';
 import { PoliticalTone } from '../enums/political-tone.enum';
 
-export function buildBlogCoverImagePrompt(title: string, countryName: string): string {
-  return `Generate a professional, high-quality editorial blog cover image for an article titled "${title}" about immigration to ${countryName}.
+export function buildBlogCoverImagePrompt(
+  title: string,
+  countryName: string,
+): string {
+  return `Generate a professional editorial blog cover image for an article titled "${title}" about immigration to ${countryName}.
 
 Style: Wide landscape format (16:9), photorealistic documentary style, natural cinematic lighting, no text overlays. Suitable for a professional blog header.
 
-People: Include real human beings — diverse individuals in authentic, candid moments (e.g. walking in a city, at an airport, in a park, at work). Natural skin tones, genuine expressions, relaxed body language. Show people from various angles; faces can be visible or shown from behind/side for a documentary feel. Avoid stiff poses, plastic skin, or AI-generated artificial appearance.
+Subject: Show the destination itself — iconic landmarks, architecture, cityscape, or natural landscape of ${countryName}. No human figures. Focus on the place: streets, buildings, flags, skies, public spaces. Capture a real sense of what it feels like to be there.
 
-Quality: Raw, authentic, like award-winning photojournalism. Avoid symmetrical compositions that look robotic, oversaturated colors, or uncanny valley effects.`;
+Quality: Raw, authentic, like travel photography or documentary filmmaking. Slightly imperfect — natural grain, real shadows, uneven lighting. Avoid overly symmetrical compositions, oversaturated colors, or the clean-plastic look of AI-generated imagery.`;
 }
 
 export interface RssNewsItem {
@@ -28,8 +31,7 @@ export interface BlogPostPromptOptions {
 }
 
 const TONE_INSTRUCTIONS: Record<PoliticalTone, string> = {
-  [PoliticalTone.NEUTRAL]:
-    'Keep an objective, balanced and informative tone.',
+  [PoliticalTone.NEUTRAL]: 'Keep an objective, balanced and informative tone.',
   [PoliticalTone.PRO_IMMIGRATION]:
     'Adopt a pro-immigration perspective, emphasizing opportunities, rights and benefits for immigrants.',
   [PoliticalTone.CONSERVATIVE]:
@@ -88,9 +90,8 @@ export function buildBlogPostPrompt(
 
   const newsSummary = newsItems
     .slice(0, 5)
-    .map(
-      (item, i) =>
-        `${i + 1}. **${item.title}**\n   ${item.description ?? ''}`.trim(),
+    .map((item, i) =>
+      `${i + 1}. **${item.title}**\n   ${item.description ?? ''}`.trim(),
     )
     .join('\n\n');
 
@@ -113,6 +114,7 @@ ${newsSummary}
 - **Language**: English
 - **Tone**: ${toneInstruction}
 - **Content**: Synthesize the news into a coherent narrative with context. Do NOT just list the news items.
+- **Title**: Concise and expressive — maximum 8 words. Prefer titles that reveal a specific insight, use contrast, or pose a direct question. Avoid listicle-style or generic titles.
 - **Format**: Return a valid JSON object matching the schema below. The "content" field must be valid Markdown.
 ${complexityRequirements}
 - The "excerpt" must be a single engaging paragraph of 2–3 sentences summarizing the post.
@@ -120,7 +122,7 @@ ${complexityRequirements}
 ${customSection}
 ## JSON Schema
 {
-  "title": "string — compelling, SEO-friendly title in English",
+  "title": "string — short, punchy title in English (max 8 words). Use strong verbs, specific details, or a surprising angle. Avoid generic phrases like 'Everything You Need to Know' or 'A Complete Guide'.",
   "excerpt": "string — 2-3 sentence summary in English",
   "content": "string — full Markdown post body in English",
   "suggested_tags": ["string"]

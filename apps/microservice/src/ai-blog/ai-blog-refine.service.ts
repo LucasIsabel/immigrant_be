@@ -10,7 +10,7 @@ export interface RefineBlogPostJobData {
 const VISUAL_MARKER_REGEX = />\s*📊\s*\*\*\[Visual sugerido\]:\*\*\s*(.+)/g;
 
 const IMAGE_REALISM_SUFFIX =
-  ' Photorealistic, documentary style. Real human beings with natural skin tones and authentic expressions. Candid, lifelike moment. Avoid robotic, cartoon, or AI-generated artificial appearance.';
+  ' Photorealistic, documentary or editorial style. Natural imperfections — film grain, uneven lighting, real textures. If people are present: candid, unstaged moments with genuine expressions and natural skin tones. Avoid plastic skin, overly clean lighting, symmetrical poses, or any visual cues typical of AI-generated imagery.';
 
 @Injectable()
 export class AiBlogRefineService {
@@ -32,16 +32,28 @@ export class AiBlogRefineService {
     }
 
     const content = post.content ?? '';
-    const matches = [...content.matchAll(new RegExp(VISUAL_MARKER_REGEX.source, 'g'))];
+    const matches = [
+      ...content.matchAll(new RegExp(VISUAL_MARKER_REGEX.source, 'g')),
+    ];
 
     if (matches.length === 0) {
-      this.logger.log(`No [Visual sugerido] markers found in post ${data.postId}`);
+      this.logger.log(
+        `No [Visual sugerido] markers found in post ${data.postId}`,
+      );
       return;
     }
 
-    this.logger.log(`Found ${matches.length} visual marker(s) in post ${data.postId}`);
+    this.logger.log(
+      `Found ${matches.length} visual marker(s) in post ${data.postId}`,
+    );
 
-    const processed: { fullMatch: string; index: number; matchOrdinal: number; url: string; replacement: string }[] = [];
+    const processed: {
+      fullMatch: string;
+      index: number;
+      matchOrdinal: number;
+      url: string;
+      replacement: string;
+    }[] = [];
 
     for (let i = 0; i < matches.length; i++) {
       const match = matches[i];
@@ -78,8 +90,13 @@ export class AiBlogRefineService {
     }
 
     let newContent = content;
-    for (const { fullMatch, index, replacement } of processed.sort((a, b) => b.index - a.index)) {
-      newContent = newContent.slice(0, index) + replacement + newContent.slice(index + fullMatch.length);
+    for (const { fullMatch, index, replacement } of processed.sort(
+      (a, b) => b.index - a.index,
+    )) {
+      newContent =
+        newContent.slice(0, index) +
+        replacement +
+        newContent.slice(index + fullMatch.length);
     }
 
     await this.prisma.blogPost.update({
@@ -100,9 +117,15 @@ export class AiBlogRefineService {
 
       for (const translation of translations) {
         const tContent = translation.content ?? '';
-        const tMatches = [...tContent.matchAll(new RegExp(VISUAL_MARKER_REGEX.source, 'g'))];
+        const tMatches = [
+          ...tContent.matchAll(new RegExp(VISUAL_MARKER_REGEX.source, 'g')),
+        ];
 
-        const tProcessed: { fullMatch: string; matchIndex: number; replacement: string }[] = [];
+        const tProcessed: {
+          fullMatch: string;
+          matchIndex: number;
+          replacement: string;
+        }[] = [];
         for (let i = 0; i < tMatches.length; i++) {
           const url = imageByOrdinal.get(i);
           if (!url || !tMatches[i]) continue;
@@ -118,15 +141,22 @@ export class AiBlogRefineService {
         if (tProcessed.length === 0) continue;
 
         let newTContent = tContent;
-        for (const { fullMatch, matchIndex, replacement } of tProcessed.sort((a, b) => b.matchIndex - a.matchIndex)) {
-          newTContent = newTContent.slice(0, matchIndex) + replacement + newTContent.slice(matchIndex + fullMatch.length);
+        for (const { fullMatch, matchIndex, replacement } of tProcessed.sort(
+          (a, b) => b.matchIndex - a.matchIndex,
+        )) {
+          newTContent =
+            newTContent.slice(0, matchIndex) +
+            replacement +
+            newTContent.slice(matchIndex + fullMatch.length);
         }
 
         await this.prisma.blogPostTranslation.update({
           where: { id: translation.id },
           data: { content: newTContent },
         });
-        this.logger.log(`Propagated images to translation ${translation.locale} for post ${data.postId}`);
+        this.logger.log(
+          `Propagated images to translation ${translation.locale} for post ${data.postId}`,
+        );
       }
     }
 
