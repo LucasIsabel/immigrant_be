@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { AiBlogRepository } from './ai-blog.repository';
@@ -41,8 +41,17 @@ export class AiBlogService {
 
   // ─── Pending Posts ────────────────────────────────────────────────────────
 
+  private static readonly REQUIRED_LOCALES = ['en', 'es', 'pt'];
+
   async findPendingPosts() {
-    return this.repository.findPendingAiPosts();
+    const posts = await this.repository.findPendingAiPosts();
+    return posts.map((post) => {
+      const existingLocales = post.translations.map((t) => t.locale);
+      const missing_translations = AiBlogService.REQUIRED_LOCALES.filter(
+        (l) => !existingLocales.includes(l),
+      );
+      return { ...post, missing_translations };
+    });
   }
 
   async approvePost(id: string) {
@@ -65,6 +74,15 @@ export class AiBlogService {
     if (!post.is_ai_generated || post.status !== BlogPostStatus.DRAFT) {
       throw new NotFoundException('Post deve estar em DRAFT e ser gerado por IA para refinamento');
     }
+
+    const existingLocales = await this.repository.findTranslationLocalesForPost(id);
+    const missing = AiBlogService.REQUIRED_LOCALES.filter((l) => !existingLocales.includes(l));
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `Post não possui todas as traduções obrigatórias. Faltando: ${missing.join(', ')}`,
+      );
+    }
+
     const job = await this.aiBlogImageQueue.add(REFINE_AI_BLOG_POST, {
       postId: id,
       requestedByUserId: requestedByUserId ?? undefined,

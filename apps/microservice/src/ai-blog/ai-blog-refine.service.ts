@@ -41,7 +41,7 @@ export class AiBlogRefineService {
 
     this.logger.log(`Found ${matches.length} visual marker(s) in post ${data.postId}`);
 
-    const processed: { fullMatch: string; index: number; replacement: string }[] = [];
+    const processed: { fullMatch: string; index: number; matchOrdinal: number; url: string; replacement: string }[] = [];
 
     for (let i = 0; i < matches.length; i++) {
       const match = matches[i];
@@ -70,6 +70,8 @@ export class AiBlogRefineService {
       processed.push({
         fullMatch,
         index: match.index ?? 0,
+        matchOrdinal: i,
+        url,
         replacement,
       });
       this.logger.log(`Generated image ${i + 1}: ${url}`);
@@ -84,6 +86,49 @@ export class AiBlogRefineService {
       where: { id: data.postId },
       data: { content: newContent },
     });
+
+    // Propagate generated images to translations by ordinal position
+    const imageByOrdinal = new Map<number, string>();
+    for (const { matchOrdinal, url } of processed) {
+      imageByOrdinal.set(matchOrdinal, url);
+    }
+
+    if (imageByOrdinal.size > 0) {
+      const translations = await this.prisma.blogPostTranslation.findMany({
+        where: { post_id: data.postId },
+      });
+
+      for (const translation of translations) {
+        const tContent = translation.content ?? '';
+        const tMatches = [...tContent.matchAll(new RegExp(VISUAL_MARKER_REGEX.source, 'g'))];
+
+        const tProcessed: { fullMatch: string; matchIndex: number; replacement: string }[] = [];
+        for (let i = 0; i < tMatches.length; i++) {
+          const url = imageByOrdinal.get(i);
+          if (!url || !tMatches[i]) continue;
+          const fullMatch = tMatches[i][0];
+          const desc = (tMatches[i][1] ?? '').trim();
+          tProcessed.push({
+            fullMatch,
+            matchIndex: tMatches[i].index ?? 0,
+            replacement: `![${this.escapeMarkdownAlt(desc)}](${url})`,
+          });
+        }
+
+        if (tProcessed.length === 0) continue;
+
+        let newTContent = tContent;
+        for (const { fullMatch, matchIndex, replacement } of tProcessed.sort((a, b) => b.matchIndex - a.matchIndex)) {
+          newTContent = newTContent.slice(0, matchIndex) + replacement + newTContent.slice(matchIndex + fullMatch.length);
+        }
+
+        await this.prisma.blogPostTranslation.update({
+          where: { id: translation.id },
+          data: { content: newTContent },
+        });
+        this.logger.log(`Propagated images to translation ${translation.locale} for post ${data.postId}`);
+      }
+    }
 
     this.logger.log(`Refinement complete for post ${data.postId}`);
   }

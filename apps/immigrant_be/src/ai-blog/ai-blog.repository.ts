@@ -18,9 +18,18 @@ export class AiBlogRepository {
         category: true,
         tags: { include: { tag: true } },
         featured_country: { select: { id: true, name: true, flag: true } },
+        translations: { select: { locale: true } },
       },
       orderBy: { created_at: 'desc' },
     });
+  }
+
+  async findTranslationLocalesForPost(postId: string): Promise<string[]> {
+    const rows = await this.prisma.blogPostTranslation.findMany({
+      where: { post_id: postId },
+      select: { locale: true },
+    });
+    return rows.map((r) => r.locale);
   }
 
   async approvePost(id: string) {

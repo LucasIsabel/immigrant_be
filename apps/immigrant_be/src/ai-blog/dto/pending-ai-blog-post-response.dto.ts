@@ -25,4 +25,11 @@ export class PendingAiBlogPostResponseDto extends BlogPostResponseDto {
     nullable: true,
   })
   featured_country: FeaturedCountryDto | null;
+
+  @ApiProperty({
+    description: 'Locales de tradução que ainda estão faltando (en, es, pt)',
+    example: ['es'],
+    type: [String],
+  })
+  missing_translations: string[];
 }
