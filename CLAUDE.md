@@ -60,6 +60,12 @@
 •⁠ ⁠*No Laziness*: Find root causes. No temporary fixes. Senior developer standards.
 •⁠ ⁠*Minimat Impact*: Changes should only touch what's necessary. Avoid introducing bugs.
 
+## Code Formatting (Prettier + ESLint)
+
+- Generate TypeScript/JavaScript already valid under the project ESLint config (`eslint.config.mjs` with Prettier).
+- Assume files will be autoformatted by Prettier; write code in that style (no manual alignment or unusual line breaks).
+- Any snippet you propose should pass `pnpm lint` without style changes after formatting.
+
 ## Architecture Document
 
 **REQUIRED**: Before proposing or implementing any architectural change, consult `docs/ARCHITECTURE.md`. This document describes the complete architecture, adopted patterns, and each layer’s conventions.
