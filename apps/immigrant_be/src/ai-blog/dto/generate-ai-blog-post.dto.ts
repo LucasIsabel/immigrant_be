@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { PostComplexity } from '@app/ai';
 import { PoliticalTone } from '@app/ai';
 
@@ -21,7 +28,8 @@ export class GenerateAiBlogPostDto {
   category_id: string;
 
   @ApiProperty({
-    description: 'ID do usuário que será o autor do post (opcional, usa admin do sistema se omitido)',
+    description:
+      'ID do usuário que será o autor do post (opcional, usa admin do sistema se omitido)',
     example: '123e4567-e89b-12d3-a456-426614174000',
     required: false,
   })
@@ -60,7 +68,8 @@ export class GenerateAiBlogPostDto {
 
   @ApiProperty({
     description: 'Instruções personalizadas adicionadas ao prompt do AI',
-    example: 'Foque no mercado de trabalho tech. Mencione vistos de trabalho específicos.',
+    example:
+      'Foque no mercado de trabalho tech. Mencione vistos de trabalho específicos.',
     required: false,
     maxLength: 1000,
   })

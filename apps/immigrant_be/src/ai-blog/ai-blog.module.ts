@@ -11,7 +11,10 @@ import { BlogModule } from '../blog/blog.module';
   imports: [
     DatabaseModule,
     BlogModule,
-    BullModule.registerQueue({ name: AI_BLOG_QUEUE }, { name: AI_BLOG_IMAGE_QUEUE }),
+    BullModule.registerQueue(
+      { name: AI_BLOG_QUEUE },
+      { name: AI_BLOG_IMAGE_QUEUE },
+    ),
   ],
   controllers: [AiBlogController],
   providers: [AiBlogService, AiBlogRepository],

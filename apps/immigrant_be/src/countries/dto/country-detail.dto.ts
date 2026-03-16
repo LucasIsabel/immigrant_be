@@ -6,7 +6,11 @@ class ImmigrationVisaTypeEmbeddedDto {
   @ApiProperty({ description: 'Unique identifier', type: String })
   id: string;
 
-  @ApiProperty({ description: 'Visa category/name', example: 'Express Entry', type: String })
+  @ApiProperty({
+    description: 'Visa category/name',
+    example: 'Express Entry',
+    type: String,
+  })
   category: string;
 
   @ApiProperty({ description: 'Description of the visa type', type: String })

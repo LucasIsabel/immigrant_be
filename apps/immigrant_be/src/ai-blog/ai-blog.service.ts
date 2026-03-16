@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { AiBlogRepository } from './ai-blog.repository';
@@ -7,7 +12,12 @@ import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
 import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
 import { BlogService } from '../blog/blog.service';
-import { AI_BLOG_QUEUE, AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_POST, REFINE_AI_BLOG_POST } from '@app/config/constants';
+import {
+  AI_BLOG_QUEUE,
+  AI_BLOG_IMAGE_QUEUE,
+  GENERATE_AI_BLOG_POST,
+  REFINE_AI_BLOG_POST,
+} from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { PostComplexity, PoliticalTone } from '@app/ai';
 
@@ -24,7 +34,10 @@ export class AiBlogService {
 
   // ─── Generate ─────────────────────────────────────────────────────────────
 
-  async enqueueGeneration(dto: GenerateAiBlogPostDto, requestedByUserId?: string) {
+  async enqueueGeneration(
+    dto: GenerateAiBlogPostDto,
+    requestedByUserId?: string,
+  ) {
     const job = await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
       country_id: dto.country_id,
       category_id: dto.category_id,
@@ -36,7 +49,11 @@ export class AiBlogService {
       requestedByUserId: requestedByUserId ?? undefined,
     });
     this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
-    return { job_id: job.id, message: 'Post gerado em fila. Verifique a fila de aprovação em instantes.' };
+    return {
+      job_id: job.id,
+      message:
+        'Post gerado em fila. Verifique a fila de aprovação em instantes.',
+    };
   }
 
   // ─── Pending Posts ────────────────────────────────────────────────────────
@@ -72,11 +89,16 @@ export class AiBlogService {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
     if (!post.is_ai_generated || post.status !== BlogPostStatus.DRAFT) {
-      throw new NotFoundException('Post deve estar em DRAFT e ser gerado por IA para refinamento');
+      throw new NotFoundException(
+        'Post deve estar em DRAFT e ser gerado por IA para refinamento',
+      );
     }
 
-    const existingLocales = await this.repository.findTranslationLocalesForPost(id);
-    const missing = AiBlogService.REQUIRED_LOCALES.filter((l) => !existingLocales.includes(l));
+    const existingLocales =
+      await this.repository.findTranslationLocalesForPost(id);
+    const missing = AiBlogService.REQUIRED_LOCALES.filter(
+      (l) => !existingLocales.includes(l),
+    );
     if (missing.length > 0) {
       throw new BadRequestException(
         `Post não possui todas as traduções obrigatórias. Faltando: ${missing.join(', ')}`,
@@ -87,8 +109,13 @@ export class AiBlogService {
       postId: id,
       requestedByUserId: requestedByUserId ?? undefined,
     });
-    this.logger.log(`Enqueued AI blog post refinement job: ${job.id} for post ${id}`);
-    return { job_id: job.id, message: 'Refinamento enfileirado. As imagens serão geradas em breve.' };
+    this.logger.log(
+      `Enqueued AI blog post refinement job: ${job.id} for post ${id}`,
+    );
+    return {
+      job_id: job.id,
+      message: 'Refinamento enfileirado. As imagens serão geradas em breve.',
+    };
   }
 
   async updatePendingPost(id: string, dto: UpdateBlogPostDto) {
@@ -133,7 +160,10 @@ export class AiBlogService {
 
     // Remove old repeatable job if it exists
     if (existing.bullmq_job_id) {
-      await this.removeRepeatableJob(existing.bullmq_job_id, existing.cron_expr);
+      await this.removeRepeatableJob(
+        existing.bullmq_job_id,
+        existing.cron_expr,
+      );
     }
 
     const updated = await this.repository.updateCronJob(id, dto, undefined);
@@ -143,10 +173,16 @@ export class AiBlogService {
     const newCountryId = dto.country_id ?? existing.country_id;
     const newCategoryId = dto.category_id ?? existing.category_id;
     const newAuthorId = dto.author_id ?? existing.author_id ?? undefined;
-    const newDisplayAuthorId = dto.display_author_id ?? existing.display_author_id ?? undefined;
-    const newComplexity = (dto.complexity ?? existing.complexity ?? PostComplexity.SIMPLE) as PostComplexity;
-    const newPoliticalTone = (dto.political_tone ?? existing.political_tone ?? PoliticalTone.NEUTRAL) as PoliticalTone;
-    const newCustomInstructions = dto.custom_instructions ?? existing.custom_instructions ?? undefined;
+    const newDisplayAuthorId =
+      dto.display_author_id ?? existing.display_author_id ?? undefined;
+    const newComplexity = (dto.complexity ??
+      existing.complexity ??
+      PostComplexity.SIMPLE) as PostComplexity;
+    const newPoliticalTone = (dto.political_tone ??
+      existing.political_tone ??
+      PoliticalTone.NEUTRAL) as PoliticalTone;
+    const newCustomInstructions =
+      dto.custom_instructions ?? existing.custom_instructions ?? undefined;
 
     if (newIsActive) {
       const bullmqJobId = await this.registerRepeatableJob(id, {
@@ -170,7 +206,10 @@ export class AiBlogService {
     if (!existing) throw new NotFoundException('Cron job não encontrado');
 
     if (existing.bullmq_job_id) {
-      await this.removeRepeatableJob(existing.bullmq_job_id, existing.cron_expr);
+      await this.removeRepeatableJob(
+        existing.bullmq_job_id,
+        existing.cron_expr,
+      );
     }
 
     return this.repository.deleteCronJob(id);

@@ -48,7 +48,9 @@ export class VisaStepsService {
     return this.visaStepsRepository.update(id, data);
   }
 
-  async translate(dto: TranslateVisaStepsDto): Promise<Record<string, unknown>> {
+  async translate(
+    dto: TranslateVisaStepsDto,
+  ): Promise<Record<string, unknown>> {
     const prompt = buildVisaStepsTranslationPrompt({
       steps: dto.steps,
       sourceLanguage: dto.sourceLanguage,

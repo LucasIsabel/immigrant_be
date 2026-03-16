@@ -110,9 +110,7 @@ export class RoleService {
     const count = await this.roleRepository.countUserRoles(userId);
 
     if (count <= 1) {
-      throw new BadRequestException(
-        'Cannot revoke the last role from a user',
-      );
+      throw new BadRequestException('Cannot revoke the last role from a user');
     }
 
     try {

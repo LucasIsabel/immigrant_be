@@ -39,9 +39,7 @@ export class BlogTranslationWorkerService {
       throw new Error(`BlogPost not found: ${data.postId}`);
     }
 
-    this.logger.log(
-      `Translating post "${post.title}" to ${data.targetLocale}`,
-    );
+    this.logger.log(`Translating post "${post.title}" to ${data.targetLocale}`);
 
     const prompt = buildBlogTranslationPrompt({
       targetLocale: data.targetLocale,
@@ -53,7 +51,10 @@ export class BlogTranslationWorkerService {
 
     const response = await this.gemini.generateContent(prompt);
     const rawText = response.response.text();
-    const parsed = this.gemini.parseJsonResponse(rawText, blogTranslationAiSchema);
+    const parsed = this.gemini.parseJsonResponse(
+      rawText,
+      blogTranslationAiSchema,
+    );
 
     if (!parsed) {
       this.logger.error(

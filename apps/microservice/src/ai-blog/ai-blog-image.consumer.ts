@@ -1,10 +1,17 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { AiBlogImageWorkerService, GenerateBlogImageJobData } from './ai-blog-image.service';
+import {
+  AiBlogImageWorkerService,
+  GenerateBlogImageJobData,
+} from './ai-blog-image.service';
 import { AiBlogRefineService } from './ai-blog-refine.service';
 import { EventsService } from '../events/events.service';
-import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE, REFINE_AI_BLOG_POST } from '@app/config/constants';
+import {
+  AI_BLOG_IMAGE_QUEUE,
+  GENERATE_AI_BLOG_IMAGE,
+  REFINE_AI_BLOG_POST,
+} from '@app/config/constants';
 
 type ImageQueueJobData =
   | GenerateBlogImageJobData
@@ -23,12 +30,17 @@ export class AiBlogImageConsumer extends WorkerHost {
   }
 
   async process(job: Job<ImageQueueJobData>): Promise<void> {
-    const userId = 'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
+    const userId =
+      'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
 
     switch (job.name) {
       case GENERATE_AI_BLOG_IMAGE: {
-        this.logger.log(`Processando geração de imagem para post: ${job.data.postId}`);
-        await this.aiBlogImageWorkerService.generateAndAttachImage(job.data as GenerateBlogImageJobData);
+        this.logger.log(
+          `Processando geração de imagem para post: ${job.data.postId}`,
+        );
+        await this.aiBlogImageWorkerService.generateAndAttachImage(
+          job.data as GenerateBlogImageJobData,
+        );
         if (userId) {
           await this.eventsService.emit({
             userId,
@@ -61,7 +73,9 @@ export class AiBlogImageConsumer extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<ImageQueueJobData>): void {
-    this.logger.log(`Job de imagem concluído: ${job.id} (post: ${job.data.postId})`);
+    this.logger.log(
+      `Job de imagem concluído: ${job.id} (post: ${job.data.postId})`,
+    );
   }
 
   @OnWorkerEvent('failed')

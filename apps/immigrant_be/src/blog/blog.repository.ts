@@ -57,9 +57,24 @@ export class BlogRepository {
     const searchFilter = opts.search?.trim()
       ? {
           OR: [
-            { title: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
-            { excerpt: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
-            { content: { contains: opts.search!.trim(), mode: 'insensitive' as const } },
+            {
+              title: {
+                contains: opts.search!.trim(),
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              excerpt: {
+                contains: opts.search!.trim(),
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              content: {
+                contains: opts.search!.trim(),
+                mode: 'insensitive' as const,
+              },
+            },
           ],
         }
       : {};
@@ -279,7 +294,10 @@ export class BlogRepository {
 
   // ─── Translations ─────────────────────────────────────────────────────────
 
-  async toggleLike(postId: string, userId: string): Promise<{ liked: boolean }> {
+  async toggleLike(
+    postId: string,
+    userId: string,
+  ): Promise<{ liked: boolean }> {
     const existing = await this.prisma.blogPostLike.findUnique({
       where: { post_id_user_id: { post_id: postId, user_id: userId } },
     });
@@ -307,7 +325,10 @@ export class BlogRepository {
     return map;
   }
 
-  async getLikedPostIdsForUser(postIds: string[], userId: string): Promise<Set<string>> {
+  async getLikedPostIdsForUser(
+    postIds: string[],
+    userId: string,
+  ): Promise<Set<string>> {
     if (postIds.length === 0) return new Set();
     const likes = await this.prisma.blogPostLike.findMany({
       where: { post_id: { in: postIds }, user_id: userId },
@@ -332,7 +353,12 @@ export class BlogRepository {
   async upsertTranslation(
     postId: string,
     locale: string,
-    data: { title: string; excerpt: string; content: string; translated_by: string },
+    data: {
+      title: string;
+      excerpt: string;
+      content: string;
+      translated_by: string;
+    },
   ) {
     return this.prisma.blogPostTranslation.upsert({
       where: { post_id_locale: { post_id: postId, locale } },

@@ -268,7 +268,9 @@ export class SystemRepository {
    * Fetches the first pending event for the user and marks it as delivered
    * in a single transaction to avoid duplicate delivery across SSE connections.
    */
-  async getAndConsumeNextEvent(userId: string): Promise<EventResponseDto | null> {
+  async getAndConsumeNextEvent(
+    userId: string,
+  ): Promise<EventResponseDto | null> {
     const result = await this.prisma.$transaction(async (tx) => {
       const event = await tx.events.findFirst({
         where: {

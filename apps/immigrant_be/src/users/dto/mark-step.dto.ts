@@ -12,7 +12,13 @@ export class MarkStepDto {
     },
     example: {
       core_documents: [
-        { name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false },
+        {
+          name: 'Birth certificate',
+          required: true,
+          priority: 2,
+          notes: '',
+          checked: false,
+        },
       ],
     },
   })
@@ -29,7 +35,13 @@ export class MarkStepDto {
     },
     example: {
       core_documents: [
-        { name: 'Valid passport', required: true, priority: 1, notes: '', checked: true },
+        {
+          name: 'Valid passport',
+          required: true,
+          priority: 1,
+          notes: '',
+          checked: true,
+        },
       ],
     },
   })

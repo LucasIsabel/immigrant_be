@@ -320,7 +320,11 @@ export class UserService {
       ? new Date(Date.now() + dto.banExpiresInSeconds * 1000)
       : undefined;
 
-    const result = await this.userRepository.banUser(id, dto.banReason, banExpires);
+    const result = await this.userRepository.banUser(
+      id,
+      dto.banReason,
+      banExpires,
+    );
     await this.userRepository.deleteSessionsByUserId(id);
     return result;
   }

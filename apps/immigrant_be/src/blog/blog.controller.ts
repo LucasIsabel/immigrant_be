@@ -17,7 +17,11 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { AllowAnonymous, Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import {
+  AllowAnonymous,
+  Session,
+  type UserSession,
+} from '@thallesp/nestjs-better-auth';
 import { BlogService } from './blog.service';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
@@ -49,10 +53,7 @@ export class BlogController {
     @Query() query: BlogQueryDto,
     @Session() session?: UserSession,
   ) {
-    return this.blogService.findPublishedPosts(
-      query,
-      session?.user?.id,
-    );
+    return this.blogService.findPublishedPosts(query, session?.user?.id);
   }
 
   @Get('posts/admin')
@@ -78,7 +79,8 @@ export class BlogController {
   @AllowAnonymous()
   @ApiOperation({
     summary: 'Buscar post por slug',
-    description: 'Retorna post individual e incrementa contador de visualizações',
+    description:
+      'Retorna post individual e incrementa contador de visualizações',
   })
   @ApiParam({
     name: 'slug',
@@ -96,11 +98,7 @@ export class BlogController {
     @Query('lang') lang?: string,
     @Session() session?: UserSession,
   ) {
-    return this.blogService.findPostBySlug(
-      slug,
-      lang,
-      session?.user?.id,
-    );
+    return this.blogService.findPostBySlug(slug, lang, session?.user?.id);
   }
 
   @Get('categories')

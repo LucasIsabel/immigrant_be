@@ -165,7 +165,10 @@ export class UserRepository {
     });
   }
 
-  async getUserPlanRaw(user: UserSession, plan_id: string): Promise<Plans | null> {
+  async getUserPlanRaw(
+    user: UserSession,
+    plan_id: string,
+  ): Promise<Plans | null> {
     return this.prisma.plans.findUnique({
       where: { id: plan_id, user_id: user.user.id },
     });
@@ -420,7 +423,10 @@ export class UserRepository {
     });
   }
 
-  async updateMyProfile(userId: string, data: { name?: string; image?: string }) {
+  async updateMyProfile(
+    userId: string,
+    data: { name?: string; image?: string },
+  ) {
     return this.prisma.users.update({
       where: { id: userId },
       data,

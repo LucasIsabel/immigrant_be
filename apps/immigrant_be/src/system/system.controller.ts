@@ -88,11 +88,18 @@ export class SystemController {
     const userId = session?.user?.id;
 
     return defer(() =>
-      userId ? this.eventsService.getAndConsumeNextEvent(userId) : Promise.resolve(null),
+      userId
+        ? this.eventsService.getAndConsumeNextEvent(userId)
+        : Promise.resolve(null),
     ).pipe(
       repeat({ delay: 1000 }),
-      filter((result): result is NonNullable<typeof result> => Boolean(result?.id)),
-      map((event) => ({ data: JSON.stringify(event), type: 'message' as const })),
+      filter((result): result is NonNullable<typeof result> =>
+        Boolean(result?.id),
+      ),
+      map((event) => ({
+        data: JSON.stringify(event),
+        type: 'message' as const,
+      })),
     );
   }
 

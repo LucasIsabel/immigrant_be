@@ -93,7 +93,18 @@ describe('BlogRepository', () => {
       const mockPost = { id: 'post-id', title: 'Post de teste' };
       mockPrisma.blogPost.create.mockResolvedValue(mockPost);
 
-      await repository.createPost('author-id', { title: 'Post de teste', excerpt: 'Resumo', content: 'Conteúdo', category_id: 'cat-id' } as any, 'slug', 1, null);
+      await repository.createPost(
+        'author-id',
+        {
+          title: 'Post de teste',
+          excerpt: 'Resumo',
+          content: 'Conteúdo',
+          category_id: 'cat-id',
+        } as any,
+        'slug',
+        1,
+        null,
+      );
 
       expect(mockPrisma.blogPost.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -214,10 +225,17 @@ describe('BlogRepository', () => {
 
   describe('createTag', () => {
     it('deve criar tag', async () => {
-      const mockTag = { id: 'tag-id', name: 'Express Entry', slug: 'express-entry' };
+      const mockTag = {
+        id: 'tag-id',
+        name: 'Express Entry',
+        slug: 'express-entry',
+      };
       mockPrisma.blogTag.create.mockResolvedValue(mockTag);
 
-      const result = await repository.createTag('Express Entry', 'express-entry');
+      const result = await repository.createTag(
+        'Express Entry',
+        'express-entry',
+      );
 
       expect(mockPrisma.blogTag.create).toHaveBeenCalledWith({
         data: { name: 'Express Entry', slug: 'express-entry' },

@@ -16,7 +16,8 @@ export function buildBlogTranslationPrompt(
   opts: BlogTranslationPromptOptions,
 ): string {
   const targetLabel = LOCALE_LABELS[opts.targetLocale] ?? opts.targetLocale;
-  const originalLabel = LOCALE_LABELS[opts.originalLocale] ?? opts.originalLocale;
+  const originalLabel =
+    LOCALE_LABELS[opts.originalLocale] ?? opts.originalLocale;
 
   return `
 You are a professional translator specializing in immigration and visa content.

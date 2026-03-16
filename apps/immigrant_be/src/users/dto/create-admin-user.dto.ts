@@ -10,7 +10,10 @@ export class CreateAdminUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'User password (min 8 chars)', example: 'Str0ngPass!' })
+  @ApiProperty({
+    description: 'User password (min 8 chars)',
+    example: 'Str0ngPass!',
+  })
   @IsString()
   @MinLength(8)
   password: string;

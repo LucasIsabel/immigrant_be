@@ -10,7 +10,10 @@ import {
   PoliticalTone,
   type RssNewsItem,
 } from '@app/ai';
-import { AI_BLOG_IMAGE_QUEUE, GENERATE_AI_BLOG_IMAGE } from '@app/config/constants';
+import {
+  AI_BLOG_IMAGE_QUEUE,
+  GENERATE_AI_BLOG_IMAGE,
+} from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -52,7 +55,9 @@ export class AiBlogWorkerService {
     const newsItems = await this.fetchGoogleNewsRss(country.name);
 
     if (newsItems.length === 0) {
-      this.logger.warn(`No RSS news found for ${country.name}, aborting generation`);
+      this.logger.warn(
+        `No RSS news found for ${country.name}, aborting generation`,
+      );
       return;
     }
 
@@ -70,7 +75,9 @@ export class AiBlogWorkerService {
     const parsed = this.gemini.parseJsonResponse(rawText, blogPostAiSchema);
 
     if (!parsed) {
-      this.logger.error(`Failed to parse Gemini response for country: ${country.name}`);
+      this.logger.error(
+        `Failed to parse Gemini response for country: ${country.name}`,
+      );
       return;
     }
 
@@ -120,13 +127,17 @@ export class AiBlogWorkerService {
           where: { id: data.cron_job_id },
           data: { last_run_at: new Date() },
         })
-        .catch((err) => this.logger.warn(`Could not update cron job last_run_at: ${err}`));
+        .catch((err) =>
+          this.logger.warn(`Could not update cron job last_run_at: ${err}`),
+        );
     }
   }
 
   // ─── RSS ──────────────────────────────────────────────────────────────────
 
-  private async fetchGoogleNewsRss(countryName: string): Promise<RssNewsItem[]> {
+  private async fetchGoogleNewsRss(
+    countryName: string,
+  ): Promise<RssNewsItem[]> {
     const query = encodeURIComponent(`${countryName} immigration imigração`);
     const url = `https://news.google.com/rss/search?q=${query}&hl=en&gl=US&ceid=US:en`;
 
@@ -137,7 +148,9 @@ export class AiBlogWorkerService {
       });
 
       if (!response.ok) {
-        this.logger.warn(`RSS fetch returned ${response.status} for ${countryName}`);
+        this.logger.warn(
+          `RSS fetch returned ${response.status} for ${countryName}`,
+        );
         return [];
       }
 
@@ -149,7 +162,9 @@ export class AiBlogWorkerService {
       return itemsArray.slice(0, 5).map((item: any) => ({
         title: String(item.title ?? ''),
         description: item.description
-          ? String(item.description).replace(/<[^>]+>/g, '').slice(0, 200)
+          ? String(item.description)
+              .replace(/<[^>]+>/g, '')
+              .slice(0, 200)
           : undefined,
         link: String(item.link ?? ''),
         pubDate: item.pubDate ? String(item.pubDate) : undefined,
@@ -164,9 +179,13 @@ export class AiBlogWorkerService {
 
   private async resolveAuthorId(authorId?: string): Promise<string> {
     if (authorId) {
-      const user = await this.prisma.users.findUnique({ where: { id: authorId } });
+      const user = await this.prisma.users.findUnique({
+        where: { id: authorId },
+      });
       if (user) return user.id;
-      this.logger.warn(`Author with id ${authorId} not found, falling back to system admin`);
+      this.logger.warn(
+        `Author with id ${authorId} not found, falling back to system admin`,
+      );
     }
     return this.getSystemUserId();
   }

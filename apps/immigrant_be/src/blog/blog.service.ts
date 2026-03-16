@@ -38,15 +38,16 @@ export class BlogService {
   // ─── Posts ────────────────────────────────────────────────────────────────
 
   async createPost(authorId: string, dto: CreateBlogPostDto) {
-    const category = await this.blogRepository.findCategoryById(dto.category_id);
+    const category = await this.blogRepository.findCategoryById(
+      dto.category_id,
+    );
     if (!category) {
       throw new NotFoundException('Categoria não encontrada');
     }
 
     const slug = slugify(dto.title);
     const readingTimeMin = calcReadingTime(dto.content);
-    const publishedAt =
-      dto.status === 'PUBLISHED' ? new Date() : null;
+    const publishedAt = dto.status === 'PUBLISHED' ? new Date() : null;
 
     return this.blogRepository.createPost(
       authorId,
@@ -71,7 +72,9 @@ export class BlogService {
     });
 
     const localized = query.lang
-      ? await Promise.all(data.map((post) => this.applyTranslation(post, query.lang!)))
+      ? await Promise.all(
+          data.map((post) => this.applyTranslation(post, query.lang!)),
+        )
       : data;
 
     const postIds = localized.map((p) => p.id);
@@ -146,7 +149,10 @@ export class BlogService {
     const originalLocale = post.original_locale ?? 'en';
     if (!lang || lang === originalLocale) return post;
 
-    const translation = await this.blogRepository.findTranslation(post.id, lang);
+    const translation = await this.blogRepository.findTranslation(
+      post.id,
+      lang,
+    );
     if (!translation) return post;
 
     return {
@@ -191,14 +197,18 @@ export class BlogService {
     }
 
     if (dto.category_id) {
-      const category = await this.blogRepository.findCategoryById(dto.category_id);
+      const category = await this.blogRepository.findCategoryById(
+        dto.category_id,
+      );
       if (!category) {
         throw new NotFoundException('Categoria não encontrada');
       }
     }
 
     const slug = dto.slug ?? (dto.title ? slugify(dto.title) : undefined);
-    const readingTimeMin = dto.reading_time_min ?? (dto.content ? calcReadingTime(dto.content) : undefined);
+    const readingTimeMin =
+      dto.reading_time_min ??
+      (dto.content ? calcReadingTime(dto.content) : undefined);
 
     let publishedAt: Date | null | undefined;
     if (dto.status === 'PUBLISHED' && !existing.published_at) {

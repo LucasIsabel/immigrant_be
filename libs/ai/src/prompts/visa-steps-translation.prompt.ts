@@ -13,10 +13,8 @@ export interface VisaStepsTranslationPromptOptions {
 export function buildVisaStepsTranslationPrompt(
   opts: VisaStepsTranslationPromptOptions,
 ): string {
-  const targetLabel =
-    LOCALE_LABELS[opts.targetLanguage] ?? opts.targetLanguage;
-  const sourceLabel =
-    LOCALE_LABELS[opts.sourceLanguage] ?? opts.sourceLanguage;
+  const targetLabel = LOCALE_LABELS[opts.targetLanguage] ?? opts.targetLanguage;
+  const sourceLabel = LOCALE_LABELS[opts.sourceLanguage] ?? opts.sourceLanguage;
 
   const stepsJson = JSON.stringify(opts.steps, null, 2);
 

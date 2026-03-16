@@ -106,10 +106,16 @@ export class AiBlogRepository {
         ...(dto.cron_expr !== undefined && { cron_expr: dto.cron_expr }),
         ...(dto.is_active !== undefined && { is_active: dto.is_active }),
         ...(dto.author_id !== undefined && { author_id: dto.author_id }),
-        ...(dto.display_author_id !== undefined && { display_author_id: dto.display_author_id }),
+        ...(dto.display_author_id !== undefined && {
+          display_author_id: dto.display_author_id,
+        }),
         ...(dto.complexity !== undefined && { complexity: dto.complexity }),
-        ...(dto.political_tone !== undefined && { political_tone: dto.political_tone }),
-        ...(dto.custom_instructions !== undefined && { custom_instructions: dto.custom_instructions }),
+        ...(dto.political_tone !== undefined && {
+          political_tone: dto.political_tone,
+        }),
+        ...(dto.custom_instructions !== undefined && {
+          custom_instructions: dto.custom_instructions,
+        }),
         ...(bullmqJobId !== undefined && { bullmq_job_id: bullmqJobId }),
       },
       include: { country: { select: { id: true, name: true, flag: true } } },

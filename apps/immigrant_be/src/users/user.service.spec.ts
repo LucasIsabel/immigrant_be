@@ -18,11 +18,29 @@ const makePlan = (overrides: object = {}) => ({
   user_id: 'user-id-1',
   steps_remaining: {
     core_documents: [
-      { name: 'Valid passport', required: true, priority: 1, notes: '', checked: false },
-      { name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false },
+      {
+        name: 'Valid passport',
+        required: true,
+        priority: 1,
+        notes: '',
+        checked: false,
+      },
+      {
+        name: 'Birth certificate',
+        required: true,
+        priority: 2,
+        notes: '',
+        checked: false,
+      },
     ],
     health_and_character: [
-      { name: 'Police check', required: true, priority: 1, notes: '', checked: false },
+      {
+        name: 'Police check',
+        required: true,
+        priority: 1,
+        notes: '',
+        checked: false,
+      },
     ],
   },
   steps_completed: {},
@@ -75,7 +93,9 @@ describe('UserService - markStep', () => {
     repository.getUserPlanRaw.mockResolvedValue(null);
 
     const dto: MarkStepDto = {
-      steps_remaining: { core_documents: [{ name: 'Birth certificate', checked: false }] },
+      steps_remaining: {
+        core_documents: [{ name: 'Birth certificate', checked: false }],
+      },
       steps_completed: {},
     };
 
@@ -95,10 +115,26 @@ describe('UserService - markStep', () => {
 
     const dto: MarkStepDto = {
       steps_remaining: {
-        core_documents: [{ name: 'Birth certificate', required: true, priority: 2, notes: '', checked: false }],
+        core_documents: [
+          {
+            name: 'Birth certificate',
+            required: true,
+            priority: 2,
+            notes: '',
+            checked: false,
+          },
+        ],
       },
       steps_completed: {
-        core_documents: [{ name: 'Valid passport', required: true, priority: 1, notes: '', checked: true }],
+        core_documents: [
+          {
+            name: 'Valid passport',
+            required: true,
+            priority: 1,
+            notes: '',
+            checked: true,
+          },
+        ],
       },
     };
 
@@ -233,12 +269,21 @@ describe('UserService - completeAllSteps', () => {
 
     // All steps from core_documents should be in completedSteps with checked=true
     expect(completedSteps.core_documents).toHaveLength(2);
-    expect(completedSteps.core_documents[0]).toMatchObject({ name: 'Valid passport', checked: true });
-    expect(completedSteps.core_documents[1]).toMatchObject({ name: 'Birth certificate', checked: true });
+    expect(completedSteps.core_documents[0]).toMatchObject({
+      name: 'Valid passport',
+      checked: true,
+    });
+    expect(completedSteps.core_documents[1]).toMatchObject({
+      name: 'Birth certificate',
+      checked: true,
+    });
 
     // All steps from health_and_character should be in completedSteps with checked=true
     expect(completedSteps.health_and_character).toHaveLength(1);
-    expect(completedSteps.health_and_character[0]).toMatchObject({ name: 'Police check', checked: true });
+    expect(completedSteps.health_and_character[0]).toMatchObject({
+      name: 'Police check',
+      checked: true,
+    });
   });
 
   it('should be idempotent when steps_remaining is already empty', async () => {
@@ -246,7 +291,13 @@ describe('UserService - completeAllSteps', () => {
       steps_remaining: {},
       steps_completed: {
         core_documents: [
-          { name: 'Valid passport', required: true, priority: 1, notes: '', checked: true },
+          {
+            name: 'Valid passport',
+            required: true,
+            priority: 1,
+            notes: '',
+            checked: true,
+          },
         ],
       },
       progress: 1,
@@ -266,7 +317,10 @@ describe('UserService - completeAllSteps', () => {
     expect(progress).toBe(1);
     // Existing completed steps should remain unchanged
     expect(completedSteps.core_documents).toHaveLength(1);
-    expect(completedSteps.core_documents[0]).toMatchObject({ name: 'Valid passport', checked: true });
+    expect(completedSteps.core_documents[0]).toMatchObject({
+      name: 'Valid passport',
+      checked: true,
+    });
   });
 
   it('should migrate steps from multiple categories correctly', async () => {
@@ -276,14 +330,10 @@ describe('UserService - completeAllSteps', () => {
           { name: 'Step A1', checked: false },
           { name: 'Step A2', checked: false },
         ],
-        cat_b: [
-          { name: 'Step B1', checked: false },
-        ],
+        cat_b: [{ name: 'Step B1', checked: false }],
       },
       steps_completed: {
-        cat_a: [
-          { name: 'Step A0', checked: true },
-        ],
+        cat_a: [{ name: 'Step A0', checked: true }],
       },
     });
     repository.getUserPlanRaw.mockResolvedValue(plan);
@@ -299,12 +349,24 @@ describe('UserService - completeAllSteps', () => {
 
     // cat_a: existing completed step + 2 migrated steps
     expect(completedSteps.cat_a).toHaveLength(3);
-    expect(completedSteps.cat_a[0]).toMatchObject({ name: 'Step A0', checked: true });
-    expect(completedSteps.cat_a[1]).toMatchObject({ name: 'Step A1', checked: true });
-    expect(completedSteps.cat_a[2]).toMatchObject({ name: 'Step A2', checked: true });
+    expect(completedSteps.cat_a[0]).toMatchObject({
+      name: 'Step A0',
+      checked: true,
+    });
+    expect(completedSteps.cat_a[1]).toMatchObject({
+      name: 'Step A1',
+      checked: true,
+    });
+    expect(completedSteps.cat_a[2]).toMatchObject({
+      name: 'Step A2',
+      checked: true,
+    });
 
     // cat_b: 1 migrated step
     expect(completedSteps.cat_b).toHaveLength(1);
-    expect(completedSteps.cat_b[0]).toMatchObject({ name: 'Step B1', checked: true });
+    expect(completedSteps.cat_b[0]).toMatchObject({
+      name: 'Step B1',
+      checked: true,
+    });
   });
 });

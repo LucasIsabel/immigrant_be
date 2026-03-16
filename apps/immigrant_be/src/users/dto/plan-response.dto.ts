@@ -152,8 +152,7 @@ export class PlanResponseDto {
           name: 'Police clearance certificates',
           required: true,
           priority: 1,
-          notes:
-            'Required for all countries lived in for 12 months or more.',
+          notes: 'Required for all countries lived in for 12 months or more.',
           checked: false,
         },
       ],

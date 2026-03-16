@@ -1,7 +1,10 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { AiBlogWorkerService, GenerateBlogPostJobData } from './ai-blog.service';
+import {
+  AiBlogWorkerService,
+  GenerateBlogPostJobData,
+} from './ai-blog.service';
 import { EventsService } from '../events/events.service';
 import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
 
@@ -28,7 +31,8 @@ export class AiBlogConsumer extends WorkerHost {
             userId: job.data.requestedByUserId,
             type: 'blog_post_generated',
             title: 'Post gerado',
-            message: 'O post foi gerado e está na fila de aprovação. A imagem de capa está sendo processada.',
+            message:
+              'O post foi gerado e está na fila de aprovação. A imagem de capa está sendo processada.',
             payload: {},
           });
         }

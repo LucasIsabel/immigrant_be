@@ -26,8 +26,6 @@ export class BlogTranslationCronService implements OnModuleInit {
       },
     );
 
-    this.logger.log(
-      'Daily blog translation cron registered (03:00 UTC)',
-    );
+    this.logger.log('Daily blog translation cron registered (03:00 UTC)');
   }
 }

@@ -118,9 +118,18 @@ describe('SystemService - createSuggestions', () => {
       expect(typeof step.answer).toBe('string');
     });
 
-    expect(savedParameters.steps[0]).toMatchObject({ type: 'TARGET', answer: 'work' });
-    expect(savedParameters.steps[1]).toMatchObject({ type: 'ENGLISH', answer: 'beginner' });
-    expect(savedParameters.steps[2]).toMatchObject({ type: 'BUDGET', answer: '10000' });
+    expect(savedParameters.steps[0]).toMatchObject({
+      type: 'TARGET',
+      answer: 'work',
+    });
+    expect(savedParameters.steps[1]).toMatchObject({
+      type: 'ENGLISH',
+      answer: 'beginner',
+    });
+    expect(savedParameters.steps[2]).toMatchObject({
+      type: 'BUDGET',
+      answer: '10000',
+    });
   });
 
   it('should return cached suggestions and skip Gemini when parameters match', async () => {
@@ -131,8 +140,12 @@ describe('SystemService - createSuggestions', () => {
       suggestions: geminiSuggestions.suggestions,
     };
 
-    repository.getRawSuggestionsWithParameters.mockResolvedValue(cachedSuggestion);
-    repository.getSuggestionAccordingToLanguage.mockResolvedValue(cachedResponse);
+    repository.getRawSuggestionsWithParameters.mockResolvedValue(
+      cachedSuggestion,
+    );
+    repository.getSuggestionAccordingToLanguage.mockResolvedValue(
+      cachedResponse,
+    );
 
     const dto = { steps: makeSteps() as any, parameters, language: 'en' };
     const result = await service.createSuggestions(dto);

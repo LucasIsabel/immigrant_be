@@ -140,7 +140,10 @@ describe('BlogService', () => {
   describe('findPublishedPosts', () => {
     it('deve retornar posts paginados', async () => {
       const mockData = [{ id: 'post-1' }];
-      mockRepository.findPublishedPosts.mockResolvedValue({ data: mockData, total: 1 });
+      mockRepository.findPublishedPosts.mockResolvedValue({
+        data: mockData,
+        total: 1,
+      });
 
       const result = await service.findPublishedPosts({ page: 1, limit: 10 });
 
@@ -154,7 +157,10 @@ describe('BlogService', () => {
     });
 
     it('deve calcular skip correto para página 2', async () => {
-      mockRepository.findPublishedPosts.mockResolvedValue({ data: [], total: 0 });
+      mockRepository.findPublishedPosts.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await service.findPublishedPosts({ page: 2, limit: 5 });
 
@@ -201,7 +207,10 @@ describe('BlogService', () => {
     });
 
     it('deve lançar NotFoundException quando nova categoria não existe', async () => {
-      mockRepository.findPostById.mockResolvedValue({ id: 'post-id', published_at: null });
+      mockRepository.findPostById.mockResolvedValue({
+        id: 'post-id',
+        published_at: null,
+      });
       mockRepository.findCategoryById.mockResolvedValue(null);
 
       await expect(
@@ -329,9 +338,9 @@ describe('BlogService', () => {
     it('deve lançar ConflictException quando tag já existe', async () => {
       mockRepository.findTagBySlug.mockResolvedValue({ id: 'tag-id' });
 
-      await expect(service.createTag({ name: 'Express Entry' })).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.createTag({ name: 'Express Entry' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

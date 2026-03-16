@@ -47,7 +47,10 @@ import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
 import { AdminBlogQueryDto } from './dto/blog-query.dto';
 import { UpsertBlogTranslationDto } from './dto/upsert-blog-translation.dto';
 import { BlogTranslationResponseDto } from './dto/blog-translation-response.dto';
-import { BLOG_TRANSLATION_QUEUE, TRANSLATE_BLOG_POST } from '@app/config/constants';
+import {
+  BLOG_TRANSLATION_QUEUE,
+  TRANSLATE_BLOG_POST,
+} from '@app/config/constants';
 
 @ApiTags('Admin Blog')
 @Controller('admin/blog')
@@ -58,7 +61,8 @@ import { BLOG_TRANSLATION_QUEUE, TRANSLATE_BLOG_POST } from '@app/config/constan
 export class BlogAdminController {
   constructor(
     private readonly blogService: BlogService,
-    @InjectQueue(BLOG_TRANSLATION_QUEUE) private readonly translationQueue: Queue,
+    @InjectQueue(BLOG_TRANSLATION_QUEUE)
+    private readonly translationQueue: Queue,
   ) {}
 
   // ─── Posts ────────────────────────────────────────────────────────────────
@@ -67,7 +71,8 @@ export class BlogAdminController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Criar post',
-    description: 'Cria um novo post no blog. Slug gerado automaticamente pelo título.',
+    description:
+      'Cria um novo post no blog. Slug gerado automaticamente pelo título.',
   })
   @ApiBody({ type: CreateBlogPostDto })
   @ApiCreatedResponse({
@@ -81,7 +86,8 @@ export class BlogAdminController {
   @Get('posts')
   @ApiOperation({
     summary: 'Listar todos os posts (admin)',
-    description: 'Retorna todos os posts independente do status, com filtros opcionais',
+    description:
+      'Retorna todos os posts independente do status, com filtros opcionais',
   })
   @ApiResponse({
     status: 200,
@@ -95,9 +101,14 @@ export class BlogAdminController {
   @Patch('posts/:id')
   @ApiOperation({
     summary: 'Atualizar post',
-    description: 'Atualiza dados de um post existente. Slug e reading_time recalculados automaticamente.',
+    description:
+      'Atualiza dados de um post existente. Slug e reading_time recalculados automaticamente.',
   })
-  @ApiParam({ name: 'id', description: 'ID do post', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do post',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiBody({ type: UpdateBlogPostDto })
   @ApiResponse({
     status: 200,
@@ -115,7 +126,11 @@ export class BlogAdminController {
     summary: 'Remover post',
     description: 'Remove permanentemente um post do blog',
   })
-  @ApiParam({ name: 'id', description: 'ID do post', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do post',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiNoContentResponse({ description: 'Post removido com sucesso' })
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
   deletePost(@Param('id') id: string) {
@@ -143,10 +158,15 @@ export class BlogAdminController {
   @Put('posts/:id/translations/:locale')
   @ApiOperation({
     summary: 'Criar ou atualizar tradução manual',
-    description: 'Upsert de tradução humana para um locale específico ("pt" | "en" | "es")',
+    description:
+      'Upsert de tradução humana para um locale específico ("pt" | "en" | "es")',
   })
   @ApiParam({ name: 'id', description: 'ID do post' })
-  @ApiParam({ name: 'locale', description: 'Locale da tradução', example: 'en' })
+  @ApiParam({
+    name: 'locale',
+    description: 'Locale da tradução',
+    example: 'en',
+  })
   @ApiBody({ type: UpsertBlogTranslationDto })
   @ApiResponse({
     status: 200,
@@ -166,12 +186,16 @@ export class BlogAdminController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Enfileirar tradução automática via IA',
-    description: 'Enfileira jobs de tradução para Português e Espanhol usando Gemini (a partir do conteúdo em inglês)',
+    description:
+      'Enfileira jobs de tradução para Português e Espanhol usando Gemini (a partir do conteúdo em inglês)',
   })
   @ApiParam({ name: 'id', description: 'ID do post' })
   @ApiAcceptedResponse({ description: 'Jobs enfileirados com sucesso' })
   @ApiNotFoundResponse({ description: 'Post não encontrado' })
-  async enqueueTranslation(@Param('id') id: string, @Session() session: UserSession) {
+  async enqueueTranslation(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+  ) {
     // Validate post exists
     await this.blogService.getPostTranslations(id);
 
@@ -199,7 +223,8 @@ export class BlogAdminController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Criar categoria',
-    description: 'Cria uma nova categoria. Slug gerado automaticamente pelo nome.',
+    description:
+      'Cria uma nova categoria. Slug gerado automaticamente pelo nome.',
   })
   @ApiBody({ type: CreateBlogCategoryDto })
   @ApiCreatedResponse({
@@ -213,9 +238,14 @@ export class BlogAdminController {
   @Patch('categories/:id')
   @ApiOperation({
     summary: 'Atualizar categoria',
-    description: 'Atualiza dados de uma categoria existente. Slug recalculado automaticamente pelo nome.',
+    description:
+      'Atualiza dados de uma categoria existente. Slug recalculado automaticamente pelo nome.',
   })
-  @ApiParam({ name: 'id', description: 'ID da categoria', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID da categoria',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiBody({ type: UpdateBlogCategoryDto })
   @ApiResponse({
     status: 200,
@@ -233,7 +263,11 @@ export class BlogAdminController {
     summary: 'Remover categoria',
     description: 'Remove permanentemente uma categoria do blog',
   })
-  @ApiParam({ name: 'id', description: 'ID da categoria', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID da categoria',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiNoContentResponse({ description: 'Categoria removida com sucesso' })
   @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
   deleteCategory(@Param('id') id: string) {
@@ -260,9 +294,14 @@ export class BlogAdminController {
   @Patch('tags/:id')
   @ApiOperation({
     summary: 'Atualizar tag',
-    description: 'Atualiza dados de uma tag existente. Slug recalculado automaticamente pelo nome.',
+    description:
+      'Atualiza dados de uma tag existente. Slug recalculado automaticamente pelo nome.',
   })
-  @ApiParam({ name: 'id', description: 'ID da tag', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID da tag',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiBody({ type: UpdateBlogTagDto })
   @ApiResponse({
     status: 200,
@@ -280,7 +319,11 @@ export class BlogAdminController {
     summary: 'Remover tag',
     description: 'Remove permanentemente uma tag do blog',
   })
-  @ApiParam({ name: 'id', description: 'ID da tag', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID da tag',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiNoContentResponse({ description: 'Tag removida com sucesso' })
   @ApiNotFoundResponse({ description: 'Tag não encontrada' })
   deleteTag(@Param('id') id: string) {
@@ -323,7 +366,11 @@ export class BlogAdminController {
     summary: 'Buscar autor por ID',
     description: 'Retorna um autor pelo ID',
   })
-  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do autor',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiResponse({
     status: 200,
     description: 'Autor encontrado',
@@ -339,7 +386,11 @@ export class BlogAdminController {
     summary: 'Atualizar autor',
     description: 'Atualiza dados de um autor existente',
   })
-  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do autor',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiBody({ type: UpdateBlogAuthorDto })
   @ApiResponse({
     status: 200,
@@ -355,9 +406,14 @@ export class BlogAdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Remover autor',
-    description: 'Remove um autor do blog. Posts com display_author_id apontando para este autor terão o vínculo removido (SetNull).',
+    description:
+      'Remove um autor do blog. Posts com display_author_id apontando para este autor terão o vínculo removido (SetNull).',
   })
-  @ApiParam({ name: 'id', description: 'ID do autor', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do autor',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiNoContentResponse({ description: 'Autor removido com sucesso' })
   @ApiNotFoundResponse({ description: 'Autor não encontrado' })
   deleteAuthor(@Param('id') id: string) {

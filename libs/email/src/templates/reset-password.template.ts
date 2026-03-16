@@ -4,28 +4,37 @@ type Locale = 'en' | 'pt' | 'es';
 
 const translations: Record<
   Locale,
-  { subject: string; heading: string; body: string; button: string; footer: string }
+  {
+    subject: string;
+    heading: string;
+    body: string;
+    button: string;
+    footer: string;
+  }
 > = {
   en: {
     subject: 'Reset your password',
     heading: 'Reset your password',
     body: 'We received a request to reset your password. Click the button below to choose a new password.',
     button: 'Reset Password',
-    footer: 'If you did not request a password reset, you can safely ignore this email.',
+    footer:
+      'If you did not request a password reset, you can safely ignore this email.',
   },
   pt: {
     subject: 'Redefina sua senha',
     heading: 'Redefina sua senha',
     body: 'Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para escolher uma nova senha.',
     button: 'Redefinir Senha',
-    footer: 'Se você não solicitou a redefinição de senha, pode ignorar este email com segurança.',
+    footer:
+      'Se você não solicitou a redefinição de senha, pode ignorar este email com segurança.',
   },
   es: {
     subject: 'Restablece tu contraseña',
     heading: 'Restablece tu contraseña',
     body: 'Recibimos una solicitud para restablecer tu contraseña. Haz clic en el botón de abajo para elegir una nueva contraseña.',
     button: 'Restablecer Contraseña',
-    footer: 'Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.',
+    footer:
+      'Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.',
   },
 };
 

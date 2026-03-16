@@ -51,7 +51,10 @@ export class AiBlogController {
       'Enfileira a geração de um post de blog com IA para o país informado. O post ficará em DRAFT na fila de aprovação.',
   })
   @ApiResponse({ status: 202, description: 'Geração enfileirada com sucesso' })
-  generate(@Body() dto: GenerateAiBlogPostDto, @Session() session: UserSession) {
+  generate(
+    @Body() dto: GenerateAiBlogPostDto,
+    @Session() session: UserSession,
+  ) {
     return this.aiBlogService.enqueueGeneration(dto, session?.user?.id);
   }
 
@@ -62,7 +65,11 @@ export class AiBlogController {
     summary: 'Listar posts pendentes de aprovação',
     description: 'Retorna posts DRAFT gerados por IA aguardando revisão',
   })
-  @ApiResponse({ status: 200, description: 'Posts listados com sucesso', type: [PendingAiBlogPostResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Posts listados com sucesso',
+    type: [PendingAiBlogPostResponseDto],
+  })
   findPendingPosts() {
     return this.aiBlogService.findPendingPosts();
   }
@@ -82,11 +89,14 @@ export class AiBlogController {
   @Patch('pending/:id')
   @ApiOperation({
     summary: 'Editar post pendente de aprovação',
-    description: 'Atualiza campos de um post DRAFT gerado por IA antes da aprovação',
+    description:
+      'Atualiza campos de um post DRAFT gerado por IA antes da aprovação',
   })
   @ApiParam({ name: 'id', description: 'ID do post' })
   @ApiResponse({ status: 200, description: 'Post atualizado com sucesso' })
-  @ApiNotFoundResponse({ description: 'Post não encontrado ou não está em DRAFT' })
+  @ApiNotFoundResponse({
+    description: 'Post não encontrado ou não está em DRAFT',
+  })
   updatePendingPost(@Param('id') id: string, @Body() dto: UpdateBlogPostDto) {
     return this.aiBlogService.updatePendingPost(id, dto);
   }
@@ -112,8 +122,13 @@ export class AiBlogController {
       'Enfileira o refinamento de um post DRAFT gerado por IA: substitui marcadores [Visual sugerido] por imagens geradas via Gemini.',
   })
   @ApiParam({ name: 'id', description: 'ID do post' })
-  @ApiResponse({ status: 202, description: 'Refinamento enfileirado com sucesso' })
-  @ApiNotFoundResponse({ description: 'Post não encontrado ou não elegível para refinamento' })
+  @ApiResponse({
+    status: 202,
+    description: 'Refinamento enfileirado com sucesso',
+  })
+  @ApiNotFoundResponse({
+    description: 'Post não encontrado ou não elegível para refinamento',
+  })
   enqueueRefinement(@Param('id') id: string, @Session() session: UserSession) {
     return this.aiBlogService.enqueueRefinement(id, session?.user?.id);
   }
@@ -125,7 +140,11 @@ export class AiBlogController {
     summary: 'Listar cron jobs de geração de posts',
     description: 'Retorna todos os cron jobs configurados',
   })
-  @ApiResponse({ status: 200, description: 'Cron jobs listados', type: [AiBlogCronResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Cron jobs listados',
+    type: [AiBlogCronResponseDto],
+  })
   findAllCronJobs() {
     return this.aiBlogService.findAllCronJobs();
   }
@@ -136,7 +155,10 @@ export class AiBlogController {
     summary: 'Criar cron job',
     description: 'Cria um novo cron job para geração automática de posts',
   })
-  @ApiCreatedResponse({ description: 'Cron job criado com sucesso', type: AiBlogCronResponseDto })
+  @ApiCreatedResponse({
+    description: 'Cron job criado com sucesso',
+    type: AiBlogCronResponseDto,
+  })
   createCronJob(@Body() dto: CreateAiBlogCronDto) {
     return this.aiBlogService.createCronJob(dto);
   }
@@ -147,7 +169,11 @@ export class AiBlogController {
     description: 'Atualiza expressão, país, categoria ou ativa/desativa o cron',
   })
   @ApiParam({ name: 'id', description: 'ID do cron job' })
-  @ApiResponse({ status: 200, description: 'Cron job atualizado', type: AiBlogCronResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Cron job atualizado',
+    type: AiBlogCronResponseDto,
+  })
   @ApiNotFoundResponse({ description: 'Cron job não encontrado' })
   updateCronJob(@Param('id') id: string, @Body() dto: UpdateAiBlogCronDto) {
     return this.aiBlogService.updateCronJob(id, dto);

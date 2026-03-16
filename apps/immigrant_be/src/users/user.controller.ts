@@ -228,7 +228,8 @@ export class UserController {
     schema: { example: { id: '123e4567-e89b-12d3-a456-426614174000' } },
   })
   @ApiBadRequestResponse({
-    description: 'Validation failed — `steps_remaining` or `steps_completed` is missing or not an object',
+    description:
+      'Validation failed — `steps_remaining` or `steps_completed` is missing or not an object',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,

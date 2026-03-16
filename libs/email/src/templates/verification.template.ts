@@ -4,28 +4,37 @@ type Locale = 'en' | 'pt' | 'es';
 
 const translations: Record<
   Locale,
-  { subject: string; heading: string; body: string; button: string; footer: string }
+  {
+    subject: string;
+    heading: string;
+    body: string;
+    button: string;
+    footer: string;
+  }
 > = {
   en: {
     subject: 'Verify your email address',
     heading: 'Verify your email',
     body: 'Thanks for signing up! Please click the button below to verify your email address.',
     button: 'Verify Email',
-    footer: 'If you did not create an account, you can safely ignore this email.',
+    footer:
+      'If you did not create an account, you can safely ignore this email.',
   },
   pt: {
     subject: 'Verifique seu endereço de email',
     heading: 'Verifique seu email',
     body: 'Obrigado por se cadastrar! Clique no botão abaixo para verificar seu endereço de email.',
     button: 'Verificar Email',
-    footer: 'Se você não criou uma conta, pode ignorar este email com segurança.',
+    footer:
+      'Se você não criou uma conta, pode ignorar este email com segurança.',
   },
   es: {
     subject: 'Verifica tu dirección de correo electrónico',
     heading: 'Verifica tu correo',
     body: 'Gracias por registrarte. Haz clic en el botón de abajo para verificar tu dirección de correo electrónico.',
     button: 'Verificar Correo',
-    footer: 'Si no creaste una cuenta, puedes ignorar este correo de forma segura.',
+    footer:
+      'Si no creaste una cuenta, puedes ignorar este correo de forma segura.',
   },
 };
 

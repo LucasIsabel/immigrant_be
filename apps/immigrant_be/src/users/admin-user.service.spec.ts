@@ -268,8 +268,13 @@ describe('UserService - Admin Methods', () => {
       const result = await service.deactivateUser('user-id-1');
 
       expect(result.isActive).toBe(false);
-      expect(repository.setActiveStatus).toHaveBeenCalledWith('user-id-1', false);
-      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
+      expect(repository.setActiveStatus).toHaveBeenCalledWith(
+        'user-id-1',
+        false,
+      );
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith(
+        'user-id-1',
+      );
     });
 
     it('should throw ConflictException when user is already inactive', async () => {
@@ -306,7 +311,9 @@ describe('UserService - Admin Methods', () => {
 
       expect(result.banned).toBe(true);
       expect(result.banReason).toBe('Spamming');
-      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith(
+        'user-id-1',
+      );
     });
 
     it('should ban a user with expiry', async () => {
@@ -385,7 +392,11 @@ describe('UserService - Admin Methods', () => {
   // ── createAdminUser ───────────────────────────────────────
 
   describe('createAdminUser', () => {
-    const createDto = { name: 'New User', email: 'new@example.com', password: 'Str0ngPass!' };
+    const createDto = {
+      name: 'New User',
+      email: 'new@example.com',
+      password: 'Str0ngPass!',
+    };
 
     it('should create a user successfully', async () => {
       const created = { ...mockUser, ...createDto };
@@ -396,7 +407,11 @@ describe('UserService - Admin Methods', () => {
 
       expect(repository.findByEmail).toHaveBeenCalledWith(createDto.email);
       expect(repository.createUser).toHaveBeenCalledWith(
-        expect.objectContaining({ name: createDto.name, email: createDto.email, password: createDto.password }),
+        expect.objectContaining({
+          name: createDto.name,
+          email: createDto.email,
+          password: createDto.password,
+        }),
       );
       expect(result).toEqual(created);
     });
@@ -404,7 +419,9 @@ describe('UserService - Admin Methods', () => {
     it('should throw ConflictException when email already in use', async () => {
       repository.findByEmail.mockResolvedValue(mockUser);
 
-      await expect(service.createAdminUser(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.createAdminUser(createDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(repository.createUser).not.toHaveBeenCalled();
     });
 
@@ -412,7 +429,9 @@ describe('UserService - Admin Methods', () => {
       repository.findByEmail.mockResolvedValue(null);
       repository.createUser.mockResolvedValue(null);
 
-      await expect(service.createAdminUser(createDto)).rejects.toThrow(NotFoundException);
+      await expect(service.createAdminUser(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -421,13 +440,19 @@ describe('UserService - Admin Methods', () => {
   describe('verifyUserEmail', () => {
     it('should verify email successfully', async () => {
       const verified = { ...mockUser, emailVerified: true };
-      repository.findByIdWithRoles.mockResolvedValue({ ...mockUser, emailVerified: false });
+      repository.findByIdWithRoles.mockResolvedValue({
+        ...mockUser,
+        emailVerified: false,
+      });
       repository.setEmailVerified.mockResolvedValue(verified);
 
       const result = await service.verifyUserEmail('user-id-1', true);
 
       expect(result.emailVerified).toBe(true);
-      expect(repository.setEmailVerified).toHaveBeenCalledWith('user-id-1', true);
+      expect(repository.setEmailVerified).toHaveBeenCalledWith(
+        'user-id-1',
+        true,
+      );
     });
 
     it('should unverify email successfully', async () => {
@@ -438,19 +463,26 @@ describe('UserService - Admin Methods', () => {
       const result = await service.verifyUserEmail('user-id-1', false);
 
       expect(result.emailVerified).toBe(false);
-      expect(repository.setEmailVerified).toHaveBeenCalledWith('user-id-1', false);
+      expect(repository.setEmailVerified).toHaveBeenCalledWith(
+        'user-id-1',
+        false,
+      );
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
       repository.findByIdWithRoles.mockResolvedValue(null);
 
-      await expect(service.verifyUserEmail('nonexistent', true)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.verifyUserEmail('nonexistent', true),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException when email is already in the desired state', async () => {
       repository.findByIdWithRoles.mockResolvedValue(mockUser); // emailVerified: true
 
-      await expect(service.verifyUserEmail('user-id-1', true)).rejects.toThrow(ConflictException);
+      await expect(service.verifyUserEmail('user-id-1', true)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -458,7 +490,14 @@ describe('UserService - Admin Methods', () => {
 
   describe('getUserSessions', () => {
     it('should return sessions for a user', async () => {
-      const sessions = [{ id: 'session-1', userId: 'user-id-1', expiresAt: new Date(), createdAt: new Date() }];
+      const sessions = [
+        {
+          id: 'session-1',
+          userId: 'user-id-1',
+          expiresAt: new Date(),
+          createdAt: new Date(),
+        },
+      ];
       repository.findByIdWithRoles.mockResolvedValue(mockUser);
       repository.findSessionsByUserId.mockResolvedValue(sessions);
 
@@ -471,7 +510,9 @@ describe('UserService - Admin Methods', () => {
     it('should throw NotFoundException when user does not exist', async () => {
       repository.findByIdWithRoles.mockResolvedValue(null);
 
-      await expect(service.getUserSessions('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getUserSessions('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -484,13 +525,17 @@ describe('UserService - Admin Methods', () => {
 
       await service.revokeUserSessions('user-id-1');
 
-      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith('user-id-1');
+      expect(repository.deleteSessionsByUserId).toHaveBeenCalledWith(
+        'user-id-1',
+      );
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
       repository.findByIdWithRoles.mockResolvedValue(null);
 
-      await expect(service.revokeUserSessions('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.revokeUserSessions('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

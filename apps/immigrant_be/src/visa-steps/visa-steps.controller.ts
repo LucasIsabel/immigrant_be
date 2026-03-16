@@ -54,8 +54,7 @@ export class VisaStepsController {
   @Post('translate')
   @ApiOperation({
     summary: 'Translate visa steps',
-    description:
-      'Translates visa steps JSON to Portuguese or Spanish using AI',
+    description: 'Translates visa steps JSON to Portuguese or Spanish using AI',
   })
   @ApiBody({ type: TranslateVisaStepsDto })
   @ApiResponse({
