@@ -6,7 +6,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env } from './env';
 import { sendEmail } from '@app/email/send-email';
 import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
-import { sendVerificationEmail } from './email';
+import { buildVerificationEmail } from '@app/email/templates/verification.template';
 
 const prisma = new PrismaClient();
 
@@ -47,11 +47,17 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      await sendVerificationEmail({
-        to: user.email,
-        subject: 'Verifique seu email',
-        url,
-      });
+      const verificationUrl = new URL(url);
+      verificationUrl.searchParams.set(
+        'callbackURL',
+        `${env.FRONTEND_URL}/verify-email?verified=true`,
+      );
+      const { subject, html } = buildVerificationEmail(
+        'en',
+        verificationUrl.toString(),
+        user.name,
+      );
+      await sendEmail({ to: user.email, subject, html });
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
