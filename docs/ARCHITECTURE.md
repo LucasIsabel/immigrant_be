@@ -388,6 +388,9 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | Prefixo                                      | Módulo                    | Acesso                                     |
 | -------------------------------------------- | ------------------------- | ------------------------------------------ |
 | `/auth/*`                                    | better-auth               | Público                                    |
+| `GET /users/me`                              | Users                     | Autenticado                                |
+| `PATCH /users/me`                            | Users                     | Autenticado (nome, imagem, bio)            |
+| `PATCH /users/me/preferences`                | Users                     | Autenticado (emailNotificationsEnabled)    |
 | `/users/plan`                                | Users                     | Autenticado                                |
 | `/users/plan/from-country`                   | Users                     | Autenticado (criar plano a partir de país) |
 | `/admin/users`                               | Users (admin)             | ADMIN                                      |

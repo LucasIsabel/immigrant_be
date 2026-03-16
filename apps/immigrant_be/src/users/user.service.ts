@@ -18,6 +18,7 @@ import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
 import { MarkStepDto } from './dto/mark-step.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
+import { UpdateMyPreferencesDto } from './dto/update-my-preferences.dto';
 
 @Injectable()
 export class UserService {
@@ -418,5 +419,15 @@ export class UserService {
     }
 
     return this.userRepository.updateMyProfile(userId, dto);
+  }
+
+  async updateMyPreferences(userId: string, dto: UpdateMyPreferencesDto) {
+    const user = await this.userRepository.findMeWithRoles(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.userRepository.updateMyPreferences(userId, dto);
   }
 }

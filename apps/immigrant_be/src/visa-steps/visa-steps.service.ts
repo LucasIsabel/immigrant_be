@@ -68,6 +68,6 @@ export class VisaStepsService {
       throw new Error('Failed to parse translation response');
     }
 
-    return parsed as Record<string, unknown>;
+    return parsed;
   }
 }

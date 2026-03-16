@@ -59,19 +59,19 @@ export class BlogRepository {
           OR: [
             {
               title: {
-                contains: opts.search!.trim(),
+                contains: opts.search.trim(),
                 mode: 'insensitive' as const,
               },
             },
             {
               excerpt: {
-                contains: opts.search!.trim(),
+                contains: opts.search.trim(),
                 mode: 'insensitive' as const,
               },
             },
             {
               content: {
-                contains: opts.search!.trim(),
+                contains: opts.search.trim(),
                 mode: 'insensitive' as const,
               },
             },

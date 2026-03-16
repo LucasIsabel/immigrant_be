@@ -19,4 +19,13 @@ export class UpdateMyProfileDto {
   @IsUrl()
   @IsOptional()
   image?: string;
+
+  @ApiProperty({
+    description: 'User bio',
+    example: 'Software engineer based in Brazil.',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  bio?: string;
 }

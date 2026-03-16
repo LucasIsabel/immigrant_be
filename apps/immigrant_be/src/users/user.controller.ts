@@ -37,6 +37,7 @@ import { UserDetailsDto } from './dto/user-detail.dto';
 import { MarkStepDto } from './dto/mark-step.dto';
 import { MyProfileResponseDto } from './dto/my-profile-response.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
+import { UpdateMyPreferencesDto } from './dto/update-my-preferences.dto';
 
 @ApiTags('Users')
 @ApiCookieAuth('better-auth.session_token')
@@ -60,7 +61,7 @@ export class UserController {
   }
 
   @Patch('/me')
-  @ApiOperation({ summary: 'Update own profile (name and image only)' })
+  @ApiOperation({ summary: 'Update own profile (name, image, bio)' })
   @ApiBody({ type: UpdateMyProfileDto })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -72,6 +73,21 @@ export class UserController {
     @Body() dto: UpdateMyProfileDto,
   ) {
     return this.userService.updateMyProfile(session.user.id, dto);
+  }
+
+  @Patch('/me/preferences')
+  @ApiOperation({ summary: 'Update own notification preferences' })
+  @ApiBody({ type: UpdateMyPreferencesDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Preferences updated successfully',
+    type: MyProfileResponseDto,
+  })
+  updateMyPreferences(
+    @Session() session: UserSession,
+    @Body() dto: UpdateMyPreferencesDto,
+  ) {
+    return this.userService.updateMyPreferences(session.user.id, dto);
   }
 
   @ApiOperation({

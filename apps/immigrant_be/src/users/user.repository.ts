@@ -425,7 +425,22 @@ export class UserRepository {
 
   async updateMyProfile(
     userId: string,
-    data: { name?: string; image?: string },
+    data: { name?: string; image?: string; bio?: string },
+  ) {
+    return this.prisma.users.update({
+      where: { id: userId },
+      data,
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+  }
+
+  async updateMyPreferences(
+    userId: string,
+    data: { emailNotificationsEnabled?: boolean },
   ) {
     return this.prisma.users.update({
       where: { id: userId },

@@ -22,8 +22,23 @@ export class MyProfileResponseDto {
     example: 'https://example.com/avatar.png',
     required: false,
     nullable: true,
+    type: 'string',
   })
   image: string | null;
+
+  @ApiProperty({
+    description: 'User bio',
+    example: 'Software engineer based in Brazil.',
+    nullable: true,
+    type: 'string',
+  })
+  bio: string | null;
+
+  @ApiProperty({
+    description: 'Whether email notifications are enabled',
+    example: true,
+  })
+  emailNotificationsEnabled: boolean;
 
   @ApiProperty({ description: 'Whether the account is active', example: true })
   isActive: boolean;
