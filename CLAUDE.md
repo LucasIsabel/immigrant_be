@@ -52,6 +52,7 @@
 4.⁠ ⁠*Explain Changes*: High-level summary at each step
 5.⁠ ⁠*Document Results*: Add review section to ⁠ tasks/todo.md ⁠
 6.⁠ ⁠*Capture Lessons*: Update ⁠ tasks/lessons.md ⁠ after corrections
+7.⁠ ⁠*Persist Plans*: Save every plan created in a markdown file under the `plans/` directory at the project root (one file per plan).
 
 ## Core Principles
 
