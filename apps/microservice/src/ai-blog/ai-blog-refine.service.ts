@@ -22,7 +22,9 @@ export class AiBlogRefineService {
     private readonly storage: StorageService,
   ) {}
 
-  async refinePost(data: RefineBlogPostJobData): Promise<void> {
+  async refinePost(
+    data: RefineBlogPostJobData,
+  ): Promise<{ allGenerated: boolean; generated: number; total: number }> {
     const post = await this.prisma.blogPost.findUnique({
       where: { id: data.postId },
     });
@@ -40,7 +42,7 @@ export class AiBlogRefineService {
       this.logger.log(
         `No [Visual sugerido] markers found in post ${data.postId}`,
       );
-      return;
+      return { allGenerated: true, generated: 0, total: 0 };
     }
 
     this.logger.log(
@@ -161,6 +163,11 @@ export class AiBlogRefineService {
     }
 
     this.logger.log(`Refinement complete for post ${data.postId}`);
+    return {
+      allGenerated: processed.length === matches.length,
+      generated: processed.length,
+      total: matches.length,
+    };
   }
 
   private escapeMarkdownAlt(text: string): string {

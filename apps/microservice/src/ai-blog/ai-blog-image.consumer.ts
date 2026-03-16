@@ -54,15 +54,31 @@ export class AiBlogImageConsumer extends WorkerHost {
       }
       case REFINE_AI_BLOG_POST: {
         this.logger.log(`Processando refinamento de post: ${job.data.postId}`);
-        await this.refineService.refinePost({ postId: job.data.postId });
+        const result = await this.refineService.refinePost({
+          postId: job.data.postId,
+        });
         if (userId) {
-          await this.eventsService.emit({
-            userId,
-            type: 'blog_refine_completed',
-            title: 'Refinamento concluído',
-            message: 'As imagens do post foram geradas e inseridas.',
-            payload: { postId: job.data.postId },
-          });
+          if (result.allGenerated) {
+            await this.eventsService.emit({
+              userId,
+              type: 'blog_refine_completed',
+              title: 'Refinamento concluído',
+              message: 'As imagens do post foram geradas e inseridas.',
+              payload: { postId: job.data.postId },
+            });
+          } else {
+            await this.eventsService.emit({
+              userId,
+              type: 'blog_refine_partial',
+              title: 'Refinamento parcial',
+              message: `${result.generated} de ${result.total} imagens foram geradas. Algumas falharam.`,
+              payload: {
+                postId: job.data.postId,
+                generated: result.generated,
+                total: result.total,
+              },
+            });
+          }
         }
         break;
       }
