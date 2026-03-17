@@ -128,4 +128,11 @@ export class BlogPostResponseDto {
     required: false,
   })
   is_liked?: boolean;
+
+  @ApiProperty({
+    description:
+      'Indica que algumas imagens do refinamento falharam e precisam de correção manual',
+    example: false,
+  })
+  refine_needs_manual_fix: boolean;
 }

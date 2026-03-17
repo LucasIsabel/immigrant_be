@@ -64,10 +64,23 @@ export class AiBlogRefineService {
       const description = (match[1] ?? '').trim();
 
       const enrichedPrompt = description + IMAGE_REALISM_SUFFIX;
-      const imageBuffer = await this.gemini.generateImage(enrichedPrompt);
+      const MAX_ATTEMPTS = 3;
+      let imageBuffer: Buffer | null = null;
+
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        imageBuffer = await this.gemini.generateImage(enrichedPrompt);
+        if (imageBuffer) break;
+        if (attempt < MAX_ATTEMPTS) {
+          this.logger.warn(
+            `Attempt ${attempt}/${MAX_ATTEMPTS} failed for marker ${i + 1} in post ${data.postId}, retrying in ${attempt}s...`,
+          );
+          await new Promise((r) => setTimeout(r, attempt * 1000));
+        }
+      }
+
       if (!imageBuffer) {
         this.logger.warn(
-          `Failed to generate image for marker ${i + 1} in post ${data.postId}: "${description.slice(0, 50)}..."`,
+          `All ${MAX_ATTEMPTS} attempts failed for marker ${i + 1} in post ${data.postId}: "${description.slice(0, 50)}..."`,
         );
         continue;
       }
@@ -103,7 +116,10 @@ export class AiBlogRefineService {
 
     await this.prisma.blogPost.update({
       where: { id: data.postId },
-      data: { content: newContent },
+      data: {
+        content: newContent,
+        refine_needs_manual_fix: processed.length < matches.length,
+      },
     });
 
     // Propagate generated images to translations by ordinal position

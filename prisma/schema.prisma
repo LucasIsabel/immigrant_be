@@ -199,8 +199,9 @@ model BlogPost {
 
   tags BlogPostTag[]
 
-  is_ai_generated  Boolean        @default(false) @map("is_ai_generated")
-  original_locale  String         @default("en") @map("original_locale")
+  is_ai_generated          Boolean @default(false) @map("is_ai_generated")
+  refine_needs_manual_fix  Boolean @default(false) @map("refine_needs_manual_fix")
+  original_locale          String  @default("en") @map("original_locale")
   translations     BlogPostTranslation[]
   likes            BlogPostLike[]
 
