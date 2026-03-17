@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { RoleModule } from './roles/role.module';
 import { BlogModule } from './blog/blog.module';
 import { AiBlogModule } from './ai-blog/ai-blog.module';
+import { AiImageModule } from './ai-image/ai-image.module';
 import { StorageModule } from './storage/storage.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { StorageModule } from './storage/storage.module';
     RoleModule,
     BlogModule,
     AiBlogModule,
+    AiImageModule,
     StorageModule,
   ],
   providers: [

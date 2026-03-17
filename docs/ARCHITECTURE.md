@@ -206,6 +206,10 @@ BlogPostTranslation — traduções de posts do blog
 AiBlogCronJob ─── Country (N:1) — país alvo
                └── BullMQ repeatable job (bullmq_job_id)
                Armazena: cron_expr, is_active, last_run_at
+
+AiGeneratedImage ─── Users (N:1) — quem solicitou a geração
+  Armazena: prompt, folder, key, url, mimeType, isPublic, status (pending|processing|completed|failed), errorMessage
+  Usado pelo Media Generator (admin): geração de imagens via Gemini e upload para R2
 ```
 
 ### Convenções do Schema
@@ -371,11 +375,14 @@ App Principal (API)                    Microservice
 | `plan_queue`             | `PLAN_QUEUE`             | `process_create_plan`                          | Geração de planos de imigração               |
 | `ai_blog_queue`          | `AI_BLOG_QUEUE`          | `generate_ai_blog_post`                        | Geração de posts de blog com IA              |
 | `ai_blog_image_queue`    | `AI_BLOG_IMAGE_QUEUE`    | `generate_ai_blog_image`                       | Geração assíncrona de imagem de capa do post |
+| `ai_image_queue`         | `AI_IMAGE_QUEUE`         | `generate_ai_image`                            | Geração de imagens via Gemini (Media Generator) |
 | `blog_translation_queue` | `BLOG_TRANSLATION_QUEUE` | `translate_blog_post`, `translate_all_pending` | Tradução automática via Gemini (EN + ES)     |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
 
 A fila `ai_blog_image_queue` é enfileirada após a criação do post (DRAFT), permitindo que a geração de imagem ocorra de forma **assíncrona e independente**. O campo `cover_image_url` é `null` inicialmente e atualizado pelo consumer `AiBlogImageConsumer` via `prisma.blogPost.update()` assim que a imagem é gerada e enviada ao storage.
+
+A fila `ai_image_queue` é usada pelo módulo **AI Image** (Media Generator): o admin enfileira uma geração via `POST /admin/ai-image/generate`; o consumer `AiImageConsumer` processa o job chamando `GeminiBaseService.generateImage()`, faz upload para o R2 na pasta informada e atualiza o registro `AiGeneratedImage` (status, url, key).
 
 A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_all_pending` às 03:00 UTC) registrado por `BlogTranslationCronService` via `OnModuleInit`. O job `translate_all_pending` busca todos os posts PUBLISHED sem tradução para EN e ES, e enfileira jobs individuais `translate_blog_post`. O endpoint `POST /admin/blog/posts/:id/translations/enqueue` permite acionar traduções sob demanda.
 
@@ -418,6 +425,10 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/admin/blog/posts/:id/translations/:locale` | Blog Translations (admin) | ADMIN                                      |
 | `/admin/blog/posts/:id/translations/enqueue` | Blog Translations (admin) | ADMIN                                      |
 | `/admin/ai/blog/generate`                    | AI Blog                   | ADMIN                                      |
+| `/admin/ai-image/generate`                  | AI Image                  | ADMIN                                      |
+| `/admin/ai-image`                            | AI Image                  | ADMIN (listar imagens geradas)              |
+| `/admin/ai-image/:id`                       | AI Image                  | ADMIN                                      |
+| `/admin/ai-image/:id` (DELETE)              | AI Image                  | ADMIN                                      |
 | `/admin/ai/blog/pending`                     | AI Blog                   | ADMIN                                      |
 | `/admin/ai/blog/pending/:id/approve`         | AI Blog                   | ADMIN                                      |
 | `/admin/ai/blog/cron`                        | AI Blog                   | ADMIN                                      |

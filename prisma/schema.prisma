@@ -33,8 +33,9 @@ model Users {
   plans           Plans[]
   events          Events[]
   userRoles       UserRoles[]
-  blog_posts      BlogPost[]
-  blog_post_likes BlogPostLike[]
+  blog_posts         BlogPost[]
+  blog_post_likes    BlogPostLike[]
+  aiGeneratedImages  AiGeneratedImage[]
 
   @@unique([email])
   @@map("users")
@@ -414,4 +415,24 @@ model AiBlogCronJob {
 
   @@index([country_id])
   @@map("ai_blog_cron_jobs")
+}
+
+model AiGeneratedImage {
+  id           String   @id @default(uuid()) @db.Uuid
+  prompt       String   @db.Text
+  folder       String
+  key          String?
+  url          String?
+  mimeType     String?  @map("mime_type")
+  isPublic     Boolean  @default(true) @map("is_public")
+  status       String   @default("pending")
+  errorMessage String?  @map("error_message") @db.Text
+  userId       String   @map("user_id") @db.Uuid
+  user         Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("ai_generated_images")
 }

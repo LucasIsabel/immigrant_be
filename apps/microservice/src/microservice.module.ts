@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { PlanModule } from './plan/plan.module';
 import { EventsModule } from './events/events.module';
 import { AiBlogWorkerModule } from './ai-blog/ai-blog.module';
+import { AiImageWorkerModule } from './ai-image/ai-image.module';
 import { BlogTranslationWorkerModule } from './blog-translation/blog-translation.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { BlogTranslationWorkerModule } from './blog-translation/blog-translation
     DatabaseModule,
     EventsModule,
     AiBlogWorkerModule,
+    AiImageWorkerModule,
     BlogTranslationWorkerModule,
   ],
 })
