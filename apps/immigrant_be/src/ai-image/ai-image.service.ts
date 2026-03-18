@@ -42,7 +42,12 @@ export class AiImageService {
     };
   }
 
-  async findAll(params: { folder?: string; status?: string; page?: number; limit?: number }) {
+  async findAll(params: {
+    folder?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
     return this.repository.findAll(params);
   }
 

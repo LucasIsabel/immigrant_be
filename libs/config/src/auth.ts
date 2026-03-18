@@ -7,6 +7,7 @@ import { env } from './env';
 import { sendEmail } from '@app/email/send-email';
 import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
 import { buildVerificationEmail } from '@app/email/templates/verification.template';
+import { extractResetTokenFromBetterAuthUrl } from './auth-reset-token.util';
 
 const prisma = new PrismaClient();
 
@@ -35,11 +36,22 @@ export const auth = betterAuth({
       verify: ({ password, hash }: { password: string; hash: string }) =>
         bcrypt.compare(password, hash),
     },
-    sendResetPassword: async ({ user, url }) => {
-      const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${new URL(url).searchParams.get('token')}`;
+    sendResetPassword: async ({ user, url, token }) => {
+      const resetToken = extractResetTokenFromBetterAuthUrl(url, token);
+
+      if (!resetToken) {
+        console.error(
+          '[auth] Failed to extract reset password token from Better Auth URL. Email will not be sent.',
+        );
+        return;
+      }
+
+      const resetUrl = new URL('/reset-password', env.FRONTEND_URL);
+      resetUrl.searchParams.set('token', resetToken);
+
       const { subject, html } = buildResetPasswordEmail(
         'en',
-        resetUrl,
+        resetUrl.toString(),
         user.name,
       );
       await sendEmail({ to: user.email, subject, html });

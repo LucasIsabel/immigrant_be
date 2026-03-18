@@ -63,8 +63,7 @@ export class AiImageWorkerService {
 
       this.logger.log(`AI image completed: ${imageId} -> ${url}`);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Upload failed';
+      const message = error instanceof Error ? error.message : 'Upload failed';
       await this.prisma.aiGeneratedImage.update({
         where: { id: imageId },
         data: { status: 'failed', errorMessage: message },

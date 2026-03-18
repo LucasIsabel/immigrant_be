@@ -21,7 +21,9 @@ export class AiImageConsumer extends WorkerHost {
       return;
     }
 
-    this.logger.log(`Processing AI image job: ${job.id} (imageId: ${job.data.imageId})`);
+    this.logger.log(
+      `Processing AI image job: ${job.id} (imageId: ${job.data.imageId})`,
+    );
     await this.aiImageWorkerService.processImage(job.data);
     this.logger.log(`AI image job completed: ${job.id}`);
   }
