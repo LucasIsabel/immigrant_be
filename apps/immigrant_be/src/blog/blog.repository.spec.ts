@@ -24,6 +24,7 @@ const mockPrisma = {
     update: jest.fn(),
     delete: jest.fn(),
     count: jest.fn(),
+    groupBy: jest.fn(),
   },
   blogCategory: {
     create: jest.fn(),
@@ -209,15 +210,45 @@ describe('BlogRepository', () => {
 
   describe('findAllCategories', () => {
     it('deve retornar todas as categorias ordenadas por nome', async () => {
-      const mockCategories = [{ name: 'Guia' }, { name: 'Visto' }];
+      const mockCategories = [
+        {
+          id: 'cat-1',
+          name: 'Guia',
+          slug: 'guia',
+          created_at: new Date('2024-01-01T00:00:00.000Z'),
+          updated_at: new Date('2024-01-01T00:00:00.000Z'),
+        },
+        {
+          id: 'cat-2',
+          name: 'Visto',
+          slug: 'visto',
+          created_at: new Date('2024-01-02T00:00:00.000Z'),
+          updated_at: new Date('2024-01-02T00:00:00.000Z'),
+        },
+      ];
       mockPrisma.blogCategory.findMany.mockResolvedValue(mockCategories);
+      mockPrisma.blogPost.groupBy.mockResolvedValue([
+        {
+          category_id: 'cat-1',
+          _count: { _all: 2 },
+        },
+      ]);
 
       const result = await repository.findAllCategories();
 
       expect(mockPrisma.blogCategory.findMany).toHaveBeenCalledWith({
         orderBy: { name: 'asc' },
       });
-      expect(result).toEqual(mockCategories);
+      expect(mockPrisma.blogPost.groupBy).toHaveBeenCalledWith({
+        by: ['category_id'],
+        where: { status: BlogPostStatus.PUBLISHED },
+        _count: { _all: true },
+      });
+
+      expect(result).toEqual([
+        { ...mockCategories[0], published_posts_count: 2 },
+        { ...mockCategories[1], published_posts_count: 0 },
+      ]);
     });
   });
 

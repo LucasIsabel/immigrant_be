@@ -412,7 +412,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/blog/posts`                                | Blog                      | Público                                    |
 | `/blog/posts/admin`                          | Blog (admin inline)       | ADMIN                                      |
 | `/blog/posts/:slug`                          | Blog                      | Público                                    |
-| `/blog/categories`                           | Blog                      | Público                                    |
+| `/blog/categories`                           | Blog (categorias com count de posts PUBLISHED) | Público                                    |
 | `/blog/tags`                                 | Blog                      | Público                                    |
 | `/blog/authors`                              | Blog                      | Público                                    |
 | `/blog/authors/:id`                          | Blog                      | Público                                    |

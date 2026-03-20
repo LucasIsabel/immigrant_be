@@ -200,9 +200,31 @@ export class BlogRepository {
   }
 
   async findAllCategories() {
-    return this.prisma.blogCategory.findMany({
-      orderBy: { name: 'asc' },
-    });
+    const [categories, groupedCounts] = await Promise.all([
+      this.prisma.blogCategory.findMany({
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.blogPost.groupBy({
+        by: ['category_id'],
+        where: {
+          status: BlogPostStatus.PUBLISHED,
+        },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const countByCategoryId = new Map<string, number>(
+      groupedCounts.map((group) => [
+        group.category_id,
+        group._count._all,
+      ]),
+    );
+
+    return categories.map((category) => ({
+      ...category,
+      published_posts_count:
+        countByCategoryId.get(category.id) ?? 0,
+    }));
   }
 
   async findCategoryBySlug(slug: string) {

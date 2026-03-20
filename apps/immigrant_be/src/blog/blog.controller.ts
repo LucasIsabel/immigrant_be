@@ -27,6 +27,7 @@ import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
 import { BlogPostListResponseDto } from './dto/blog-post-list-response.dto';
 import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
+import { BlogCategoryWithPublishedCountResponseDto } from './dto/blog-category-with-published-count-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
 import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -110,7 +111,7 @@ export class BlogController {
   @ApiResponse({
     status: 200,
     description: 'Categorias listadas com sucesso',
-    type: [BlogCategoryResponseDto],
+    type: [BlogCategoryWithPublishedCountResponseDto],
   })
   findAllCategories() {
     return this.blogService.findAllCategories();
