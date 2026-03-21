@@ -48,6 +48,7 @@ immigrant_be/
 │   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
 │   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
 │   │   │   ├── storage/        # Módulo de upload de arquivos para R2
+│   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -210,6 +211,11 @@ AiBlogCronJob ─── Country (N:1) — país alvo
 AiGeneratedImage ─── Users (N:1) — quem solicitou a geração
   Armazena: prompt, folder, key, url, mimeType, isPublic, status (pending|processing|completed|failed), errorMessage
   Usado pelo Media Generator (admin): geração de imagens via Gemini e upload para R2
+
+UserProfessionalProfile ─── Users (1:1, opcional) — perfil profissional do usuário
+  Armazena: jobTitle, company, linkedinUrl, githubUrl, websiteUrl, bio, skills (String[]),
+            yearsOfExperience, location, isPublic (default true)
+  Perfil público acessível sem autenticação via GET /professional-profile/:userId
 ```
 
 ### Convenções do Schema
@@ -435,6 +441,9 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/storage/upload`                            | Storage                   | Autenticado                                |
 | `/health`                                    | Health                    | Público                                    |
 | `/health/ready`                              | Health                    | Público                                    |
+| `GET /professional-profile/me`               | ProfessionalProfile       | Autenticado                                |
+| `PUT /professional-profile/me`               | ProfessionalProfile       | Autenticado (role USER)                    |
+| `GET /professional-profile/:userId`          | ProfessionalProfile       | Público (`@AllowAnonymous`)                |
 
 ### Convenções de endpoints
 

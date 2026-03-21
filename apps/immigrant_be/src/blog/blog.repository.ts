@@ -214,16 +214,12 @@ export class BlogRepository {
     ]);
 
     const countByCategoryId = new Map<string, number>(
-      groupedCounts.map((group) => [
-        group.category_id,
-        group._count._all,
-      ]),
+      groupedCounts.map((group) => [group.category_id, group._count._all]),
     );
 
     return categories.map((category) => ({
       ...category,
-      published_posts_count:
-        countByCategoryId.get(category.id) ?? 0,
+      published_posts_count: countByCategoryId.get(category.id) ?? 0,
     }));
   }
 

@@ -36,6 +36,7 @@ model Users {
   blog_posts         BlogPost[]
   blog_post_likes    BlogPostLike[]
   aiGeneratedImages  AiGeneratedImage[]
+  professionalProfile UserProfessionalProfile?
 
   @@unique([email])
   @@map("users")
@@ -416,6 +417,26 @@ model AiBlogCronJob {
 
   @@index([country_id])
   @@map("ai_blog_cron_jobs")
+}
+
+model UserProfessionalProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @db.Uuid @map("user_id")
+  user              Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobTitle          String?  @map("job_title")
+  company           String?
+  linkedinUrl       String?  @map("linkedin_url")
+  githubUrl         String?  @map("github_url")
+  websiteUrl        String?  @map("website_url")
+  bio               String?  @db.Text
+  skills            String[]
+  yearsOfExperience Int?     @map("years_of_experience")
+  location          String?
+  isPublic          Boolean  @default(true) @map("is_public")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("user_professional_profiles")
 }
 
 model AiGeneratedImage {

@@ -9,4 +9,3 @@ export class BlogCategoryWithPublishedCountResponseDto extends BlogCategoryRespo
   })
   published_posts_count: number;
 }
-
