@@ -71,14 +71,14 @@ export class BusinessService {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
     // Clear typeData when businessType changes without new typeData
-    const updateData = { ...dto };
-    if (
+    const shouldClearTypeData =
       dto.businessType &&
       dto.businessType !== existing.businessType &&
-      !dto.typeData
-    ) {
-      updateData.typeData = null;
-    }
+      !dto.typeData;
+    const updateData = {
+      ...dto,
+      ...(shouldClearTypeData ? { typeData: null as unknown as object } : {}),
+    };
     return this.repository.update(id, updateData);
   }
 

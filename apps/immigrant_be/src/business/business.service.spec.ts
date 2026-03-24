@@ -120,7 +120,9 @@ describe('BusinessService', () => {
         typeData: { priceRange: 'INVALID' },
       };
 
-      expect(() => service.create('user-id-1', dto)).toThrow(BadRequestException);
+      expect(() => service.create('user-id-1', dto)).toThrow(
+        BadRequestException,
+      );
       expect(repository.create).not.toHaveBeenCalled();
     });
   });
@@ -183,7 +185,10 @@ describe('BusinessService', () => {
     });
 
     it('should update a business with valid typeData', async () => {
-      const updatedBusiness = { ...mockBusiness, typeData: { cuisine: 'Italiana' } };
+      const updatedBusiness = {
+        ...mockBusiness,
+        typeData: { cuisine: 'Italiana' },
+      };
       repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
       repository.update.mockResolvedValue(updatedBusiness);
 
