@@ -37,6 +37,7 @@ model Users {
   blog_post_likes    BlogPostLike[]
   aiGeneratedImages  AiGeneratedImage[]
   professionalProfile UserProfessionalProfile?
+  businesses          Business[]
 
   @@unique([email])
   @@map("users")
@@ -457,4 +458,38 @@ model AiGeneratedImage {
   @@index([userId])
   @@index([status])
   @@map("ai_generated_images")
+}
+
+enum BusinessType {
+  RESTAURANT
+  LEGAL
+  TOUR_GUIDE
+  GENERAL
+}
+
+model Business {
+  id           String       @id @default(uuid()) @db.Uuid
+  userId       String       @db.Uuid @map("user_id")
+  user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessType BusinessType @map("business_type")
+  name         String       @db.VarChar(100)
+  description  String?      @db.Text
+  address      String?      @db.VarChar(200)
+  city         String       @db.VarChar(100)
+  country      String?      @db.VarChar(100)
+  lat          Float?
+  lng          Float?
+  phone        String?      @db.VarChar(20)
+  email        String?      @db.VarChar(100)
+  website      String?      @db.VarChar(200)
+  photos       String[]
+  typeData     Json?        @map("type_data")
+  isPublic     Boolean      @default(false) @map("is_public")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([businessType, isPublic])
+  @@index([city, isPublic])
+  @@map("businesses")
 }
