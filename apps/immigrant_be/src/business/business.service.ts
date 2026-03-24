@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { BusinessType } from '../../../../../generated/prisma';
+import { BusinessType } from '../../../../generated/prisma';
 import { BusinessRepository } from './business.repository';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';

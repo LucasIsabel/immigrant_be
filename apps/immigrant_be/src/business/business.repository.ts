@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { Business } from '../../../../../generated/prisma';
+import { Business } from '../../../../generated/prisma';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';

@@ -112,7 +112,7 @@ describe('BusinessService', () => {
       expect(repository.create).toHaveBeenCalledWith('user-id-1', dto);
     });
 
-    it('should throw BadRequestException when typeData is invalid for the business type', async () => {
+    it('should throw BadRequestException when typeData is invalid for the business type', () => {
       const dto = {
         businessType: 'RESTAURANT' as any,
         name: 'Test Restaurant',
@@ -120,9 +120,7 @@ describe('BusinessService', () => {
         typeData: { priceRange: 'INVALID' },
       };
 
-      await expect(service.create('user-id-1', dto)).rejects.toThrow(
-        BadRequestException,
-      );
+      expect(() => service.create('user-id-1', dto)).toThrow(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
     });
   });
@@ -166,6 +164,35 @@ describe('BusinessService', () => {
         service.update('business-id-1', 'user-id-1', dto),
       ).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should validate typeData against the new businessType (not the existing one)', async () => {
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness); // existing is RESTAURANT
+
+      // When updating to LEGAL type, LEGAL schema is applied.
+      // LEGAL schema: specializations (string[]) — passing a number triggers a type error.
+      const dto = {
+        businessType: 'LEGAL' as any,
+        typeData: { specializations: 12345 } as any, // invalid: should be string[]
+      };
+
+      await expect(
+        service.update('business-id-1', 'user-id-1', dto),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should update a business with valid typeData', async () => {
+      const updatedBusiness = { ...mockBusiness, typeData: { cuisine: 'Italiana' } };
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+      repository.update.mockResolvedValue(updatedBusiness);
+
+      const result = await service.update('business-id-1', 'user-id-1', {
+        typeData: { cuisine: 'Italiana' } as any,
+      });
+
+      expect(result).toEqual(updatedBusiness);
+      expect(repository.update).toHaveBeenCalled();
     });
   });
 
