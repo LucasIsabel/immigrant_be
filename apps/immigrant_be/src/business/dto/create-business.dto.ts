@@ -12,7 +12,7 @@ import {
   MaxLength,
   ArrayMaxSize,
 } from 'class-validator';
-import { BusinessType } from '../../../../generated/prisma';
+import { BusinessType } from '../../../../../generated/prisma';
 
 export class CreateBusinessDto {
   @ApiProperty({ enum: BusinessType, example: BusinessType.RESTAURANT })
