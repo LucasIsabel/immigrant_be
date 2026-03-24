@@ -49,6 +49,7 @@ immigrant_be/
 │   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
 │   │   │   ├── storage/        # Módulo de upload de arquivos para R2
 │   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
+│   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -216,6 +217,15 @@ UserProfessionalProfile ─── Users (1:1, opcional) — perfil profissional 
   Armazena: jobTitle, company, linkedinUrl, githubUrl, websiteUrl, bio, skills (String[]),
             yearsOfExperience, location, isPublic (default true)
   Perfil público acessível sem autenticação via GET /professional-profile/:userId
+
+Business ─── Users (N:1) — negócio local de um imigrante
+  Tabela: businesses
+  Enum BusinessType: RESTAURANT | LEGAL | TOUR_GUIDE | GENERAL
+  Armazena: userId (FK), businessType, name, city, lat, lng, photos (String[]),
+            typeData (Json — dados específicos por tipo, validados via Zod no Service),
+            isPublic (default false)
+  Listagem pública disponível via GET /business/public (diretório "My City")
+  Verificação de propriedade (ownership check) nas operações de update/delete/visibility
 ```
 
 ### Convenções do Schema
@@ -444,6 +454,13 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /professional-profile/me`               | ProfessionalProfile       | Autenticado                                |
 | `PUT /professional-profile/me`               | ProfessionalProfile       | Autenticado (role USER)                    |
 | `GET /professional-profile/:userId`          | ProfessionalProfile       | Público (`@AllowAnonymous`)                |
+| `GET /business/me`                           | Business                  | Autenticado (role USER) — lista negócios do usuário |
+| `POST /business`                             | Business                  | Autenticado (role USER) — cria negócio     |
+| `PUT /business/:id`                          | Business                  | Autenticado (role USER) — atualiza (ownership check) |
+| `DELETE /business/:id`                       | Business                  | Autenticado (role USER) — remove (ownership check) |
+| `PATCH /business/:id/visibility`             | Business                  | Autenticado (role USER) — alterna isPublic (ownership check) |
+| `GET /business/public`                       | Business                  | Público (`@AllowAnonymous`) — lista negócios públicos com filtros (city, businessType, search, page, limit) |
+| `GET /business/public/:id`                   | Business                  | Público (`@AllowAnonymous`) — detalhe de negócio público |
 
 ### Convenções de endpoints
 
