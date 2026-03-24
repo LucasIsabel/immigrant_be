@@ -19,23 +19,16 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiProperty,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { IsBoolean } from 'class-validator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessResponseDto } from './dto/business-response.dto';
-
-class ToggleVisibilityDto {
-  @ApiProperty({ example: true })
-  @IsBoolean()
-  isPublic: boolean;
-}
+import { ToggleVisibilityDto } from './dto/toggle-visibility.dto';
 
 @ApiTags('Business')
 @Controller('business')

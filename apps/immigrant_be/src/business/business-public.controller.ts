@@ -5,7 +5,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { BusinessService } from './business.service';
@@ -20,31 +19,6 @@ export class BusinessPublicController {
   @Get('public')
   @AllowAnonymous()
   @ApiOperation({ summary: 'Listar negócios públicos com filtros' })
-  @ApiQuery({
-    name: 'city',
-    required: false,
-    description: 'Filtrar por cidade',
-  })
-  @ApiQuery({
-    name: 'businessType',
-    required: false,
-    description: 'Filtrar por tipo de negócio',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    description: 'Buscar por nome do negócio',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'Página (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Itens por página (default: 20)',
-  })
   @ApiOkResponse({
     description: 'Lista paginada de negócios',
     schema: {
