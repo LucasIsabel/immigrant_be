@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -17,11 +17,11 @@ export enum PriceRange {
 }
 
 export class MenuItemDto {
-  @ApiPropertyOptional({ example: 'Frango Grelhado' })
+  @ApiProperty({ example: 'Pizza Margherita' })
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: 18.5 })
+  @ApiProperty({ example: 12.5 })
   @IsNumber()
   price: number;
 }

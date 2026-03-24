@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { BusinessType } from '../../../../../generated/prisma';
 
 export class BusinessResponseDto {
@@ -14,40 +14,42 @@ export class BusinessResponseDto {
   @ApiProperty({ example: 'Restaurante do João' })
   name: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Um restaurante aconchegante no centro da cidade.',
+    nullable: true,
   })
   description: string | null;
 
-  @ApiPropertyOptional({ example: 'Rua das Flores, 123' })
+  @ApiProperty({ example: 'Rua das Flores, 123', nullable: true })
   address: string | null;
 
   @ApiProperty({ example: 'Lisboa' })
   city: string;
 
-  @ApiPropertyOptional({ example: 'Portugal' })
+  @ApiProperty({ example: 'Portugal', nullable: true })
   country: string | null;
 
-  @ApiPropertyOptional({ example: 38.7169 })
+  @ApiProperty({ example: 38.7169, nullable: true })
   lat: number | null;
 
-  @ApiPropertyOptional({ example: -9.1399 })
+  @ApiProperty({ example: -9.1399, nullable: true })
   lng: number | null;
 
-  @ApiPropertyOptional({ example: '+351 912 345 678' })
+  @ApiProperty({ example: '+351 912 345 678', nullable: true })
   phone: string | null;
 
-  @ApiPropertyOptional({ example: 'contato@restaurante.pt' })
+  @ApiProperty({ example: 'contato@restaurante.pt', nullable: true })
   email: string | null;
 
-  @ApiPropertyOptional({ example: 'https://restaurante.pt' })
+  @ApiProperty({ example: 'https://restaurante.pt', nullable: true })
   website: string | null;
 
   @ApiProperty({ type: [String], example: [] })
   photos: string[];
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Dados específicos do tipo de negócio (JSON livre)',
+    nullable: true,
   })
   typeData: object | null;
 

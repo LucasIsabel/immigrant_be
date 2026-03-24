@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsEnum,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUrl,
@@ -73,6 +74,7 @@ export class CreateBusinessDto {
   @ApiPropertyOptional({ example: 'https://restaurante.pt' })
   @IsUrl()
   @IsOptional()
+  @MaxLength(200)
   website?: string;
 
   @ApiPropertyOptional({
@@ -88,6 +90,7 @@ export class CreateBusinessDto {
   @ApiPropertyOptional({
     description: 'Dados específicos do tipo de negócio (JSON livre)',
   })
+  @IsObject()
   @IsOptional()
   typeData?: object;
 

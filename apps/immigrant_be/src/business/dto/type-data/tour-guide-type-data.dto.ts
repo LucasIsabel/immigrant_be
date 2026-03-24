@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsNumber,
@@ -9,15 +9,15 @@ import {
 import { Type } from 'class-transformer';
 
 export class TourItemDto {
-  @ApiPropertyOptional({ example: 'Tour Histórico de Lisboa' })
+  @ApiProperty({ example: 'Tour Histórico de Lisboa' })
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: '3 horas' })
+  @ApiProperty({ example: '3 horas' })
   @IsString()
   duration: string;
 
-  @ApiPropertyOptional({ example: 45 })
+  @ApiProperty({ example: 45 })
   @IsNumber()
   price: number;
 }
