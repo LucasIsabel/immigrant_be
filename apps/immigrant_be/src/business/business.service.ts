@@ -62,14 +62,13 @@ export class BusinessService {
   }
 
   async update(id: string, userId: string, dto: UpdateBusinessDto) {
-    await this.checkOwnership(id, userId);
-    if (dto.businessType && dto.typeData) {
-      this.validateTypeData(dto.businessType, dto.typeData);
-    } else if (dto.typeData) {
-      const existing = await this.repository.findByIdAndUserId(id, userId);
-      if (existing) {
-        this.validateTypeData(existing.businessType, dto.typeData);
-      }
+    const existing = await this.repository.findByIdAndUserId(id, userId);
+    if (!existing) {
+      throw new ForbiddenException('Acesso negado');
+    }
+    const typeToValidate = dto.businessType ?? existing.businessType;
+    if (dto.typeData) {
+      this.validateTypeData(typeToValidate, dto.typeData);
     }
     return this.repository.update(id, dto);
   }
@@ -101,7 +100,7 @@ export class BusinessService {
     const schema = typeDataSchemas[businessType];
     const result = schema.safeParse(typeData);
     if (!result.success) {
-      throw new BadRequestException(result.error.message);
+      throw new BadRequestException(result.error.flatten().fieldErrors);
     }
   }
 
