@@ -18,6 +18,7 @@ import { AiBlogModule } from './ai-blog/ai-blog.module';
 import { AiImageModule } from './ai-image/ai-image.module';
 import { StorageModule } from './storage/storage.module';
 import { ProfessionalProfileModule } from './professional-profile/professional-profile.module';
+import { BusinessModule } from './business/business.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ProfessionalProfileModule } from './professional-profile/professional-p
     AiImageModule,
     StorageModule,
     ProfessionalProfileModule,
+    BusinessModule,
   ],
   providers: [
     {
