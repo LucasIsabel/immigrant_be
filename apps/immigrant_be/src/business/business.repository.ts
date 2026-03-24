@@ -9,39 +9,39 @@ import { BusinessListQueryDto } from './dto/business-list-query.dto';
 export class BusinessRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(userId: string, data: CreateBusinessDto): Promise<Business> {
+  create(userId: string, data: CreateBusinessDto) {
     return this.prisma.business.create({
       data: { userId, ...data },
     });
   }
 
-  findAllByUserId(userId: string): Promise<Business[]> {
+  findAllByUserId(userId: string) {
     return this.prisma.business.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  findByIdAndUserId(id: string, userId: string): Promise<Business | null> {
+  findByIdAndUserId(id: string, userId: string) {
     return this.prisma.business.findFirst({
       where: { id, userId },
     });
   }
 
-  update(id: string, data: UpdateBusinessDto): Promise<Business> {
+  update(id: string, data: UpdateBusinessDto) {
     return this.prisma.business.update({
       where: { id },
       data,
     });
   }
 
-  delete(id: string): Promise<Business> {
+  delete(id: string) {
     return this.prisma.business.delete({
       where: { id },
     });
   }
 
-  toggleVisibility(id: string, isPublic: boolean): Promise<Business> {
+  toggleVisibility(id: string, isPublic: boolean) {
     return this.prisma.business.update({
       where: { id },
       data: { isPublic },
@@ -75,7 +75,7 @@ export class BusinessRepository {
     return { data, total };
   }
 
-  findPublicById(id: string): Promise<Business | null> {
+  findPublicById(id: string) {
     return this.prisma.business.findFirst({
       where: { id, isPublic: true },
     });
