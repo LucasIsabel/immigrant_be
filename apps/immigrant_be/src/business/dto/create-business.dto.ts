@@ -82,9 +82,9 @@ export class CreateBusinessDto {
     example: ['https://cdn.example.com/photo1.jpg'],
   })
   @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
+  @IsUrl({}, { each: true })
   @ArrayMaxSize(10)
+  @IsOptional()
   photos?: string[];
 
   @ApiPropertyOptional({

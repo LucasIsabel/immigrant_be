@@ -70,7 +70,16 @@ export class BusinessService {
     if (dto.typeData) {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
-    return this.repository.update(id, dto);
+    // Clear typeData when businessType changes without new typeData
+    const updateData = { ...dto };
+    if (
+      dto.businessType &&
+      dto.businessType !== existing.businessType &&
+      !dto.typeData
+    ) {
+      updateData.typeData = null;
+    }
+    return this.repository.update(id, updateData);
   }
 
   async delete(id: string, userId: string) {
