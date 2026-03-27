@@ -16,7 +16,18 @@ const restaurantTypeDataSchema = z.object({
   priceRange: z.enum(['$', '$$', '$$$']).optional(),
   openingHours: z.string().optional(),
   acceptsReservations: z.boolean().optional(),
-  menu: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
+  menu: z
+    .array(
+      z.object({
+        name: z.string(),
+        price: z.number(),
+        category: z.string().max(100).optional(),
+        description: z.string().max(2000).optional(),
+        photo: z.string().url().max(500).optional(),
+        featured: z.boolean().optional(),
+      }),
+    )
+    .optional(),
 });
 
 const legalTypeDataSchema = z.object({

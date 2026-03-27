@@ -477,6 +477,7 @@ model Business {
   address      String?      @db.VarChar(200)
   city         String       @db.VarChar(100)
   country      String?      @db.VarChar(100)
+  state        String?      @db.VarChar(120)
   lat          Float?
   lng          Float?
   phone        String?      @db.VarChar(20)

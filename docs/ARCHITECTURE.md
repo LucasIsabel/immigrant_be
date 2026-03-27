@@ -40,6 +40,7 @@ immigrant_be/
 │   │   │   ├── app.module.ts   # Módulo raiz
 │   │   │   ├── common/         # Guards, filters, decorators compartilhados
 │   │   │   ├── countries/      # Módulo de países
+│   │   │   ├── countriesnow/   # Proxy público CountriesNow (países/estados/cidades/moeda)
 │   │   │   ├── immigration-visa-type/  # Módulo de tipos de visto
 │   │   │   ├── users/          # Módulo de usuários
 │   │   │   ├── roles/          # Módulo de RBAC
@@ -419,6 +420,10 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/admin/users`                               | Users (admin)             | ADMIN                                      |
 | `/admin/roles`                               | Roles                     | ADMIN                                      |
 | `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública)        |
+| `GET /countriesnow/countries`                | CountriesNow              | Público (proxy CountriesNow + cache 24h)   |
+| `GET /countriesnow/states?country=`          | CountriesNow              | Público (estados por país; cache 24h)      |
+| `GET /countriesnow/cities?country=&state=`   | CountriesNow              | Público (cidades por estado; cache 24h)    |
+| `GET /countriesnow/currency`                 | CountriesNow              | Público (moeda; fallback REST Countries)   |
 | `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                                      |
 | `/visa-steps`                                | VisaSteps                 | Misto                                      |
 | `/admin/visa-steps/translate`                | VisaSteps (tradução)      | ADMIN                                      |

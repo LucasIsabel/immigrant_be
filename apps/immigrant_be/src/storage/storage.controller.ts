@@ -17,6 +17,10 @@ import {
 } from '@nestjs/swagger';
 import { StorageService } from '@app/storage';
 import { UploadResponseDto } from './dto/upload-response.dto';
+import {
+  normalizeUploadFolder,
+  validateUploadMimeForFolder,
+} from './storage-upload.util';
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
@@ -65,17 +69,14 @@ export class StorageController {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      throw new BadRequestException(
-        `Tipo de arquivo não permitido: ${file.mimetype}`,
-      );
-    }
+    const safeFolder = normalizeUploadFolder(folder);
+    validateUploadMimeForFolder(safeFolder, file.mimetype, ALLOWED_MIME_TYPES);
 
     const { url, key } = await this.storageService.uploadFile(
       file.buffer,
       file.originalname,
       file.mimetype,
-      folder,
+      safeFolder,
     );
 
     return {

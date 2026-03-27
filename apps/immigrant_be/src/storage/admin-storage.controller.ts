@@ -27,6 +27,12 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { StorageFileItemDto } from './dto/storage-file-item.dto';
 import { UploadResponseDto } from './dto/upload-response.dto';
+import {
+  BUSINESS_STORAGE_FOLDER,
+  DISHES_STORAGE_FOLDER,
+  DISH_UPLOAD_ALLOWED_MIMES,
+  normalizeUploadFolder,
+} from './storage-upload.util';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -84,11 +90,24 @@ export class AdminStorageController {
       throw new BadRequestException('Nenhum arquivo enviado');
     }
 
+    const safeFolder = normalizeUploadFolder(folder);
+    if (
+      (safeFolder === DISHES_STORAGE_FOLDER ||
+        safeFolder === BUSINESS_STORAGE_FOLDER) &&
+      !DISH_UPLOAD_ALLOWED_MIMES.has(file.mimetype)
+    ) {
+      throw new BadRequestException(
+        safeFolder === DISHES_STORAGE_FOLDER
+          ? 'Para fotos de pratos use apenas imagens JPG ou PNG'
+          : 'Para fotos do negócio use apenas imagens JPG ou PNG',
+      );
+    }
+
     const { url, key } = await this.storageService.uploadFile(
       file.buffer,
       file.originalname,
       file.mimetype,
-      folder,
+      safeFolder,
     );
 
     return {

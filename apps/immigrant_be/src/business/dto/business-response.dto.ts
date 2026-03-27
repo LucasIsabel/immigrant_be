@@ -29,6 +29,13 @@ export class BusinessResponseDto {
   @ApiProperty({ example: 'Portugal', nullable: true })
   country: string | null;
 
+  @ApiProperty({
+    example: 'Lisbon',
+    nullable: true,
+    description: 'State, region, or district when stored',
+  })
+  state: string | null;
+
   @ApiProperty({ example: 38.7169, nullable: true })
   lat: number | null;
 

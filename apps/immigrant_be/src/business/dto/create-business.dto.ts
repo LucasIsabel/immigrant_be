@@ -50,6 +50,16 @@ export class CreateBusinessDto {
   @MaxLength(100)
   country?: string;
 
+  @ApiPropertyOptional({
+    example: 'Lisbon',
+    description: 'State, region, or district when applicable',
+    maxLength: 120,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  state?: string;
+
   @ApiPropertyOptional({ example: 38.7169 })
   @IsNumber()
   @IsOptional()
