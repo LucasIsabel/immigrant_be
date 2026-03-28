@@ -65,6 +65,24 @@ export class RestaurantTypeDataDto {
   @IsOptional()
   priceRange?: PriceRange;
 
+  @ApiPropertyOptional({
+    example: '09:00 – 18:00',
+    description:
+      'Horário de funcionamento nos dias úteis (texto livre ou máscara HH:MM – HH:MM)',
+  })
+  @IsString()
+  @IsOptional()
+  openingHoursWeekdays?: string;
+
+  @ApiPropertyOptional({
+    example: '10:00 – 23:00',
+    description: 'Horário de funcionamento ao fim de semana',
+  })
+  @IsString()
+  @IsOptional()
+  openingHoursWeekend?: string;
+
+  /** Legado: preferir openingHoursWeekdays / openingHoursWeekend */
   @ApiPropertyOptional({ example: 'Seg-Sex 12h-22h, Sáb-Dom 11h-23h' })
   @IsString()
   @IsOptional()

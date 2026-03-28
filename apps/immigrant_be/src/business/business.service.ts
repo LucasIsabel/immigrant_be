@@ -14,6 +14,8 @@ import { BusinessListQueryDto } from './dto/business-list-query.dto';
 const restaurantTypeDataSchema = z.object({
   cuisine: z.string().optional(),
   priceRange: z.enum(['$', '$$', '$$$']).optional(),
+  openingHoursWeekdays: z.string().optional(),
+  openingHoursWeekend: z.string().optional(),
   openingHours: z.string().optional(),
   acceptsReservations: z.boolean().optional(),
   menu: z
