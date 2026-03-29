@@ -79,7 +79,12 @@ describe('BusinessPagesService', () => {
 
   describe('getPublicPage', () => {
     it('returns the page when found and approved', async () => {
-      const page = { id: 'uuid', slug: 'meu-slug', status: 'APPROVED', approvedContent: {} };
+      const page = {
+        id: 'uuid',
+        slug: 'meu-slug',
+        status: 'APPROVED',
+        approvedContent: {},
+      };
       mockRepo.findApprovedBySlug.mockResolvedValue(page);
       const result = await service.getPublicPage('meu-slug');
       expect(result).toEqual(page);
@@ -87,7 +92,9 @@ describe('BusinessPagesService', () => {
 
     it('throws NotFoundException when page not found', async () => {
       mockRepo.findApprovedBySlug.mockResolvedValue(null);
-      await expect(service.getPublicPage('nao-existe')).rejects.toThrow(NotFoundException);
+      await expect(service.getPublicPage('nao-existe')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -109,7 +116,10 @@ describe('BusinessPagesService', () => {
           businessId: 'biz-1',
           slug: 'padaria-central',
           businessType: 'restaurante',
-          pendingContent: expect.objectContaining({ name: 'Padaria Central', city: 'Lisboa' }),
+          pendingContent: expect.objectContaining({
+            name: 'Padaria Central',
+            city: 'Lisboa',
+          }),
         }),
       );
       expect(result.status).toBe('DRAFT');
@@ -118,7 +128,11 @@ describe('BusinessPagesService', () => {
     it('throws ForbiddenException when business does not belong to user', async () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(null);
       await expect(
-        service.createPage('other-user', { businessId: 'biz-1', slug: 'slug', businessType: 'loja' }),
+        service.createPage('other-user', {
+          businessId: 'biz-1',
+          slug: 'slug',
+          businessType: 'loja',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -126,7 +140,11 @@ describe('BusinessPagesService', () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
       mockRepo.findByBusinessId.mockResolvedValue(mockPage);
       await expect(
-        service.createPage('user-1', { businessId: 'biz-1', slug: 'slug', businessType: 'loja' }),
+        service.createPage('user-1', {
+          businessId: 'biz-1',
+          slug: 'slug',
+          businessType: 'loja',
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
@@ -135,14 +153,21 @@ describe('BusinessPagesService', () => {
       mockRepo.findByBusinessId.mockResolvedValue(null);
       mockRepo.isSlugTaken.mockResolvedValue(true);
       await expect(
-        service.createPage('user-1', { businessId: 'biz-1', slug: 'taken-slug', businessType: 'loja' }),
+        service.createPage('user-1', {
+          businessId: 'biz-1',
+          slug: 'taken-slug',
+          businessType: 'loja',
+        }),
       ).rejects.toThrow(ConflictException);
     });
   });
 
   describe('updateContent', () => {
     it('updates pending_content and returns updated page', async () => {
-      const updatedPage = { ...mockPage, pendingContent: { name: 'Nova Padaria', city: 'Porto' } };
+      const updatedPage = {
+        ...mockPage,
+        pendingContent: { name: 'Nova Padaria', city: 'Porto' },
+      };
       mockRepo.findByIdAndUserId.mockResolvedValue(mockPage);
       mockRepo.updatePendingContent.mockResolvedValue(updatedPage);
 
@@ -150,14 +175,19 @@ describe('BusinessPagesService', () => {
         pendingContent: { name: 'Nova Padaria', city: 'Porto' },
       });
 
-      expect(mockRepo.updatePendingContent).toHaveBeenCalledWith('page-1', { name: 'Nova Padaria', city: 'Porto' });
+      expect(mockRepo.updatePendingContent).toHaveBeenCalledWith('page-1', {
+        name: 'Nova Padaria',
+        city: 'Porto',
+      });
       expect(result).toEqual(updatedPage);
     });
 
     it('throws ForbiddenException when page does not belong to user', async () => {
       mockRepo.findByIdAndUserId.mockResolvedValue(null);
       await expect(
-        service.updateContent('page-1', 'other-user', { pendingContent: { name: 'x', city: 'y' } }),
+        service.updateContent('page-1', 'other-user', {
+          pendingContent: { name: 'x', city: 'y' },
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -166,22 +196,38 @@ describe('BusinessPagesService', () => {
     it('transitions DRAFT to PENDING_REVIEW and returns modal: "first"', async () => {
       const draftPage = { ...mockPage, status: 'DRAFT', approvedContent: null };
       mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
-      mockRepo.submitPage.mockResolvedValue({ ...draftPage, status: 'PENDING_REVIEW' });
+      mockRepo.submitPage.mockResolvedValue({
+        ...draftPage,
+        status: 'PENDING_REVIEW',
+      });
 
       const result = await service.submitForReview('page-1', 'user-1');
 
-      expect(mockRepo.submitPage).toHaveBeenCalledWith('page-1', 'PENDING_REVIEW');
+      expect(mockRepo.submitPage).toHaveBeenCalledWith(
+        'page-1',
+        'PENDING_REVIEW',
+      );
       expect(result).toEqual({ modal: 'first', status: 'PENDING_REVIEW' });
     });
 
     it('transitions REJECTED to PENDING_REVIEW and returns modal: "update" when previously approved', async () => {
-      const rejectedPage = { ...mockPage, status: 'REJECTED', approvedContent: { name: 'Padaria' } };
+      const rejectedPage = {
+        ...mockPage,
+        status: 'REJECTED',
+        approvedContent: { name: 'Padaria' },
+      };
       mockRepo.findByIdAndUserId.mockResolvedValue(rejectedPage);
-      mockRepo.submitPage.mockResolvedValue({ ...rejectedPage, status: 'PENDING_REVIEW' });
+      mockRepo.submitPage.mockResolvedValue({
+        ...rejectedPage,
+        status: 'PENDING_REVIEW',
+      });
 
       const result = await service.submitForReview('page-1', 'user-1');
 
-      expect(mockRepo.submitPage).toHaveBeenCalledWith('page-1', 'PENDING_REVIEW');
+      expect(mockRepo.submitPage).toHaveBeenCalledWith(
+        'page-1',
+        'PENDING_REVIEW',
+      );
       expect(result).toEqual({ modal: 'update', status: 'PENDING_REVIEW' });
     });
 
@@ -192,27 +238,48 @@ describe('BusinessPagesService', () => {
         approvedContent: { name: 'Padaria' },
       };
       mockRepo.findByIdAndUserId.mockResolvedValue(approvedPage);
-      mockRepo.submitPage.mockResolvedValue({ ...approvedPage, status: 'APPROVED_WITH_PENDING' });
+      mockRepo.submitPage.mockResolvedValue({
+        ...approvedPage,
+        status: 'APPROVED_WITH_PENDING',
+      });
 
       const result = await service.submitForReview('page-1', 'user-1');
 
-      expect(mockRepo.submitPage).toHaveBeenCalledWith('page-1', 'APPROVED_WITH_PENDING');
-      expect(result).toEqual({ modal: 'update', status: 'APPROVED_WITH_PENDING' });
+      expect(mockRepo.submitPage).toHaveBeenCalledWith(
+        'page-1',
+        'APPROVED_WITH_PENDING',
+      );
+      expect(result).toEqual({
+        modal: 'update',
+        status: 'APPROVED_WITH_PENDING',
+      });
     });
 
     it('throws ConflictException when status is PENDING_REVIEW', async () => {
-      mockRepo.findByIdAndUserId.mockResolvedValue({ ...mockPage, status: 'PENDING_REVIEW' });
-      await expect(service.submitForReview('page-1', 'user-1')).rejects.toThrow(ConflictException);
+      mockRepo.findByIdAndUserId.mockResolvedValue({
+        ...mockPage,
+        status: 'PENDING_REVIEW',
+      });
+      await expect(service.submitForReview('page-1', 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('throws ConflictException when status is APPROVED_WITH_PENDING', async () => {
-      mockRepo.findByIdAndUserId.mockResolvedValue({ ...mockPage, status: 'APPROVED_WITH_PENDING' });
-      await expect(service.submitForReview('page-1', 'user-1')).rejects.toThrow(ConflictException);
+      mockRepo.findByIdAndUserId.mockResolvedValue({
+        ...mockPage,
+        status: 'APPROVED_WITH_PENDING',
+      });
+      await expect(service.submitForReview('page-1', 'user-1')).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('throws ForbiddenException when page does not belong to user', async () => {
       mockRepo.findByIdAndUserId.mockResolvedValue(null);
-      await expect(service.submitForReview('page-1', 'other-user')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.submitForReview('page-1', 'other-user'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -226,13 +293,17 @@ describe('BusinessPagesService', () => {
 
     it('throws ForbiddenException when business does not belong to user', async () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(null);
-      await expect(service.getMyPage('biz-1', 'other-user')).rejects.toThrow(ForbiddenException);
+      await expect(service.getMyPage('biz-1', 'other-user')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('throws NotFoundException when no page exists for business', async () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
       mockRepo.findByBusinessId.mockResolvedValue(null);
-      await expect(service.getMyPage('biz-1', 'user-1')).rejects.toThrow(NotFoundException);
+      await expect(service.getMyPage('biz-1', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

@@ -36,7 +36,8 @@ export class BusinessPagesService {
     if (!business) throw new ForbiddenException('Acesso negado');
 
     const existing = await this.repository.findByBusinessId(dto.businessId);
-    if (existing) throw new ConflictException('Já existe uma página para este negócio');
+    if (existing)
+      throw new ConflictException('Já existe uma página para este negócio');
 
     const slugTaken = await this.repository.isSlugTaken(dto.slug);
     if (slugTaken) throw new ConflictException('Slug não disponível');
@@ -86,10 +87,7 @@ export class BusinessPagesService {
     const newStatus =
       status === 'APPROVED' ? 'APPROVED_WITH_PENDING' : 'PENDING_REVIEW';
 
-    await this.repository.submitPage(
-      id,
-      newStatus as 'PENDING_REVIEW' | 'APPROVED_WITH_PENDING',
-    );
+    await this.repository.submitPage(id, newStatus);
 
     return {
       modal: approvedContent !== null ? 'update' : 'first',
