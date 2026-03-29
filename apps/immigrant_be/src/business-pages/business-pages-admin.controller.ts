@@ -11,6 +11,7 @@ import {
 import {
   ApiCookieAuth,
   ApiConflictResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -19,6 +20,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import { BusinessPageStatus } from '../../../../generated/prisma';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BusinessPagesService } from './business-pages.service';
@@ -30,6 +32,7 @@ import { RejectBusinessPageDto } from './dto/reject-business-page.dto';
 @Roles(UserRole.ADMIN)
 @ApiCookieAuth('better-auth.session_token')
 @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+@ApiForbiddenResponse({ description: 'Acesso insuficiente' })
 export class BusinessPagesAdminController {
   constructor(private readonly service: BusinessPagesService) {}
 
@@ -37,7 +40,7 @@ export class BusinessPagesAdminController {
   @ApiOperation({ summary: 'Listar BusinessPages (admin, filtro por status)' })
   @ApiOkResponse({ description: 'Lista de páginas' })
   listPages(@Query() query: ListBusinessPagesQueryDto) {
-    return this.service.listPages(query.status as any);
+    return this.service.listPages(query.status as BusinessPageStatus);
   }
 
   @Post(':id/approve')
