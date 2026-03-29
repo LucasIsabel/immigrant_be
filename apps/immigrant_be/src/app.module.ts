@@ -19,6 +19,7 @@ import { AiImageModule } from './ai-image/ai-image.module';
 import { StorageModule } from './storage/storage.module';
 import { ProfessionalProfileModule } from './professional-profile/professional-profile.module';
 import { BusinessModule } from './business/business.module';
+import { BusinessPagesModule } from './business-pages/business-pages.module';
 import { CountriesNowModule } from './countriesnow/countriesnow.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { CountriesNowModule } from './countriesnow/countriesnow.module';
     StorageModule,
     ProfessionalProfileModule,
     BusinessModule,
+    BusinessPagesModule,
     CountriesNowModule,
   ],
   providers: [
