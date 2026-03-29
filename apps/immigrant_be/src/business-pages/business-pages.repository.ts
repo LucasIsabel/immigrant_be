@@ -14,4 +14,10 @@ export class BusinessPagesRepository {
   findBySlug(slug: string) {
     return this.prisma.businessPage.findUnique({ where: { slug } });
   }
+
+  findApprovedBySlug(slug: string) {
+    return this.prisma.businessPage.findFirst({
+      where: { slug, status: 'APPROVED' },
+    });
+  }
 }
