@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
-import { EmailService } from '@app/email';
+import { buildRejectionEmail, EmailService } from '@app/email';
 
 const mockBusiness = {
   id: 'biz-1',
@@ -553,6 +553,30 @@ describe('BusinessPagesService', () => {
       const result = await service.rejectBusinessPage('page-1', 'admin-1', {});
 
       expect(result.status).toBe('REJECTED');
+    });
+
+    it('sends rejection email with isUpdate=true for update rejection', async () => {
+      const mockedBuildRejectionEmail = jest.mocked(buildRejectionEmail);
+      const page = {
+        ...mockPageWithBusiness,
+        status: 'APPROVED_WITH_PENDING',
+        approvedContent: { name: 'Live' },
+      };
+      mockRepo.findById.mockResolvedValue(page);
+      mockRepo.rejectPage.mockResolvedValue({ ...page, status: 'APPROVED' });
+      mockEmail.send.mockResolvedValue(undefined);
+
+      await service.rejectBusinessPage('page-1', 'admin-1', {});
+
+      expect(mockEmail.send).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'owner@email.com' }),
+      );
+      expect(mockedBuildRejectionEmail).toHaveBeenCalledWith(
+        expect.any(String),
+        true,
+        expect.any(String),
+        undefined,
+      );
     });
   });
 });

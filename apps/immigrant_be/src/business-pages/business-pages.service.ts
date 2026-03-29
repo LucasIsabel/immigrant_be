@@ -9,6 +9,7 @@ import {
   buildApprovalEmail,
   buildRejectionEmail,
 } from '@app/email';
+import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
 import { UpdateBusinessPageContentDto } from './dto/update-business-page-content.dto';
@@ -119,8 +120,8 @@ export class BusinessPagesService {
 
   // ── Admin methods ──────────────────────────────────────────────────
 
-  listPages(status?: string) {
-    return this.repository.listPages(status as any);
+  listPages(status?: BusinessPageStatus) {
+    return this.repository.listPages(status);
   }
 
   async approveBusinessPage(id: string, adminId: string) {
