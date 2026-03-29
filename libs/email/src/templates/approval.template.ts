@@ -1,10 +1,13 @@
-import { wrapInBaseLayout } from './base.template';
+import { wrapInBaseLayout, escapeHtml } from './base.template';
 
+// TODO(i18n): hardcoded to pt-PT — extend with locale param when multi-language support is needed
 export function buildApprovalEmail(
   businessName: string,
   pageUrl: string,
 ): { subject: string; html: string } {
   const subject = `Sua página foi aprovada! — ImmigrantMatch`;
+
+  const safeName = escapeHtml(businessName);
 
   const content = `
     <h1 style="margin:0 0 8px;color:#0f172a;font-size:24px;font-weight:700;text-align:center;line-height:1.3;">
@@ -12,7 +15,7 @@ export function buildApprovalEmail(
     </h1>
     <p style="margin:16px 0 8px;color:#334155;font-size:16px;line-height:1.6;">Olá,</p>
     <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6;">
-      Boa notícia! A página pública de <strong>${businessName}</strong> foi revisada e
+      Boa notícia! A página pública de <strong>${safeName}</strong> foi revisada e
       aprovada pela nossa equipa. Ela já está visível para toda a comunidade.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
@@ -24,10 +27,6 @@ export function buildApprovalEmail(
         </td>
       </tr>
     </table>
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 20px;">
-    <p style="margin:0;color:#94a3b8;font-size:13px;line-height:1.5;">
-      ImmigrantMatch · Não responda a este email
-    </p>
   `;
 
   return { subject, html: wrapInBaseLayout(content) };

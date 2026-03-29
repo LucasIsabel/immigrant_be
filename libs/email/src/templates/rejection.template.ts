@@ -1,5 +1,6 @@
-import { wrapInBaseLayout } from './base.template';
+import { wrapInBaseLayout, escapeHtml } from './base.template';
 
+// TODO(i18n): hardcoded to pt-PT — extend with locale param when multi-language support is needed
 export function buildRejectionEmail(
   businessName: string,
   isUpdate: boolean,
@@ -14,14 +15,17 @@ export function buildRejectionEmail(
     ? 'Sua atualização não foi aprovada'
     : 'Sua página não foi aprovada';
 
-  const body = isUpdate
-    ? `A atualização enviada para a página de <strong>${businessName}</strong> não foi aprovada pela nossa equipa de moderação. A versão atual da sua página continua visível.`
-    : `A página de <strong>${businessName}</strong> não foi aprovada pela nossa equipa de moderação.`;
+  const safeName = escapeHtml(businessName);
+  const safeReason = reason ? escapeHtml(reason) : undefined;
 
-  const reasonHtml = reason
+  const body = isUpdate
+    ? `A atualização enviada para a página de <strong>${safeName}</strong> não foi aprovada pela nossa equipa de moderação. A versão atual da sua página continua visível.`
+    : `A página de <strong>${safeName}</strong> não foi aprovada pela nossa equipa de moderação.`;
+
+  const reasonHtml = safeReason
     ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin:16px 0;">
         <p style="margin:0 0 4px;font-size:12px;color:#991b1b;font-weight:600;">Motivo:</p>
-        <p style="margin:0;color:#7f1d1d;font-size:14px;line-height:1.5;">${reason}</p>
+        <p style="margin:0;color:#7f1d1d;font-size:14px;line-height:1.5;">${safeReason}</p>
        </div>`
     : '';
 
@@ -44,10 +48,6 @@ export function buildRejectionEmail(
         </td>
       </tr>
     </table>
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 20px;">
-    <p style="margin:0;color:#94a3b8;font-size:13px;line-height:1.5;">
-      ImmigrantMatch · Não responda a este email
-    </p>
   `;
 
   return { subject, html: wrapInBaseLayout(content) };
