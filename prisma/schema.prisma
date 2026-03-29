@@ -36,8 +36,11 @@ model Users {
   blog_posts         BlogPost[]
   blog_post_likes    BlogPostLike[]
   aiGeneratedImages  AiGeneratedImage[]
-  professionalProfile UserProfessionalProfile?
-  businesses          Business[]
+  professionalProfile    UserProfessionalProfile?
+  businesses             Business[]
+  approvedBusinessPages  BusinessPage[]       @relation("ApprovedPages")
+  rejectedBusinessPages  BusinessPage[]       @relation("RejectedPages")
+  businessPageReviews    BusinessPageReview[] @relation("ReviewedPages")
 
   @@unique([email])
   @@map("users")
@@ -489,8 +492,75 @@ model Business {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
+  businessPage           BusinessPage?
+  publisherQualification PublisherQualification?
+
   @@index([userId])
   @@index([businessType, isPublic])
   @@index([city, isPublic])
   @@map("businesses")
+}
+
+enum BusinessPageStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  APPROVED_WITH_PENDING
+}
+
+model BusinessPage {
+  id             String             @id @default(uuid()) @db.Uuid
+  businessId     String             @unique @db.Uuid @map("business_id")
+  business       Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  slug           String             @unique @db.VarChar(48)
+  businessType   String             @db.VarChar(50) @map("business_type")
+  approvedContent Json?             @map("approved_content")
+  approvedAt     DateTime?          @map("approved_at")
+  approvedById   String?            @db.Uuid @map("approved_by")
+  approvedBy     Users?             @relation("ApprovedPages", fields: [approvedById], references: [id], onDelete: SetNull)
+  pendingContent Json?              @map("pending_content")
+  submittedAt    DateTime?          @map("submitted_at")
+  status         BusinessPageStatus @default(DRAFT)
+  rejectionReason String?           @db.Text @map("rejection_reason")
+  rejectedAt     DateTime?          @map("rejected_at")
+  rejectedById   String?            @db.Uuid @map("rejected_by")
+  rejectedBy     Users?             @relation("RejectedPages", fields: [rejectedById], references: [id], onDelete: SetNull)
+  slugLockedAt   DateTime?          @map("slug_locked_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  reviews        BusinessPageReview[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([businessId])
+  @@map("business_pages")
+}
+
+model BusinessPageReview {
+  id              String       @id @default(uuid()) @db.Uuid
+  pageId          String       @db.Uuid @map("page_id")
+  page            BusinessPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  reviewerId      String?      @db.Uuid @map("reviewer_id")
+  reviewer        Users?       @relation("ReviewedPages", fields: [reviewerId], references: [id], onDelete: SetNull)
+  action          String       @db.VarChar(20)
+  reason          String?      @db.Text
+  contentSnapshot Json?        @map("content_snapshot")
+  reviewedAt      DateTime     @default(now()) @map("reviewed_at")
+
+  @@index([pageId])
+  @@map("business_page_reviews")
+}
+
+model PublisherQualification {
+  businessId             String    @id @db.Uuid @map("business_id")
+  business               Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  isQualified            Boolean   @default(false) @map("is_qualified")
+  qualifiedAt            DateTime? @map("qualified_at")
+  totalApprovals         Int       @default(0) @map("total_approvals")
+  lastRejectionAt        DateTime? @map("last_rejection_at")
+  disqualifiedAt         DateTime? @map("disqualified_at")
+  disqualificationReason String?   @db.Text @map("disqualification_reason")
+
+  @@map("publisher_qualifications")
 }
