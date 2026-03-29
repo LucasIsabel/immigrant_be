@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { BusinessPageStatus } from '../../../../generated/prisma';
 import { PrismaService } from '@app/database';
 
 @Injectable()
@@ -65,6 +66,56 @@ export class BusinessPagesRepository {
     return this.prisma.businessPage.update({
       where: { id },
       data: { status, submittedAt: new Date() },
+    });
+  }
+
+  // Busca página por id (sem verificação de ownership — uso admin)
+  findById(id: string) {
+    return this.prisma.businessPage.findUnique({
+      where: { id },
+      include: {
+        business: {
+          select: {
+            name: true,
+            userId: true,
+            user: { select: { email: true, name: true } },
+          },
+        },
+      },
+    });
+  }
+
+  // Lista páginas com filtro opcional por status; inclui business.name e city para a tabela
+  listPages(status?: BusinessPageStatus) {
+    return this.prisma.businessPage.findMany({
+      where: status ? { status } : undefined,
+      include: { business: { select: { name: true, city: true } } },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  // Aprova: copia pendingContent → approvedContent, seta slugLockedAt se indicado
+  approvePage(id: string, approvedContent: object, setSlugLock: boolean) {
+    return this.prisma.businessPage.update({
+      where: { id },
+      data: {
+        status: 'APPROVED',
+        approvedContent,
+        approvedAt: new Date(),
+        ...(setSlugLock ? { slugLockedAt: new Date() } : {}),
+      },
+    });
+  }
+
+  // Reprova: status determinado pelo service ('REJECTED' ou 'APPROVED' se era APPROVED_WITH_PENDING)
+  rejectPage(id: string, newStatus: 'REJECTED' | 'APPROVED', reason?: string) {
+    return this.prisma.businessPage.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        rejectedAt: new Date(),
+        ...(reason !== undefined ? { rejectionReason: reason } : {}),
+      },
     });
   }
 }
