@@ -95,25 +95,37 @@ export class BusinessPagesRepository {
   }
 
   // Aprova: copia pendingContent → approvedContent, seta slugLockedAt se indicado
-  approvePage(id: string, approvedContent: object, setSlugLock: boolean) {
+  approvePage(
+    id: string,
+    approvedContent: object,
+    setSlugLock: boolean,
+    adminId: string,
+  ) {
     return this.prisma.businessPage.update({
       where: { id },
       data: {
         status: 'APPROVED',
         approvedContent,
         approvedAt: new Date(),
+        approvedById: adminId,
         ...(setSlugLock ? { slugLockedAt: new Date() } : {}),
       },
     });
   }
 
   // Reprova: status determinado pelo service ('REJECTED' ou 'APPROVED' se era APPROVED_WITH_PENDING)
-  rejectPage(id: string, newStatus: 'REJECTED' | 'APPROVED', reason?: string) {
+  rejectPage(
+    id: string,
+    newStatus: 'REJECTED' | 'APPROVED',
+    adminId: string,
+    reason?: string,
+  ) {
     return this.prisma.businessPage.update({
       where: { id },
       data: {
         status: newStatus,
         rejectedAt: new Date(),
+        rejectedById: adminId,
         ...(reason !== undefined ? { rejectionReason: reason } : {}),
       },
     });
