@@ -60,7 +60,10 @@ export class PublisherQualificationRepository {
   }
 
   // Update fields on an existing record
-  update(businessId: string, data: Prisma.PublisherQualificationUpdateInput) {
+  update(
+    businessId: string,
+    data: Prisma.PublisherQualificationUpdateInput | Prisma.PublisherQualificationUncheckedUpdateInput,
+  ) {
     return this.prisma.publisherQualification.update({
       where: { businessId },
       data,
