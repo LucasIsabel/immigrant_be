@@ -20,6 +20,7 @@ import { StorageModule } from './storage/storage.module';
 import { ProfessionalProfileModule } from './professional-profile/professional-profile.module';
 import { BusinessModule } from './business/business.module';
 import { BusinessPagesModule } from './business-pages/business-pages.module';
+import { PublisherQualificationModule } from './publisher-qualification/publisher-qualification.module';
 import { CountriesNowModule } from './countriesnow/countriesnow.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { CountriesNowModule } from './countriesnow/countriesnow.module';
     ProfessionalProfileModule,
     BusinessModule,
     BusinessPagesModule,
+    PublisherQualificationModule,
     CountriesNowModule,
   ],
   providers: [
