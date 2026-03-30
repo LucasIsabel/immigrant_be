@@ -3,6 +3,11 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
+jest.mock('@app/config', () => ({
+  env: { FRONTEND_URL: 'https://app.test' },
+  ConfigModule: jest.fn(),
+}));
+
 jest.mock('@app/email', () => ({
   EmailService: jest.fn(),
   buildApprovalEmail: jest.fn().mockReturnValue({ subject: 's', html: 'h' }),
