@@ -14,6 +14,10 @@ jest.mock('@app/email', () => ({
   buildRejectionEmail: jest.fn().mockReturnValue({ subject: 's', html: 'h' }),
 }));
 
+jest.mock('../publisher-qualification/publisher-qualification.service', () => ({
+  PublisherQualificationService: jest.fn(),
+}));
+
 import { Test } from '@nestjs/testing';
 import {
   ConflictException,
@@ -23,6 +27,7 @@ import {
 import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
 import { buildRejectionEmail, EmailService } from '@app/email';
+import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 
 const mockBusiness = {
   id: 'biz-1',
@@ -85,6 +90,12 @@ const mockEmail = {
   send: jest.fn(),
 };
 
+const mockQualification = {
+  isQualified: jest.fn().mockResolvedValue(false),
+  onPageApproved: jest.fn().mockResolvedValue(undefined),
+  onPageRejected: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('BusinessPagesService', () => {
   let service: BusinessPagesService;
 
@@ -94,6 +105,7 @@ describe('BusinessPagesService', () => {
         BusinessPagesService,
         { provide: BusinessPagesRepository, useValue: mockRepo },
         { provide: EmailService, useValue: mockEmail },
+        { provide: PublisherQualificationService, useValue: mockQualification },
       ],
     }).compile();
     service = module.get(BusinessPagesService);
@@ -318,6 +330,33 @@ describe('BusinessPagesService', () => {
         service.submitForReview('page-1', 'other-user'),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('approves directly when publisher is qualified (bypasses PENDING_REVIEW)', async () => {
+      const draftPage = {
+        ...mockPage,
+        status: 'DRAFT',
+        approvedContent: null,
+        pendingContent: { name: 'Padaria' },
+        slugLockedAt: null,
+      };
+      mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
+      mockQualification.isQualified.mockResolvedValue(true);
+      mockRepo.approvePage.mockResolvedValue({
+        ...draftPage,
+        status: 'APPROVED',
+      });
+
+      const result = await service.submitForReview('page-1', 'user-1');
+
+      expect(mockRepo.approvePage).toHaveBeenCalledWith(
+        'page-1',
+        draftPage.pendingContent,
+        true,
+        'system',
+      );
+      expect(mockRepo.submitPage).not.toHaveBeenCalled();
+      expect(result).toEqual({ modal: 'approved', status: 'APPROVED' });
+    });
   });
 
   describe('getMyPage', () => {
@@ -446,6 +485,22 @@ describe('BusinessPagesService', () => {
       const result = await service.approveBusinessPage('page-1', 'admin-1');
 
       expect(result.status).toBe('APPROVED');
+    });
+
+    it('calls onPageApproved after successful approval', async () => {
+      const page = {
+        ...mockPageWithBusiness,
+        status: 'PENDING_REVIEW',
+        approvedContent: null,
+      };
+      mockRepo.findById.mockResolvedValue(page);
+      mockRepo.approvePage.mockResolvedValue({ ...page, status: 'APPROVED' });
+      mockQualification.onPageApproved.mockResolvedValue(undefined);
+
+      await service.approveBusinessPage('page-1', 'admin-1');
+
+      // onPageApproved is fire-and-forget; just verify it was called
+      expect(mockQualification.onPageApproved).toHaveBeenCalledWith('page-1');
     });
   });
 
@@ -582,6 +637,21 @@ describe('BusinessPagesService', () => {
         expect.any(String),
         undefined,
       );
+    });
+
+    it('calls onPageRejected after successful rejection', async () => {
+      const page = {
+        ...mockPageWithBusiness,
+        status: 'PENDING_REVIEW',
+        approvedContent: null,
+      };
+      mockRepo.findById.mockResolvedValue(page);
+      mockRepo.rejectPage.mockResolvedValue({ ...page, status: 'REJECTED' });
+      mockQualification.onPageRejected.mockResolvedValue(undefined);
+
+      await service.rejectBusinessPage('page-1', 'admin-1', {});
+
+      expect(mockQualification.onPageRejected).toHaveBeenCalledWith('page-1');
     });
   });
 });
