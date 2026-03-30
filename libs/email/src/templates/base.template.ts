@@ -59,3 +59,11 @@ export function wrapInBaseLayout(content: string): string {
 </body>
 </html>`;
 }
+
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
