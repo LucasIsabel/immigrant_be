@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BusinessPageStatus } from '../../../../generated/prisma';
+import { BusinessPageStatus, Prisma } from '../../../../generated/prisma';
 import { PrismaService } from '@app/database';
 
 @Injectable()
@@ -108,6 +108,7 @@ export class BusinessPagesRepository {
         approvedContent,
         approvedAt: new Date(),
         approvedById: adminId,
+        pendingContent: Prisma.JsonNull,
         ...(setSlugLock ? { slugLockedAt: new Date() } : {}),
       },
     });

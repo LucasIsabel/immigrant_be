@@ -9,6 +9,7 @@ import {
   buildApprovalEmail,
   buildRejectionEmail,
 } from '@app/email';
+import { env } from '@app/config';
 import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
@@ -140,8 +141,7 @@ export class BusinessPagesService {
     );
 
     try {
-      const appUrl = process.env.APP_URL ?? '';
-      const pageUrl = `${appUrl}/pg/${updated.businessType}/${updated.slug}`;
+      const pageUrl = `${env.FRONTEND_URL}/pg/${updated.businessType}/${updated.slug}`;
       const { subject, html } = buildApprovalEmail(page.business.name, pageUrl);
       await this.emailService.send({
         to: page.business.user.email,
@@ -178,8 +178,7 @@ export class BusinessPagesService {
     );
 
     try {
-      const appUrl = process.env.APP_URL ?? '';
-      const dashboardUrl = `${appUrl}/dashboard/meu-negocio/${page.businessId}/pagina-publica`;
+      const dashboardUrl = `${env.FRONTEND_URL}/dashboard/meu-negocio/${page.businessId}/pagina-publica`;
       const { subject, html } = buildRejectionEmail(
         page.business.name,
         isUpdate,

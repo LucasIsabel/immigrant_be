@@ -20,7 +20,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
-import { BusinessPageStatus } from '../../../../generated/prisma';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BusinessPagesService } from './business-pages.service';
@@ -40,7 +39,7 @@ export class BusinessPagesAdminController {
   @ApiOperation({ summary: 'Listar BusinessPages (admin, filtro por status)' })
   @ApiOkResponse({ description: 'Lista de páginas' })
   listPages(@Query() query: ListBusinessPagesQueryDto) {
-    return this.service.listPages(query.status as BusinessPageStatus);
+    return this.service.listPages(query.status);
   }
 
   @Post(':id/approve')

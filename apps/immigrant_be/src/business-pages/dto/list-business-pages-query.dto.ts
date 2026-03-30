@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional } from 'class-validator';
+import { BusinessPageStatus } from '../../../../../generated/prisma';
 
 export class ListBusinessPagesQueryDto {
   @ApiPropertyOptional({
@@ -13,6 +14,12 @@ export class ListBusinessPagesQueryDto {
     ],
   })
   @IsOptional()
-  @IsIn(['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'APPROVED_WITH_PENDING', 'REJECTED'])
-  status?: string;
+  @IsIn([
+    'DRAFT',
+    'PENDING_REVIEW',
+    'APPROVED',
+    'APPROVED_WITH_PENDING',
+    'REJECTED',
+  ])
+  status?: BusinessPageStatus;
 }
