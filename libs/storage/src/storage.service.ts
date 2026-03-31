@@ -80,6 +80,25 @@ export class StorageService {
     return { url, key };
   }
 
+  async uploadFileAtKey(
+    buffer: Buffer,
+    key: string,
+    mimeType: string,
+  ): Promise<{ url: string; key: string }> {
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      }),
+    );
+
+    const url = `${this.publicUrl}/${key}`;
+    this.logger.log(`Uploaded file at key: ${key}`);
+    return { url, key };
+  }
+
   async listFiles(folder?: string): Promise<StorageFileItem[]> {
     this.logger.debug('Listing files', this.s3.config);
 

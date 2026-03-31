@@ -116,4 +116,36 @@ describe('StorageService', () => {
       ).rejects.toThrow('S3 connection failed');
     });
   });
+
+  describe('uploadFileAtKey', () => {
+    it('deve fazer upload com a key fornecida e retornar url e key', async () => {
+      const buffer = Buffer.from('test');
+      const result = await service.uploadFileAtKey(
+        buffer,
+        'business-pages/biz-1/logo.jpg',
+        'image/jpeg',
+      );
+
+      expect(result.key).toBe('business-pages/biz-1/logo.jpg');
+      expect(result.url).toBe(
+        'https://cdn.example.com/business-pages/biz-1/logo.jpg',
+      );
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const [command] = mockSend.mock.calls[0] as [PutObjectCommand];
+      expect(command.input).toMatchObject({
+        Bucket: 'test-bucket',
+        Key: 'business-pages/biz-1/logo.jpg',
+        Body: buffer,
+        ContentType: 'image/jpeg',
+      });
+    });
+
+    it('deve propagar erro quando S3.send falhar', async () => {
+      mockSend.mockRejectedValueOnce(new Error('S3 error'));
+      await expect(
+        service.uploadFileAtKey(Buffer.from('x'), 'some/key.png', 'image/png'),
+      ).rejects.toThrow('S3 error');
+    });
+  });
 });
