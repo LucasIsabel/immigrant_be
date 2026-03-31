@@ -244,6 +244,9 @@ export class BusinessPagesService {
     file: Express.Multer.File,
     slot: 'logo' | 'cover',
   ): Promise<{ url: string }> {
+    const page = await this.repository.findByIdAndUserId(pageId, userId);
+    if (!page) throw new ForbiddenException('Acesso negado');
+
     if (!BusinessPagesService.ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
       throw new BadRequestException(
         'Tipo de ficheiro não permitido. Use JPEG, PNG ou WebP.',
@@ -252,9 +255,6 @@ export class BusinessPagesService {
     if (file.size > BusinessPagesService.MAX_IMAGE_SIZE) {
       throw new BadRequestException('Ficheiro excede o tamanho máximo de 5 MB.');
     }
-
-    const page = await this.repository.findByIdAndUserId(pageId, userId);
-    if (!page) throw new ForbiddenException('Acesso negado');
 
     const ext = this.mimeToExt(file.mimetype);
     const key = `business-pages/${page.businessId}/${slot}${ext}`;
