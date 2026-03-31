@@ -117,7 +117,11 @@ describe('PublisherQualificationService', () => {
       const existing = { ...baseQual, totalApprovals: 2 };
       mockRepo.findPageBusinessId.mockResolvedValue({ businessId: 'biz-1' });
       mockRepo.findWithBusinessAndUser.mockResolvedValue(existing);
-      mockRepo.update.mockResolvedValue({ ...existing, totalApprovals: 3, isQualified: true });
+      mockRepo.update.mockResolvedValue({
+        ...existing,
+        totalApprovals: 3,
+        isQualified: true,
+      });
 
       await service.onPageApproved('page-1');
 
@@ -253,7 +257,10 @@ describe('PublisherQualificationService', () => {
       });
       mockRepo.approvePendingPage.mockResolvedValue(null);
 
-      await service.applyOverride('biz-1', 'admin-1', { value: true, reason: 'Publisher confiável' });
+      await service.applyOverride('biz-1', 'admin-1', {
+        value: true,
+        reason: 'Publisher confiável',
+      });
 
       expect(mockRepo.update).toHaveBeenCalledWith(
         'biz-1',
@@ -277,7 +284,10 @@ describe('PublisherQualificationService', () => {
         isQualified: false,
       });
 
-      await service.applyOverride('biz-1', 'admin-1', { value: false, reason: 'Conteúdo suspeito' });
+      await service.applyOverride('biz-1', 'admin-1', {
+        value: false,
+        reason: 'Conteúdo suspeito',
+      });
 
       expect(mockRepo.update).toHaveBeenCalledWith(
         'biz-1',
@@ -288,11 +298,24 @@ describe('PublisherQualificationService', () => {
       );
     });
 
-    it('throws NotFoundException when businessId not found', async () => {
+    it('creates record if not yet exists (upsert behavior)', async () => {
       mockRepo.findWithBusinessAndUser.mockResolvedValue(null);
-      await expect(
-        service.applyOverride('biz-1', 'admin-1', { value: true, reason: 'teste motivo ok' }),
-      ).rejects.toThrow(NotFoundException);
+      mockRepo.create.mockResolvedValue({ ...baseQual });
+      mockRepo.update.mockResolvedValue({
+        ...baseQual,
+        overrideActive: true,
+        overrideValue: true,
+        isQualified: true,
+      });
+      mockRepo.approvePendingPage.mockResolvedValue(null);
+
+      const result = await service.applyOverride('biz-1', 'admin-1', {
+        value: true,
+        reason: 'Publisher confiável',
+      });
+
+      expect(mockRepo.create).toHaveBeenCalledWith('biz-1');
+      expect(result.businessId).toBe('biz-1');
     });
   });
 
@@ -335,7 +358,9 @@ describe('PublisherQualificationService', () => {
 
     it('throws NotFoundException when businessId not found', async () => {
       mockRepo.findWithBusinessAndUser.mockResolvedValue(null);
-      await expect(service.removeOverride('biz-1')).rejects.toThrow(NotFoundException);
+      await expect(service.removeOverride('biz-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -348,7 +373,10 @@ describe('PublisherQualificationService', () => {
         businessId: 'biz-1',
         businessName: 'Padaria Central',
         isQualified: true,
-        criteria: expect.objectContaining({ approvalsCount: 3, approvalsRequired: 3 }),
+        criteria: expect.objectContaining({
+          approvalsCount: 3,
+          approvalsRequired: 3,
+        }),
       });
     });
   });

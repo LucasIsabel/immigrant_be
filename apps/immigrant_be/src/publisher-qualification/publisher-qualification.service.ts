@@ -27,7 +27,9 @@ export interface AdminPublisherView {
 }
 
 type QualWithBusiness = NonNullable<
-  Awaited<ReturnType<PublisherQualificationRepository['findWithBusinessAndUser']>>
+  Awaited<
+    ReturnType<PublisherQualificationRepository['findWithBusinessAndUser']>
+  >
 >;
 
 @Injectable()
@@ -52,7 +54,9 @@ export class PublisherQualificationService {
       totalApprovals: newTotalApprovals,
     });
 
-    const updates: Record<string, unknown> = { totalApprovals: newTotalApprovals };
+    const updates: Record<string, unknown> = {
+      totalApprovals: newTotalApprovals,
+    };
 
     if (!wasQualified && nowQualified) {
       updates.isQualified = true;
@@ -66,7 +70,10 @@ export class PublisherQualificationService {
     await this.repository.update(businessId, updates);
 
     if (!wasQualified && nowQualified && qual.business.businessPage) {
-      await this.autoApprovePendingPage(qual.business.businessPage.id, qual.business.businessPage);
+      await this.autoApprovePendingPage(
+        qual.business.businessPage.id,
+        qual.business.businessPage,
+      );
     }
   }
 
@@ -104,7 +111,8 @@ export class PublisherQualificationService {
     adminId: string,
     dto: ApplyOverrideDto,
   ): Promise<AdminPublisherView> {
-    const qual = await this.repository.findWithBusinessAndUser(businessId);
+    let qual = await this.repository.findWithBusinessAndUser(businessId);
+    if (!qual) qual = await this.repository.create(businessId);
     if (!qual) throw new NotFoundException('Publisher não encontrado');
 
     const wasQualified = qual.isQualified;
@@ -116,12 +124,17 @@ export class PublisherQualificationService {
       overrideReason: dto.reason,
       overrideAt: new Date(),
       isQualified: dto.value,
-      ...(dto.value && !wasQualified ? { qualifiedAt: new Date(), disqualifiedAt: null } : {}),
+      ...(dto.value && !wasQualified
+        ? { qualifiedAt: new Date(), disqualifiedAt: null }
+        : {}),
       ...(!dto.value && wasQualified ? { disqualifiedAt: new Date() } : {}),
     });
 
     if (!wasQualified && dto.value && qual.business.businessPage) {
-      await this.autoApprovePendingPage(qual.business.businessPage.id, qual.business.businessPage);
+      await this.autoApprovePendingPage(
+        qual.business.businessPage.id,
+        qual.business.businessPage,
+      );
     }
 
     return this.buildView(updated);
@@ -143,8 +156,12 @@ export class PublisherQualificationService {
       overrideReason: null,
       overrideAt: null,
       isQualified: nowQualified,
-      ...(nowQualified && !qual.isQualified ? { qualifiedAt: new Date(), disqualifiedAt: null } : {}),
-      ...(!nowQualified && qual.isQualified ? { disqualifiedAt: new Date() } : {}),
+      ...(nowQualified && !qual.isQualified
+        ? { qualifiedAt: new Date(), disqualifiedAt: null }
+        : {}),
+      ...(!nowQualified && qual.isQualified
+        ? { disqualifiedAt: new Date() }
+        : {}),
     });
 
     return this.buildView(updated);
@@ -171,10 +188,13 @@ export class PublisherQualificationService {
     if (qual.overrideActive) return qual.overrideValue ?? false;
 
     const accountAgeDays = Math.floor(
-      (Date.now() - qual.business.user.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      (Date.now() - qual.business.user.createdAt.getTime()) /
+        (1000 * 60 * 60 * 24),
     );
     const daysSinceRejection = qual.lastRejectionAt
-      ? Math.floor((Date.now() - qual.lastRejectionAt.getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor(
+          (Date.now() - qual.lastRejectionAt.getTime()) / (1000 * 60 * 60 * 24),
+        )
       : null;
 
     return (
@@ -188,10 +208,13 @@ export class PublisherQualificationService {
 
   private buildView(qual: QualWithBusiness): AdminPublisherView {
     const accountAgeDays = Math.floor(
-      (Date.now() - qual.business.user.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      (Date.now() - qual.business.user.createdAt.getTime()) /
+        (1000 * 60 * 60 * 24),
     );
     const daysSinceLastRejection = qual.lastRejectionAt
-      ? Math.floor((Date.now() - qual.lastRejectionAt.getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor(
+          (Date.now() - qual.lastRejectionAt.getTime()) / (1000 * 60 * 60 * 24),
+        )
       : null;
 
     return {
@@ -222,17 +245,27 @@ export class PublisherQualificationService {
   ): Promise<void> {
     if (page.status !== 'PENDING_REVIEW') return;
 
-    let approved: Awaited<ReturnType<typeof this.repository.approvePendingPage>>;
+    let approved: Awaited<
+      ReturnType<typeof this.repository.approvePendingPage>
+    >;
     try {
-      approved = await this.repository.approvePendingPage(businessPageId, {});
+      approved = await this.repository.approvePendingPage(businessPageId);
     } catch {
       return;
     }
+    if (!approved) return; // page was already processed (race condition)
 
     try {
       const pageUrl = `${env.FRONTEND_URL}/pg/${page.businessType}/${page.slug}`;
-      const { subject, html } = buildApprovalEmail(approved.business.name, pageUrl);
-      await this.emailService.send({ to: approved.business.user.email, subject, html });
+      const { subject, html } = buildApprovalEmail(
+        approved.business.name,
+        pageUrl,
+      );
+      await this.emailService.send({
+        to: approved.business.user.email,
+        subject,
+        html,
+      });
     } catch {
       // email failure must not block auto-approval
     }

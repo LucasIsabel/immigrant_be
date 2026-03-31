@@ -7,7 +7,9 @@ export class PublisherQualificationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   // Gets businessId for a given businessPageId
-  findPageBusinessId(businessPageId: string): Promise<{ businessId: string } | null> {
+  findPageBusinessId(
+    businessPageId: string,
+  ): Promise<{ businessId: string } | null> {
     return this.prisma.businessPage.findUnique({
       where: { id: businessPageId },
       select: { businessId: true },
@@ -24,7 +26,12 @@ export class PublisherQualificationRepository {
             name: true,
             city: true,
             businessPage: {
-              select: { id: true, slug: true, businessType: true, status: true },
+              select: {
+                id: true,
+                slug: true,
+                businessType: true,
+                status: true,
+              },
             },
             user: { select: { emailVerified: true, createdAt: true } },
           },
@@ -50,7 +57,12 @@ export class PublisherQualificationRepository {
             name: true,
             city: true,
             businessPage: {
-              select: { id: true, slug: true, businessType: true, status: true },
+              select: {
+                id: true,
+                slug: true,
+                businessType: true,
+                status: true,
+              },
             },
             user: { select: { emailVerified: true, createdAt: true } },
           },
@@ -62,7 +74,9 @@ export class PublisherQualificationRepository {
   // Update fields on an existing record
   update(
     businessId: string,
-    data: Prisma.PublisherQualificationUpdateInput | Prisma.PublisherQualificationUncheckedUpdateInput,
+    data:
+      | Prisma.PublisherQualificationUpdateInput
+      | Prisma.PublisherQualificationUncheckedUpdateInput,
   ) {
     return this.prisma.publisherQualification.update({
       where: { businessId },
@@ -73,7 +87,12 @@ export class PublisherQualificationRepository {
             name: true,
             city: true,
             businessPage: {
-              select: { id: true, slug: true, businessType: true, status: true },
+              select: {
+                id: true,
+                slug: true,
+                businessType: true,
+                status: true,
+              },
             },
             user: { select: { emailVerified: true, createdAt: true } },
           },
@@ -91,7 +110,12 @@ export class PublisherQualificationRepository {
             name: true,
             city: true,
             businessPage: {
-              select: { id: true, slug: true, businessType: true, status: true },
+              select: {
+                id: true,
+                slug: true,
+                businessType: true,
+                status: true,
+              },
             },
             user: { select: { emailVerified: true, createdAt: true } },
           },
@@ -101,14 +125,21 @@ export class PublisherQualificationRepository {
     });
   }
 
-  // Approve a pending page directly (used for auto-approval when publisher qualifies)
-  // Returns the updated page with business + user data for sending the approval email
-  approvePendingPage(businessPageId: string, approvedContent: object) {
+  // Approve a pending page directly (used for auto-approval when publisher qualifies).
+  // Fetches pendingContent from DB to avoid data loss, then atomically approves.
+  // Returns null if the page is not in PENDING_REVIEW status (already processed).
+  async approvePendingPage(businessPageId: string) {
+    const page = await this.prisma.businessPage.findUnique({
+      where: { id: businessPageId, status: 'PENDING_REVIEW' },
+      select: { pendingContent: true },
+    });
+    if (!page) return null;
+
     return this.prisma.businessPage.update({
       where: { id: businessPageId, status: 'PENDING_REVIEW' },
       data: {
         status: 'APPROVED',
-        approvedContent,
+        approvedContent: page.pendingContent as Prisma.InputJsonValue,
         approvedAt: new Date(),
         pendingContent: Prisma.JsonNull,
       },
