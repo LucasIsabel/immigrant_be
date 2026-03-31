@@ -51,6 +51,8 @@ immigrant_be/
 │   │   │   ├── storage/        # Módulo de upload de arquivos para R2
 │   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
 │   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
+│   │   │   ├── business-pages/ # Módulo de páginas públicas de negócios (My City)
+│   │   │   ├── publisher-qualification/ # Módulo de qualificação automática de publishers
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
 │   │
@@ -227,6 +229,27 @@ Business ─── Users (N:1) — negócio local de um imigrante
             isPublic (default false)
   Listagem pública disponível via GET /business/public (diretório "My City")
   Verificação de propriedade (ownership check) nas operações de update/delete/visibility
+
+BusinessPage ─── Business (1:1) — página pública moderada de um negócio
+  Tabela: business_pages
+  Status: DRAFT | PENDING_REVIEW | APPROVED | APPROVED_WITH_PENDING | REJECTED
+  Armazena: businessId (FK único), slug (único após primeira aprovação via slugLockedAt),
+            businessType, pendingContent (Json), approvedContent (Json),
+            submittedAt, approvedAt, approvedById, rejectedAt, rejectionReason, slugLockedAt
+  Conteúdo em dois estágios: pendingContent (editável pelo owner) e approvedContent (versão ao vivo)
+  Fluxo: DRAFT → PENDING_REVIEW → APPROVED | REJECTED; re-edição: APPROVED → APPROVED_WITH_PENDING
+  Página pública acessível sem autenticação via GET /pg/:businessType/:slug
+
+PublisherQualification ─── Business (1:1) — qualificação automática do publisher
+  Tabela: publisher_qualifications
+  PK: businessId (UUID, aponta diretamente para Business)
+  Armazena: isQualified, qualifiedAt, disqualifiedAt, totalApprovals, lastRejectionAt
+  Critérios automáticos (calculados em runtime): totalApprovals >= 3, emailVerified,
+    accountAge >= 30 dias, sem rejeição nos últimos 90 dias, perfil completo (name + city)
+  Override manual (admin): overrideActive, overrideValue, overrideById (FK Users),
+    overrideReason, overrideAt — quando overrideActive=true, ignora critérios automáticos
+  Ciclo: criado automaticamente na primeira aprovação/rejeição de página;
+    publisher qualificado tem suas submissões aprovadas diretamente sem moderação
 ```
 
 ### Convenções do Schema
@@ -307,13 +330,15 @@ apps/microservice/src/ai-blog/
 
 ### Exportações
 
-| Export                    | Tipo              | Descrição                                         |
-| ------------------------- | ----------------- | ------------------------------------------------- |
-| `EmailModule`             | Módulo NestJS     | Módulo importável que registra `EmailService`     |
-| `EmailService`            | Service           | Serviço injetável para envio de emails via Resend |
-| `sendEmail`               | Função standalone | Envio de emails fora do contexto de DI do NestJS  |
-| `buildVerificationEmail`  | Função            | Gera template HTML de verificação de email        |
-| `buildResetPasswordEmail` | Função            | Gera template HTML de reset de senha              |
+| Export                    | Tipo              | Descrição                                                |
+| ------------------------- | ----------------- | -------------------------------------------------------- |
+| `EmailModule`             | Módulo NestJS     | Módulo importável que registra `EmailService`            |
+| `EmailService`            | Service           | Serviço injetável para envio de emails via Resend        |
+| `sendEmail`               | Função standalone | Envio de emails fora do contexto de DI do NestJS         |
+| `buildVerificationEmail`  | Função            | Gera template HTML de verificação de email               |
+| `buildResetPasswordEmail` | Função            | Gera template HTML de reset de senha                     |
+| `buildApprovalEmail`      | Função            | Gera template HTML de aprovação de página (My City)      |
+| `buildRejectionEmail`     | Função            | Gera template HTML de reprovação de página (My City)     |
 
 ---
 
@@ -464,8 +489,21 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `PUT /business/:id`                          | Business                  | Autenticado (role USER) — atualiza (ownership check) |
 | `DELETE /business/:id`                       | Business                  | Autenticado (role USER) — remove (ownership check) |
 | `PATCH /business/:id/visibility`             | Business                  | Autenticado (role USER) — alterna isPublic (ownership check) |
-| `GET /business/public`                       | Business                  | Público (`@AllowAnonymous`) — lista negócios públicos com filtros (city, businessType, search, page, limit) |
-| `GET /business/public/:id`                   | Business                  | Público (`@AllowAnonymous`) — detalhe de negócio público |
+| `GET /business/public`                                     | Business                       | Público (`@AllowAnonymous`) — lista negócios públicos com filtros (city, businessType, search, page, limit) |
+| `GET /business/public/:id`                                 | Business                       | Público (`@AllowAnonymous`) — detalhe de negócio público                                                   |
+| `GET /pg/:businessType/:slug`                              | BusinessPages                  | Público (`@AllowAnonymous`) — detalhe de página aprovada                                                   |
+| `GET /business-pages/slug-availability`                    | BusinessPages                  | Autenticado — verifica disponibilidade de slug                                                             |
+| `POST /business-pages`                                     | BusinessPages                  | Autenticado (role USER) — cria página (DRAFT)                                                              |
+| `GET /business-pages/:businessId/me`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página                                                        |
+| `PUT /business-pages/:id/content`                          | BusinessPages                  | Autenticado (role USER) — atualiza pendingContent                                                          |
+| `POST /business-pages/:id/submit`                          | BusinessPages                  | Autenticado (role USER) — submete para revisão (ou aprova diretamente se publisher qualificado)            |
+| `GET /admin/business-pages`                                | BusinessPages (admin)          | ADMIN — lista páginas com filtro opcional por status                                                       |
+| `POST /admin/business-pages/:id/approve`                   | BusinessPages (admin)          | ADMIN — aprova submissão, envia email ao owner                                                             |
+| `POST /admin/business-pages/:id/reject`                    | BusinessPages (admin)          | ADMIN — reprova submissão com motivo opcional, envia email ao owner                                        |
+| `GET /admin/publishers`                                    | PublisherQualification (admin) | ADMIN — lista qualificações de publishers com critérios calculados                                         |
+| `GET /admin/publishers/:businessId`                        | PublisherQualification (admin) | ADMIN — detalhe de um publisher                                                                            |
+| `POST /admin/publishers/:businessId/override`              | PublisherQualification (admin) | ADMIN — aplica override manual (forçar qualificado ou bloquear)                                            |
+| `DELETE /admin/publishers/:businessId/override`            | PublisherQualification (admin) | ADMIN — remove override, restaura critérios automáticos                                                    |
 
 ### Convenções de endpoints
 

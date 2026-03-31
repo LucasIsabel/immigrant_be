@@ -62,11 +62,11 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.md
 !CLAUDE.md
 !docs/*.md
-!plans/*.md
 *.mdc
 
 .claude/*
 .mcp.json
 
 /plans/*
+!/plans/*.md
 .worktrees/

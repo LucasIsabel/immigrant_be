@@ -12,6 +12,7 @@ import {
 import { env } from '@app/config';
 import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
+import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
 import { UpdateBusinessPageContentDto } from './dto/update-business-page-content.dto';
 import { SubmitBusinessPageResponseDto } from './dto/submit-business-page-response.dto';
@@ -22,6 +23,7 @@ export class BusinessPagesService {
   constructor(
     private readonly repository: BusinessPagesRepository,
     private readonly emailService: EmailService,
+    private readonly qualificationService: PublisherQualificationService,
   ) {}
 
   async checkSlugAvailability(
@@ -95,6 +97,18 @@ export class BusinessPagesService {
       throw new ConflictException('Página já está em análise');
     }
 
+    // Qualified publishers bypass moderation
+    const qualified = await this.qualificationService.isQualified(id);
+    if (qualified) {
+      await this.repository.approvePage(
+        id,
+        page.pendingContent as object,
+        page.slugLockedAt === null,
+        'system',
+      );
+      return { modal: 'approved', status: 'APPROVED' };
+    }
+
     const newStatus =
       status === 'APPROVED' ? 'APPROVED_WITH_PENDING' : 'PENDING_REVIEW';
 
@@ -140,6 +154,9 @@ export class BusinessPagesService {
       adminId,
     );
 
+    // Update qualification record (fire-and-forget errors)
+    this.qualificationService.onPageApproved(id).catch(() => undefined);
+
     try {
       const pageUrl = `${env.FRONTEND_URL}/pg/${updated.businessType}/${updated.slug}`;
       const { subject, html } = buildApprovalEmail(page.business.name, pageUrl);
@@ -176,6 +193,9 @@ export class BusinessPagesService {
       adminId,
       dto.reason,
     );
+
+    // Update qualification record (fire-and-forget errors)
+    this.qualificationService.onPageRejected(id).catch(() => undefined);
 
     try {
       const dashboardUrl = `${env.FRONTEND_URL}/dashboard/meu-negocio/${page.businessId}/pagina-publica`;

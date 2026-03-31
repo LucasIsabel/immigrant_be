@@ -41,6 +41,7 @@ model Users {
   approvedBusinessPages  BusinessPage[]       @relation("ApprovedPages")
   rejectedBusinessPages  BusinessPage[]       @relation("RejectedPages")
   businessPageReviews    BusinessPageReview[] @relation("ReviewedPages")
+  publisherQualificationOverrides PublisherQualification[] @relation("PublisherOverrides")
 
   @@unique([email])
   @@map("users")
@@ -561,6 +562,15 @@ model PublisherQualification {
   lastRejectionAt        DateTime? @map("last_rejection_at")
   disqualifiedAt         DateTime? @map("disqualified_at")
   disqualificationReason String?   @db.Text @map("disqualification_reason")
+
+  // Manual override by admin
+  overrideActive  Boolean   @default(false) @map("override_active")
+  overrideValue   Boolean?  @map("override_value")
+  overrideById    String?   @db.Uuid @map("override_by")
+  overrideBy      Users?    @relation("PublisherOverrides", fields: [overrideById], references: [id], onDelete: SetNull)
+  overrideReason  String?   @db.Text @map("override_reason")
+  overrideAt      DateTime? @map("override_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("publisher_qualifications")
 }
