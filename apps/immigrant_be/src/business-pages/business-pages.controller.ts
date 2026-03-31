@@ -8,10 +8,15 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
+  ApiConsumes,
   ApiCookieAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -125,5 +130,55 @@ export class BusinessPagesController {
     @Session() session: UserSession,
   ): Promise<SubmitBusinessPageResponseDto> {
     return this.service.submitForReview(id, session.user.id);
+  }
+
+  @Post(':id/upload/logo')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiOkResponse({ schema: { type: 'object', properties: { url: { type: 'string' } } } })
+  @ApiOperation({ summary: 'Upload da logo da página pública' })
+  @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
+  uploadLogo(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.uploadLogo(id, session.user.id, file);
+  }
+
+  @Post(':id/upload/cover')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiOkResponse({ schema: { type: 'object', properties: { url: { type: 'string' } } } })
+  @ApiOperation({ summary: 'Upload da foto de capa da página pública' })
+  @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
+  uploadCover(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.uploadCover(id, session.user.id, file);
   }
 }
