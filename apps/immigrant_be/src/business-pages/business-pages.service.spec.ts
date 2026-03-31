@@ -3,6 +3,11 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
+jest.mock('@app/storage', () => ({
+  StorageService: jest.fn(),
+  StorageModule: jest.fn(),
+}));
+
 jest.mock('@app/config', () => ({
   env: { FRONTEND_URL: 'https://app.test' },
   ConfigModule: jest.fn(),
@@ -20,6 +25,7 @@ jest.mock('../publisher-qualification/publisher-qualification.service', () => ({
 
 import { Test } from '@nestjs/testing';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -28,6 +34,7 @@ import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
 import { buildRejectionEmail, EmailService } from '@app/email';
 import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
+import { StorageService } from '@app/storage';
 
 const mockBusiness = {
   id: 'biz-1',
@@ -96,6 +103,10 @@ const mockQualification = {
   onPageRejected: jest.fn().mockResolvedValue(undefined),
 };
 
+const mockStorage = {
+  uploadFileAtKey: jest.fn(),
+};
+
 describe('BusinessPagesService', () => {
   let service: BusinessPagesService;
 
@@ -106,6 +117,7 @@ describe('BusinessPagesService', () => {
         { provide: BusinessPagesRepository, useValue: mockRepo },
         { provide: EmailService, useValue: mockEmail },
         { provide: PublisherQualificationService, useValue: mockQualification },
+        { provide: StorageService, useValue: mockStorage },
       ],
     }).compile();
     service = module.get(BusinessPagesService);
@@ -652,6 +664,101 @@ describe('BusinessPagesService', () => {
       await service.rejectBusinessPage('page-1', 'admin-1', {});
 
       expect(mockQualification.onPageRejected).toHaveBeenCalledWith('page-1');
+    });
+  });
+
+  describe('uploadImage', () => {
+    const pageId = 'page-1';
+    const userId = 'user-1';
+
+    beforeEach(() => {
+      mockRepo.findByIdAndUserId.mockResolvedValue({ id: pageId, businessId: 'biz-1' });
+      mockStorage.uploadFileAtKey.mockResolvedValue({
+        url: 'https://cdn.example.com/business-pages/biz-1/logo.jpg',
+        key: 'business-pages/biz-1/logo.jpg',
+      });
+    });
+
+    it('uploadLogo — retorna url ao fazer upload de imagem válida', async () => {
+      const file = {
+        buffer: Buffer.from('img'),
+        mimetype: 'image/jpeg',
+        size: 100,
+      } as Express.Multer.File;
+
+      const result = await service.uploadLogo(pageId, userId, file);
+
+      expect(mockStorage.uploadFileAtKey).toHaveBeenCalledWith(
+        file.buffer,
+        'business-pages/biz-1/logo.jpg',
+        'image/jpeg',
+      );
+      expect(result).toEqual({
+        url: 'https://cdn.example.com/business-pages/biz-1/logo.jpg',
+      });
+    });
+
+    it('uploadCover — retorna url ao fazer upload de imagem válida', async () => {
+      mockStorage.uploadFileAtKey.mockResolvedValue({
+        url: 'https://cdn.example.com/business-pages/biz-1/cover.png',
+        key: 'business-pages/biz-1/cover.png',
+      });
+      const file = {
+        buffer: Buffer.from('img'),
+        mimetype: 'image/png',
+        size: 200,
+      } as Express.Multer.File;
+
+      const result = await service.uploadCover(pageId, userId, file);
+
+      expect(mockStorage.uploadFileAtKey).toHaveBeenCalledWith(
+        file.buffer,
+        'business-pages/biz-1/cover.png',
+        'image/png',
+      );
+      expect(result).toEqual({
+        url: 'https://cdn.example.com/business-pages/biz-1/cover.png',
+      });
+    });
+
+    it('uploadLogo — lança ForbiddenException quando página não pertence ao usuário', async () => {
+      mockRepo.findByIdAndUserId.mockResolvedValue(null);
+      const file = {
+        buffer: Buffer.from('x'),
+        mimetype: 'image/jpeg',
+        size: 10,
+      } as Express.Multer.File;
+
+      await expect(service.uploadLogo(pageId, userId, file)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
+    });
+
+    it('uploadLogo — lança BadRequestException para tipo MIME inválido', async () => {
+      const file = {
+        buffer: Buffer.from('x'),
+        mimetype: 'application/pdf',
+        size: 10,
+      } as Express.Multer.File;
+
+      await expect(service.uploadLogo(pageId, userId, file)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
+    });
+
+    it('uploadLogo — lança BadRequestException para ficheiro > 5 MB', async () => {
+      const file = {
+        buffer: Buffer.from('x'),
+        mimetype: 'image/jpeg',
+        size: 5 * 1024 * 1024 + 1,
+      } as Express.Multer.File;
+
+      await expect(service.uploadLogo(pageId, userId, file)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
     });
   });
 });

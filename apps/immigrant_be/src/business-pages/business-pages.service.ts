@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -17,6 +18,7 @@ import { CreateBusinessPageDto } from './dto/create-business-page.dto';
 import { UpdateBusinessPageContentDto } from './dto/update-business-page-content.dto';
 import { SubmitBusinessPageResponseDto } from './dto/submit-business-page-response.dto';
 import { RejectBusinessPageDto } from './dto/reject-business-page.dto';
+import { StorageService } from '@app/storage';
 
 @Injectable()
 export class BusinessPagesService {
@@ -24,6 +26,7 @@ export class BusinessPagesService {
     private readonly repository: BusinessPagesRepository,
     private readonly emailService: EmailService,
     private readonly qualificationService: PublisherQualificationService,
+    private readonly storageService: StorageService,
   ) {}
 
   async checkSlugAvailability(
@@ -215,5 +218,67 @@ export class BusinessPagesService {
     }
 
     return updated;
+  }
+
+  // ── Upload methods ─────────────────────────────────────────────────
+
+  private static readonly ALLOWED_IMAGE_MIMES = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ]);
+  private static readonly MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+  private mimeToExt(mimeType: string): string {
+    const map: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+    };
+    return map[mimeType] ?? '';
+  }
+
+  private async uploadImage(
+    pageId: string,
+    userId: string,
+    file: Express.Multer.File,
+    slot: 'logo' | 'cover',
+  ): Promise<{ url: string }> {
+    if (!BusinessPagesService.ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
+      throw new BadRequestException(
+        'Tipo de ficheiro não permitido. Use JPEG, PNG ou WebP.',
+      );
+    }
+    if (file.size > BusinessPagesService.MAX_IMAGE_SIZE) {
+      throw new BadRequestException('Ficheiro excede o tamanho máximo de 5 MB.');
+    }
+
+    const page = await this.repository.findByIdAndUserId(pageId, userId);
+    if (!page) throw new ForbiddenException('Acesso negado');
+
+    const ext = this.mimeToExt(file.mimetype);
+    const key = `business-pages/${page.businessId}/${slot}${ext}`;
+    const { url } = await this.storageService.uploadFileAtKey(
+      file.buffer,
+      key,
+      file.mimetype,
+    );
+    return { url };
+  }
+
+  async uploadLogo(
+    pageId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    return this.uploadImage(pageId, userId, file, 'logo');
+  }
+
+  async uploadCover(
+    pageId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    return this.uploadImage(pageId, userId, file, 'cover');
   }
 }
