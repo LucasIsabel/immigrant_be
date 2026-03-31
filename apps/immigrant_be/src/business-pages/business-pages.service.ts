@@ -244,6 +244,10 @@ export class BusinessPagesService {
     file: Express.Multer.File,
     slot: 'logo' | 'cover',
   ): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException('Nenhum ficheiro enviado.');
+    }
+
     const page = await this.repository.findByIdAndUserId(pageId, userId);
     if (!page) throw new ForbiddenException('Acesso negado');
 

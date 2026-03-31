@@ -762,5 +762,12 @@ describe('BusinessPagesService', () => {
       expect(mockRepo.findByIdAndUserId).toHaveBeenCalledTimes(1);
       expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
     });
+
+    it('uploadLogo — lança BadRequestException quando nenhum ficheiro é enviado', async () => {
+      await expect(
+        service.uploadLogo(pageId, userId, undefined as unknown as Express.Multer.File),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.findByIdAndUserId).not.toHaveBeenCalled();
+    });
   });
 });
