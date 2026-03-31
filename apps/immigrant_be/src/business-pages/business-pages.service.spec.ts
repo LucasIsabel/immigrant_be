@@ -745,6 +745,7 @@ describe('BusinessPagesService', () => {
       await expect(service.uploadLogo(pageId, userId, file)).rejects.toThrow(
         BadRequestException,
       );
+      expect(mockRepo.findByIdAndUserId).toHaveBeenCalledTimes(1);
       expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
     });
 
@@ -758,6 +759,7 @@ describe('BusinessPagesService', () => {
       await expect(service.uploadLogo(pageId, userId, file)).rejects.toThrow(
         BadRequestException,
       );
+      expect(mockRepo.findByIdAndUserId).toHaveBeenCalledTimes(1);
       expect(mockStorage.uploadFileAtKey).not.toHaveBeenCalled();
     });
   });
