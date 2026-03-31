@@ -21,6 +21,7 @@ describe('StorageService', () => {
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: 'secret-key',
     CLOUDFLARE_R2_BUCKET_NAME: 'test-bucket',
     CLOUDFLARE_R2_PUBLIC_URL: 'https://cdn.example.com',
+    CLOUDFLARE_ENDPOINT: 'https://accountid.r2.cloudflarestorage.com',
   };
 
   beforeEach(async () => {
