@@ -105,6 +105,25 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          const defaultRole = await prisma.roles.findUnique({
+            where: { name: 'user' },
+          });
+          if (!defaultRole) {
+            console.error(
+              '[auth] Default role "user" not found. Skipping role assignment for user',
+              user.id,
+            );
+            return;
+          }
+          await prisma.userRoles.create({
+            data: { userId: user.id, roleId: defaultRole.id },
+          });
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {
