@@ -504,6 +504,8 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /admin/publishers/:businessId`                        | PublisherQualification (admin) | ADMIN — detalhe de um publisher                                                                            |
 | `POST /admin/publishers/:businessId/override`              | PublisherQualification (admin) | ADMIN — aplica override manual (forçar qualificado ou bloquear)                                            |
 | `DELETE /admin/publishers/:businessId/override`            | PublisherQualification (admin) | ADMIN — remove override, restaura critérios automáticos                                                    |
+| `POST /business-pages/:id/upload/logo`                     | BusinessPages                  | Autenticado (role USER) — upload da logo; multipart/form-data, campo `file`; JPEG/PNG/WebP, máx 5 MB; chave R2 determinística `business-pages/{businessId}/logo.{ext}` |
+| `POST /business-pages/:id/upload/cover`                    | BusinessPages                  | Autenticado (role USER) — upload da foto de capa; mesmas restrições; chave R2 `business-pages/{businessId}/cover.{ext}` |
 
 ### Convenções de endpoints
 
