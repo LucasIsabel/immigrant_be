@@ -375,8 +375,10 @@ describe('BusinessPagesService', () => {
     it('returns the page when it exists and business belongs to user', async () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
       mockRepo.findByBusinessId.mockResolvedValue(mockPage);
+      mockQualification.isQualified.mockResolvedValue(false);
       const result = await service.getMyPage('biz-1', 'user-1');
-      expect(result).toEqual(mockPage);
+      expect(result).toEqual({ ...mockPage, isPublisherQualified: false });
+      expect(mockQualification.isQualified).toHaveBeenCalledWith(mockPage.id);
     });
 
     it('throws ForbiddenException when business does not belong to user', async () => {

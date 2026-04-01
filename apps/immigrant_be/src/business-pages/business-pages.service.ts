@@ -133,7 +133,11 @@ export class BusinessPagesService {
     const page = await this.repository.findByBusinessId(businessId);
     if (!page) throw new NotFoundException('Página não encontrada');
 
-    return page;
+    const isPublisherQualified = await this.qualificationService.isQualified(
+      page.id,
+    );
+
+    return { ...page, isPublisherQualified };
   }
 
   // ── Admin methods ──────────────────────────────────────────────────
