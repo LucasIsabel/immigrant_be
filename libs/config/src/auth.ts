@@ -54,7 +54,15 @@ export const auth = betterAuth({
         resetUrl.toString(),
         user.name,
       );
-      await sendEmail({ to: user.email, subject, html });
+      try {
+        await sendEmail({ to: user.email, subject, html });
+      } catch (error) {
+        console.error(
+          '[auth] Failed to send reset password email to',
+          user.email,
+          error,
+        );
+      }
     },
   },
   emailVerification: {
@@ -69,7 +77,15 @@ export const auth = betterAuth({
         verificationUrl.toString(),
         user.name,
       );
-      await sendEmail({ to: user.email, subject, html });
+      try {
+        await sendEmail({ to: user.email, subject, html });
+      } catch (error) {
+        console.error(
+          '[auth] Failed to send verification email to',
+          user.email,
+          error,
+        );
+      }
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
