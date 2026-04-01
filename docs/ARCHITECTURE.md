@@ -494,7 +494,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /pg/:businessType/:slug`                              | BusinessPages                  | Público (`@AllowAnonymous`) — detalhe de página aprovada                                                   |
 | `GET /business-pages/slug-availability`                    | BusinessPages                  | Autenticado — verifica disponibilidade de slug                                                             |
 | `POST /business-pages`                                     | BusinessPages                  | Autenticado (role USER) — cria página (DRAFT)                                                              |
-| `GET /business-pages/:businessId/me`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página                                                        |
+| `GET /business-pages/my/:businessId`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página; inclui `isPublisherQualified` (PublisherQualification) |
 | `PUT /business-pages/:id/content`                          | BusinessPages                  | Autenticado (role USER) — atualiza pendingContent                                                          |
 | `POST /business-pages/:id/submit`                          | BusinessPages                  | Autenticado (role USER) — submete para revisão (ou aprova diretamente se publisher qualificado)            |
 | `GET /admin/business-pages`                                | BusinessPages (admin)          | ADMIN — lista páginas com filtro opcional por status                                                       |
