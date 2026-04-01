@@ -672,7 +672,10 @@ describe('BusinessPagesService', () => {
     const userId = 'user-1';
 
     beforeEach(() => {
-      mockRepo.findByIdAndUserId.mockResolvedValue({ id: pageId, businessId: 'biz-1' });
+      mockRepo.findByIdAndUserId.mockResolvedValue({
+        id: pageId,
+        businessId: 'biz-1',
+      });
       mockStorage.uploadFileAtKey.mockResolvedValue({
         url: 'https://cdn.example.com/business-pages/biz-1/logo.jpg',
         key: 'business-pages/biz-1/logo.jpg',
@@ -765,7 +768,11 @@ describe('BusinessPagesService', () => {
 
     it('uploadLogo — lança BadRequestException quando nenhum ficheiro é enviado', async () => {
       await expect(
-        service.uploadLogo(pageId, userId, undefined as unknown as Express.Multer.File),
+        service.uploadLogo(
+          pageId,
+          userId,
+          undefined as unknown as Express.Multer.File,
+        ),
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.findByIdAndUserId).not.toHaveBeenCalled();
     });

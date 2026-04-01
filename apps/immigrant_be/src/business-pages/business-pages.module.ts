@@ -9,7 +9,12 @@ import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
 
 @Module({
-  imports: [DatabaseModule, EmailModule, PublisherQualificationModule, StorageModule],
+  imports: [
+    DatabaseModule,
+    EmailModule,
+    PublisherQualificationModule,
+    StorageModule,
+  ],
   controllers: [BusinessPagesController, BusinessPagesAdminController],
   providers: [BusinessPagesService, BusinessPagesRepository],
   exports: [BusinessPagesService],

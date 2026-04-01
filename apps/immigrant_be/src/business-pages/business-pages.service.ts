@@ -253,7 +253,9 @@ export class BusinessPagesService {
       );
     }
     if (file.size > BusinessPagesService.MAX_IMAGE_SIZE) {
-      throw new BadRequestException('Ficheiro excede o tamanho máximo de 5 MB.');
+      throw new BadRequestException(
+        'Ficheiro excede o tamanho máximo de 5 MB.',
+      );
     }
 
     const page = await this.repository.findByIdAndUserId(pageId, userId);

@@ -8,7 +8,9 @@ export class ApplyOverrideDto {
   @IsBoolean()
   value: boolean;
 
-  @ApiProperty({ description: 'Motivo do override (obrigatório, mínimo 10 caracteres)' })
+  @ApiProperty({
+    description: 'Motivo do override (obrigatório, mínimo 10 caracteres)',
+  })
   @IsString()
   @MinLength(10)
   reason: string;

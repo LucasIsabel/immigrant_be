@@ -135,7 +135,9 @@ export class BusinessPagesController {
   @Post(':id/upload/logo')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.USER)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -146,7 +148,9 @@ export class BusinessPagesController {
   @ApiCookieAuth('better-auth.session_token')
   @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
   @ApiForbiddenResponse({ description: 'Acesso negado' })
-  @ApiOkResponse({ schema: { type: 'object', properties: { url: { type: 'string' } } } })
+  @ApiOkResponse({
+    schema: { type: 'object', properties: { url: { type: 'string' } } },
+  })
   @ApiOperation({ summary: 'Upload da logo da página pública' })
   @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
   uploadLogo(
@@ -160,7 +164,9 @@ export class BusinessPagesController {
   @Post(':id/upload/cover')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.USER)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -171,7 +177,9 @@ export class BusinessPagesController {
   @ApiCookieAuth('better-auth.session_token')
   @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
   @ApiForbiddenResponse({ description: 'Acesso negado' })
-  @ApiOkResponse({ schema: { type: 'object', properties: { url: { type: 'string' } } } })
+  @ApiOkResponse({
+    schema: { type: 'object', properties: { url: { type: 'string' } } },
+  })
   @ApiOperation({ summary: 'Upload da foto de capa da página pública' })
   @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
   uploadCover(
