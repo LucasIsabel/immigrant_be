@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { Business } from '../../../../generated/prisma';
+import { Business, Prisma } from '../../../../generated/prisma';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
@@ -32,6 +32,31 @@ export class BusinessRepository {
     return this.prisma.business.update({
       where: { id },
       data,
+    });
+  }
+
+  /** Apply validated draft fields to live business and clear `draftData`. */
+  applyDraftAndClearDraft(id: string, data: UpdateBusinessDto) {
+    return this.prisma.business.update({
+      where: { id },
+      data: {
+        ...data,
+        draftData: Prisma.JsonNull,
+      },
+    });
+  }
+
+  saveDraft(id: string, draft: object) {
+    return this.prisma.business.update({
+      where: { id },
+      data: { draftData: draft },
+    });
+  }
+
+  clearDraft(id: string) {
+    return this.prisma.business.update({
+      where: { id },
+      data: { draftData: Prisma.JsonNull },
     });
   }
 

@@ -60,6 +60,13 @@ export class BusinessResponseDto {
   })
   typeData: object | null;
 
+  @ApiProperty({
+    description:
+      'Rascunho guardado via PUT (alterações ainda não publicadas ao vivo)',
+    nullable: true,
+  })
+  draftData: object | null;
+
   @ApiProperty({ example: false })
   isPublic: boolean;
 

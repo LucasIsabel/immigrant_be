@@ -69,6 +69,34 @@ export class BusinessPagesRepository {
     });
   }
 
+  findByIdWithContent(id: string) {
+    return this.prisma.businessPage.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        businessId: true,
+        slug: true,
+        businessType: true,
+        status: true,
+        pendingContent: true,
+        approvedContent: true,
+        submittedAt: true,
+        approvedAt: true,
+        rejectedAt: true,
+        rejectionReason: true,
+        createdAt: true,
+        updatedAt: true,
+        business: {
+          select: {
+            name: true,
+            city: true,
+            user: { select: { email: true, name: true } },
+          },
+        },
+      },
+    });
+  }
+
   // Busca página por id (sem verificação de ownership — uso admin)
   findById(id: string) {
     return this.prisma.businessPage.findUnique({

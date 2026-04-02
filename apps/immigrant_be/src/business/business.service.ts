@@ -74,6 +74,9 @@ export class BusinessService {
     return this.repository.create(userId, dto);
   }
 
+  /**
+   * Saves changes as `draftData` only; live fields stay unchanged until `publishDraft`.
+   */
   async update(id: string, userId: string, dto: UpdateBusinessDto) {
     const existing = await this.repository.findByIdAndUserId(id, userId);
     if (!existing) {
@@ -83,16 +86,42 @@ export class BusinessService {
     if (dto.typeData) {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
-    // Clear typeData when businessType changes without new typeData
+    return this.repository.saveDraft(id, dto as object);
+  }
+
+  async publishDraft(id: string, userId: string) {
+    const existing = await this.repository.findByIdAndUserId(id, userId);
+    if (!existing) {
+      throw new ForbiddenException('Acesso negado');
+    }
+    if (!existing.draftData || typeof existing.draftData !== 'object') {
+      throw new BadRequestException('Nenhum rascunho para publicar');
+    }
+    const dto = existing.draftData as UpdateBusinessDto;
+    const typeToValidate = dto.businessType ?? existing.businessType;
+    if (dto.typeData) {
+      this.validateTypeData(typeToValidate, dto.typeData);
+    }
     const shouldClearTypeData =
-      dto.businessType &&
+      Boolean(dto.businessType) &&
       dto.businessType !== existing.businessType &&
       !dto.typeData;
     const updateData = {
       ...dto,
       ...(shouldClearTypeData ? { typeData: null as unknown as object } : {}),
     };
-    return this.repository.update(id, updateData);
+    return this.repository.applyDraftAndClearDraft(id, updateData);
+  }
+
+  async discardDraft(id: string, userId: string) {
+    const existing = await this.repository.findByIdAndUserId(id, userId);
+    if (!existing) {
+      throw new ForbiddenException('Acesso negado');
+    }
+    if (existing.draftData == null) {
+      throw new BadRequestException('Nenhum rascunho para descartar');
+    }
+    return this.repository.clearDraft(id);
   }
 
   async delete(id: string, userId: string) {
