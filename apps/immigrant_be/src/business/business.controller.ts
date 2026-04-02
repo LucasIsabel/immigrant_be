@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import {
+  ApiBadRequestResponse,
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -56,13 +57,52 @@ export class BusinessController {
     return this.service.create(session.user.id, dto);
   }
 
+  @Post(':id/draft/publish')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiBadRequestResponse({ description: 'Nenhum rascunho para publicar' })
+  @ApiOperation({
+    summary: 'Publicar rascunho do negócio (aplica alterações ao vivo)',
+  })
+  @ApiParam({ name: 'id', description: 'ID do negócio' })
+  @ApiOkResponse({ type: BusinessResponseDto })
+  publishDraft(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+  ) {
+    return this.service.publishDraft(id, session.user.id);
+  }
+
+  @Delete(':id/draft')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiBadRequestResponse({ description: 'Nenhum rascunho para descartar' })
+  @ApiOperation({ summary: 'Descartar rascunho do negócio' })
+  @ApiParam({ name: 'id', description: 'ID do negócio' })
+  @ApiOkResponse({ type: BusinessResponseDto })
+  discardDraft(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+  ) {
+    return this.service.discardDraft(id, session.user.id);
+  }
+
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.USER)
   @ApiCookieAuth('better-auth.session_token')
   @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
   @ApiForbiddenResponse({ description: 'Acesso negado' })
-  @ApiOperation({ summary: 'Atualizar negócio' })
+  @ApiOperation({
+    summary:
+      'Guardar rascunho do negócio (alterações não vão ao vivo até publicar)',
+  })
   @ApiParam({ name: 'id', description: 'ID do negócio' })
   @ApiOkResponse({ type: BusinessResponseDto })
   update(

@@ -42,6 +42,30 @@ export class BusinessPagesAdminController {
     return this.service.listPages(query.status);
   }
 
+  @Get(':id')
+  @ApiOperation({
+    summary:
+      'Detalhe de BusinessPage (admin — pendingContent + approvedContent)',
+  })
+  @ApiOkResponse({
+    description: 'Detalhe da página com conteúdo pendente e aprovado',
+  })
+  @ApiNotFoundResponse({ description: 'Página não encontrada' })
+  @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
+  getPageDetail(@Param('id') id: string) {
+    return this.service.getPageDetail(id);
+  }
+
+  @Post(':id/moderate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Analisar conteúdo da página com IA (moderação)' })
+  @ApiOkResponse({ description: 'Resultado da análise de moderação' })
+  @ApiNotFoundResponse({ description: 'Página não encontrada' })
+  @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
+  moderatePage(@Param('id') id: string) {
+    return this.service.moderatePage(id);
+  }
+
   @Post(':id/approve')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aprovar BusinessPage' })

@@ -225,6 +225,8 @@ Business ─── Users (N:1) — negócio local de um imigrante
   Tabela: businesses
   Enum BusinessType: RESTAURANT | LEGAL | TOUR_GUIDE | GENERAL
   Armazena: userId (FK), businessType, name, city, lat, lng, photos (String[]),
+            draftData (Json?, opcional) — rascunho de edição; `PUT /business/:id` grava apenas aqui;
+            `POST /business/:id/draft/publish` aplica ao vivo e limpa; `DELETE /business/:id/draft` descarta o rascunho;
             typeData (Json — dados específicos por tipo, validados via Zod no Service),
             isPublic (default false)
   Listagem pública disponível via GET /business/public (diretório "My City")
@@ -284,13 +286,18 @@ libs/ai/                              # Biblioteca compartilhada de IA
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
 │   ├── visa-steps.schema.ts          # VisaStepsType
 │   ├── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
-│   └── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
+│   ├── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
+│   └── business-page-moderation.schema.ts # Entrada/saída da moderação de páginas (admin)
 └── prompts/                          # Templates de prompts centralizados
     ├── countries-match.prompt.ts
     ├── best-visa-type.prompt.ts
     ├── visa-steps.prompt.ts
     ├── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
-    └── blog-translation.prompt.ts    # buildBlogTranslationPrompt() — preserva Markdown
+    ├── blog-translation.prompt.ts    # buildBlogTranslationPrompt() — preserva Markdown
+    └── business-page-moderation.prompt.ts # Moderação de conteúdo de páginas públicas (admin)
+
+apps/immigrant_be/src/business-pages/
+└── business-page-moderation.service.ts  # Moderação IA (admin): GeminiBaseService + validação Zod
 
 apps/immigrant_be/src/system/
 ├── gemini.service.ts          # Extends GeminiBaseService
@@ -486,7 +493,9 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /professional-profile/:userId`          | ProfessionalProfile       | Público (`@AllowAnonymous`)                |
 | `GET /business/me`                           | Business                  | Autenticado (role USER) — lista negócios do usuário |
 | `POST /business`                             | Business                  | Autenticado (role USER) — cria negócio     |
-| `PUT /business/:id`                          | Business                  | Autenticado (role USER) — atualiza (ownership check) |
+| `PUT /business/:id`                          | Business                  | Autenticado (role USER) — guarda rascunho em `draftData` (validação de `typeData`); não altera campos ao vivo até publicar |
+| `POST /business/:id/draft/publish`           | Business                  | Autenticado (role USER) — aplica `draftData` aos campos do negócio e limpa o rascunho |
+| `DELETE /business/:id/draft`                 | Business                  | Autenticado (role USER) — descarta `draftData` sem alterar o negócio ao vivo |
 | `DELETE /business/:id`                       | Business                  | Autenticado (role USER) — remove (ownership check) |
 | `PATCH /business/:id/visibility`             | Business                  | Autenticado (role USER) — alterna isPublic (ownership check) |
 | `GET /business/public`                                     | Business                       | Público (`@AllowAnonymous`) — lista negócios públicos com filtros (city, businessType, search, page, limit) |
@@ -500,12 +509,16 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /admin/business-pages`                                | BusinessPages (admin)          | ADMIN — lista páginas com filtro opcional por status                                                       |
 | `POST /admin/business-pages/:id/approve`                   | BusinessPages (admin)          | ADMIN — aprova submissão, envia email ao owner                                                             |
 | `POST /admin/business-pages/:id/reject`                    | BusinessPages (admin)          | ADMIN — reprova submissão com motivo opcional, envia email ao owner                                        |
+| `GET /admin/business-pages/:id`                            | BusinessPages (admin)          | ADMIN — detalhe: `pendingContent`, `approvedContent`, negócio e utilizador (folha de revisão)              |
+| `POST /admin/business-pages/:id/moderate`                  | BusinessPages (admin)          | ADMIN — moderação de conteúdo via Gemini (`pendingContent`, fallback `approvedContent`); analisa pornografia, linguagem obscena, links adultos, violações de normas off-platform e abuso de contactos; resposta `ModerationResult` (`riskLevel`, `flags`, `summary`, `recommendation`) |
 | `GET /admin/publishers`                                    | PublisherQualification (admin) | ADMIN — lista qualificações de publishers com critérios calculados                                         |
 | `GET /admin/publishers/:businessId`                        | PublisherQualification (admin) | ADMIN — detalhe de um publisher                                                                            |
 | `POST /admin/publishers/:businessId/override`              | PublisherQualification (admin) | ADMIN — aplica override manual (forçar qualificado ou bloquear)                                            |
 | `DELETE /admin/publishers/:businessId/override`            | PublisherQualification (admin) | ADMIN — remove override, restaura critérios automáticos                                                    |
 | `POST /business-pages/:id/upload/logo`                     | BusinessPages                  | Autenticado (role USER) — upload da logo; multipart/form-data, campo `file`; JPEG/PNG/WebP, máx 5 MB; chave R2 determinística `business-pages/{businessId}/logo.{ext}` |
 | `POST /business-pages/:id/upload/cover`                    | BusinessPages                  | Autenticado (role USER) — upload da foto de capa; mesmas restrições; chave R2 `business-pages/{businessId}/cover.{ext}` |
+
+**Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta `GeminiBaseService`, monta o input a partir do conteúdo da página, chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
 ### Convenções de endpoints
 

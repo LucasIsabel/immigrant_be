@@ -19,6 +19,8 @@ import { UpdateBusinessPageContentDto } from './dto/update-business-page-content
 import { SubmitBusinessPageResponseDto } from './dto/submit-business-page-response.dto';
 import { RejectBusinessPageDto } from './dto/reject-business-page.dto';
 import { StorageService } from '@app/storage';
+import { BusinessPageModerationService } from './business-page-moderation.service';
+import type { BusinessPageModerationResult } from '@app/ai';
 
 @Injectable()
 export class BusinessPagesService {
@@ -27,6 +29,7 @@ export class BusinessPagesService {
     private readonly emailService: EmailService,
     private readonly qualificationService: PublisherQualificationService,
     private readonly storageService: StorageService,
+    private readonly moderationService: BusinessPageModerationService,
   ) {}
 
   async checkSlugAvailability(
@@ -144,6 +147,27 @@ export class BusinessPagesService {
 
   listPages(status?: BusinessPageStatus) {
     return this.repository.listPages(status);
+  }
+
+  async getPageDetail(id: string) {
+    const page = await this.repository.findByIdWithContent(id);
+    if (!page) throw new NotFoundException('Página não encontrada');
+    return page;
+  }
+
+  async moderatePage(id: string): Promise<BusinessPageModerationResult> {
+    const page = await this.repository.findByIdWithContent(id);
+    if (!page) throw new NotFoundException('Página não encontrada');
+
+    const content = (page.pendingContent ?? page.approvedContent) as Record<
+      string,
+      unknown
+    > | null;
+    if (!content) {
+      throw new BadRequestException('Página não possui conteúdo para moderar');
+    }
+
+    return this.moderationService.moderateContent(content, page.businessType);
   }
 
   async approveBusinessPage(id: string, adminId: string) {

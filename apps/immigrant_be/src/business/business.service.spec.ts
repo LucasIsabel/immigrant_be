@@ -34,6 +34,9 @@ const mockBusinessRepository = {
   findAllByUserId: jest.fn(),
   findByIdAndUserId: jest.fn(),
   update: jest.fn(),
+  saveDraft: jest.fn(),
+  applyDraftAndClearDraft: jest.fn(),
+  clearDraft: jest.fn(),
   delete: jest.fn(),
   toggleVisibility: jest.fn(),
   findPublic: jest.fn(),
@@ -129,11 +132,14 @@ describe('BusinessService', () => {
 
   // ── update ─────────────────────────────────────────────────
 
-  describe('update', () => {
-    it('should update a business when user is owner', async () => {
-      const updated = { ...mockBusiness, name: 'Updated Restaurant' };
+  describe('update (saves draft only)', () => {
+    it('should save draft when user is owner', async () => {
+      const updated = {
+        ...mockBusiness,
+        draftData: { name: 'Updated Restaurant' },
+      };
       repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
-      repository.update.mockResolvedValue(updated);
+      repository.saveDraft.mockResolvedValue(updated);
 
       const dto = { name: 'Updated Restaurant' };
       const result = await service.update('business-id-1', 'user-id-1', dto);
@@ -143,7 +149,8 @@ describe('BusinessService', () => {
         'business-id-1',
         'user-id-1',
       );
-      expect(repository.update).toHaveBeenCalledWith('business-id-1', dto);
+      expect(repository.saveDraft).toHaveBeenCalledWith('business-id-1', dto);
+      expect(repository.update).not.toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when user is not owner (repository returns null)', async () => {
@@ -152,7 +159,7 @@ describe('BusinessService', () => {
       await expect(
         service.update('business-id-1', 'other-user-id', { name: 'X' }),
       ).rejects.toThrow(ForbiddenException);
-      expect(repository.update).not.toHaveBeenCalled();
+      expect(repository.saveDraft).not.toHaveBeenCalled();
     });
 
     it('should validate typeData when provided in update', async () => {
@@ -165,39 +172,89 @@ describe('BusinessService', () => {
       await expect(
         service.update('business-id-1', 'user-id-1', dto),
       ).rejects.toThrow(BadRequestException);
-      expect(repository.update).not.toHaveBeenCalled();
+      expect(repository.saveDraft).not.toHaveBeenCalled();
     });
 
     it('should validate typeData against the new businessType (not the existing one)', async () => {
       repository.findByIdAndUserId.mockResolvedValue(mockBusiness); // existing is RESTAURANT
 
-      // When updating to LEGAL type, LEGAL schema is applied.
-      // LEGAL schema: specializations (string[]) — passing a number triggers a type error.
       const dto = {
         businessType: 'LEGAL' as any,
-        typeData: { specializations: 12345 } as any, // invalid: should be string[]
+        typeData: { specializations: 12345 } as any,
       };
 
       await expect(
         service.update('business-id-1', 'user-id-1', dto),
       ).rejects.toThrow(BadRequestException);
-      expect(repository.update).not.toHaveBeenCalled();
+      expect(repository.saveDraft).not.toHaveBeenCalled();
     });
 
-    it('should update a business with valid typeData', async () => {
+    it('should save draft with valid typeData', async () => {
       const updatedBusiness = {
         ...mockBusiness,
-        typeData: { cuisine: 'Italiana' },
+        draftData: { typeData: { cuisine: 'Italiana' } },
       };
       repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
-      repository.update.mockResolvedValue(updatedBusiness);
+      repository.saveDraft.mockResolvedValue(updatedBusiness);
 
       const result = await service.update('business-id-1', 'user-id-1', {
         typeData: { cuisine: 'Italiana' } as any,
       });
 
       expect(result).toEqual(updatedBusiness);
-      expect(repository.update).toHaveBeenCalled();
+      expect(repository.saveDraft).toHaveBeenCalled();
+    });
+  });
+
+  describe('publishDraft', () => {
+    it('should apply draft and clear draftData', async () => {
+      const draft = { name: 'Published Name' };
+      const withDraft = { ...mockBusiness, draftData: draft };
+      const published = { ...mockBusiness, name: 'Published Name', draftData: null };
+      repository.findByIdAndUserId.mockResolvedValue(withDraft);
+      repository.applyDraftAndClearDraft.mockResolvedValue(published);
+
+      const result = await service.publishDraft('business-id-1', 'user-id-1');
+
+      expect(result).toEqual(published);
+      expect(repository.applyDraftAndClearDraft).toHaveBeenCalledWith(
+        'business-id-1',
+        draft,
+      );
+    });
+
+    it('should throw BadRequestException when no draft', async () => {
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+
+      await expect(
+        service.publishDraft('business-id-1', 'user-id-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.applyDraftAndClearDraft).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('discardDraft', () => {
+    it('should clear draft', async () => {
+      const cleared = { ...mockBusiness, draftData: null };
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        draftData: { name: 'X' },
+      });
+      repository.clearDraft.mockResolvedValue(cleared);
+
+      const result = await service.discardDraft('business-id-1', 'user-id-1');
+
+      expect(result).toEqual(cleared);
+      expect(repository.clearDraft).toHaveBeenCalledWith('business-id-1');
+    });
+
+    it('should throw BadRequestException when no draft', async () => {
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+
+      await expect(
+        service.discardDraft('business-id-1', 'user-id-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.clearDraft).not.toHaveBeenCalled();
     });
   });
 
