@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsObject,
   IsNumber,
   IsOptional,
   IsString,
@@ -83,6 +84,16 @@ class PendingContentDto {
   @ValidateNested()
   @Type(() => OpeningHoursDto)
   openingHours?: OpeningHoursDto;
+
+  /** Type-specific JSON (e.g. restaurant `menu` in `typeData`) */
+  @ApiPropertyOptional({
+    description: 'Dados por tipo de página (ex.: cardápio do restaurante)',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  typeData?: Record<string, unknown>;
 }
 
 export class UpdateBusinessPageContentDto {

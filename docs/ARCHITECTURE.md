@@ -239,6 +239,7 @@ BusinessPage ─── Business (1:1) — página pública moderada de um negóc
             businessType, pendingContent (Json), approvedContent (Json),
             submittedAt, approvedAt, approvedById, rejectedAt, rejectionReason, slugLockedAt
   Conteúdo em dois estágios: pendingContent (editável pelo owner) e approvedContent (versão ao vivo)
+  Cada blob JSON pode incluir `typeData` (objeto opcional) — snapshot por tipo na versão da página (ex.: menu em RESTAURANT), distinto do `typeData` ao vivo na tabela `Business`; na aprovação, o conteúdo aprovado copia `pendingContent` (incluindo `typeData` quando existir).
   Fluxo: DRAFT → PENDING_REVIEW → APPROVED | REJECTED; re-edição: APPROVED → APPROVED_WITH_PENDING
   Página pública acessível sem autenticação via GET /pg/:businessType/:slug
 
@@ -504,7 +505,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `GET /business-pages/slug-availability`                    | BusinessPages                  | Autenticado — verifica disponibilidade de slug                                                             |
 | `POST /business-pages`                                     | BusinessPages                  | Autenticado (role USER) — cria página (DRAFT)                                                              |
 | `GET /business-pages/my/:businessId`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página; inclui `isPublisherQualified` (PublisherQualification) |
-| `PUT /business-pages/:id/content`                          | BusinessPages                  | Autenticado (role USER) — atualiza pendingContent                                                          |
+| `PUT /business-pages/:id/content`                          | BusinessPages                  | Autenticado (role USER) — atualiza `pendingContent` (DTO `UpdateBusinessPageContentDto`; campo opcional `typeData` como objeto para snapshots por tipo, ex. cardápio) |
 | `POST /business-pages/:id/submit`                          | BusinessPages                  | Autenticado (role USER) — submete para revisão (ou aprova diretamente se publisher qualificado)            |
 | `GET /admin/business-pages`                                | BusinessPages (admin)          | ADMIN — lista páginas com filtro opcional por status                                                       |
 | `POST /admin/business-pages/:id/approve`                   | BusinessPages (admin)          | ADMIN — aprova submissão, envia email ao owner                                                             |
