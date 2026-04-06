@@ -90,6 +90,17 @@ export class BusinessPagesService {
     return this.repository.updatePendingContent(id, dto.pendingContent);
   }
 
+  private extractTypeData(content: unknown): object | null {
+    if (!content || typeof content !== 'object' || Array.isArray(content)) {
+      return null;
+    }
+    const typeData = (content as Record<string, unknown>).typeData;
+    if (!typeData || typeof typeData !== 'object' || Array.isArray(typeData)) {
+      return null;
+    }
+    return typeData as object;
+  }
+
   async submitForReview(
     id: string,
     userId: string,
@@ -112,6 +123,10 @@ export class BusinessPagesService {
         page.slugLockedAt === null,
         'system',
       );
+      const typeData = this.extractTypeData(page.pendingContent);
+      if (typeData) {
+        await this.repository.updateBusinessTypeData(page.businessId, typeData);
+      }
       return { modal: 'approved', status: 'APPROVED' };
     }
 
@@ -184,6 +199,11 @@ export class BusinessPagesService {
       page.slugLockedAt === null,
       adminId,
     );
+
+    const typeData = this.extractTypeData(page.pendingContent);
+    if (typeData) {
+      await this.repository.updateBusinessTypeData(page.businessId, typeData);
+    }
 
     // Update qualification record (fire-and-forget errors)
     this.qualificationService.onPageApproved(id).catch(() => undefined);

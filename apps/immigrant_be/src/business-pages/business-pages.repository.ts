@@ -142,6 +142,14 @@ export class BusinessPagesRepository {
     });
   }
 
+  // Sincroniza typeData do approvedContent para o Business (so /my-city page reflects approved dishes)
+  updateBusinessTypeData(businessId: string, typeData: object) {
+    return this.prisma.business.update({
+      where: { id: businessId },
+      data: { typeData },
+    });
+  }
+
   // Reprova: status determinado pelo service ('REJECTED' ou 'APPROVED' se era APPROVED_WITH_PENDING)
   rejectPage(
     id: string,
