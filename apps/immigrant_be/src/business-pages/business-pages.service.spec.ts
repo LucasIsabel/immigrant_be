@@ -30,6 +30,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { BusinessPageModerationService } from './business-page-moderation.service';
 import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
 import { buildRejectionEmail, EmailService } from '@app/email';
@@ -107,6 +108,10 @@ const mockStorage = {
   uploadFileAtKey: jest.fn(),
 };
 
+const mockModeration = {
+  moderateContent: jest.fn(),
+};
+
 describe('BusinessPagesService', () => {
   let service: BusinessPagesService;
 
@@ -118,6 +123,7 @@ describe('BusinessPagesService', () => {
         { provide: EmailService, useValue: mockEmail },
         { provide: PublisherQualificationService, useValue: mockQualification },
         { provide: StorageService, useValue: mockStorage },
+        { provide: BusinessPageModerationService, useValue: mockModeration },
       ],
     }).compile();
     service = module.get(BusinessPagesService);
@@ -239,6 +245,35 @@ describe('BusinessPagesService', () => {
       expect(mockRepo.updatePendingContent).toHaveBeenCalledWith('page-1', {
         name: 'Nova Padaria',
         city: 'Porto',
+      });
+      expect(result).toEqual(updatedPage);
+    });
+
+    it('passes typeData through to pending_content for restaurant menu', async () => {
+      const typeData = { menu: [{ name: 'Prato', price: 10 }] };
+      const updatedPage = {
+        ...mockPage,
+        pendingContent: {
+          name: 'Rest',
+          city: 'Lx',
+          typeData,
+        },
+      };
+      mockRepo.findByIdAndUserId.mockResolvedValue(mockPage);
+      mockRepo.updatePendingContent.mockResolvedValue(updatedPage);
+
+      const result = await service.updateContent('page-1', 'user-1', {
+        pendingContent: {
+          name: 'Rest',
+          city: 'Lx',
+          typeData,
+        },
+      });
+
+      expect(mockRepo.updatePendingContent).toHaveBeenCalledWith('page-1', {
+        name: 'Rest',
+        city: 'Lx',
+        typeData,
       });
       expect(result).toEqual(updatedPage);
     });
