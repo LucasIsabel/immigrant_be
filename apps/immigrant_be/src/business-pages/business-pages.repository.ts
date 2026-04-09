@@ -127,7 +127,7 @@ export class BusinessPagesRepository {
     id: string,
     approvedContent: object,
     setSlugLock: boolean,
-    adminId: string,
+    adminId: string | null,
   ) {
     return this.prisma.businessPage.update({
       where: { id },

@@ -231,7 +231,7 @@ describe('BusinessPagesService', () => {
         createdDraft.id,
         expect.objectContaining({ name: 'Padaria Central' }),
         true, // setSlugLock = true (slugLockedAt is null on new page)
-        'system',
+        null,
       );
       expect(result?.status).toBe('APPROVED');
     });
@@ -423,7 +423,7 @@ describe('BusinessPagesService', () => {
         'page-1',
         draftPage.pendingContent,
         true,
-        'system',
+        null,
       );
       expect(mockRepo.submitPage).not.toHaveBeenCalled();
       expect(result).toEqual({ modal: 'approved', status: 'APPROVED' });
