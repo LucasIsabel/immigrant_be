@@ -18,7 +18,7 @@ export class BusinessPagesRepository {
 
   findApprovedBySlug(slug: string) {
     return this.prisma.businessPage.findFirst({
-      where: { slug, status: 'APPROVED' },
+      where: { slug, status: { in: ['APPROVED', 'APPROVED_WITH_PENDING'] } },
     });
   }
 
@@ -127,7 +127,7 @@ export class BusinessPagesRepository {
     id: string,
     approvedContent: object,
     setSlugLock: boolean,
-    adminId: string,
+    adminId: string | null,
   ) {
     return this.prisma.businessPage.update({
       where: { id },
