@@ -92,6 +92,7 @@ const mockRepo = {
   listPages: jest.fn(),
   approvePage: jest.fn(),
   rejectPage: jest.fn(),
+  updateBusinessTypeData: jest.fn(),
 };
 
 const mockEmail = {
@@ -179,66 +180,76 @@ describe('BusinessPagesService', () => {
   });
 
   describe('createPage', () => {
-    it('creates a DRAFT page pre-populated from business', async () => {
-      mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
-      mockRepo.findByBusinessId.mockResolvedValue(null);
-      mockRepo.isSlugTaken.mockResolvedValue(false);
-      mockRepo.create.mockResolvedValue({ ...mockPage, status: 'DRAFT' });
+    const dto = { businessId: 'biz-1', slug: 'padaria-central', businessType: 'restaurante' };
+    const createdDraft = { ...mockPage, status: 'DRAFT' };
+    const createdPending = { ...mockPage, status: 'PENDING_REVIEW', submittedAt: new Date() };
 
-      const result = await service.createPage('user-1', {
-        businessId: 'biz-1',
-        slug: 'padaria-central',
-        businessType: 'restaurante',
-      });
+    beforeEach(() => {
+      mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
+      mockRepo.isSlugTaken.mockResolvedValue(false);
+      mockRepo.create.mockResolvedValue(createdDraft);
+      mockQualification.isQualified.mockResolvedValue(false);
+    });
+
+    it('auto-submits to PENDING_REVIEW when publisher is not qualified', async () => {
+      mockRepo.findByBusinessId
+        .mockResolvedValueOnce(null)          // first call: "no existing page" check
+        .mockResolvedValueOnce(createdPending); // second call: return after submit
+      mockRepo.submitPage.mockResolvedValue(createdPending);
+
+      const result = await service.createPage('user-1', dto);
 
       expect(mockRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           businessId: 'biz-1',
           slug: 'padaria-central',
           businessType: 'restaurante',
-          pendingContent: expect.objectContaining({
-            name: 'Padaria Central',
-            city: 'Lisboa',
-          }),
+          pendingContent: expect.objectContaining({ name: 'Padaria Central', city: 'Lisboa' }),
         }),
       );
-      expect(result.status).toBe('DRAFT');
+      expect(mockRepo.submitPage).toHaveBeenCalledWith(createdDraft.id, 'PENDING_REVIEW');
+      expect(result?.status).toBe('PENDING_REVIEW');
+    });
+
+    it('auto-approves when publisher is qualified', async () => {
+      mockQualification.isQualified.mockResolvedValue(true);
+      const approvedPage = {
+        ...mockPage,
+        status: 'APPROVED',
+        approvedContent: mockPage.pendingContent,
+        pendingContent: null,
+      };
+      mockRepo.findByBusinessId
+        .mockResolvedValueOnce(null)           // first call: "no existing page" check
+        .mockResolvedValueOnce(approvedPage);  // second call: return after approve
+      mockRepo.approvePage.mockResolvedValue(approvedPage);
+      mockRepo.updateBusinessTypeData.mockResolvedValue({});
+
+      const result = await service.createPage('user-1', dto);
+
+      expect(mockRepo.approvePage).toHaveBeenCalledWith(
+        createdDraft.id,
+        expect.objectContaining({ name: 'Padaria Central' }),
+        true, // setSlugLock = true (slugLockedAt is null on new page)
+        'system',
+      );
+      expect(result?.status).toBe('APPROVED');
     });
 
     it('throws ForbiddenException when business does not belong to user', async () => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(null);
-      await expect(
-        service.createPage('other-user', {
-          businessId: 'biz-1',
-          slug: 'slug',
-          businessType: 'loja',
-        }),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.createPage('other-user', dto)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws ConflictException when page already exists for business', async () => {
-      mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
       mockRepo.findByBusinessId.mockResolvedValue(mockPage);
-      await expect(
-        service.createPage('user-1', {
-          businessId: 'biz-1',
-          slug: 'slug',
-          businessType: 'loja',
-        }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createPage('user-1', dto)).rejects.toThrow(ConflictException);
     });
 
     it('throws ConflictException when slug is already taken', async () => {
-      mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
       mockRepo.findByBusinessId.mockResolvedValue(null);
       mockRepo.isSlugTaken.mockResolvedValue(true);
-      await expect(
-        service.createPage('user-1', {
-          businessId: 'biz-1',
-          slug: 'taken-slug',
-          businessType: 'loja',
-        }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.createPage('user-1', dto)).rejects.toThrow(ConflictException);
     });
   });
 

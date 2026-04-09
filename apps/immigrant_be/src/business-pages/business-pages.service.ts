@@ -72,12 +72,27 @@ export class BusinessPagesService {
       ...(business.lng != null ? { lng: business.lng } : {}),
     };
 
-    return this.repository.create({
+    const page = await this.repository.create({
       businessId: dto.businessId,
       slug: dto.slug,
       businessType: dto.businessType,
       pendingContent,
     });
+
+    // Auto-submit for review immediately after creation
+    const qualified = await this.qualificationService.isQualified(page.id);
+    if (qualified) {
+      await this.repository.approvePage(page.id, pendingContent, true, 'system');
+      const typeData = this.extractTypeData(pendingContent);
+      if (typeData) {
+        await this.repository.updateBusinessTypeData(page.businessId, typeData);
+      }
+    } else {
+      await this.repository.submitPage(page.id, 'PENDING_REVIEW');
+    }
+
+    // Return the page in its final state
+    return this.repository.findByBusinessId(dto.businessId);
   }
 
   async updateContent(
