@@ -163,6 +163,19 @@ describe('BusinessPagesService', () => {
         NotFoundException,
       );
     });
+
+    it('returns the page when status is APPROVED_WITH_PENDING (old content stays live)', async () => {
+      const page = {
+        id: 'uuid',
+        slug: 'meu-slug',
+        status: 'APPROVED_WITH_PENDING',
+        approvedContent: { name: 'Old content' },
+        pendingContent: { name: 'New content under review' },
+      };
+      mockRepo.findApprovedBySlug.mockResolvedValue(page);
+      const result = await service.getPublicPage('meu-slug');
+      expect(result).toEqual(page);
+    });
   });
 
   describe('createPage', () => {
