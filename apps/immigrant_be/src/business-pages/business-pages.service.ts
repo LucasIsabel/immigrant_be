@@ -82,7 +82,7 @@ export class BusinessPagesService {
     // Auto-submit for review immediately after creation
     const qualified = await this.qualificationService.isQualified(page.id);
     if (qualified) {
-      await this.repository.approvePage(page.id, pendingContent, true, 'system');
+      await this.repository.approvePage(page.id, pendingContent, page.slugLockedAt === null, 'system');
       const typeData = this.extractTypeData(pendingContent);
       if (typeData) {
         await this.repository.updateBusinessTypeData(page.businessId, typeData);

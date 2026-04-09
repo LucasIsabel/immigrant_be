@@ -181,8 +181,8 @@ describe('BusinessPagesService', () => {
 
   describe('createPage', () => {
     const dto = { businessId: 'biz-1', slug: 'padaria-central', businessType: 'restaurante' };
-    const createdDraft = { ...mockPage, status: 'DRAFT' };
-    const createdPending = { ...mockPage, status: 'PENDING_REVIEW', submittedAt: new Date() };
+    const createdDraft = { ...mockPage, status: 'DRAFT', slugLockedAt: null };
+    const createdPending = { ...mockPage, status: 'PENDING_REVIEW', submittedAt: new Date(), slugLockedAt: null };
 
     beforeEach(() => {
       mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
