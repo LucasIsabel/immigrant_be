@@ -69,10 +69,7 @@ export class BusinessController {
   })
   @ApiParam({ name: 'id', description: 'ID do negócio' })
   @ApiOkResponse({ type: BusinessResponseDto })
-  publishDraft(
-    @Param('id') id: string,
-    @Session() session: UserSession,
-  ) {
+  publishDraft(@Param('id') id: string, @Session() session: UserSession) {
     return this.service.publishDraft(id, session.user.id);
   }
 
@@ -86,10 +83,7 @@ export class BusinessController {
   @ApiOperation({ summary: 'Descartar rascunho do negócio' })
   @ApiParam({ name: 'id', description: 'ID do negócio' })
   @ApiOkResponse({ type: BusinessResponseDto })
-  discardDraft(
-    @Param('id') id: string,
-    @Session() session: UserSession,
-  ) {
+  discardDraft(@Param('id') id: string, @Session() session: UserSession) {
     return this.service.discardDraft(id, session.user.id);
   }
 
