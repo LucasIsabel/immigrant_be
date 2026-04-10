@@ -4,6 +4,7 @@ import {
   IsArray,
   IsNumber,
   IsOptional,
+  IsString,
   IsUrl,
   ValidateNested,
 } from 'class-validator';
