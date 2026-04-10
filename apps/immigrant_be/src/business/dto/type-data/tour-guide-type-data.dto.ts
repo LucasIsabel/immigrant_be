@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
   IsArray,
   IsNumber,
   IsOptional,
-  IsString,
   IsUrl,
   ValidateNested,
 } from 'class-validator';
@@ -53,7 +53,8 @@ export class ItineraryLocationDto {
     maxItems: 3,
   })
   @IsArray()
-  @IsString({ each: true })
+  @IsUrl({}, { each: true })
+  @ArrayMaxSize(3)
   @IsOptional()
   photos?: string[];
 }
