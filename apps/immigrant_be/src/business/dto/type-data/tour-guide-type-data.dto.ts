@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -20,6 +21,41 @@ export class TourItemDto {
   @ApiProperty({ example: 45 })
   @IsNumber()
   price: number;
+}
+
+export class ItineraryLocationDto {
+  @ApiProperty({ example: 'Portugal' })
+  @IsString()
+  country: string;
+
+  @ApiPropertyOptional({ example: 'Lisboa' })
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @ApiProperty({ example: 'Lisboa' })
+  @IsString()
+  city: string;
+
+  @ApiPropertyOptional({ example: 38.7169 })
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -9.1399 })
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Up to 3 photo URLs for this location',
+    maxItems: 3,
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  photos?: string[];
 }
 
 export class TourGuideTypeDataDto {
@@ -43,4 +79,21 @@ export class TourGuideTypeDataDto {
   @IsString()
   @IsOptional()
   meetingPoint?: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/guide.jpg' })
+  @IsUrl()
+  @IsOptional()
+  profileImage?: string;
+
+  @ApiPropertyOptional({ example: 'Brasil' })
+  @IsString()
+  @IsOptional()
+  countryOfOrigin?: string;
+
+  @ApiPropertyOptional({ type: [ItineraryLocationDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ItineraryLocationDto)
+  @IsOptional()
+  itinerary?: ItineraryLocationDto[];
 }
