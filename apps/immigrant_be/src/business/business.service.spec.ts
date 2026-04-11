@@ -210,7 +210,11 @@ describe('BusinessService', () => {
     it('should apply draft and clear draftData', async () => {
       const draft = { name: 'Published Name' };
       const withDraft = { ...mockBusiness, draftData: draft };
-      const published = { ...mockBusiness, name: 'Published Name', draftData: null };
+      const published = {
+        ...mockBusiness,
+        name: 'Published Name',
+        draftData: null,
+      };
       repository.findByIdAndUserId.mockResolvedValue(withDraft);
       repository.applyDraftAndClearDraft.mockResolvedValue(published);
 

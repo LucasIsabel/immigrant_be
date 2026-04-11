@@ -82,7 +82,12 @@ export class BusinessPagesService {
     // Auto-submit for review immediately after creation
     const qualified = await this.qualificationService.isQualified(page.id);
     if (qualified) {
-      await this.repository.approvePage(page.id, pendingContent, page.slugLockedAt === null, null);
+      await this.repository.approvePage(
+        page.id,
+        pendingContent,
+        page.slugLockedAt === null,
+        null,
+      );
       const typeData = this.extractTypeData(pendingContent);
       if (typeData) {
         await this.repository.updateBusinessTypeData(page.businessId, typeData);
@@ -113,7 +118,7 @@ export class BusinessPagesService {
     if (!typeData || typeof typeData !== 'object' || Array.isArray(typeData)) {
       return null;
     }
-    return typeData as object;
+    return typeData;
   }
 
   async submitForReview(

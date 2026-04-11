@@ -9,6 +9,7 @@ export const BUSINESS_PAGE_TYPES = [
   'hotel',
   'academia',
   'salao',
+  'guia-turistico',
 ] as const;
 
 export type BusinessPageType = (typeof BUSINESS_PAGE_TYPES)[number];
