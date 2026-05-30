@@ -48,15 +48,26 @@ const tourGuideTypeDataSchema = z.object({
   meetingPoint: z.string().optional(),
   profileImage: z.string().url().optional(),
   countryOfOrigin: z.string().optional(),
+  featured: z.boolean().optional(),
   itinerary: z
     .array(
       z.object({
-        country: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        country: z.string().optional(),
         state: z.string().optional(),
-        city: z.string(),
+        city: z.string().optional(),
         lat: z.number().optional(),
         lng: z.number().optional(),
-        photos: z.array(z.string().url()).max(3).optional(),
+        photos: z
+          .array(
+            z.object({
+              url: z.string().url(),
+              lat: z.number().optional(),
+              lng: z.number().optional(),
+            }),
+          )
+          .optional(),
       }),
     )
     .optional(),

@@ -128,6 +128,57 @@ describe('BusinessService', () => {
       );
       expect(repository.create).not.toHaveBeenCalled();
     });
+
+    it('should create TOUR_GUIDE with itinerary containing photo objects', async () => {
+      repository.create.mockResolvedValue(mockBusiness);
+
+      const dto = {
+        businessType: 'TOUR_GUIDE' as any,
+        name: 'Lucas Turismo',
+        city: 'Calheta',
+        typeData: {
+          languages: ['portugues', 'ingles'],
+          meetingPoint: 'Aeroporto',
+          countryOfOrigin: 'Portugal',
+          featured: false,
+          profileImage: 'https://example.com/profile.webp',
+          itinerary: [
+            {
+              name: 'Lisboa',
+              description: 'lisboa',
+              photos: [
+                { url: 'https://example.com/photo1.jpg', lat: 38.72, lng: -9.41 },
+                { url: 'https://example.com/photo2.jpg', lat: 38.70, lng: -9.13 },
+              ],
+            },
+          ],
+        },
+      };
+
+      const result = await service.create('user-id-1', dto);
+
+      expect(result).toEqual(mockBusiness);
+      expect(repository.create).toHaveBeenCalledWith('user-id-1', dto);
+    });
+
+    it('should throw BadRequestException for TOUR_GUIDE with invalid photo URL', () => {
+      const dto = {
+        businessType: 'TOUR_GUIDE' as any,
+        name: 'Lucas Turismo',
+        city: 'Calheta',
+        typeData: {
+          itinerary: [
+            {
+              name: 'Lisboa',
+              photos: [{ url: 'not-a-valid-url' }],
+            },
+          ],
+        },
+      };
+
+      expect(() => service.create('user-id-1', dto)).toThrow(BadRequestException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
   });
 
   // ── update ─────────────────────────────────────────────────
