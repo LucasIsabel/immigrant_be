@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,13 +16,40 @@ export class TourItemDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ example: '3 horas' })
+  @ApiProperty({ example: '3h' })
   @IsString()
   duration: string;
 
   @ApiProperty({ example: 45 })
   @IsNumber()
   price: number;
+
+  @ApiPropertyOptional({
+    example: 'Passeio a pé pelos bairros históricos de Lisboa.',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/tour.jpg' })
+  @IsUrl()
+  @IsOptional()
+  imageUrl?: string;
+
+  @ApiPropertyOptional({ example: 'MAIS PEDIDO' })
+  @IsString()
+  @IsOptional()
+  badgeLabel?: string;
+
+  @ApiPropertyOptional({ example: 4 })
+  @IsNumber()
+  @IsOptional()
+  stopCount?: number;
+
+  @ApiPropertyOptional({ example: 8 })
+  @IsNumber()
+  @IsOptional()
+  maxParticipants?: number;
 }
 
 export class ItineraryLocationDto {
@@ -98,4 +126,14 @@ export class TourGuideTypeDataDto {
   @Type(() => ItineraryLocationDto)
   @IsOptional()
   itinerary?: ItineraryLocationDto[];
+
+  @ApiPropertyOptional({ example: false })
+  @IsBoolean()
+  @IsOptional()
+  featured?: boolean;
+
+  @ApiPropertyOptional({ example: '+351912345678' })
+  @IsString()
+  @IsOptional()
+  whatsapp?: string;
 }

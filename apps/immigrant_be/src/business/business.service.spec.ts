@@ -147,8 +147,16 @@ describe('BusinessService', () => {
               name: 'Lisboa',
               description: 'lisboa',
               photos: [
-                { url: 'https://example.com/photo1.jpg', lat: 38.72, lng: -9.41 },
-                { url: 'https://example.com/photo2.jpg', lat: 38.70, lng: -9.13 },
+                {
+                  url: 'https://example.com/photo1.jpg',
+                  lat: 38.72,
+                  lng: -9.41,
+                },
+                {
+                  url: 'https://example.com/photo2.jpg',
+                  lat: 38.7,
+                  lng: -9.13,
+                },
               ],
             },
           ],
@@ -176,7 +184,9 @@ describe('BusinessService', () => {
         },
       };
 
-      expect(() => service.create('user-id-1', dto)).toThrow(BadRequestException);
+      expect(() => service.create('user-id-1', dto)).toThrow(
+        BadRequestException,
+      );
       expect(repository.create).not.toHaveBeenCalled();
     });
   });
