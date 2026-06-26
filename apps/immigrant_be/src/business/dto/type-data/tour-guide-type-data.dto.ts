@@ -1,12 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  ArrayMaxSize,
   IsArray,
   IsBoolean,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
+  MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -28,6 +30,7 @@ export class TourItemDto {
     example: 'Passeio a pé pelos bairros históricos de Lisboa.',
   })
   @IsString()
+  @MaxLength(2000)
   @IsOptional()
   description?: string;
 
@@ -38,33 +41,64 @@ export class TourItemDto {
 
   @ApiPropertyOptional({ example: 'MAIS PEDIDO' })
   @IsString()
+  @MaxLength(50)
   @IsOptional()
   badgeLabel?: string;
 
   @ApiPropertyOptional({ example: 4 })
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
   stopCount?: number;
 
   @ApiPropertyOptional({ example: 8 })
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
   maxParticipants?: number;
 }
 
+export class ItineraryPhotoDto {
+  @ApiProperty({ example: 'https://cdn.example.com/photo.jpg' })
+  @IsUrl()
+  url: string;
+
+  @ApiPropertyOptional({ example: 38.7169 })
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -9.1399 })
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
+}
+
 export class ItineraryLocationDto {
-  @ApiProperty({ example: 'Portugal' })
+  @ApiPropertyOptional({ example: 'Bairro Alto' })
   @IsString()
-  country: string;
+  @IsOptional()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Bairro histórico e boémio de Lisboa.' })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiPropertyOptional({ example: 'Portugal' })
+  @IsString()
+  @IsOptional()
+  country?: string;
 
   @ApiPropertyOptional({ example: 'Lisboa' })
   @IsString()
   @IsOptional()
   state?: string;
 
-  @ApiProperty({ example: 'Lisboa' })
+  @ApiPropertyOptional({ example: 'Lisboa' })
   @IsString()
-  city: string;
+  @IsOptional()
+  city?: string;
 
   @ApiPropertyOptional({ example: 38.7169 })
   @IsNumber()
@@ -76,16 +110,12 @@ export class ItineraryLocationDto {
   @IsOptional()
   lng?: number;
 
-  @ApiPropertyOptional({
-    type: [String],
-    description: 'Up to 3 photo URLs for this location',
-    maxItems: 3,
-  })
+  @ApiPropertyOptional({ type: [ItineraryPhotoDto] })
   @IsArray()
-  @IsUrl({}, { each: true })
-  @ArrayMaxSize(3)
+  @ValidateNested({ each: true })
+  @Type(() => ItineraryPhotoDto)
   @IsOptional()
-  photos?: string[];
+  photos?: ItineraryPhotoDto[];
 }
 
 export class TourGuideTypeDataDto {
@@ -134,6 +164,7 @@ export class TourGuideTypeDataDto {
 
   @ApiPropertyOptional({ example: '+351912345678' })
   @IsString()
+  @MaxLength(20)
   @IsOptional()
   whatsapp?: string;
 }
