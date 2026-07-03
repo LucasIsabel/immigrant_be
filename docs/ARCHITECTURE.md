@@ -230,6 +230,12 @@ Business ─── Users (N:1) — negócio local de um imigrante
             typeData (Json — dados específicos por tipo, validados via Zod no Service),
             isPublic (default false)
   Listagem pública disponível via GET /business/public (diretório "My City")
+  Filtro geoespacial por raio: quando os params lat, lng e radius (km) são enviados,
+    BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
+    Haversine SQL via Prisma.$queryRaw para buscar apenas os IDs dentro do raio e
+    depois hidrata os registros completos via Prisma ORM (preserva mapeamento camelCase).
+    Negócios sem lat/lng são excluídos quando o filtro de raio está ativo.
+    Sem os três params, o caminho Prisma ORM padrão é mantido sem alterações.
   Verificação de propriedade (ownership check) nas operações de update/delete/visibility
 
 BusinessPage ─── Business (1:1) — página pública moderada de um negócio

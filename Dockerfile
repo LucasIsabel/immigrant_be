@@ -1,12 +1,13 @@
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:22-bullseye AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml .npmrc* ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Build
-FROM node:20-alpine AS build
+# Stage 2: Build
+FROM node:22-bullseye AS build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
@@ -15,7 +16,8 @@ RUN npx prisma generate
 RUN pnpm build && npx nest build microservice
 
 # Stage 3: Production - API + Microservice (single container)
-FROM node:20-alpine AS production
+# Stage 3: Production - API + Microservice (single container)
+FROM node:22-bullseye AS production
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/dist ./dist

@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { BusinessType } from '../../../../../generated/prisma';
 
 export class BusinessListQueryDto {
@@ -36,4 +44,24 @@ export class BusinessListQueryDto {
   @Max(100)
   @IsOptional()
   limit?: number = 20;
+
+  @ApiPropertyOptional({ example: 38.7169, description: 'Latitude do ponto de origem' })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -9.1399, description: 'Longitude do ponto de origem' })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  lng?: number;
+
+  @ApiPropertyOptional({ example: 10, description: 'Raio de busca em km (máx 200)', minimum: 1, maximum: 200 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(200)
+  @IsOptional()
+  radius?: number;
 }
