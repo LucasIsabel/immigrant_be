@@ -77,6 +77,18 @@
     "typescript": "5.9.3",
     "typescript-eslint": "^8.20.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "bcrypt",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma"
+    ]
+  },
   "prisma": {
     "seed": "tsx prisma/seeds/index.ts"
   },
