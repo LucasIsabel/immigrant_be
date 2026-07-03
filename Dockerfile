@@ -1,7 +1,7 @@
 # Stage 1: Dependencies
 FROM node:22-bullseye AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@7 --activate
 COPY package.json pnpm-lock.yaml .npmrc* ./
 RUN pnpm install --frozen-lockfile
 
@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile
 # Stage 2: Build
 FROM node:22-bullseye AS build
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@7 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
