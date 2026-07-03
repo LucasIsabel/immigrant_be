@@ -1,15 +1,15 @@
 # Stage 1: Dependencies
 FROM node:22-bullseye AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@7 --activate
-COPY package.json pnpm-lock.yaml .npmrc* ./
-RUN pnpm install --frozen-lockfile
+# Use npm ci in Docker build to avoid pnpm lockfile / interactive approval issues in CI
+COPY package.json package-lock.json .npmrc* ./
+RUN npm ci --unsafe-perm --no-audit --progress=false
 
 # Stage 2: Build
 # Stage 2: Build
+COPY --from=deps /app/node_modules ./node_modules
 FROM node:22-bullseye AS build
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@7 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
