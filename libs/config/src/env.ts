@@ -16,7 +16,7 @@ export const envSchema = zod.object({
   CORS_ORIGINS: zod.string().default('http://localhost:3001'),
   RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
   FRONTEND_URL: zod.string().default('http://localhost:3001'),
-  EMAIL_FROM: zod.string().default('ImmigrantMatch <onboarding@resend.dev>'),
+  EMAIL_FROM: zod.string().default('Aloravia <onboarding@resend.dev>'),
   CLOUDFLARE_R2_ACCESS_KEY_ID: zod.string().min(1),
   CLOUDFLARE_R2_SECRET_ACCESS_KEY: zod.string().min(1),
   CLOUDFLARE_R2_ACCOUNT_ID: zod.string().min(1),

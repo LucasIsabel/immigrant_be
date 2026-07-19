@@ -8,8 +8,8 @@ export function buildRejectionEmail(
   reason?: string,
 ): { subject: string; html: string } {
   const subject = isUpdate
-    ? `Sua atualização não foi aprovada — ImmigrantMatch`
-    : `Sua página não foi aprovada — ImmigrantMatch`;
+    ? `Sua atualização não foi aprovada — Aloravia`
+    : `Sua página não foi aprovada — Aloravia`;
 
   const heading = isUpdate
     ? 'Sua atualização não foi aprovada'

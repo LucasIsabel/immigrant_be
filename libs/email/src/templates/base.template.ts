@@ -4,7 +4,7 @@ export function wrapInBaseLayout(content: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ImmigrantMatch</title>
+  <title>Aloravia</title>
   <style>
     @media only screen and (max-width: 600px) {
       .email-container { width: 100% !important; }
@@ -29,7 +29,7 @@ export function wrapInBaseLayout(content: string): string {
                     </svg>
                   </td>
                   <td style="vertical-align:middle;">
-                    <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">ImmigrantMatch</span>
+                    <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Aloravia</span>
                   </td>
                 </tr>
               </table>
@@ -45,11 +45,11 @@ export function wrapInBaseLayout(content: string): string {
           <tr>
             <td style="padding:20px 40px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
               <p style="margin:0 0 10px;color:#64748b;font-size:13px;line-height:1.5;">
-                <a href="https://immigrantmatch.com" style="color:#2563eb;text-decoration:none;font-weight:500;">Website</a>
+                <a href="https://aloravia.com" style="color:#2563eb;text-decoration:none;font-weight:500;">Website</a>
                 &nbsp;&bull;&nbsp;
-                <a href="mailto:support@immigrantmatch.com" style="color:#2563eb;text-decoration:none;font-weight:500;">Support</a>
+                <a href="mailto:support@aloravia.com" style="color:#2563eb;text-decoration:none;font-weight:500;">Support</a>
               </p>
-              <p style="margin:0;color:#94a3b8;font-size:12px;">&copy; ${new Date().getFullYear()} ImmigrantMatch. All rights reserved.</p>
+              <p style="margin:0;color:#94a3b8;font-size:12px;">&copy; ${new Date().getFullYear()} Aloravia. All rights reserved.</p>
             </td>
           </tr>
         </table>

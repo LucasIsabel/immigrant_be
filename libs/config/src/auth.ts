@@ -146,7 +146,7 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: env.NODE_ENV === 'production',
       additionalCookies: ['better-auth.session_token'],
-      domain: '.immigrantmatch.com',
+      domain: '.aloravia.com',
     },
     defaultCookieAttributes: {
       secure: true,
