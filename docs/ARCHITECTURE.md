@@ -134,6 +134,7 @@ módulo/
 - Mecanismo: **Cookie-based sessions** (`better-auth.session_token`)
 - Duração da sessão: **7 dias**
 - Cache de cookie: **5 minutos**
+- **Cookies entre subdomínios**: controlado pela env var `COOKIE_DOMAIN` (ex.: `.aloravia.com`), **não** por `NODE_ENV`. Quando definida, `crossSubDomainCookies` é habilitado com esse `domain`, permitindo que o frontend (`aloravia.com`) leia o cookie setado pela API (`api.aloravia.com`). Sem `COOKIE_DOMAIN`, o cookie fica *host-only* (adequado para dev em `localhost`).
 - Hash de senha: **bcrypt** (salt rounds: 10)
 - Suporte a múltiplos providers via tabela `Accounts`
 - **Verificação de email**: Obrigatória para login. Usuário só pode fazer login após verificar o email.
@@ -623,6 +624,7 @@ Pipeline sequencial: **Lint → Test → Build**
 | `REDIS_USER`                      | Usuário Redis (opcional)                              |
 | `REDIS_PASSWORD`                  | Senha Redis                                           |
 | `CORS_ORIGINS`                    | Origens permitidas (separadas por vírgula)            |
+| `COOKIE_DOMAIN`                   | Domínio do cookie de sessão p/ subdomínios (ex: `.aloravia.com`); opcional |
 | `CLOUDFLARE_R2_ACCESS_KEY_ID`     | Access Key ID do token S3 do R2                       |
 | `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Secret Access Key do token S3 do R2                   |
 | `CLOUDFLARE_R2_ACCOUNT_ID`        | Account ID da conta Cloudflare                        |

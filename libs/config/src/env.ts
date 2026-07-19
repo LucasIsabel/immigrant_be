@@ -14,6 +14,7 @@ export const envSchema = zod.object({
   REDIS_USER: zod.string().optional(),
   REDIS_PASSWORD: zod.string().optional(),
   CORS_ORIGINS: zod.string().default('http://localhost:3001'),
+  COOKIE_DOMAIN: zod.string().optional(),
   RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
   FRONTEND_URL: zod.string().default('http://localhost:3001'),
   EMAIL_FROM: zod.string().default('Aloravia <onboarding@resend.dev>'),

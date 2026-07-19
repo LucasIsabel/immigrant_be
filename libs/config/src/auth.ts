@@ -11,7 +11,9 @@ import { extractResetTokenFromBetterAuthUrl } from './auth-reset-token.util';
 
 const prisma = new PrismaClient();
 
-const corsOrigins = env.CORS_ORIGINS.split(',');
+const corsOrigins = env.CORS_ORIGINS.split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -143,11 +145,13 @@ export const auth = betterAuth({
     database: {
       generateId: false,
     },
-    crossSubDomainCookies: {
-      enabled: env.NODE_ENV === 'production',
-      additionalCookies: ['better-auth.session_token'],
-      domain: '.aloravia.com',
-    },
+    crossSubDomainCookies: env.COOKIE_DOMAIN
+      ? {
+          enabled: true,
+          additionalCookies: ['better-auth.session_token'],
+          domain: env.COOKIE_DOMAIN,
+        }
+      : { enabled: false },
     defaultCookieAttributes: {
       secure: true,
       httpOnly: true,
