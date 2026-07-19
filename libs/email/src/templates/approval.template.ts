@@ -5,7 +5,7 @@ export function buildApprovalEmail(
   businessName: string,
   pageUrl: string,
 ): { subject: string; html: string } {
-  const subject = `Sua página foi aprovada! — ImmigrantMatch`;
+  const subject = `Sua página foi aprovada! — Aloravia`;
 
   const safeName = escapeHtml(businessName);
 

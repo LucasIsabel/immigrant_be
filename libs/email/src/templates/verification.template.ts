@@ -17,42 +17,42 @@ const translations: Record<
   }
 > = {
   en: {
-    subject: 'Verify your email address — ImmigrantMatch',
+    subject: 'Verify your email address — Aloravia',
     heading: 'Verify your email address',
     greeting: 'Hi {name},',
-    body: 'Thanks for signing up for ImmigrantMatch! Please verify your email address to activate your account and get started.',
+    body: 'Thanks for signing up for Aloravia! Please verify your email address to activate your account and get started.',
     expiry: 'This link expires in <strong>24 hours</strong>.',
     button: 'Verify Email Address',
     fallback:
       "If the button above doesn't work, copy and paste this link into your browser:",
     footer:
-      'If you did not create an account on ImmigrantMatch, you can safely ignore this email.',
+      'If you did not create an account on Aloravia, you can safely ignore this email.',
     security: 'For security, never share this link with anyone.',
   },
   pt: {
-    subject: 'Verifique seu endereço de email — ImmigrantMatch',
+    subject: 'Verifique seu endereço de email — Aloravia',
     heading: 'Verifique seu endereço de email',
     greeting: 'Olá, {name}',
-    body: 'Obrigado por se cadastrar no ImmigrantMatch! Verifique seu endereço de email para ativar sua conta.',
+    body: 'Obrigado por se cadastrar no Aloravia! Verifique seu endereço de email para ativar sua conta.',
     expiry: 'Este link expira em <strong>24 horas</strong>.',
     button: 'Verificar Email',
     fallback:
       'Se o botão acima não funcionar, copie e cole este link no seu navegador:',
     footer:
-      'Se você não criou uma conta no ImmigrantMatch, pode ignorar este email com segurança.',
+      'Se você não criou uma conta no Aloravia, pode ignorar este email com segurança.',
     security: 'Por segurança, nunca compartilhe este link com ninguém.',
   },
   es: {
-    subject: 'Verifica tu dirección de correo electrónico — ImmigrantMatch',
+    subject: 'Verifica tu dirección de correo electrónico — Aloravia',
     heading: 'Verifica tu correo electrónico',
     greeting: 'Hola, {name}',
-    body: '¡Gracias por registrarte en ImmigrantMatch! Verifica tu correo electrónico para activar tu cuenta.',
+    body: '¡Gracias por registrarte en Aloravia! Verifica tu correo electrónico para activar tu cuenta.',
     expiry: 'Este enlace expira en <strong>24 horas</strong>.',
     button: 'Verificar Correo',
     fallback:
       'Si el botón de arriba no funciona, copia y pega este enlace en tu navegador:',
     footer:
-      'Si no creaste una cuenta en ImmigrantMatch, puedes ignorar este correo de forma segura.',
+      'Si no creaste una cuenta en Aloravia, puedes ignorar este correo de forma segura.',
     security: 'Por seguridad, nunca compartas este enlace con nadie.',
   },
 };

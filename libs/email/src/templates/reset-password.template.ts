@@ -17,10 +17,10 @@ const translations: Record<
   }
 > = {
   en: {
-    subject: 'Reset your password — ImmigrantMatch',
+    subject: 'Reset your password — Aloravia',
     heading: 'Reset your password',
     greeting: 'Hi {name},',
-    body: 'We received a request to reset the password for your ImmigrantMatch account. Click the button below to choose a new password.',
+    body: 'We received a request to reset the password for your Aloravia account. Click the button below to choose a new password.',
     expiry:
       'This link expires in <strong>1 hour</strong>. After that, you will need to request a new reset link.',
     button: 'Reset Password',
@@ -32,10 +32,10 @@ const translations: Record<
       'If you did not make this request, we recommend changing your password as a precaution.',
   },
   pt: {
-    subject: 'Redefina sua senha — ImmigrantMatch',
+    subject: 'Redefina sua senha — Aloravia',
     heading: 'Redefina sua senha',
     greeting: 'Olá, {name}',
-    body: 'Recebemos uma solicitação para redefinir a senha da sua conta no ImmigrantMatch. Clique no botão abaixo para escolher uma nova senha.',
+    body: 'Recebemos uma solicitação para redefinir a senha da sua conta no Aloravia. Clique no botão abaixo para escolher uma nova senha.',
     expiry:
       'Este link expira em <strong>1 hora</strong>. Após isso, você precisará solicitar um novo link.',
     button: 'Redefinir Senha',
@@ -47,10 +47,10 @@ const translations: Record<
       'Se não foi você que fez esta solicitação, recomendamos trocar sua senha por precaução.',
   },
   es: {
-    subject: 'Restablece tu contraseña — ImmigrantMatch',
+    subject: 'Restablece tu contraseña — Aloravia',
     heading: 'Restablece tu contraseña',
     greeting: 'Hola, {name}',
-    body: 'Recibimos una solicitud para restablecer la contraseña de tu cuenta en ImmigrantMatch. Haz clic en el botón de abajo para elegir una nueva contraseña.',
+    body: 'Recibimos una solicitud para restablecer la contraseña de tu cuenta en Aloravia. Haz clic en el botón de abajo para elegir una nueva contraseña.',
     expiry:
       'Este enlace expira en <strong>1 hora</strong>. Después de eso, necesitarás solicitar un nuevo enlace.',
     button: 'Restablecer Contraseña',

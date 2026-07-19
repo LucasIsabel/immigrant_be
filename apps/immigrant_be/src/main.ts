@@ -26,9 +26,9 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Immigrant API')
+    .setTitle('Aloravia API')
     .setDescription(
-      'The Immigrant API documentation. Protected endpoints require authentication via the session cookie **better-auth.session_token**. Use the "Authorize" button to send the cookie when testing.',
+      'The Aloravia API documentation. Protected endpoints require authentication via the session cookie **better-auth.session_token**. Use the "Authorize" button to send the cookie when testing.',
     )
     .setVersion('1.0')
     .addCookieAuth('better-auth.session_token')
