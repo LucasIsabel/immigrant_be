@@ -11,8 +11,8 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npx prisma generate
-RUN pnpm build && npx nest build microservice
+RUN pnpm exec prisma generate
+RUN pnpm build && pnpm exec nest build microservice
 
 # Stage 3: Production - API + Microservice (single container)
 FROM node:22-bullseye AS production
