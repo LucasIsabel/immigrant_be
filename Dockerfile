@@ -3,7 +3,9 @@ FROM node:22-bullseye AS deps
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY package.json pnpm-lock.yaml .npmrc* ./
-RUN pnpm install --frozen-lockfile
+# --prod=false: o Coolify injeta ARG NODE_ENV=production, o que faria o pnpm
+# saltar as devDependencies (prisma CLI, @nestjs/cli) necessarias ao build.
+RUN pnpm install --frozen-lockfile --prod=false
 
 # Stage 2: Build
 FROM node:22-bullseye AS build
