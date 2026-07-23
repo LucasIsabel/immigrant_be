@@ -1,39 +1,85 @@
-import { PrismaClient } from '../../generated/prisma';
 import bcrypt from 'bcrypt';
+
+import { PrismaClient } from '../../generated/prisma';
 
 const prisma = new PrismaClient();
 
-async function createAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@immigrant.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
-  // Verificar se já existe
+const ADMIN_EMAIL = requireEnv('ADMIN_EMAIL');
+const ADMIN_PASSWORD = requireEnv('ADMIN_PASSWORD');
+const ADMIN_NAME = requireEnv('ADMIN_NAME');
+
+/**
+ * Garante que as roles informadas existam e estejam vinculadas ao usuário.
+ * Idempotente: cria a role se faltar e ignora vínculos já existentes.
+ */
+async function ensureRoles(userId: string, roleNames: string[]) {
+  for (const name of roleNames) {
+    const role = await prisma.roles.upsert({
+      where: { name },
+      update: {},
+      create: {
+        name,
+        description:
+          name === 'admin' ? 'Administrator role' : 'Default user role',
+      },
+    });
+
+    await prisma.userRoles.upsert({
+      where: { userId_roleId: { userId, roleId: role.id } },
+      update: {},
+      create: { userId, roleId: role.id },
+    });
+  }
+}
+
+async function createAdmin() {
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
   const existing = await prisma.users.findUnique({
-    where: { email: adminEmail },
+    where: { email: ADMIN_EMAIL },
   });
 
   if (existing) {
-    console.log(`Admin user ${adminEmail} already exists`);
+    console.log(`Admin user ${ADMIN_EMAIL} already exists`);
+    await ensureRoles(existing.id, ['user', 'admin']);
 
-    // Atualizar para admin se não for
-    if (!existing.roles.includes('admin')) {
-      await prisma.users.update({
-        where: { id: existing.id },
-        data: { roles: { push: 'admin' } },
+    // Garante que exista uma conta de credencial com a senha definida.
+    const credentialAccount = await prisma.accounts.findFirst({
+      where: { userId: existing.id, providerId: 'credential' },
+    });
+
+    if (credentialAccount) {
+      await prisma.accounts.update({
+        where: { id: credentialAccount.id },
+        data: { password: hashedPassword },
       });
-      console.log(`Updated ${adminEmail} to include admin role`);
+    } else {
+      await prisma.accounts.create({
+        data: {
+          userId: existing.id,
+          accountId: existing.id,
+          providerId: 'credential',
+          password: hashedPassword,
+        },
+      });
     }
+
+    console.log(`✅ Admin roles/credentials ensured for ${ADMIN_EMAIL}`);
     return;
   }
 
-  // Criar novo admin
-  const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
   const user = await prisma.users.create({
     data: {
-      email: adminEmail,
-      name: 'Administrator',
-      roles: ['user', 'admin'],
+      email: ADMIN_EMAIL,
+      name: ADMIN_NAME,
       emailVerified: true,
     },
   });
@@ -47,8 +93,10 @@ async function createAdmin() {
     },
   });
 
-  console.log(`✅ Admin user created: ${adminEmail}`);
-  console.log(`Password: ${adminPassword}`);
+  await ensureRoles(user.id, ['user', 'admin']);
+
+  console.log(`✅ Admin user created: ${ADMIN_EMAIL}`);
+  console.log(`Password: ${ADMIN_PASSWORD}`);
   console.log('⚠️  Change password after first login!');
 }
 
