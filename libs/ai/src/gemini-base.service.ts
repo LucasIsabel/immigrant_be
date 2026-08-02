@@ -43,20 +43,43 @@ export class GeminiBaseService {
     raw: string | undefined,
     schema: z.ZodType<T>,
   ): T | null {
+    if (!raw) {
+      this.logger.error('Gemini returned an empty response');
+      return null;
+    }
+
+    const cleaned = this.cleanJsonResponse(raw);
+
+    let parsed: unknown;
     try {
-      if (!raw) {
-        return null;
-      }
-      const cleaned = this.cleanJsonResponse(raw);
-      const parsed = JSON.parse(cleaned);
-      return schema.parse(parsed);
+      parsed = JSON.parse(cleaned);
     } catch (error) {
       this.logger.error(
-        'Error parsing JSON response',
-        error instanceof Error ? error.stack : undefined,
+        `Gemini response is not valid JSON: ${
+          error instanceof Error ? error.message : String(error)
+        }. Raw: ${this.truncateForLog(cleaned)}`,
       );
       return null;
     }
+
+    const result = schema.safeParse(parsed);
+    if (!result.success) {
+      this.logger.error(
+        `Gemini response does not match the expected schema: ${
+          result.error.issues
+            .map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`)
+            .join('; ') || 'unknown issue'
+        }. Raw: ${this.truncateForLog(cleaned)}`,
+      );
+      return null;
+    }
+
+    return result.data;
+  }
+
+  /** Keeps a failing payload readable in the logs without flooding them. */
+  private truncateForLog(text: string, max = 500): string {
+    return text.length > max ? `${text.slice(0, max)}… (truncated)` : text;
   }
 
   async generateEmbeddings(text: string): Promise<number[] | null> {

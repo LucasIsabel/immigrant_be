@@ -32,6 +32,7 @@ export class AiImageService {
       prompt: dto.prompt,
       folder,
       isPublic,
+      requestedByUserId: userId,
     });
 
     this.logger.log(`Enqueued AI image generation job for image ${image.id}`);

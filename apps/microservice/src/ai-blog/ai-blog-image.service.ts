@@ -27,8 +27,7 @@ export class AiBlogImageWorkerService {
     const imageBuffer = await this.gemini.generateImage(prompt);
 
     if (!imageBuffer) {
-      this.logger.warn(`Nenhuma imagem retornada para post ${data.postId}`);
-      return;
+      throw new Error(`Nenhuma imagem retornada para post ${data.postId}`);
     }
 
     const { url } = await this.storage.uploadFile(

@@ -21,8 +21,9 @@ export class BlogTranslationCronService implements OnModuleInit {
       {
         repeat: { pattern: '0 3 * * *' },
         jobId: 'daily-blog-translation-scan',
-        removeOnComplete: 10,
-        removeOnFail: 5,
+        // The scan only fans out into per-post jobs; retrying it would duplicate
+        // that fan-out, and the next daily run picks up whatever was missed.
+        attempts: 1,
       },
     );
 

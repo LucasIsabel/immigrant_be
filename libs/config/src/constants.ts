@@ -1,3 +1,17 @@
+/**
+ * Applied to every job that does not override it. Each queue talks to Gemini,
+ * to R2 or to an external RSS feed, so a transient 5xx/timeout must be retried
+ * instead of discarding the work — BullMQ defaults to a single attempt.
+ * The retention caps keep completed/failed jobs available for inspection
+ * without letting Redis grow unbounded.
+ */
+export const DEFAULT_JOB_OPTIONS = {
+  attempts: 3,
+  backoff: { type: 'exponential' as const, delay: 30_000 },
+  removeOnComplete: 50,
+  removeOnFail: 100,
+};
+
 export const AI_BLOG_QUEUE = 'ai_blog_queue';
 export const GENERATE_AI_BLOG_POST = 'generate_ai_blog_post';
 

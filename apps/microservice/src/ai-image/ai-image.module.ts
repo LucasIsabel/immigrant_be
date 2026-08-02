@@ -4,6 +4,7 @@ import { DatabaseModule } from '@app/database';
 import { AiModule } from '@app/ai';
 import { StorageModule } from '@app/storage';
 import { AI_IMAGE_QUEUE } from '@app/config/constants';
+import { EventsModule } from '../events/events.module';
 import { AiImageConsumer } from './ai-image.consumer';
 import { AiImageWorkerService } from './ai-image.service';
 
@@ -12,6 +13,7 @@ import { AiImageWorkerService } from './ai-image.service';
     DatabaseModule,
     AiModule,
     StorageModule,
+    EventsModule,
     BullModule.registerQueue({ name: AI_IMAGE_QUEUE }),
   ],
   providers: [AiImageConsumer, AiImageWorkerService],
