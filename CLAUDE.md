@@ -54,6 +54,20 @@
 6.⁠ ⁠*Capture Lessons*: Update ⁠ tasks/lessons.md ⁠ after corrections
 7.⁠ ⁠*Persist Plans*: Save every plan created in a markdown file under the `plans/` directory at the project root (one file per plan).
 
+## Gestão de Tarefas — GitHub Projects
+
+- O board deste repositório é **Aloravia BE**: https://github.com/users/LucasIsabel/projects/3
+  (o frontend `immigrant_fe` usa o **Aloravia FE**: https://github.com/users/LucasIsabel/projects/2).
+- **O ClickUp está descontinuado desde 2026-08-03.** Não crie, atualize nem consulte tasks no
+  ClickUp para este projeto — o GitHub Projects é a única fonte de verdade.
+- Toda operação no board (criar item, mover coluna, atualizar status/prioridade/datas, gerar
+  relatório) passa pelo skill `/github-board`. Não opere o board direto via `gh` nem pelo
+  navegador na sessão principal.
+- Fluxo padrão de uma task: o card nasce em `Backlog`/`Ready` → `In progress` ao começar →
+  **`In review` assim que o PR for aberto**, com o link do PR registrado no item → `Done` no
+  merge. Se a task ainda não existe no board, crie o item antes de abrir o PR.
+- Colunas do board: `Backlog` → `Ready` → `In progress` → `In review` → `Done`.
+
 ## Core Principles
 
 •⁠ ⁠*Simplicity First*: Make every change as simple as possible. Impact minimal code.

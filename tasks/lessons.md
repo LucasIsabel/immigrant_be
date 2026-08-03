@@ -3,6 +3,16 @@
 Padrões aprendidos trabalhando neste repositório. Cada entrada existe para
 evitar que o mesmo erro se repita.
 
+## 2026-08-03 — Rastreamento de tasks saiu do ClickUp e foi para o GitHub Projects
+
+O Lucas decidiu que, a partir do PR das tasks desta rodada, o ClickUp deixa de ser usado nos
+dois repos do Aloravia. Board do backend: https://github.com/users/LucasIsabel/projects/3
+(Aloravia BE); frontend: https://github.com/users/LucasIsabel/projects/2 (Aloravia FE).
+
+**Regra:** nenhuma operação de task no ClickUp para este projeto. Use o skill `/github-board`
+(nunca `gh project` direto) e, assim que o PR for aberto, mova o card para `In review` com o
+link do PR no item. Se a task não existe no board, crie o item antes de abrir o PR.
+
 ## 2026-08-03 — Verificar o baseline antes de culpar a própria mudança
 
 Ao rodar `pnpm test` depois de uma refatoração, 48 de 223 testes falharam.
