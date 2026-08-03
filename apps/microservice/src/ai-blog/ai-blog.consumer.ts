@@ -45,7 +45,10 @@ export class AiBlogConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  async onFailed(job: Job<GenerateBlogPostJobData>, error: Error): Promise<void> {
+  async onFailed(
+    job: Job<GenerateBlogPostJobData>,
+    error: Error,
+  ): Promise<void> {
     this.logger.error(
       `Geração de post falhou: ${job.id} (country: ${job.data.country_id}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,

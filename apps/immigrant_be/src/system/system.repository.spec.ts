@@ -63,8 +63,12 @@ describe('SystemRepository - normalizeParametersToJson', () => {
   });
 
   // Access the private method via bracket notation for testing
-  const normalize = (repo: SystemRepository, dto: SuggestionsDto) =>
-    (repo as any).normalizeParametersToJson(dto);
+  const normalize = (repo: SystemRepository, dto: SuggestionsDto): string =>
+    (
+      repo as unknown as {
+        normalizeParametersToJson: (dto: SuggestionsDto) => string;
+      }
+    ).normalizeParametersToJson(dto);
 
   it('should serialize plain object steps correctly — no empty arrays', () => {
     const dto = makePlainDto();

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
+import { CountryService } from '../countries/country.service';
 
 const mockUser = {
   id: 'user-id-1',
@@ -77,6 +78,10 @@ const mockUserRepository = {
   getUserById: jest.fn(),
 };
 
+const mockCountryService = {
+  findOne: jest.fn(),
+};
+
 describe('UserService - Admin Methods', () => {
   let service: UserService;
   let repository: typeof mockUserRepository;
@@ -86,6 +91,7 @@ describe('UserService - Admin Methods', () => {
       providers: [
         UserService,
         { provide: UserRepository, useValue: mockUserRepository },
+        { provide: CountryService, useValue: mockCountryService },
       ],
     }).compile();
 

@@ -1,9 +1,18 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
+  "rootDir": "../../..",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "roots": ["<rootDir>/apps/immigrant_be/test/"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@app/ai(|/.*)$": "<rootDir>/libs/ai/src/$1",
+    "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
+    "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+    "^@app/email(|/.*)$": "<rootDir>/libs/email/src/$1",
+    "^@app/storage(|/.*)$": "<rootDir>/libs/storage/src/$1",
+    "^generated/prisma(|/.*)$": "<rootDir>/generated/prisma$1"
   }
 }

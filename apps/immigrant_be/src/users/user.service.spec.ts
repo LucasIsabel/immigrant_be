@@ -7,7 +7,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
+import { CountryService } from '../countries/country.service';
 import { MarkStepDto } from './dto/mark-step.dto';
+
+const mockCountryService = {
+  findOne: jest.fn(),
+};
 
 const mockSession = {
   user: { id: 'user-id-1' },
@@ -78,6 +83,7 @@ describe('UserService - markStep', () => {
       providers: [
         UserService,
         { provide: UserRepository, useValue: mockUserRepository },
+        { provide: CountryService, useValue: mockCountryService },
       ],
     }).compile();
 
@@ -232,6 +238,7 @@ describe('UserService - completeAllSteps', () => {
       providers: [
         UserService,
         { provide: UserRepository, useValue: mockUserRepository },
+        { provide: CountryService, useValue: mockCountryService },
       ],
     }).compile();
 

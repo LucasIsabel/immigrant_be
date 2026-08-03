@@ -44,7 +44,10 @@ export class AiImageConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  async onFailed(job: Job<GenerateAiImageJobData>, error: Error): Promise<void> {
+  async onFailed(
+    job: Job<GenerateAiImageJobData>,
+    error: Error,
+  ): Promise<void> {
     this.logger.error(
       `Job de imagem falhou: ${job.id} (imageId: ${job.data.imageId}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,

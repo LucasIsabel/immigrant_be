@@ -138,10 +138,9 @@ describe('BlogService', () => {
   // ─── findPublishedPosts ───────────────────────────────────────────────────
 
   describe('findPublishedPosts', () => {
-    it('deve retornar posts paginados', async () => {
-      const mockData = [{ id: 'post-1' }];
+    it('deve retornar posts paginados com contagem de likes', async () => {
       mockRepository.findPublishedPosts.mockResolvedValue({
-        data: mockData,
+        data: [{ id: 'post-1', _count: { likes: 3 } }],
         total: 1,
       });
 
@@ -153,7 +152,12 @@ describe('BlogService', () => {
         categorySlug: undefined,
         tagSlug: undefined,
       });
-      expect(result).toEqual({ data: mockData, total: 1, page: 1, limit: 10 });
+      expect(result).toEqual({
+        data: [{ id: 'post-1', likes_count: 3, is_liked: false }],
+        total: 1,
+        page: 1,
+        limit: 10,
+      });
     });
 
     it('deve calcular skip correto para página 2', async () => {
@@ -174,13 +178,21 @@ describe('BlogService', () => {
 
   describe('findPostBySlug', () => {
     it('deve retornar post e incrementar views', async () => {
-      const mockPost = { id: 'post-id', slug: 'meu-post' };
-      mockRepository.findPostBySlug.mockResolvedValue(mockPost);
+      mockRepository.findPostBySlug.mockResolvedValue({
+        id: 'post-id',
+        slug: 'meu-post',
+        _count: { likes: 2 },
+      });
       mockRepository.incrementViews.mockResolvedValue(undefined);
 
       const result = await service.findPostBySlug('meu-post');
 
-      expect(result).toEqual(mockPost);
+      expect(result).toMatchObject({
+        id: 'post-id',
+        slug: 'meu-post',
+        likes_count: 2,
+        is_liked: false,
+      });
       // incrementViews é chamado de forma assíncrona (void), verificamos após um tick
       await Promise.resolve();
       expect(mockRepository.incrementViews).toHaveBeenCalledWith('post-id');

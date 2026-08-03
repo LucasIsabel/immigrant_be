@@ -111,7 +111,7 @@ describe('SystemService - createSuggestions', () => {
 
     // steps must be an array of objects with type + answer — never empty arrays
     expect(savedParameters.steps).toHaveLength(3);
-    savedParameters.steps.forEach((step: any, i: number) => {
+    savedParameters.steps.forEach((step: Record<string, unknown>) => {
       expect(step).toHaveProperty('type');
       expect(step).toHaveProperty('answer');
       expect(typeof step.type).toBe('string');

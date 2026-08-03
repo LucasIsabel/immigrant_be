@@ -45,19 +45,30 @@ export class BusinessListQueryDto {
   @IsOptional()
   limit?: number = 20;
 
-  @ApiPropertyOptional({ example: 38.7169, description: 'Latitude do ponto de origem' })
+  @ApiPropertyOptional({
+    example: 38.7169,
+    description: 'Latitude do ponto de origem',
+  })
   @Type(() => Number)
   @IsNumber()
   @IsOptional()
   lat?: number;
 
-  @ApiPropertyOptional({ example: -9.1399, description: 'Longitude do ponto de origem' })
+  @ApiPropertyOptional({
+    example: -9.1399,
+    description: 'Longitude do ponto de origem',
+  })
   @Type(() => Number)
   @IsNumber()
   @IsOptional()
   lng?: number;
 
-  @ApiPropertyOptional({ example: 10, description: 'Raio de busca em km (máx 200)', minimum: 1, maximum: 200 })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Raio de busca em km (máx 200)',
+    minimum: 1,
+    maximum: 200,
+  })
   @Type(() => Number)
   @IsNumber()
   @Min(1)
