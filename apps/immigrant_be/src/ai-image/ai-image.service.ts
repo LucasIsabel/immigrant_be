@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { StorageService } from '@app/storage';
@@ -32,6 +32,7 @@ export class AiImageService {
       prompt: dto.prompt,
       folder,
       isPublic,
+      requestedByUserId: userId,
     });
 
     this.logger.log(`Enqueued AI image generation job for image ${image.id}`);

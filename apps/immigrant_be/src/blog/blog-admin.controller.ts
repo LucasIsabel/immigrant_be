@@ -210,7 +210,6 @@ export class BlogAdminController {
           targetLocale: locale,
           requestedByUserId: requestedByUserId ?? undefined,
         },
-        opts: { removeOnComplete: 10, removeOnFail: 5 },
       })),
     );
 

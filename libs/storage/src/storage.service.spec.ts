@@ -6,7 +6,7 @@ import { StorageService } from './storage.service';
 const mockSend = jest.fn();
 
 jest.mock('@aws-sdk/client-s3', () => ({
-  ...jest.requireActual('@aws-sdk/client-s3'),
+  ...jest.requireActual<Record<string, unknown>>('@aws-sdk/client-s3'),
   S3Client: jest.fn().mockImplementation(() => ({
     send: mockSend,
   })),

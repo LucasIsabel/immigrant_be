@@ -77,12 +77,31 @@ export class BusinessRepository {
   async findPublic(
     query: BusinessListQueryDto,
   ): Promise<{ data: Business[]; total: number }> {
-    const { city, businessType, search, page = 1, limit = 20, lat, lng, radius } = query;
+    const {
+      city,
+      businessType,
+      search,
+      page = 1,
+      limit = 20,
+      lat,
+      lng,
+      radius,
+    } = query;
 
-    const useGeo = lat !== undefined && lng !== undefined && radius !== undefined;
+    const useGeo =
+      lat !== undefined && lng !== undefined && radius !== undefined;
 
     if (useGeo) {
-      return this.findPublicByRadius({ city, businessType, search, page, limit, lat: lat!, lng: lng!, radius: radius! });
+      return this.findPublicByRadius({
+        city,
+        businessType,
+        search,
+        page,
+        limit,
+        lat: lat,
+        lng: lng,
+        radius: radius,
+      });
     }
 
     const where = {
@@ -117,7 +136,8 @@ export class BusinessRepository {
     lng: number;
     radius: number;
   }): Promise<{ data: Business[]; total: number }> {
-    const { city, businessType, search, page, limit, lat, lng, radius } = params;
+    const { city, businessType, search, page, limit, lat, lng, radius } =
+      params;
     const offset = (page - 1) * limit;
 
     const conditions: Prisma.Sql[] = [
@@ -128,7 +148,10 @@ export class BusinessRepository {
     ];
 
     if (city) conditions.push(Prisma.sql`b.city = ${city}`);
-    if (businessType) conditions.push(Prisma.sql`b.business_type = ${businessType}::"BusinessType"`);
+    if (businessType)
+      conditions.push(
+        Prisma.sql`b.business_type = ${businessType}::"BusinessType"`,
+      );
     if (search) conditions.push(Prisma.sql`b.name ILIKE ${'%' + search + '%'}`);
 
     const where = Prisma.join(conditions, ' AND ');

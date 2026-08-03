@@ -55,10 +55,9 @@ export class AiBlogWorkerService {
     const newsItems = await this.fetchGoogleNewsRss(country.name);
 
     if (newsItems.length === 0) {
-      this.logger.warn(
-        `No RSS news found for ${country.name}, aborting generation`,
+      throw new Error(
+        `No RSS news found for ${country.name}, nothing to generate from`,
       );
-      return;
     }
 
     const prompt = buildBlogPostPrompt({
@@ -75,10 +74,9 @@ export class AiBlogWorkerService {
     const parsed = this.gemini.parseJsonResponse(rawText, blogPostAiSchema);
 
     if (!parsed) {
-      this.logger.error(
+      throw new Error(
         `Failed to parse Gemini response for country: ${country.name}`,
       );
-      return;
     }
 
     const slug = this.slugify(`${parsed.title}-${Date.now()}`);

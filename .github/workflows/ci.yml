@@ -6,19 +6,26 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Must match the Dockerfile, so CI validates the runtime that ships.
+  NODE_VERSION: 22
+  PNPM_VERSION: 9
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: npx prisma generate
-      - run: pnpm lint
+      - run: pnpm lint:ci
 
   test:
     runs-on: ubuntu-latest
@@ -52,20 +59,35 @@ jobs:
       GEMINI_API_KEY: test-api-key
       PORT_IMMIGRANT: 3000
       PORT_MICROSERVICE: 6000
+      REDIS_URL: redis://localhost:6379
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       NODE_ENV: test
       CORS_ORIGINS: http://localhost:3001
+      FRONTEND_URL: http://localhost:3001
+      # env.ts validates these at import time; without them the Zod schema
+      # throws before any spec runs.
+      RESEND_API_KEY: test-resend-key
+      EMAIL_FROM: no-reply@example.com
+      CLOUDFLARE_R2_ACCESS_KEY_ID: test-access-key
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: test-secret-key
+      CLOUDFLARE_R2_ACCOUNT_ID: test-account
+      CLOUDFLARE_R2_BUCKET_NAME: test-bucket
+      CLOUDFLARE_R2_PUBLIC_URL: https://example.com
+      CLOUDFLARE_ENDPOINT: https://example.com
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: npx prisma generate
       - run: pnpm test
+      - run: pnpm test:e2e
 
   build:
     runs-on: ubuntu-latest
@@ -73,9 +95,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: npx prisma generate

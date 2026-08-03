@@ -138,7 +138,6 @@ describe('BlogRepository', () => {
         categorySlug: 'visto',
       });
 
-      const [findManyCall] = mockPrisma.$transaction.mock.calls[0][0];
       // Verificamos que a chamada inclui o filtro de categoria
       expect(mockPrisma.$transaction).toHaveBeenCalled();
     });

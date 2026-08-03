@@ -1,4 +1,9 @@
-import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
+import {
+  InjectQueue,
+  OnWorkerEvent,
+  Processor,
+  WorkerHost,
+} from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import {
@@ -6,6 +11,7 @@ import {
   TranslatePostJobData,
 } from './blog-translation.service';
 import { EventsService } from '../events/events.service';
+import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import {
   BLOG_TRANSLATION_QUEUE,
   TRANSLATE_BLOG_POST,
@@ -36,7 +42,7 @@ export class BlogTranslationConsumer extends WorkerHost {
         if (data.requestedByUserId) {
           await this.eventsService.emit({
             userId: data.requestedByUserId,
-            type: 'blog_translation_completed',
+            type: EVENT_TYPES.BLOG_TRANSLATION_COMPLETED,
             title: 'Tradução concluída',
             message: `Tradução do post para ${data.targetLocale.toUpperCase()} concluída.`,
             payload: { postId: data.postId, locale: data.targetLocale },
@@ -58,7 +64,6 @@ export class BlogTranslationConsumer extends WorkerHost {
           pending.map((item) => ({
             name: TRANSLATE_BLOG_POST,
             data: item,
-            opts: { removeOnComplete: 10, removeOnFail: 5 },
           })),
         );
 
@@ -69,5 +74,30 @@ export class BlogTranslationConsumer extends WorkerHost {
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
     }
+  }
+
+  @OnWorkerEvent('failed')
+  async onFailed(job: Job, error: Error): Promise<void> {
+    this.logger.error(
+      `Job de tradução falhou: ${job.id} (${job.name}) — tentativa ${job.attemptsMade}: ${error.message}`,
+      error.stack,
+    );
+
+    if (job.name !== TRANSLATE_BLOG_POST || !isFinalAttempt(job)) return;
+
+    const data = job.data as TranslatePostJobData;
+    if (!data.requestedByUserId) return;
+
+    await this.eventsService.emit({
+      userId: data.requestedByUserId,
+      type: EVENT_TYPES.BLOG_TRANSLATION_FAILED,
+      title: 'Falha na tradução',
+      message: `Não foi possível traduzir o post para ${data.targetLocale.toUpperCase()} após várias tentativas.`,
+      payload: {
+        postId: data.postId,
+        locale: data.targetLocale,
+        error: error.message,
+      },
+    });
   }
 }

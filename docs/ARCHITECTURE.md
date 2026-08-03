@@ -292,14 +292,12 @@ libs/ai/                              # Biblioteca compartilhada de IA
 ├── schemas/                          # Zod schemas centralizados
 │   ├── suggestions.schema.ts         # SuggestionsType
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
-│   ├── visa-steps.schema.ts          # VisaStepsType
 │   ├── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
 │   ├── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
 │   └── business-page-moderation.schema.ts # Entrada/saída da moderação de páginas (admin)
 └── prompts/                          # Templates de prompts centralizados
     ├── countries-match.prompt.ts
     ├── best-visa-type.prompt.ts
-    ├── visa-steps.prompt.ts
     ├── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
     ├── blog-translation.prompt.ts    # buildBlogTranslationPrompt() — preserva Markdown
     └── business-page-moderation.prompt.ts # Moderação de conteúdo de páginas públicas (admin)
@@ -429,7 +427,6 @@ App Principal (API)                    Microservice
 
 | Fila                     | Constante                | Jobs                                           | Descrição                                    |
 | ------------------------ | ------------------------ | ---------------------------------------------- | -------------------------------------------- |
-| `plan_queue`             | `PLAN_QUEUE`             | `process_create_plan`                          | Geração de planos de imigração               |
 | `ai_blog_queue`          | `AI_BLOG_QUEUE`          | `generate_ai_blog_post`                        | Geração de posts de blog com IA              |
 | `ai_blog_image_queue`    | `AI_BLOG_IMAGE_QUEUE`    | `generate_ai_blog_image`                       | Geração assíncrona de imagem de capa do post |
 | `ai_image_queue`         | `AI_IMAGE_QUEUE`         | `generate_ai_image`                            | Geração de imagens via Gemini (Media Generator) |

@@ -117,7 +117,7 @@ export class EventResponseDto {
     type: Object,
     nullable: true,
   })
-  payload: unknown | null;
+  payload: unknown;
 
   @ApiProperty({
     description: 'Status of the notification',

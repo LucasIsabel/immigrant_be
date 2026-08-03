@@ -7,6 +7,7 @@ import {
 } from './ai-blog-image.service';
 import { AiBlogRefineService } from './ai-blog-refine.service';
 import { EventsService } from '../events/events.service';
+import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import {
   AI_BLOG_IMAGE_QUEUE,
   GENERATE_AI_BLOG_IMAGE,
@@ -44,7 +45,7 @@ export class AiBlogImageConsumer extends WorkerHost {
         if (userId) {
           await this.eventsService.emit({
             userId,
-            type: 'blog_cover_image_completed',
+            type: EVENT_TYPES.BLOG_COVER_IMAGE_COMPLETED,
             title: 'Imagem de capa gerada',
             message: 'A imagem de capa do post foi gerada com sucesso.',
             payload: { postId: job.data.postId },
@@ -61,7 +62,7 @@ export class AiBlogImageConsumer extends WorkerHost {
           if (result.allGenerated) {
             await this.eventsService.emit({
               userId,
-              type: 'blog_refine_completed',
+              type: EVENT_TYPES.BLOG_REFINE_COMPLETED,
               title: 'Refinamento concluído',
               message: 'As imagens do post foram geradas e inseridas.',
               payload: { postId: job.data.postId },
@@ -69,7 +70,7 @@ export class AiBlogImageConsumer extends WorkerHost {
           } else {
             await this.eventsService.emit({
               userId,
-              type: 'blog_refine_partial',
+              type: EVENT_TYPES.BLOG_REFINE_PARTIAL,
               title: 'Refinamento parcial',
               message: `${result.generated} de ${result.total} imagens foram geradas. Algumas falharam.`,
               payload: {
@@ -95,10 +96,29 @@ export class AiBlogImageConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job<ImageQueueJobData>, error: Error): void {
+  async onFailed(job: Job<ImageQueueJobData>, error: Error): Promise<void> {
     this.logger.error(
-      `Job de imagem falhou: ${job.id} (post: ${job.data.postId}) — ${error.message}`,
+      `Job de imagem falhou: ${job.id} (post: ${job.data.postId}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,
     );
+
+    if (!isFinalAttempt(job)) return;
+
+    const userId =
+      'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
+    if (!userId) return;
+
+    const isRefine = job.name === REFINE_AI_BLOG_POST;
+    await this.eventsService.emit({
+      userId,
+      type: isRefine
+        ? EVENT_TYPES.BLOG_REFINE_FAILED
+        : EVENT_TYPES.BLOG_COVER_IMAGE_FAILED,
+      title: isRefine ? 'Falha no refinamento' : 'Falha na imagem de capa',
+      message: isRefine
+        ? 'Não foi possível refinar o post após várias tentativas.'
+        : 'Não foi possível gerar a imagem de capa após várias tentativas.',
+      payload: { postId: job.data.postId, error: error.message },
+    });
   }
 }

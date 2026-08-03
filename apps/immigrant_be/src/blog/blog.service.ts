@@ -15,6 +15,14 @@ import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { UpsertBlogTranslationDto } from './dto/upsert-blog-translation.dto';
 
+/**
+ * Prisma includes the like count as a `_count` relation aggregate; the API
+ * exposes it flattened as `likes_count`.
+ */
+type PostWithLikeCount = Record<string, unknown> & {
+  _count?: { likes?: number };
+};
+
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -82,8 +90,8 @@ export class BlogService {
       ? await this.blogRepository.getLikedPostIdsForUser(postIds, userId)
       : new Set<string>();
 
-    const enriched = localized.map((post: any) => {
-      const { _count, ...rest } = post;
+    const enriched = localized.map((post) => {
+      const { _count, ...rest } = post as PostWithLikeCount;
       return {
         ...rest,
         likes_count: _count?.likes ?? 0,
@@ -120,7 +128,7 @@ export class BlogService {
     const likedIds = userId
       ? await this.blogRepository.getLikedPostIdsForUser([post.id], userId)
       : new Set<string>();
-    const { _count, ...rest } = localized as any;
+    const { _count, ...rest } = localized as PostWithLikeCount;
     return {
       ...rest,
       likes_count: _count?.likes ?? 0,

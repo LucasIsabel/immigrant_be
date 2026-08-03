@@ -8,13 +8,13 @@ jest.mock('@app/database', () => ({
 jest.mock('@app/config/auth', () => ({
   auth: {
     api: {
-      getSession: (...args: unknown[]) => mockGetSession(...args),
+      getSession: (...args: unknown[]): unknown => mockGetSession(...args),
     },
   },
 }));
 
 jest.mock('better-auth/node', () => ({
-  fromNodeHeaders: jest.fn((headers) => headers),
+  fromNodeHeaders: jest.fn((headers: unknown): unknown => headers),
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';

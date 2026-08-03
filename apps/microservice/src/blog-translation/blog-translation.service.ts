@@ -57,10 +57,9 @@ export class BlogTranslationWorkerService {
     );
 
     if (!parsed) {
-      this.logger.error(
+      throw new Error(
         `Failed to parse Gemini translation response for post ${data.postId} → ${data.targetLocale}`,
       );
-      return;
     }
 
     await this.prisma.blogPostTranslation.upsert({

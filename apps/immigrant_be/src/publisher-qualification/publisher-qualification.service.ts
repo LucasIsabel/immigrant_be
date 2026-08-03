@@ -1,5 +1,5 @@
 // apps/immigrant_be/src/publisher-qualification/publisher-qualification.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EmailService, buildApprovalEmail } from '@app/email';
 import { env } from '@app/config';
 import { PublisherQualificationRepository } from './publisher-qualification.repository';
@@ -34,6 +34,8 @@ type QualWithBusiness = NonNullable<
 
 @Injectable()
 export class PublisherQualificationService {
+  private readonly logger = new Logger(PublisherQualificationService.name);
+
   constructor(
     private readonly repository: PublisherQualificationRepository,
     private readonly emailService: EmailService,
@@ -250,7 +252,11 @@ export class PublisherQualificationService {
     >;
     try {
       approved = await this.repository.approvePendingPage(businessPageId);
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Auto-approval failed for business page ${businessPageId}; it stays in PENDING_REVIEW for manual moderation`,
+        error instanceof Error ? error.stack : undefined,
+      );
       return;
     }
     if (!approved) return; // page was already processed (race condition)
@@ -266,8 +272,13 @@ export class PublisherQualificationService {
         subject,
         html,
       });
-    } catch {
+    } catch (error) {
       // email failure must not block auto-approval
+      this.logger.warn(
+        `Approval email failed for business page ${businessPageId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 }

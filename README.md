@@ -1,98 +1,94 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Aloravia — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API e workers da [Aloravia](https://aloravia.com), plataforma que acompanha o
+imigrante da descoberta de uma cidade até o plano de imigração.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+O frontend fica em [`immigrant_fe`](../immigrant_fe) (Next.js).
 
-## Description
+## O que o backend faz
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Matching de imigração** — o questionário vira um prompt, o Gemini devolve
+  países compatíveis, e o resultado é cacheado por similaridade semântica
+  (pgvector) para não repetir chamadas ao modelo.
+- **Planos de visto** — tipo de visto recomendado por país e checklist de
+  etapas, com progresso por usuário.
+- **My City** — negócios cadastrados por imigrantes (restaurantes, guias,
+  serviços), busca geográfica por raio, páginas públicas com moderação humana
+  e triagem por IA, e qualificação de publisher (quem já tem histórico
+  aprovado publica sem revisão).
+- **Blog** — pipeline automática: um cron por país busca o Google News, o
+  Gemini escreve o post como rascunho, outra fila gera a imagem de capa, o
+  admin aprova e um cron diário traduz para EN e ES.
 
-## Project setup
+## Estrutura
 
-```bash
-$ pnpm install
+Monorepo NestJS com duas aplicações e bibliotecas compartilhadas:
+
+```text
+apps/immigrant_be/   API HTTP (prefixo /api/v1, Swagger em /api/v1/docs)
+apps/microservice/   Workers BullMQ (sem porta; consome as filas)
+libs/config/         env (Zod), better-auth, config do BullMQ
+libs/database/       PrismaService
+libs/ai/             Gemini: cliente base, prompts e schemas Zod
+libs/email/          Resend + templates
+libs/storage/        Cloudflare R2
 ```
 
-## Compile and run the project
+Detalhes em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Como rodar
+
+Requisitos: Node 22+, pnpm 9 e Docker.
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker compose up -d          # Postgres (pgvector) na 5434 + Redis na 6379
+pnpm install
+npx prisma migrate deploy
+pnpm seed:admin               # cria o usuário admin
+pnpm start                    # sobe API e worker juntos
 ```
 
-## Run tests
+### Variáveis de ambiente
 
-```bash
-# unit tests
-$ pnpm run test
+Validadas por Zod em `libs/config/src/env.ts` — a aplicação não sobe se
+faltar alguma.
 
-# e2e tests
-$ pnpm run test:e2e
+**Obrigatórias:** `DATABASE_URL`, `REDIS_URL`, `PRIVATE_KEY`,
+`GEMINI_API_KEY`, `PORT_IMMIGRANT`, `RESEND_API_KEY`, `FRONTEND_URL` e as
+`CLOUDFLARE_R2_*` / `CLOUDFLARE_ENDPOINT`.
 
-# test coverage
-$ pnpm run test:cov
-```
+**Com default ou opcionais:** `NODE_ENV`, `PORT_MICROSERVICE`,
+`CORS_ORIGINS`, `EMAIL_FROM`, `COOKIE_DOMAIN` (necessária para compartilhar o
+cookie de sessão entre subdomínios em produção).
 
-## Deployment
+## Scripts
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Comando | O que faz |
+| --- | --- |
+| `pnpm start` | API + worker |
+| `pnpm dev` | API em watch mode |
+| `pnpm test` | Testes unitários |
+| `pnpm test:e2e` | Testes end-to-end |
+| `pnpm lint` | ESLint com `--fix` |
+| `pnpm lint:ci` | ESLint em modo verificação (usado no CI) |
+| `pnpm build` | Build de produção |
+| `pnpm seed:admin` | Cria o usuário administrador |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Filas
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+Todas herdam `DEFAULT_JOB_OPTIONS` (`libs/config/src/constants.ts`): 3
+tentativas com backoff exponencial de 30s. Esgotadas as tentativas, o consumer
+emite um evento SSE com sufixo `_failed`, que o frontend mostra como toast de
+erro.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+| Fila | Jobs |
+| --- | --- |
+| `ai_blog_queue` | `generate_ai_blog_post` (aceita cron) |
+| `ai_blog_image_queue` | `generate_ai_blog_image`, `refine_ai_blog_post` |
+| `ai_image_queue` | `generate_ai_image` |
+| `blog_translation_queue` | `translate_blog_post`, `translate_all_pending` |
 
-## Resources
+## Deploy
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Coolify, a partir do `Dockerfile` (multi-stage, Node 22). O
+`scripts/start.sh` sobe API e worker no mesmo container.

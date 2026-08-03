@@ -8,6 +8,8 @@ export interface GenerateAiImageJobData {
   prompt: string;
   folder: string;
   isPublic: boolean;
+  /** User who triggered generation (for SSE notification) */
+  requestedByUserId?: string;
 }
 
 @Injectable()
@@ -31,45 +33,39 @@ export class AiImageWorkerService {
     const imageBuffer = await this.gemini.generateImage(prompt);
 
     if (!imageBuffer) {
-      await this.prisma.aiGeneratedImage.update({
-        where: { id: imageId },
-        data: {
-          status: 'failed',
-          errorMessage: 'Gemini não retornou imagem',
-        },
-      });
-      this.logger.warn(`No image returned for ${imageId}`);
-      return;
+      throw new Error(`Gemini não retornou imagem para ${imageId}`);
     }
 
-    try {
-      const filename = `ai-${imageId}.png`;
-      const { url, key } = await this.storage.uploadFile(
-        imageBuffer,
-        filename,
-        'image/png',
-        folder,
-      );
+    const filename = `ai-${imageId}.png`;
+    const { url, key } = await this.storage.uploadFile(
+      imageBuffer,
+      filename,
+      'image/png',
+      folder,
+    );
 
-      await this.prisma.aiGeneratedImage.update({
-        where: { id: imageId },
-        data: {
-          status: 'completed',
-          url,
-          key,
-          mimeType: 'image/png',
-        },
-      });
+    await this.prisma.aiGeneratedImage.update({
+      where: { id: imageId },
+      data: {
+        status: 'completed',
+        url,
+        key,
+        mimeType: 'image/png',
+      },
+    });
 
-      this.logger.log(`AI image completed: ${imageId} -> ${url}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Upload failed';
-      await this.prisma.aiGeneratedImage.update({
-        where: { id: imageId },
-        data: { status: 'failed', errorMessage: message },
-      });
-      this.logger.error(`AI image failed ${imageId}: ${message}`);
-      throw error;
-    }
+    this.logger.log(`AI image completed: ${imageId} -> ${url}`);
+  }
+
+  /**
+   * Persists the terminal failure state. Called by the consumer only after
+   * BullMQ exhausts the retries, so a row is never shown as failed while an
+   * attempt is still pending.
+   */
+  async markFailed(imageId: string, message: string): Promise<void> {
+    await this.prisma.aiGeneratedImage.update({
+      where: { id: imageId },
+      data: { status: 'failed', errorMessage: message },
+    });
   }
 }
