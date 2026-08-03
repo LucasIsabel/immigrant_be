@@ -56,16 +56,26 @@
 
 ## Gestão de Tarefas — GitHub Projects
 
-- O board deste repositório é **Aloravia BE**: https://github.com/users/LucasIsabel/projects/3
-  (o frontend `immigrant_fe` usa o **Aloravia FE**: https://github.com/users/LucasIsabel/projects/2).
+- O board deste repositório é **Aloravia BE**: <https://github.com/users/LucasIsabel/projects/3>
+  (o frontend `immigrant_fe` usa o **Aloravia FE**: <https://github.com/users/LucasIsabel/projects/2>).
 - **O ClickUp está descontinuado desde 2026-08-03.** Não crie, atualize nem consulte tasks no
   ClickUp para este projeto — o GitHub Projects é a única fonte de verdade.
 - Toda operação no board (criar item, mover coluna, atualizar status/prioridade/datas, gerar
   relatório) passa pelo skill `/github-board`. Não opere o board direto via `gh` nem pelo
   navegador na sessão principal.
+- Os itens do board são **issues reais** do repo (não draft issues) — foi assim que o fluxo
+  ficou automático. Item novo deve nascer como issue, não como draft.
 - Fluxo padrão de uma task: o card nasce em `Backlog`/`Ready` → `In progress` ao começar →
-  **`In review` assim que o PR for aberto**, com o link do PR registrado no item → `Done` no
-  merge. Se a task ainda não existe no board, crie o item antes de abrir o PR.
+  **`In review` assim que o PR for aberto** → `Done` **automaticamente** no merge. Se a task
+  ainda não existe no board, crie o item antes de abrir o PR.
+- O `Done` automático depende de duas coisas: o corpo do PR citar `Closes #N` — **uma keyword
+  por issue**, uma por linha (`Closes #15` / `Closes #16`; `Closes #15 #16` fecha só a
+  primeira) — e o workflow nativo "Item closed → Done" do project estar ligado. Confirme os
+  vínculos depois de abrir o PR com
+  `gh api graphql -f query='{repository(owner:"LucasIsabel",name:"immigrant_be"){pullRequest(number:N){closingIssuesReferences(first:10){nodes{number}}}}}'`.
+- `gh pr edit` está quebrado nestes repos (a query inclui `projectCards`, da API Projects
+  classic descontinuada). Para editar o corpo de um PR use
+  `gh api -X PATCH repos/LucasIsabel/immigrant_be/pulls/N -F body=@arquivo.md`.
 - Colunas do board: `Backlog` → `Ready` → `In progress` → `In review` → `Done`.
 
 ## Core Principles
