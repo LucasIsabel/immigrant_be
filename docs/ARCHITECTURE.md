@@ -279,6 +279,17 @@ pnpm prisma generate         # Regenerar client
 pnpm prisma db seed          # Popular dados iniciais
 ```
 
+### Seed de países — garantia de não-destrutividade
+
+`prisma/seeds/countries.seed.ts` reconcilia `immigration_visa_types` por
+`(country_id, category)`: atualiza a categoria existente **preservando o id**, cria a nova e
+apenas **reporta** (nunca apaga) a que existe no banco mas não está no seed.
+
+Isso não é preferência de estilo, é requisito: `visa_steps.visa_type_id` tem
+`ON DELETE CASCADE` e `plans.selected_visa_type_id` tem `ON DELETE SET NULL`. Apagar um tipo de
+visto destrói os steps associados e desvincula o plano do usuário. Remoção de categoria obsoleta
+deve ser uma decisão humana explícita, nunca efeito colateral de rodar o seed.
+
 ---
 
 ## 6. Integração com IA (Google Gemini)

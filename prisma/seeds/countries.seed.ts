@@ -659,6 +659,16 @@ export async function seedCountries() {
           description:
             'Schengen visa normalmente decidido em até 15 dias, conforme Migration Agency e consulados suecos.',
         },
+        {
+          language: 'en',
+          description:
+            'Schengen visas are normally decided within 15 days, according to the Swedish Migration Agency and Swedish consulates.',
+        },
+        {
+          language: 'es',
+          description:
+            'Los visados Schengen suelen resolverse en un plazo de 15 días, según la Agencia Sueca de Migración y los consulados suecos.',
+        },
       ],
       immigration_visa_types: [
         {
@@ -1470,18 +1480,952 @@ export async function seedCountries() {
         },
       ],
     },
+    {
+      name: 'Portugal',
+      flag: '🇵🇹',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'D7 Passive Income Visa',
+        'D8 Digital Nomad Visa',
+        'Work Visa (D1/D3)',
+        'Student Visa (D4)',
+      ],
+      processing_time: '60–90 days',
+      investment_required:
+        'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+      language_requirement: 'Portuguese (A2 required for citizenship)',
+      job_market: 'Moderate',
+      benefits: [
+        'Path to citizenship after 5 years',
+        'Affordable cost of living within the EU',
+        'CPLP agreement eases entry for Portuguese-speaking nationals',
+        'Mild climate and high safety',
+      ],
+      challenges: [
+        'AIMA backlogs and long appointment queues',
+        'Pressured housing market in Lisbon and Porto',
+        'Low local salaries',
+      ],
+      popular_cities: ['Lisboa', 'Porto', 'Braga', 'Faro'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'Portugal oferece vistos de residência D1 a D8, incluindo o D7 para renda passiva e o D8 para nômades digitais, com caminho para cidadania em 5 anos.',
+        },
+        {
+          language: 'en',
+          description:
+            'Portugal offers D1 to D8 residence visas, including the D7 for passive income and the D8 for digital nomads, with a path to citizenship after 5 years.',
+        },
+        {
+          language: 'es',
+          description:
+            'Portugal ofrece visados de residencia D1 a D8, incluido el D7 para rentas pasivas y el D8 para nómadas digitales, con vía a la ciudadanía a los 5 años.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism, business or family visits.',
+          source: 'https://vistos.mne.gov.pt/',
+        },
+        {
+          category: 'Temporary Stay Visa',
+          description:
+            'Visa for stays longer than 90 days but under one year, covering remote work, medical treatment and seasonal work.',
+          source: 'https://vistos.mne.gov.pt/',
+        },
+        {
+          category: 'Residence Visa (Type D)',
+          description:
+            'Long-term visa for work (D1/D3), entrepreneurship (D2), study (D4), family reunification and passive income (D7).',
+          source: 'https://aima.gov.pt/',
+        },
+        {
+          category: 'Permanent Residence / Long-Term Resident',
+          description:
+            'Available after five years of legal residence, granting stable residence rights and access to citizenship.',
+          source: 'https://aima.gov.pt/',
+        },
+      ],
+    },
+    {
+      name: 'Mexico',
+      flag: '🇲🇽',
+      region: 'North America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Temporary Resident Visa',
+        'Permanent Resident Visa',
+        'Visitor Visa (FMM)',
+        'Work Visa with job offer',
+      ],
+      processing_time: '10–30 days',
+      investment_required:
+        'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+      language_requirement: 'Spanish (basic)',
+      job_market: 'Moderate',
+      benefits: [
+        'Low cost of living',
+        'Proximity and time-zone overlap with the United States',
+        'Accessible temporary residency requirements',
+        'Large established expat and digital nomad community',
+      ],
+      challenges: [
+        'Security varies considerably by region',
+        'INM bureaucracy and inconsistent consulate criteria',
+        'Large informal labour market',
+      ],
+      popular_cities: [
+        'Ciudad de México',
+        'Guadalajara',
+        'Mérida',
+        'Playa del Carmen',
+      ],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'O México oferece residência temporária e permanente com requisitos de renda acessíveis, sendo um dos principais destinos de nômades digitais das Américas.',
+        },
+        {
+          language: 'en',
+          description:
+            'Mexico offers temporary and permanent residency with accessible income requirements, and is one of the main digital nomad destinations in the Americas.',
+        },
+        {
+          language: 'es',
+          description:
+            'México ofrece residencia temporal y permanente con requisitos de ingresos accesibles, y es uno de los principales destinos de nómadas digitales de América.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Visa (Visitante / FMM)',
+          description:
+            'Short-term entry for tourism or business for up to 180 days, without permission to work locally.',
+          source: 'https://www.gob.mx/inm',
+        },
+        {
+          category: 'Temporary Resident Visa (Residente Temporal)',
+          description:
+            'Residency from one to four years based on income, savings, family ties or a job offer.',
+          source: 'https://www.gob.mx/inm',
+        },
+        {
+          category: 'Permanent Resident Visa (Residente Permanente)',
+          description:
+            'Indefinite residency with work rights, reached by income, retirement, family ties or after four years as a temporary resident.',
+          source: 'https://www.gob.mx/inm',
+        },
+      ],
+    },
+    {
+      name: 'Norway',
+      flag: '🇳🇴',
+      region: 'Europe',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Skilled Worker Residence Permit',
+        'Job Seeker Visa',
+        'Student Residence Permit',
+        'Family Immigration',
+      ],
+      processing_time: '1–4 months',
+      investment_required:
+        'Skilled worker: salary matching Norwegian collective agreement levels',
+      language_requirement: 'Norwegian (B1 for permanent residence)',
+      job_market: 'Strong',
+      benefits: [
+        'High salaries and strong worker protections',
+        'Comprehensive welfare state',
+        'Strong work-life balance',
+        'Outstanding natural environment',
+      ],
+      challenges: [
+        'Very high cost of living',
+        'Difficult language for newcomers',
+        'Long, dark winters',
+      ],
+      popular_cities: ['Oslo', 'Bergen', 'Trondheim', 'Stavanger'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Noruega concede autorizações de residência para trabalhadores qualificados, estudantes e reunificação familiar, com salários altos e forte proteção social.',
+        },
+        {
+          language: 'en',
+          description:
+            'Norway grants residence permits for skilled workers, students and family reunification, with high salaries and strong social protection.',
+        },
+        {
+          language: 'es',
+          description:
+            'Noruega concede permisos de residencia para trabajadores cualificados, estudiantes y reagrupación familiar, con salarios altos y fuerte protección social.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://www.udi.no/en/',
+        },
+        {
+          category: 'Residence Permit for Skilled Workers',
+          description:
+            'Permit for qualified professionals with a concrete job offer meeting Norwegian pay and qualification standards.',
+          source: 'https://www.udi.no/en/',
+        },
+        {
+          category: 'Student Residence Permit',
+          description:
+            'Permit for full-time studies at an accredited Norwegian institution, with limited work rights.',
+          source: 'https://www.udi.no/en/',
+        },
+        {
+          category: 'Permanent Residence Permit',
+          description:
+            'Available after three years of continuous residence, subject to language and social studies requirements.',
+          source: 'https://www.udi.no/en/',
+        },
+      ],
+    },
+    {
+      name: 'Denmark',
+      flag: '🇩🇰',
+      region: 'Europe',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Pay Limit Scheme',
+        'Positive List Scheme',
+        'Student Residence Permit',
+        'Family Reunification',
+      ],
+      processing_time: '1–3 months',
+      investment_required:
+        'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+      language_requirement: 'Danish (required for permanent residence)',
+      job_market: 'Strong',
+      benefits: [
+        'Free education and healthcare',
+        'Consistently high quality of life',
+        'Short working week and strong labour rights',
+        'Efficient digital public services',
+      ],
+      challenges: [
+        'High income tax burden',
+        'Restrictive immigration rules',
+        'Social integration can be slow for newcomers',
+      ],
+      popular_cities: ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Dinamarca concede residência principalmente por vias de trabalho qualificado, como o Pay Limit Scheme e a Positive List, além de estudo e reunificação familiar.',
+        },
+        {
+          language: 'en',
+          description:
+            'Denmark grants residence mainly through skilled work routes such as the Pay Limit Scheme and the Positive List, alongside study and family reunification.',
+        },
+        {
+          language: 'es',
+          description:
+            'Dinamarca concede residencia principalmente por vías de trabajo cualificado, como el Pay Limit Scheme y la Positive List, además de estudio y reagrupación familiar.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://www.nyidanmark.dk/en-GB',
+        },
+        {
+          category: 'Work Residence Permit (Pay Limit / Positive List)',
+          description:
+            'Permit for professionals with a job offer meeting the salary threshold or in a shortage occupation.',
+          source: 'https://www.nyidanmark.dk/en-GB',
+        },
+        {
+          category: 'Student Residence Permit',
+          description:
+            'Permit for higher education at an accredited Danish institution, with limited work rights.',
+          source: 'https://www.nyidanmark.dk/en-GB',
+        },
+        {
+          category: 'Permanent Residence Permit',
+          description:
+            'Available after several years of lawful residence, subject to employment, language and civic requirements.',
+          source: 'https://www.nyidanmark.dk/en-GB',
+        },
+      ],
+    },
+    {
+      name: 'Belgium',
+      flag: '🇧🇪',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Single Permit (work and residence)',
+        'EU Blue Card',
+        'Student Visa',
+        'Family Reunification',
+      ],
+      processing_time: '2–4 months',
+      investment_required:
+        'Single Permit: employment contract meeting the salary threshold of the relevant region',
+      language_requirement: 'Dutch, French or German depending on the region',
+      job_market: 'Strong',
+      benefits: [
+        'Hosts the main EU institutions and international organisations',
+        'Central location within Western Europe',
+        'High-quality healthcare system',
+        'Multilingual working environment',
+      ],
+      challenges: [
+        'High tax burden',
+        'Administrative complexity split across regions',
+        'Grey and rainy climate',
+      ],
+      popular_cities: ['Brussels', 'Antwerp', 'Ghent', 'Leuven'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Bélgica concentra as instituições da UE e concede residência principalmente pelo Single Permit, que reúne autorização de trabalho e residência num só pedido.',
+        },
+        {
+          language: 'en',
+          description:
+            'Belgium hosts the main EU institutions and grants residence mainly through the Single Permit, which combines work and residence authorisation in one application.',
+        },
+        {
+          language: 'es',
+          description:
+            'Bélgica concentra las instituciones de la UE y concede residencia principalmente mediante el Single Permit, que reúne autorización de trabajo y residencia en una sola solicitud.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism, business or family visits.',
+          source: 'https://dofi.ibz.be/en',
+        },
+        {
+          category: 'Long-Stay Visa (Type D) / Single Permit',
+          description:
+            'Combined work and residence authorisation for stays over 90 days, issued by the region where the employer is based.',
+          source: 'https://dofi.ibz.be/en',
+        },
+        {
+          category: 'EU Blue Card',
+          description:
+            'Permit for highly qualified workers with a higher education degree and a salary above the regional threshold.',
+          source: 'https://dofi.ibz.be/en',
+        },
+        {
+          category: 'Permanent Residence / EU Long-Term Resident',
+          description:
+            'Available after five years of continuous lawful residence in Belgium.',
+          source: 'https://dofi.ibz.be/en',
+        },
+      ],
+    },
+    {
+      name: 'Czechia',
+      flag: '🇨🇿',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Employee Card',
+        'EU Blue Card',
+        'Long-Term Business Visa (Živnostenské oprávnění)',
+        'Student Long-Term Visa',
+      ],
+      processing_time: '60–90 days',
+      investment_required:
+        'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+      language_requirement: 'Czech (A2 for permanent residence)',
+      job_market: 'Strong',
+      benefits: [
+        'Low cost of living for an EU member state',
+        'Consistently low unemployment',
+        'Central location with easy travel across Europe',
+        'Accessible freelance (živno) route',
+      ],
+      challenges: [
+        'Czech is a demanding language to learn',
+        'Slow and paperwork-heavy administration',
+        'Language barrier outside Prague',
+      ],
+      popular_cities: ['Prague', 'Brno', 'Ostrava', 'Plzeň'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Chéquia oferece o Employee Card para trabalho, o Cartão Azul da UE para qualificados e o visto de longa duração para autônomos, com custo de vida baixo para a UE.',
+        },
+        {
+          language: 'en',
+          description:
+            'Czechia offers the Employee Card for work, the EU Blue Card for highly qualified professionals and a long-term visa for freelancers, with a low cost of living for the EU.',
+        },
+        {
+          language: 'es',
+          description:
+            'Chequia ofrece la Employee Card para trabajo, la Tarjeta Azul de la UE para cualificados y el visado de larga duración para autónomos, con bajo coste de vida para la UE.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://ipc.gov.cz/en/',
+        },
+        {
+          category: 'Long-Term Visa / Employee Card',
+          description:
+            'Combined work and residence permit tied to a specific position registered in the central vacancy database.',
+          source: 'https://ipc.gov.cz/en/',
+        },
+        {
+          category: 'Long-Term Business Visa (Trade Licence)',
+          description:
+            'Long-term visa for self-employed activity carried out under a Czech trade licence.',
+          source: 'https://ipc.gov.cz/en/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Available after five years of continuous residence, subject to a Czech language examination.',
+          source: 'https://ipc.gov.cz/en/',
+        },
+      ],
+    },
+    {
+      name: 'Greece',
+      flag: '🇬🇷',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Golden Visa (real estate)',
+        'Digital Nomad Visa',
+        'Financially Independent Person Visa',
+        'Work Visa',
+      ],
+      processing_time: '2–6 months',
+      investment_required:
+        'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+      language_requirement: 'Greek (basic; B1 for citizenship)',
+      job_market: 'Weak',
+      benefits: [
+        'One of the more accessible Golden Visa programmes in the EU',
+        'Mediterranean climate',
+        'Low cost of living relative to Western Europe',
+        'No minimum stay requirement for the Golden Visa',
+      ],
+      challenges: [
+        'Weak local labour market and low wages',
+        'Slow bureaucracy',
+        'Economy still recovering from the debt crisis',
+      ],
+      popular_cities: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Grécia tem um dos Golden Visas mais acessíveis da UE, além de vistos para nômades digitais e pessoas financeiramente independentes.',
+        },
+        {
+          language: 'en',
+          description:
+            'Greece runs one of the more accessible Golden Visa programmes in the EU, alongside visas for digital nomads and financially independent people.',
+        },
+        {
+          language: 'es',
+          description:
+            'Grecia tiene uno de los Golden Visa más accesibles de la UE, además de visados para nómadas digitales y personas económicamente independientes.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://www.mfa.gr/en/visas/',
+        },
+        {
+          category: 'National Visa (Type D)',
+          description:
+            'Long-stay visa for work, study, family reunification or financially independent residence.',
+          source: 'https://www.mfa.gr/en/visas/',
+        },
+        {
+          category: 'Residence Permit for Investors (Golden Visa)',
+          description:
+            'Renewable five-year residence permit granted through qualifying real estate or capital investment.',
+          source: 'https://www.mfa.gr/en/visas/',
+        },
+        {
+          category: 'Long-Term Resident Status',
+          description:
+            'Available after five years of legal residence, subject to income and integration requirements.',
+          source: 'https://www.mfa.gr/en/visas/',
+        },
+      ],
+    },
+    {
+      name: 'Thailand',
+      flag: '🇹🇭',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Long-Term Resident (LTR) Visa',
+        'Destination Thailand Visa (DTV)',
+        'Non-Immigrant B (work)',
+        'Thailand Privilege (Elite) Visa',
+      ],
+      processing_time: '15–60 days',
+      investment_required:
+        'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+      language_requirement: 'Thai (not required for most visa routes)',
+      job_market: 'Moderate',
+      benefits: [
+        'Low cost of living with high quality of life',
+        'LTR visa valid for up to 10 years',
+        'Strong infrastructure for foreign residents',
+        'Affordable and high-standard private healthcare',
+      ],
+      challenges: [
+        'Permanent residence is highly restricted and rarely granted',
+        'Many occupations are legally reserved for Thai nationals',
+        'Frequent reporting and renewal obligations',
+      ],
+      popular_cities: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Tailândia oferece o visto LTR de até 10 anos, o DTV para trabalho remoto e o Privilege Visa por adesão, mas a residência permanente é bastante restrita.',
+        },
+        {
+          language: 'en',
+          description:
+            'Thailand offers the LTR visa valid for up to 10 years, the DTV for remote work and the membership-based Privilege Visa, though permanent residence remains highly restricted.',
+        },
+        {
+          language: 'es',
+          description:
+            'Tailandia ofrece el visado LTR de hasta 10 años, el DTV para trabajo remoto y el Privilege Visa por membresía, aunque la residencia permanente es muy restringida.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / Visa Exemption',
+          description:
+            'Short-term entry for tourism, with duration depending on nationality and entry route.',
+          source: 'https://www.immigration.go.th/',
+        },
+        {
+          category: 'Non-Immigrant Visa (B, O, ED)',
+          description:
+            'Category covering employment (B), family or retirement (O) and study (ED), normally issued for 90 days and extended in country.',
+          source: 'https://www.immigration.go.th/',
+        },
+        {
+          category: 'Long-Term Resident (LTR) Visa',
+          description:
+            'Ten-year visa for wealthy global citizens, pensioners, remote professionals and highly skilled specialists.',
+          source: 'https://ltr.boi.go.th/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Granted under an annual national quota after several consecutive years on qualifying extensions of stay.',
+          source: 'https://www.immigration.go.th/',
+        },
+      ],
+    },
+    {
+      name: 'Brazil',
+      flag: '🇧🇷',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'VITEM XIV Digital Nomad Visa',
+        'VITEM V Work Visa',
+        'VITEM IV Student Visa',
+        'Mercosur Residence Agreement',
+      ],
+      processing_time: '30–90 days',
+      investment_required:
+        'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
+      language_requirement: 'Portuguese (basic)',
+      job_market: 'Moderate',
+      benefits: [
+        'Simplified residence for Mercosur nationals',
+        'Low cost of living outside the main capitals',
+        'Naturalisation possible after four years of residence',
+        'Universal public healthcare system (SUS)',
+      ],
+      challenges: [
+        'Heavy and document-intensive bureaucracy',
+        'Security varies sharply by city and neighbourhood',
+        'Pronounced regional inequality',
+      ],
+      popular_cities: [
+        'São Paulo',
+        'Rio de Janeiro',
+        'Florianópolis',
+        'Curitiba',
+      ],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'O Brasil oferece residência facilitada para nacionais do Mercosul, além do visto de nômade digital VITEM XIV e naturalização possível após quatro anos.',
+        },
+        {
+          language: 'en',
+          description:
+            'Brazil offers simplified residence for Mercosur nationals, the VITEM XIV digital nomad visa, and naturalisation after four years of residence.',
+        },
+        {
+          language: 'es',
+          description:
+            'Brasil ofrece residencia simplificada para nacionales del Mercosur, el visado de nómada digital VITEM XIV y naturalización tras cuatro años de residencia.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Visa (VIVIS)',
+          description:
+            'Short-stay visa for tourism, business or transit, with no local work rights.',
+          source: 'https://www.gov.br/mre/pt-br',
+        },
+        {
+          category: 'Temporary Visa (VITEM)',
+          description:
+            'Category covering work (V), study (IV), family reunion (XI) and remote work (XIV), granted for a defined period.',
+          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+        },
+        {
+          category: 'Mercosur Residence',
+          description:
+            'Residence granted to nationals of Mercosur member and associated states under the regional residence agreement.',
+          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted through family ties, investment, retirement or conversion from temporary residence.',
+          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+        },
+      ],
+    },
+    {
+      name: 'Uruguay',
+      flag: '🇺🇾',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Mercosur Residence',
+        'Permanent Residence',
+        'Temporary Residence',
+        'Digital Nomad Permit',
+      ],
+      processing_time: '3–8 months',
+      investment_required:
+        'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+      language_requirement: 'Spanish (basic)',
+      job_market: 'Moderate',
+      benefits: [
+        'Strong political and institutional stability',
+        'Direct path to permanent residence for Mercosur nationals',
+        'Comparatively high safety for the region',
+        'Territorial tax treatment for new residents',
+      ],
+      challenges: [
+        'High cost of living by regional standards',
+        'Small domestic market limits job opportunities',
+        'Residence processing can be slow',
+      ],
+      popular_cities: [
+        'Montevideo',
+        'Punta del Este',
+        'Colonia del Sacramento',
+        'Salto',
+      ],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'O Uruguai concede residência permanente direta a nacionais do Mercosul e residência por renda comprovada, com forte estabilidade institucional.',
+        },
+        {
+          language: 'en',
+          description:
+            'Uruguay grants direct permanent residence to Mercosur nationals and residence based on proven income, backed by strong institutional stability.',
+        },
+        {
+          language: 'es',
+          description:
+            'Uruguay concede residencia permanente directa a nacionales del Mercosur y residencia por ingresos acreditados, con fuerte estabilidad institucional.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, generally up to 90 days and extendable once.',
+          source: 'https://www.gub.uy/ministerio-relaciones-exteriores/',
+        },
+        {
+          category: 'Temporary Residence',
+          description:
+            'Residence for a defined period based on work, study, research or scientific activity.',
+          source: 'https://www.gub.uy/ministerio-relaciones-exteriores/',
+        },
+        {
+          category: 'Mercosur Residence',
+          description:
+            'Simplified residence for nationals of Mercosur member and associated states, convertible to permanent status.',
+          source: 'https://www.gub.uy/ministerio-relaciones-exteriores/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted through family ties, proven income or conversion from temporary residence.',
+          source: 'https://www.gub.uy/ministerio-relaciones-exteriores/',
+        },
+      ],
+    },
+    {
+      name: 'Panama',
+      flag: '🇵🇦',
+      region: 'North America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Friendly Nations Visa',
+        'Pensionado (Retiree) Visa',
+        'Qualified Investor Visa',
+        'Short Stay Remote Worker Visa',
+      ],
+      processing_time: '3–6 months',
+      investment_required:
+        'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+      language_requirement: 'Spanish (basic)',
+      job_market: 'Moderate',
+      benefits: [
+        'Territorial tax system — foreign income is not taxed locally',
+        'US dollar used as legal tender',
+        'Pensionado programme with wide statutory discounts',
+        'Regional logistics and banking hub',
+      ],
+      challenges: [
+        'Applications legally require a local lawyer',
+        'High cost of living in Panama City',
+        'Marked inequality outside the capital',
+      ],
+      popular_cities: ['Panama City', 'Boquete', 'Coronado', 'David'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'O Panamá oferece o Friendly Nations Visa, o programa Pensionado para aposentados e tributação territorial, com o dólar americano como moeda oficial.',
+        },
+        {
+          language: 'en',
+          description:
+            'Panama offers the Friendly Nations Visa, the Pensionado programme for retirees and territorial taxation, with the US dollar as legal tender.',
+        },
+        {
+          language: 'es',
+          description:
+            'Panamá ofrece el Friendly Nations Visa, el programa Pensionado para jubilados y tributación territorial, con el dólar estadounidense como moneda de curso legal.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, with duration depending on nationality.',
+          source: 'https://www.migracion.gob.pa/',
+        },
+        {
+          category: 'Friendly Nations Visa',
+          description:
+            'Temporary residence for nationals of listed countries, based on a job offer or economic activity in Panama, convertible to permanent residence.',
+          source: 'https://www.migracion.gob.pa/',
+        },
+        {
+          category: 'Pensionado (Retiree) Visa',
+          description:
+            'Permanent residence for retirees with a guaranteed lifetime pension, granting access to statutory discounts.',
+          source: 'https://www.migracion.gob.pa/',
+        },
+        {
+          category: 'Qualified Investor Visa',
+          description:
+            'Permanent residence granted through qualifying investment in real estate, securities or a fixed-term deposit.',
+          source: 'https://www.migracion.gob.pa/',
+        },
+      ],
+    },
+    {
+      name: 'Costa Rica',
+      flag: '🇨🇷',
+      region: 'North America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Rentista Visa',
+        'Pensionado Visa',
+        'Digital Nomad Visa',
+        'Inversionista Visa',
+      ],
+      processing_time: '3–9 months',
+      investment_required:
+        'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+      language_requirement: 'Spanish (basic)',
+      job_market: 'Weak',
+      benefits: [
+        'Long-standing political stability and no standing army',
+        'Outstanding biodiversity and natural environment',
+        'Public healthcare system (CCSS) open to legal residents',
+        'Established digital nomad legislation',
+      ],
+      challenges: [
+        'High cost of living by regional standards',
+        'Local labour market largely closed to foreign residents',
+        'Slow immigration processing times',
+      ],
+      popular_cities: ['San José', 'Escazú', 'Tamarindo', 'Atenas'],
+      created_at: '2026-08-04T00:00:00Z',
+      updated_at: '2026-08-04T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      descriptions: [
+        {
+          language: 'pt',
+          description:
+            'A Costa Rica oferece as vias Rentista, Pensionado e Inversionista, além de visto específico para nômades digitais, com forte estabilidade política.',
+        },
+        {
+          language: 'en',
+          description:
+            'Costa Rica offers the Rentista, Pensionado and Inversionista routes, plus a dedicated digital nomad visa, backed by long-standing political stability.',
+        },
+        {
+          language: 'es',
+          description:
+            'Costa Rica ofrece las vías Rentista, Pensionado e Inversionista, además de un visado específico para nómadas digitales, con fuerte estabilidad política.',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, with the authorised period set by the immigration officer on arrival.',
+          source: 'https://www.migracion.go.cr/',
+        },
+        {
+          category: 'Temporary Residence (Rentista / Inversionista)',
+          description:
+            'Two-year renewable residence based on guaranteed income or qualifying investment in the country.',
+          source: 'https://www.migracion.go.cr/',
+        },
+        {
+          category: 'Digital Nomad Visa',
+          description:
+            'One-year renewable stay for remote workers earning income from outside Costa Rica.',
+          source: 'https://www.migracion.go.cr/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Available after three years of temporary residence, or immediately through first-degree family ties to a Costa Rican citizen.',
+          source: 'https://www.migracion.go.cr/',
+        },
+      ],
+    },
   ];
 
   for (const countryData of countries) {
     const { descriptions, immigration_visa_types, ...countryInfo } =
       countryData;
 
-    // Ensure background_image is always present
+    // `background_image` is NOT NULL but may legitimately be an empty string
+    // while the artwork has not been uploaded to R2 yet. Do not substitute a
+    // placeholder here: the frontend already guards on the empty value, and a
+    // fake URL would hide which countries are still missing their image.
     const countryDataWithImage = {
       ...countryInfo,
-      background_image:
-        countryInfo.background_image ||
-        'https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?w=800&h=600&fit=crop',
+      background_image: countryInfo.background_image ?? '',
     };
 
     const country = await prisma.country.upsert({
@@ -1512,21 +2456,52 @@ export async function seedCountries() {
     }
 
     if (immigration_visa_types) {
-      // Delete existing visa types for this country to avoid duplicates
-      await prisma.immigrationVisaType.deleteMany({
+      // Reconcile by (country_id, category) instead of wiping and recreating.
+      // Deleting a visa type cascades to visa_steps and sets plans.selected_visa_type_id
+      // to NULL, so re-running the seed used to destroy real user data.
+      const existingVisaTypes = await prisma.immigrationVisaType.findMany({
         where: { country_id: country.id },
       });
 
-      // Create new visa types
       for (const visaType of immigration_visa_types) {
-        await prisma.immigrationVisaType.create({
-          data: {
-            country_id: country.id,
-            category: visaType.category,
-            description: visaType.description,
-            source: visaType.source,
-          },
-        });
+        const match = existingVisaTypes.find(
+          (existing) => existing.category === visaType.category,
+        );
+
+        if (match) {
+          // Update in place so the id survives and dependent rows stay linked.
+          await prisma.immigrationVisaType.update({
+            where: { id: match.id },
+            data: {
+              description: visaType.description,
+              source: visaType.source,
+            },
+          });
+        } else {
+          await prisma.immigrationVisaType.create({
+            data: {
+              country_id: country.id,
+              category: visaType.category,
+              description: visaType.description,
+              source: visaType.source,
+            },
+          });
+        }
+      }
+
+      // Categories present in the database but absent from the seed are reported,
+      // never deleted: removing one would cascade into visa_steps and user plans.
+      const seededCategories = new Set(
+        immigration_visa_types.map((visaType) => visaType.category),
+      );
+      const staleVisaTypes = existingVisaTypes.filter(
+        (existing) => !seededCategories.has(existing.category),
+      );
+
+      for (const stale of staleVisaTypes) {
+        console.warn(
+          `[seed] ${country.name}: visa type "${stale.category}" (${stale.id}) exists in the database but not in the seed. Left untouched — delete it manually if it is really obsolete.`,
+        );
       }
     }
   }
