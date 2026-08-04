@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CountryDescriptionDto } from './country-description.dto';
+import { CountryTranslationDto } from './country-translation.dto';
 
 export class CountryDto {
   @ApiProperty({
@@ -52,50 +52,11 @@ export class CountryDto {
   visa_options: string[];
 
   @ApiProperty({
-    description: 'Average processing time for immigration applications',
-    example: '6-12 months',
-    type: String,
-  })
-  processing_time: string;
-
-  @ApiProperty({
-    description: 'Investment requirements for immigration',
-    example: '$50,000 CAD',
-    type: String,
-  })
-  investment_required: string;
-
-  @ApiProperty({
-    description: 'Language requirements for immigration',
-    example: 'English or French proficiency required',
-    type: String,
-  })
-  language_requirement: string;
-
-  @ApiProperty({
     description: 'Job market conditions and opportunities',
     example: 'Strong job market with high demand for skilled workers',
     type: String,
   })
   job_market: string;
-
-  @ApiProperty({
-    description: 'Benefits of immigrating to this country',
-    type: [String],
-    example: [
-      'Universal Healthcare',
-      'High Quality Education',
-      'Strong Economy',
-    ],
-  })
-  benefits: string[];
-
-  @ApiProperty({
-    description: 'Challenges when immigrating to this country',
-    type: [String],
-    example: ['Cold Weather', 'High Cost of Living', 'Competitive Job Market'],
-  })
-  challenges: string[];
 
   @ApiProperty({
     description: 'Popular cities for immigrants',
@@ -126,8 +87,8 @@ export class CountryDto {
   background_image: string;
 
   @ApiProperty({
-    description: 'Country descriptions in different languages',
-    type: [CountryDescriptionDto],
+    description: 'Country copy in each available language',
+    type: [CountryTranslationDto],
   })
-  descriptions: CountryDescriptionDto[];
+  translations: CountryTranslationDto[];
 }

@@ -66,36 +66,6 @@ export class UpdateCountryDto {
   visaOptions?: string[];
 
   @ApiProperty({
-    description: 'Tempo de processamento do visto',
-    example: '6-12 meses',
-    type: String,
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  processingTime?: string;
-
-  @ApiProperty({
-    description: 'Investimento necessário',
-    example: 'CAD 13,000 - 25,000',
-    type: String,
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  investmentRequired?: string;
-
-  @ApiProperty({
-    description: 'Requisitos de idioma',
-    example: 'IELTS 6.0 ou superior',
-    type: String,
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  languageRequirement?: string;
-
-  @ApiProperty({
     description: 'Mercado de trabalho',
     example: 'Fortalecimento em tecnologia e saúde',
     type: String,
@@ -104,32 +74,6 @@ export class UpdateCountryDto {
   @IsString()
   @IsOptional()
   jobMarket?: string;
-
-  @ApiProperty({
-    description: 'Benefícios de imigrar para este país',
-    example: [
-      'Sistema de saúde público',
-      'Educação gratuita',
-      'Segurança social',
-    ],
-    type: [String],
-    required: false,
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  benefits?: string[];
-
-  @ApiProperty({
-    description: 'Desafios de imigrar para este país',
-    example: ['Custo de vida alto', 'Clima rigoroso', 'Processo seletivo'],
-    type: [String],
-    required: false,
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  challenges?: string[];
 
   @ApiProperty({
     description: 'Cidades populares para imigrantes',

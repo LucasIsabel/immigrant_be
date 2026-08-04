@@ -58,33 +58,6 @@ export class CreateCountryDto {
   visa_options: string[];
 
   @ApiProperty({
-    description: 'Tempo de processamento do visto',
-    example: '6-12 meses',
-    type: String,
-  })
-  @IsString()
-  @IsNotEmpty()
-  processing_time: string;
-
-  @ApiProperty({
-    description: 'Investimento necessário',
-    example: 'CAD 13,000 - 25,000',
-    type: String,
-  })
-  @IsString()
-  @IsNotEmpty()
-  investment_required: string;
-
-  @ApiProperty({
-    description: 'Requisitos de idioma',
-    example: 'IELTS 6.0 ou superior',
-    type: String,
-  })
-  @IsString()
-  @IsNotEmpty()
-  language_requirement: string;
-
-  @ApiProperty({
     description: 'Mercado de trabalho',
     example: 'Fortalecimento em tecnologia e saúde',
     type: String,
@@ -92,28 +65,6 @@ export class CreateCountryDto {
   @IsString()
   @IsNotEmpty()
   job_market: string;
-
-  @ApiProperty({
-    description: 'Benefícios de imigrar para este país',
-    example: [
-      'Sistema de saúde público',
-      'Educação gratuita',
-      'Segurança social',
-    ],
-    type: [String],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  benefits: string[];
-
-  @ApiProperty({
-    description: 'Desafios de imigrar para este país',
-    example: ['Custo de vida alto', 'Clima rigoroso', 'Processo seletivo'],
-    type: [String],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  challenges: string[];
 
   @ApiProperty({
     description: 'Cidades populares para imigrantes',
