@@ -2,14 +2,6 @@ import { PrismaClient } from '../../generated/prisma';
 
 const prisma = new PrismaClient();
 
-/**
- * Placeholder for countries whose background image has not been uploaded to the
- * R2 bucket yet. `background_image` is NOT NULL, so it needs some valid value.
- * Grep for this constant to find every country still waiting for real artwork.
- */
-const PENDING_BACKGROUND_IMAGE =
-  'https://images.unsplash.com/photo-1539650116574-75c0c6d73c6e?w=800&h=600&fit=crop';
-
 export async function seedCountries() {
   const countries = [
     {
@@ -1519,7 +1511,8 @@ export async function seedCountries() {
       popular_cities: ['Lisboa', 'Porto', 'Braga', 'Faro'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1600,7 +1593,8 @@ export async function seedCountries() {
       ],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1670,7 +1664,8 @@ export async function seedCountries() {
       popular_cities: ['Oslo', 'Bergen', 'Trondheim', 'Stavanger'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1746,7 +1741,8 @@ export async function seedCountries() {
       popular_cities: ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1822,7 +1818,8 @@ export async function seedCountries() {
       popular_cities: ['Brussels', 'Antwerp', 'Ghent', 'Leuven'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1898,7 +1895,8 @@ export async function seedCountries() {
       popular_cities: ['Prague', 'Brno', 'Ostrava', 'Plzeň'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -1974,7 +1972,8 @@ export async function seedCountries() {
       popular_cities: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2050,7 +2049,8 @@ export async function seedCountries() {
       popular_cities: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2131,7 +2131,8 @@ export async function seedCountries() {
       ],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2212,7 +2213,8 @@ export async function seedCountries() {
       ],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2288,7 +2290,8 @@ export async function seedCountries() {
       popular_cities: ['Panama City', 'Boquete', 'Coronado', 'David'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2364,7 +2367,8 @@ export async function seedCountries() {
       popular_cities: ['San José', 'Escazú', 'Tamarindo', 'Atenas'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
-      background_image: PENDING_BACKGROUND_IMAGE,
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
       descriptions: [
         {
           language: 'pt',
@@ -2415,11 +2419,13 @@ export async function seedCountries() {
     const { descriptions, immigration_visa_types, ...countryInfo } =
       countryData;
 
-    // Ensure background_image is always present
+    // `background_image` is NOT NULL but may legitimately be an empty string
+    // while the artwork has not been uploaded to R2 yet. Do not substitute a
+    // placeholder here: the frontend already guards on the empty value, and a
+    // fake URL would hide which countries are still missing their image.
     const countryDataWithImage = {
       ...countryInfo,
-      background_image:
-        countryInfo.background_image || PENDING_BACKGROUND_IMAGE,
+      background_image: countryInfo.background_image ?? '',
     };
 
     const country = await prisma.country.upsert({
