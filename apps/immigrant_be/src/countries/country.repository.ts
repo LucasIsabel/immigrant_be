@@ -13,7 +13,7 @@ export class CountryRepository {
         ...createCountryDto,
       },
       include: {
-        descriptions: true,
+        translations: true,
       },
     });
   }
@@ -29,7 +29,7 @@ export class CountryRepository {
   async findAll() {
     return this.prisma.country.findMany({
       include: {
-        descriptions: true,
+        translations: true,
       },
     });
   }
@@ -38,7 +38,7 @@ export class CountryRepository {
     return await this.prisma.country.findUnique({
       where: { id },
       include: {
-        descriptions: true,
+        translations: true,
         immigration_visa_types: true,
       },
     });
@@ -48,7 +48,7 @@ export class CountryRepository {
     return this.prisma.country.findUnique({
       where: { name },
       include: {
-        descriptions: true,
+        translations: true,
       },
     });
   }
@@ -60,7 +60,7 @@ export class CountryRepository {
         ...updateCountryDto,
       },
       include: {
-        descriptions: true,
+        translations: true,
       },
     });
   }
@@ -81,7 +81,7 @@ export class CountryRepository {
     return this.prisma.country.findUnique({
       where: { id },
       include: {
-        descriptions: true,
+        translations: true,
         immigration_visa_types: true,
       },
     });

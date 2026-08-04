@@ -1,3 +1,4 @@
+import { pickTranslation } from '../countries/country-translation.util';
 import { GeminiService } from './gemini.service';
 import {
   Injectable,
@@ -64,6 +65,7 @@ export class SystemService {
           const enrichedSuggestions =
             await this.enrichSuggestionsWithCountryDetails(
               geminiResponse?.suggestions || [],
+              language,
             );
 
           const suggestion =
@@ -88,6 +90,7 @@ export class SystemService {
       const enrichedSuggestions =
         await this.enrichSuggestionsWithCountryDetails(
           response?.suggestions || [],
+          language,
         );
 
       const embeddings = await this.geminiService.generateEmbeddings(
@@ -118,6 +121,7 @@ export class SystemService {
 
   private async enrichSuggestionsWithCountryDetails(
     suggestions: Array<{ country: string; [key: string]: any }>,
+    language: string,
   ): Promise<import('./dto/suggestions.dto').SuggestionItem[]> {
     return Promise.all(
       suggestions.map(async (suggestion) => {
@@ -140,7 +144,8 @@ export class SystemService {
           country_flag: country?.flag || suggestion.country_flag || '',
           country_id: country?.id || suggestion.country_id || '',
           investment_required:
-            country?.investment_required ||
+            pickTranslation(country?.translations, language)
+              ?.investment_required ||
             suggestion.investment_required ||
             '',
           average_visa_processing_time:

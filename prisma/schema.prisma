@@ -119,15 +119,24 @@ model Verifications {
   @@map("verifications")
 }
 
-model CountryDescription {
-  id          String   @id @default(uuid()) @db.Uuid
-  language    String
-  description String
-  country     Country  @relation(fields: [country_id], references: [id])
-  country_id  String   @db.Uuid @map("country_id")
+/// User-facing country copy, one row per language.
+/// Closed vocabularies (`difficulty`, `job_market`) and proper nouns
+/// (`visa_options`, `popular_cities`) stay on Country and are translated
+/// by the frontend instead.
+model CountryTranslation {
+  id                   String   @id @default(uuid()) @db.Uuid
+  language             String
+  description          String
+  benefits             String[]
+  challenges           String[]
+  processing_time      String   @map("processing_time")
+  investment_required  String   @map("investment_required")
+  language_requirement String   @map("language_requirement")
+  country              Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  country_id           String   @db.Uuid @map("country_id")
 
   @@unique([country_id, language])
-  @@map("country_descriptions")
+  @@map("country_translations")
 }
 
 model ImmigrationVisaType {
@@ -151,15 +160,10 @@ model Country {
   region                String
   difficulty            String
   difficulty_score      Int      @map("difficulty_score")
-  descriptions          CountryDescription[]
+  translations          CountryTranslation[]
   immigration_visa_types ImmigrationVisaType[]
   visa_options          String[] @map("visa_options")
-  processing_time       String   @map("processing_time")
-  investment_required   String   @map("investment_required")
-  language_requirement  String   @map("language_requirement")
   job_market            String   @map("job_market")
-  benefits              String[]
-  challenges            String[]
   popular_cities        String[] @map("popular_cities")
   created_at            DateTime @default(now()) @map("created_at")
   updated_at            DateTime @updatedAt @map("updated_at")

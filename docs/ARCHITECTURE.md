@@ -175,7 +175,7 @@ Users ─────────┬──── Sessions (1:N)
                ├──── Plans (1:N)
                └──── Events (1:N)
 
-Countries ─────┬──── CountryDescription (1:N) — multilíngue
+Countries ─────┬──── CountryTranslation (1:N) — todo o texto voltado ao usuário
                ├──── ImmigrationVisaType (1:N)
                ├──── VisaTypeRecommendations (1:N)
                ├──── Plans (1:N)
@@ -607,7 +607,16 @@ Pipeline sequencial: **Lint → Test → Build**
 ## 12. Suporte Multi-idioma
 
 - Parâmetro `language` nas requisições
-- Tabela `CountryDescription` com descrições por idioma
+- Tabela `CountryTranslation` com **todo o texto de país voltado ao usuário** por idioma:
+  `description`, `benefits`, `challenges`, `processing_time`, `investment_required`,
+  `language_requirement`. Unique em `(country_id, language)`.
+  - `difficulty` (`Easy`|`Moderate`|`Hard`) e `job_market` (`Strong`|`Moderate`|`Weak`) **não**
+    ficam aqui: são vocabulário fechado, permanecem como código em `countries` e o FE traduz
+    via `messages/*.json`. Traduzi-los por país repetiria a mesma string 34 vezes.
+  - `visa_options` e `popular_cities` também permanecem em `countries` — são nomes próprios.
+  - O repository devolve **todos** os idiomas (`translations: true`) e o cliente escolhe;
+    no BE, use o helper `pickTranslation(translations, language)`, que faz fallback para `en`
+    e depois para qualquer linha existente.
 - `VisaSteps` armazena etapas por idioma
 - Respostas de IA adaptadas ao idioma solicitado
 - **Blog Posts**: tabela `BlogPostTranslation` persiste traduções por locale (`pt` | `en` | `es`)
