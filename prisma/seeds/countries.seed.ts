@@ -15,37 +15,76 @@ export async function seedCountries() {
         'Student Visa',
         'Non-lucrative Residence Visa',
       ],
-      processing_time: '15–45 days',
-      investment_required:
-        '≈€31,752 (income requirement for digital nomad) + other fees',
-      language_requirement: 'Spanish (basic to intermediate)',
       job_market: 'Moderate',
-      benefits: [
-        'Pleasant climate',
-        'Affordable cost of living',
-        'Rich culture',
+      popular_cities: [
+        'Madrid',
+        'Barcelona',
+        'Valencia',
       ],
-      challenges: ['High unemployment', 'Bureaucracy'],
-      popular_cities: ['Madrid', 'Barcelona', 'Valencia'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/spain.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Espanha oferece vistos de trabalho, estudos e residência não-lucrativa/digital nomad, com prazos entre 15 e 45 dias úteis.',
+          benefits: [
+            'Pleasant Mediterranean climate',
+            'Affordable cost of living for Western Europe',
+            'Rich cultural life and strong regional identity',
+            'Citizenship after 10 years, or 2 for Ibero-American nationals',
+          ],
+          challenges: [
+            'Persistently high unemployment',
+            'Slow provincial bureaucracy',
+            'Low local salaries relative to Western Europe',
+          ],
+          processing_time: '15–45 days',
+          investment_required:
+            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+          language_requirement: 'Spanish (basic to intermediate)',
         },
         {
           language: 'en',
           description:
             'Spain offers work, student, and non-lucrative/digital nomad residence visas, processed within 15 to 45 working days.',
+          benefits: [
+            'Pleasant Mediterranean climate',
+            'Affordable cost of living for Western Europe',
+            'Rich cultural life and strong regional identity',
+            'Citizenship after 10 years, or 2 for Ibero-American nationals',
+          ],
+          challenges: [
+            'Persistently high unemployment',
+            'Slow provincial bureaucracy',
+            'Low local salaries relative to Western Europe',
+          ],
+          processing_time: '15–45 days',
+          investment_required:
+            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+          language_requirement: 'Spanish (basic to intermediate)',
         },
         {
           language: 'es',
           description:
             'España ofrece visados de trabajo, estudios y residencia no lucrativa/digital nomad, procesados entre 15 y 45 días hábiles.',
+          benefits: [
+            'Pleasant Mediterranean climate',
+            'Affordable cost of living for Western Europe',
+            'Rich cultural life and strong regional identity',
+            'Citizenship after 10 years, or 2 for Ibero-American nationals',
+          ],
+          challenges: [
+            'Persistently high unemployment',
+            'Slow provincial bureaucracy',
+            'Low local salaries relative to Western Europe',
+          ],
+          processing_time: '15–45 days',
+          investment_required:
+            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+          language_requirement: 'Spanish (basic to intermediate)',
         },
       ],
       immigration_visa_types: [
@@ -53,14 +92,13 @@ export async function seedCountries() {
           category: 'Short-Stay Visa (Schengen Type C)',
           description:
             'Visa for stays up to 90 days in any 180-day period in Spain/Schengen (tourism, business).',
-          source: 'https://feather-insurance.com/en-es/blog/spain-visa-types',
+          source: 'https://www.exteriores.gob.es/',
         },
         {
           category: 'Long-Stay / National Visa (Type D) / Residence Permit',
           description:
             'Visa for non-EU nationals to live, work, or study in Spain for more than 90 days (residence permit routes: work, student, non‐lucrative, family).',
-          source:
-            'https://www.immigrationspain.es/en/visas-and-residence-permits-in-spain/',
+          source: 'https://www.inclusion.gob.es/web/migraciones/',
         },
         {
           category: 'Permanent Residence / EU Long-Term Resident',
@@ -82,37 +120,76 @@ export async function seedCountries() {
         'Student Visa (Tier 4)',
         'Global Talent Visa',
       ],
-      processing_time: '3–8 weeks (outside UK)',
-      investment_required:
-        'Certificate Fee + Immigration Health Surcharge + visa fee',
-      language_requirement: 'English (B1+)',
-      job_market: 'High',
-      benefits: [
-        'High earning potential',
-        'Access to global job market',
-        'English-speaking environment',
+      job_market: 'Strong',
+      popular_cities: [
+        'London',
+        'Manchester',
+        'Edinburgh',
       ],
-      challenges: ['Expensive cost of living', 'Frequent policy changes'],
-      popular_cities: ['London', 'Manchester', 'Edinburgh'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_kingdom.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Reino Unido oferece o Skilled Worker Visa com decisão em cerca de 3 semanas (externo) e até 8 semanas interno.',
+          benefits: [
+            'High earning potential',
+            'Access to a global job market',
+            'English-speaking environment',
+            'Settlement possible after five years',
+          ],
+          challenges: [
+            'Expensive cost of living, especially in London',
+            'Frequent immigration policy changes',
+            'High cumulative visa and health surcharge costs',
+          ],
+          processing_time: '3–8 weeks for applications made outside the UK',
+          investment_required:
+            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+          language_requirement: 'English (B1 or above)',
         },
         {
           language: 'en',
           description:
             'The UK offers the Skilled Worker Visa, typically decided within 3 weeks outside the UK and 8 weeks inside.',
+          benefits: [
+            'High earning potential',
+            'Access to a global job market',
+            'English-speaking environment',
+            'Settlement possible after five years',
+          ],
+          challenges: [
+            'Expensive cost of living, especially in London',
+            'Frequent immigration policy changes',
+            'High cumulative visa and health surcharge costs',
+          ],
+          processing_time: '3–8 weeks for applications made outside the UK',
+          investment_required:
+            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+          language_requirement: 'English (B1 or above)',
         },
         {
           language: 'es',
           description:
             'El Reino Unido ofrece el Skilled Worker Visa, con decisión en unas 3 semanas desde el exterior y 8 dentro.',
+          benefits: [
+            'High earning potential',
+            'Access to a global job market',
+            'English-speaking environment',
+            'Settlement possible after five years',
+          ],
+          challenges: [
+            'Expensive cost of living, especially in London',
+            'Frequent immigration policy changes',
+            'High cumulative visa and health surcharge costs',
+          ],
+          processing_time: '3–8 weeks for applications made outside the UK',
+          investment_required:
+            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+          language_requirement: 'English (B1 or above)',
         },
       ],
       immigration_visa_types: [
@@ -138,7 +215,7 @@ export async function seedCountries() {
           category: 'Family & Settlement Visas',
           description:
             'Visas for family reunion, dependants, settlement (indefinite leave to remain).',
-          source: 'https://www.qc-immigration.com/our-services/uk-visa-types',
+          source: 'https://www.gov.uk/browse/visas-immigration',
         },
       ],
     },
@@ -153,33 +230,79 @@ export async function seedCountries() {
         'Skilled Worker Work Permit',
         'Study Permit',
       ],
-      processing_time:
-        '80% dos pedidos PR em até 6 meses; +3‑4 meses para quem aplica fora do Canadá',
-      investment_required: 'Taxas IRCC + prova de fundos (~CAD 13.000)',
-      language_requirement: 'English/French (CLB 7+)',
-      job_market: 'High',
-      benefits: ['Saúde pública', 'Educação de qualidade', 'Alta diversidade'],
-      challenges: ['Inverno rigoroso', 'Custo de vida em cidades grandes'],
-      popular_cities: ['Toronto', 'Vancouver', 'Montreal'],
+      job_market: 'Strong',
+      popular_cities: [
+        'Toronto',
+        'Vancouver',
+        'Montreal',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/canada.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O sistema Express Entry processa 80% dos pedidos em até 6 meses, e aplicações fora do Canadá levam +3‑4 meses para retorno de documentos.',
+          benefits: [
+            'Publicly funded healthcare',
+            'High-quality education system',
+            'Strong multicultural integration',
+            'Clear path from temporary status to permanent residence',
+          ],
+          challenges: [
+            'Harsh winters across most of the country',
+            'High cost of living in Toronto and Vancouver',
+            'Competitive Express Entry cut-off scores',
+          ],
+          processing_time:
+            '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
+          investment_required:
+            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+          language_requirement: 'English or French (CLB 7+)',
         },
         {
           language: 'en',
           description:
-            "Canada's Express Entry system processes 80% of permanent residency applications in 6 months, with an additional 3–4 months for passport return when applying abroad.",
+            'Canada\'s Express Entry system processes 80% of permanent residency applications in 6 months, with an additional 3–4 months for passport return when applying abroad.',
+          benefits: [
+            'Publicly funded healthcare',
+            'High-quality education system',
+            'Strong multicultural integration',
+            'Clear path from temporary status to permanent residence',
+          ],
+          challenges: [
+            'Harsh winters across most of the country',
+            'High cost of living in Toronto and Vancouver',
+            'Competitive Express Entry cut-off scores',
+          ],
+          processing_time:
+            '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
+          investment_required:
+            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+          language_requirement: 'English or French (CLB 7+)',
         },
         {
           language: 'es',
           description:
             'El sistema Express Entry de Canadá procesa el 80 % de solicitudes de residencia permanente en 6 meses, con 3–4 meses adicionales para devolución de pasaporte en el exterior.',
+          benefits: [
+            'Publicly funded healthcare',
+            'High-quality education system',
+            'Strong multicultural integration',
+            'Clear path from temporary status to permanent residence',
+          ],
+          challenges: [
+            'Harsh winters across most of the country',
+            'High cost of living in Toronto and Vancouver',
+            'Competitive Express Entry cut-off scores',
+          ],
+          processing_time:
+            '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
+          investment_required:
+            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+          language_requirement: 'English or French (CLB 7+)',
         },
       ],
       immigration_visa_types: [
@@ -231,33 +354,79 @@ export async function seedCountries() {
         'Temporary Skilled Visa (Subclass 482)',
         'Student Visa',
       ],
-      processing_time:
-        'Skilled (Permanent): ~10 meses; Skilled (Temporary): ~98 dias medianos',
-      investment_required: 'Taxas + comprovação de fundos (~AUD 20.000)',
-      language_requirement: 'English (IELTS 6+)',
-      job_market: 'High',
-      benefits: ['Qualidade de vida', 'Saúde pública (Medicare)', 'Segurança'],
-      challenges: ['Alto custo habitacional', 'Distância geográfica'],
-      popular_cities: ['Sydney', 'Melbourne', 'Brisbane'],
+      job_market: 'Strong',
+      popular_cities: [
+        'Sydney',
+        'Melbourne',
+        'Brisbane',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/new_zealand.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto Skilled Permanente leva cerca de 10 meses, e o temporário (482) tem tempo mediano de 98 dias, segundo governo austríaco.',
+          benefits: [
+            'High quality of life',
+            'Medicare public healthcare',
+            'Low crime rates',
+            'Strong wages and workplace protections',
+          ],
+          challenges: [
+            'High housing costs in major cities',
+            'Geographic distance from Europe and the Americas',
+            'Points-tested migration with fluctuating cut-offs',
+          ],
+          processing_time:
+            'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
+          investment_required:
+            'Application fees plus proof of funds (≈AUD 20,000)',
+          language_requirement: 'English (IELTS 6 or above)',
         },
         {
           language: 'en',
           description:
-            "Australia's permanent skilled visas take around 10 months, while the temporary 482 visa has a median processing time of 98 days, according to Home Affairs.",
+            'Australia\'s permanent skilled visas take around 10 months, while the temporary 482 visa has a median processing time of 98 days, according to Home Affairs.',
+          benefits: [
+            'High quality of life',
+            'Medicare public healthcare',
+            'Low crime rates',
+            'Strong wages and workplace protections',
+          ],
+          challenges: [
+            'High housing costs in major cities',
+            'Geographic distance from Europe and the Americas',
+            'Points-tested migration with fluctuating cut-offs',
+          ],
+          processing_time:
+            'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
+          investment_required:
+            'Application fees plus proof of funds (≈AUD 20,000)',
+          language_requirement: 'English (IELTS 6 or above)',
         },
         {
           language: 'es',
           description:
             'Los visados cualificados permanentes de Australia tardan unos 10 meses, mientras que el 482 temporal tiene un tiempo medio de 98 días, según el Ministerio.',
+          benefits: [
+            'High quality of life',
+            'Medicare public healthcare',
+            'Low crime rates',
+            'Strong wages and workplace protections',
+          ],
+          challenges: [
+            'High housing costs in major cities',
+            'Geographic distance from Europe and the Americas',
+            'Points-tested migration with fluctuating cut-offs',
+          ],
+          processing_time:
+            'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
+          investment_required:
+            'Application fees plus proof of funds (≈AUD 20,000)',
+          language_requirement: 'English (IELTS 6 or above)',
         },
       ],
       immigration_visa_types: [
@@ -301,34 +470,76 @@ export async function seedCountries() {
         'Work Visa (General)',
         'Business Manager Visa',
       ],
-      processing_time:
-        '≈1 semana (emissão de visto no consulado, se documentos completos)',
-      investment_required:
-        'Taxas consulares + comprovação financeira (~¥500.000)',
-      language_requirement: 'Japanese (N2+ recomendado)',
       job_market: 'Moderate',
-      benefits: ['Infraestrutura avançada', 'Segurança', 'Cultura única'],
-      challenges: ['Barreira linguística', 'Integração cultural'],
-      popular_cities: ['Tokyo', 'Osaka', 'Fukuoka'],
+      popular_cities: [
+        'Tokyo',
+        'Osaka',
+        'Fukuoka',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/australia.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto japonês é emitido em cerca de uma semana (após aprovação), de acordo com o MFA do Japão.',
+          benefits: [
+            'Advanced infrastructure and public transport',
+            'Very high public safety',
+            'Universal health insurance',
+            'Points-based fast track to permanent residence for skilled professionals',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding cultural and workplace integration',
+            'Long working hours in traditional sectors',
+          ],
+          processing_time:
+            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
+          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+          language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
           language: 'en',
           description:
             'Japan issues visas within approximately one week post-approval, per the Ministry of Foreign Affairs.',
+          benefits: [
+            'Advanced infrastructure and public transport',
+            'Very high public safety',
+            'Universal health insurance',
+            'Points-based fast track to permanent residence for skilled professionals',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding cultural and workplace integration',
+            'Long working hours in traditional sectors',
+          ],
+          processing_time:
+            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
+          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+          language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
           language: 'es',
           description:
             'Japón emite visados en aproximadamente una semana tras la aprobación, según el Ministerio de Asuntos Exteriores.',
+          benefits: [
+            'Advanced infrastructure and public transport',
+            'Very high public safety',
+            'Universal health insurance',
+            'Points-based fast track to permanent residence for skilled professionals',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding cultural and workplace integration',
+            'Long working hours in traditional sectors',
+          ],
+          processing_time:
+            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
+          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+          language_requirement: 'Japanese (JLPT N2 recommended)',
         },
       ],
       immigration_visa_types: [
@@ -360,7 +571,7 @@ export async function seedCountries() {
           category: 'Permanent Residence (Status of Residence)',
           description:
             'Foreign nationals permitted to reside permanently in Japan (indefinite stay) under certain conditions.',
-          source: 'https://www.office-kasahara.jp/visa_list_english',
+          source: 'https://www.moj.go.jp/isa/',
         },
       ],
     },
@@ -370,34 +581,87 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Moderate',
       difficulty_score: 3,
-      visa_options: ['EU Blue Card', 'Skilled Workers Visa', 'Job Seeker Visa'],
-      processing_time: '2–4 meses (Blue Card e Skilled Visa)',
-      investment_required:
-        'Taxas legais + comprovação financeira (~€9.744 ano)',
-      language_requirement: 'German (B1+ recomendado)',
-      job_market: 'High',
-      benefits: ['Economia forte', 'Sistema de saúde social', 'Alta segurança'],
-      challenges: ['A barreira linguística', 'Burocracia estatal'],
-      popular_cities: ['Berlin', 'Munich', 'Frankfurt'],
+      visa_options: [
+        'EU Blue Card',
+        'Skilled Workers Visa',
+        'Job Seeker Visa',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Berlin',
+        'Munich',
+        'Frankfurt',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/japan.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Alemanha processa pedidos de Blue Card e Skilled Workers Visa em 2–4 meses, segundo o BAMF.',
+          benefits: [
+            'Large and stable economy',
+            'Statutory health insurance system',
+            'Free or low-cost higher education',
+            'Permanent residence possible after 21–33 months with the EU Blue Card',
+          ],
+          challenges: [
+            'Language barrier outside international companies',
+            'Paper-heavy public administration',
+            'Tight housing market in major cities',
+          ],
+          processing_time:
+            '2–4 months for the EU Blue Card and the Skilled Worker visa',
+          investment_required:
+            'Application fees plus proof of funds (≈€11,904/year in a blocked account)',
+          language_requirement:
+            'German (B1 recommended; some roles accept English)',
         },
         {
           language: 'en',
           description:
             'Germany processes EU Blue Card and Skilled Worker visas within 2–4 months, per the Federal Office for Migration and Refugees (BAMF).',
+          benefits: [
+            'Large and stable economy',
+            'Statutory health insurance system',
+            'Free or low-cost higher education',
+            'Permanent residence possible after 21–33 months with the EU Blue Card',
+          ],
+          challenges: [
+            'Language barrier outside international companies',
+            'Paper-heavy public administration',
+            'Tight housing market in major cities',
+          ],
+          processing_time:
+            '2–4 months for the EU Blue Card and the Skilled Worker visa',
+          investment_required:
+            'Application fees plus proof of funds (≈€11,904/year in a blocked account)',
+          language_requirement:
+            'German (B1 recommended; some roles accept English)',
         },
         {
           language: 'es',
           description:
             'Alemania procesa los visados Blue Card y de trabajadores cualificados en 2–4 meses, según la BAMF.',
+          benefits: [
+            'Large and stable economy',
+            'Statutory health insurance system',
+            'Free or low-cost higher education',
+            'Permanent residence possible after 21–33 months with the EU Blue Card',
+          ],
+          challenges: [
+            'Language barrier outside international companies',
+            'Paper-heavy public administration',
+            'Tight housing market in major cities',
+          ],
+          processing_time:
+            '2–4 months for the EU Blue Card and the Skilled Worker visa',
+          investment_required:
+            'Application fees plus proof of funds (≈€11,904/year in a blocked account)',
+          language_requirement:
+            'German (B1 recommended; some roles accept English)',
         },
       ],
       immigration_visa_types: [
@@ -436,36 +700,76 @@ export async function seedCountries() {
         'Work to Residence',
         'Student Visa',
       ],
-      processing_time: 'Skilled Migrant: ~12–16 meses',
-      investment_required: 'Taxas + comprovação de fundos (~NZD 20.000)',
-      language_requirement: 'English (IELTS 6.5+)',
       job_market: 'Moderate',
-      benefits: [
-        'Qualidade de vida',
-        'Natureza exuberante',
-        'Baixa criminalidade',
+      popular_cities: [
+        'Auckland',
+        'Wellington',
+        'Christchurch',
       ],
-      challenges: ['Isolamento geográfico', 'Mercado de trabalho limitado'],
-      popular_cities: ['Auckland', 'Wellington', 'Christchurch'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/new_zealand.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto Skilled Migrant leva aproximadamente 12–16 meses, conforme o Immigration NZ.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Outstanding natural environment',
+            'Low crime rates',
+            'Straightforward residence pathway for skilled workers',
+          ],
+          challenges: [
+            'Geographic isolation and expensive flights',
+            'Small domestic job market',
+            'High housing costs in Auckland',
+          ],
+          processing_time: 'Skilled Migrant Category: ~12–16 months',
+          investment_required:
+            'Application fees plus proof of funds (≈NZD 20,000)',
+          language_requirement: 'English (IELTS 6.5 or above)',
         },
         {
           language: 'en',
           description:
             'The Skilled Migrant visa takes about 12–16 months, according to Immigration New Zealand.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Outstanding natural environment',
+            'Low crime rates',
+            'Straightforward residence pathway for skilled workers',
+          ],
+          challenges: [
+            'Geographic isolation and expensive flights',
+            'Small domestic job market',
+            'High housing costs in Auckland',
+          ],
+          processing_time: 'Skilled Migrant Category: ~12–16 months',
+          investment_required:
+            'Application fees plus proof of funds (≈NZD 20,000)',
+          language_requirement: 'English (IELTS 6.5 or above)',
         },
         {
           language: 'es',
           description:
             'El visado Skilled Migrant tarda aproximadamente 12–16 meses, según Immigration New Zealand.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Outstanding natural environment',
+            'Low crime rates',
+            'Straightforward residence pathway for skilled workers',
+          ],
+          challenges: [
+            'Geographic isolation and expensive flights',
+            'Small domestic job market',
+            'High housing costs in Auckland',
+          ],
+          processing_time: 'Skilled Migrant Category: ~12–16 months',
+          investment_required:
+            'Application fees plus proof of funds (≈NZD 20,000)',
+          language_requirement: 'English (IELTS 6.5 or above)',
         },
       ],
       immigration_visa_types: [
@@ -506,32 +810,73 @@ export async function seedCountries() {
         'General Employment Permit',
         'Student Visa',
       ],
-      processing_time: 'Critical Skills: ~8–12 semanas',
-      investment_required: 'Taxas + comprovação de fundos (~€12.000)',
-      language_requirement: 'English',
-      job_market: 'High',
-      benefits: ['Crescimento econômico', 'Cultura acolhedora', 'Acesso à UE'],
-      challenges: ['Custos altos de moradia', 'Clima chuvoso'],
-      popular_cities: ['Dublin', 'Cork', 'Galway'],
+      job_market: 'Strong',
+      popular_cities: [
+        'Dublin',
+        'Cork',
+        'Galway',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/ireland.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Critical Skills Employment Permit leva aproximadamente 8–12 semanas, conforme o INIS.',
+          benefits: [
+            'English-speaking EU member state',
+            'Major hub for technology and pharmaceutical employers',
+            'Welcoming culture for newcomers',
+            'Citizenship possible after five years of reckonable residence',
+          ],
+          challenges: [
+            'Severe housing shortage and high rents',
+            'Rainy climate year round',
+            'High cost of living in Dublin',
+          ],
+          processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
+          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          language_requirement: 'English',
         },
         {
           language: 'en',
           description:
             'The Critical Skills Employment Permit takes about 8–12 weeks, according to the Irish Naturalisation and Immigration Service.',
+          benefits: [
+            'English-speaking EU member state',
+            'Major hub for technology and pharmaceutical employers',
+            'Welcoming culture for newcomers',
+            'Citizenship possible after five years of reckonable residence',
+          ],
+          challenges: [
+            'Severe housing shortage and high rents',
+            'Rainy climate year round',
+            'High cost of living in Dublin',
+          ],
+          processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
+          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          language_requirement: 'English',
         },
         {
           language: 'es',
           description:
             'El Critical Skills Employment Permit tarda unas 8–12 semanas, según el INIS irlandés.',
+          benefits: [
+            'English-speaking EU member state',
+            'Major hub for technology and pharmaceutical employers',
+            'Welcoming culture for newcomers',
+            'Citizenship possible after five years of reckonable residence',
+          ],
+          challenges: [
+            'Severe housing shortage and high rents',
+            'Rainy climate year round',
+            'High cost of living in Dublin',
+          ],
+          processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
+          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          language_requirement: 'English',
         },
       ],
       immigration_visa_types: [
@@ -551,22 +896,19 @@ export async function seedCountries() {
           category: 'Re-Entry Visa',
           description:
             'Visa for non-EU/EEA nationals already holding immigration permission in Ireland who wish to leave and re-enter.',
-          source:
-            'https://dublin.ie/live/official-procedures/immigration-visas/',
+          source: 'https://www.irishimmigration.ie/',
         },
         {
           category: 'Transit Visa',
           description:
             'Visa required in certain cases for transiting through Irish airports.',
-          source:
-            'https://dublin.ie/live/official-procedures/immigration-visas/',
+          source: 'https://www.irishimmigration.ie/',
         },
         {
           category: 'Multiple Entry Visa',
           description:
             'Visa allowing several entries for stays under the dates specified, for certain eligible circumstances.',
-          source:
-            'https://dublin.ie/live/official-procedures/immigration-visas/',
+          source: 'https://www.irishimmigration.ie/',
         },
       ],
     },
@@ -581,32 +923,76 @@ export async function seedCountries() {
         'Work Visa (Salarié)',
         'Student Visa',
       ],
-      processing_time: '1–2 months',
-      investment_required: '€30,000 - €300,000',
-      language_requirement: 'French (basic)',
-      job_market: 'High',
-      benefits: ['Bom sistema de saúde', 'Cultura rica', 'Acesso à UE'],
-      challenges: ['Burocracia', 'Alto custo de vida em Paris'],
-      popular_cities: ['Paris', 'Lyon', 'Marseille'],
+      job_market: 'Strong',
+      popular_cities: [
+        'Paris',
+        'Lyon',
+        'Marseille',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/france.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O “Passeport Talent” exige investimento de €30 k (empreendedor) a €300 k (investidor), com visto emitido em até 2 meses pelo France‑Visas.',
+          benefits: [
+            'Strong public healthcare system',
+            'Rich cultural life',
+            'Free movement within the EU',
+            'Talent Passport offers a multi-year route for skilled workers',
+          ],
+          challenges: [
+            'Layered bureaucracy',
+            'High cost of living in Paris',
+            'Language barrier outside international workplaces',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+          language_requirement: 'French (basic; B1 for naturalisation)',
         },
         {
           language: 'en',
           description:
             'The “Passeport Talent” requires an investment from €30k (entrepreneur) to €300k (investor), with the visa issued within up to 2 months by France-Visas.',
+          benefits: [
+            'Strong public healthcare system',
+            'Rich cultural life',
+            'Free movement within the EU',
+            'Talent Passport offers a multi-year route for skilled workers',
+          ],
+          challenges: [
+            'Layered bureaucracy',
+            'High cost of living in Paris',
+            'Language barrier outside international workplaces',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+          language_requirement: 'French (basic; B1 for naturalisation)',
         },
         {
           language: 'es',
           description:
             'El “Passeport Talent” exige una inversión de 30.000 € (emprendedor) a 300.000 € (inversor), con visado emitido en hasta 2 meses por France-Visas.',
+          benefits: [
+            'Strong public healthcare system',
+            'Rich cultural life',
+            'Free movement within the EU',
+            'Talent Passport offers a multi-year route for skilled workers',
+          ],
+          challenges: [
+            'Layered bureaucracy',
+            'High cost of living in Paris',
+            'Language barrier outside international workplaces',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+          language_requirement: 'French (basic; B1 for naturalisation)',
         },
       ],
       immigration_visa_types: [
@@ -620,14 +1006,13 @@ export async function seedCountries() {
           category: 'Long-Stay Visa (National Visa – VLS-TS etc.)',
           description:
             'Visa for stays over 3 months in France (studies, work, family reunification, settlement).',
-          source: 'https://www.welcometofrance.com/en/rubrique/visa',
+          source: 'https://france-visas.gouv.fr/',
         },
         {
           category: 'Talent Passport / Skilled Worker Visas',
           description:
             'Specific long-stay visas designed for highly skilled professionals, research, entrepreneurs, etc.',
-          source:
-            'https://relocate.world/en/articles/visa-types-france-2025-guide',
+          source: 'https://france-visas.gouv.fr/',
         },
       ],
     },
@@ -637,37 +1022,84 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Moderate',
       difficulty_score: 3,
-      visa_options: ['Work Permit (Skilled)', 'EU Blue Card', 'Student Visa'],
-      processing_time: '≤15 dias (Schengen visa)',
-      investment_required: 'SEK 100,000 - SEK 300,000',
-      language_requirement: 'Swedish/English (basic)',
-      job_market: 'Moderate',
-      benefits: [
-        'Alta qualidade de vida',
-        'Boa integração',
-        'Sistema social forte',
+      visa_options: [
+        'Work Permit (Skilled)',
+        'EU Blue Card',
+        'Student Visa',
       ],
-      challenges: ['Custo alto de vida', 'Clima frio'],
-      popular_cities: ['Stockholm', 'Gothenburg', 'Malmö'],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Stockholm',
+        'Gothenburg',
+        'Malmö',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/sweden.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'Schengen visa normalmente decidido em até 15 dias, conforme Migration Agency e consulados suecos.',
+          benefits: [
+            'High quality of life',
+            'Generous parental leave and social benefits',
+            'Widespread English proficiency',
+            'Free higher education for EU citizens',
+          ],
+          challenges: [
+            'High cost of living',
+            'Long, dark winters',
+            'Tight housing queues in Stockholm',
+          ],
+          processing_time:
+            'Work permit: 1–4 months; Schengen visa: up to 15 days',
+          investment_required:
+            'Application fees plus a salary meeting the statutory maintenance requirement',
+          language_requirement: 'Swedish (English widely spoken at work)',
         },
         {
           language: 'en',
           description:
             'Schengen visas are normally decided within 15 days, according to the Swedish Migration Agency and Swedish consulates.',
+          benefits: [
+            'High quality of life',
+            'Generous parental leave and social benefits',
+            'Widespread English proficiency',
+            'Free higher education for EU citizens',
+          ],
+          challenges: [
+            'High cost of living',
+            'Long, dark winters',
+            'Tight housing queues in Stockholm',
+          ],
+          processing_time:
+            'Work permit: 1–4 months; Schengen visa: up to 15 days',
+          investment_required:
+            'Application fees plus a salary meeting the statutory maintenance requirement',
+          language_requirement: 'Swedish (English widely spoken at work)',
         },
         {
           language: 'es',
           description:
             'Los visados Schengen suelen resolverse en un plazo de 15 días, según la Agencia Sueca de Migración y los consulados suecos.',
+          benefits: [
+            'High quality of life',
+            'Generous parental leave and social benefits',
+            'Widespread English proficiency',
+            'Free higher education for EU citizens',
+          ],
+          challenges: [
+            'High cost of living',
+            'Long, dark winters',
+            'Tight housing queues in Stockholm',
+          ],
+          processing_time:
+            'Work permit: 1–4 months; Schengen visa: up to 15 days',
+          investment_required:
+            'Application fees plus a salary meeting the statutory maintenance requirement',
+          language_requirement: 'Swedish (English widely spoken at work)',
         },
       ],
       immigration_visa_types: [
@@ -683,7 +1115,7 @@ export async function seedCountries() {
             'Residence Permit (for stay over 90 days – work, study, family reunification)',
           description:
             'A permit required if staying more than three months; includes work permits and study permits.',
-          source: 'https://studyinsweden.se/moving-to-sweden/permits-visas/',
+          source: 'https://www.migrationsverket.se/en/',
         },
         {
           category: 'Permanent Residence / Long-Term Residence',
@@ -700,37 +1132,84 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Hard',
       difficulty_score: 4,
-      visa_options: ['L Permit (Work)', 'Swiss ICT Permit', 'Student Visa'],
-      processing_time: '2–3 meses',
-      investment_required: 'CHF 100,000 - CHF 300,000',
-      language_requirement: 'German/French/Italian (basic)',
-      job_market: 'High',
-      benefits: [
-        'Salários altos',
-        'Estabilidade econômica',
-        'Serviços públicos de qualidade',
+      visa_options: [
+        'L Permit (Work)',
+        'Swiss ICT Permit',
+        'Student Visa',
       ],
-      challenges: ['Custos elevados', 'Concorrência por vagas restritas'],
-      popular_cities: ['Zurich', 'Geneva', 'Basel'],
+      job_market: 'Strong',
+      popular_cities: [
+        'Zurich',
+        'Geneva',
+        'Basel',
+      ],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/switzerland.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto de trabalho suíço L Permit demora entre 2 e 3 meses, segundo Migration Switzerland.',
+          benefits: [
+            'Among the highest salaries in the world',
+            'Economic and political stability',
+            'Excellent public services and infrastructure',
+            'Central location within Europe',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Strict quotas for non-EU workers',
+            'Highly competitive job market for foreigners',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+          language_requirement:
+            'German, French or Italian depending on the canton',
         },
         {
           language: 'en',
           description:
             'The Swiss L Permit work visa takes between 2 and 3 months, according to Migration Switzerland.',
+          benefits: [
+            'Among the highest salaries in the world',
+            'Economic and political stability',
+            'Excellent public services and infrastructure',
+            'Central location within Europe',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Strict quotas for non-EU workers',
+            'Highly competitive job market for foreigners',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+          language_requirement:
+            'German, French or Italian depending on the canton',
         },
         {
           language: 'es',
           description:
             'La visa de trabajo suiza L Permit tarda entre 2 y 3 meses, según Migration Switzerland.',
+          benefits: [
+            'Among the highest salaries in the world',
+            'Economic and political stability',
+            'Excellent public services and infrastructure',
+            'Central location within Europe',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Strict quotas for non-EU workers',
+            'Highly competitive job market for foreigners',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+          language_requirement:
+            'German, French or Italian depending on the canton',
         },
       ],
       immigration_visa_types: [
@@ -768,36 +1247,76 @@ export async function seedCountries() {
         'H-1B Work Visa',
         'E-2 Treaty Investor Visa',
       ],
-      processing_time: '6–24 months (varia conforme categoria)',
-      investment_required: '$800,000 - $1,050,000',
-      language_requirement: 'English (basic)',
-      job_market: 'High',
-      benefits: [
-        'Oportunidades econômicas vastas',
-        'Diversidade cultural',
-        'Inovação tecnológica',
+      job_market: 'Strong',
+      popular_cities: [
+        'New York',
+        'San Francisco',
+        'Los Angeles',
       ],
-      challenges: ['Processo burocrático complexo', 'Sistema de saúde caro'],
-      popular_cities: ['New York', 'San Francisco', 'Los Angeles'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_states.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto EB‑5 exige investimento de US$ 800 000 (TEA) ou US$ 1.050 000, além de taxas. O H‑1B tem tarifas que variam e o E‑2 geralmente exige investimento de pelo menos US$ 100 000. Fonte: USCIS e Wikipedia EB‑5.',
+          benefits: [
+            'Largest economy and deepest job market in the world',
+            'Highest salaries in technology and specialised fields',
+            'Strong culture of innovation and entrepreneurship',
+            'Wide cultural diversity in major metropolitan areas',
+          ],
+          challenges: [
+            'Complex, lengthy and quota-limited processes',
+            'Expensive private healthcare tied to employment',
+            'Green card backlogs of years or decades for some nationalities',
+          ],
+          processing_time: '6–24 months, varying heavily by visa category',
+          investment_required:
+            'EB-5: US$800,000 in a targeted employment area, or US$1,050,000 otherwise',
+          language_requirement: 'English (no formal test for most categories)',
         },
         {
           language: 'en',
           description:
             'The EB-5 visa requires an investment of US$800,000 (TEA) or US$1,050,000, plus fees. The H-1B has varying fees and the E-2 generally requires an investment of at least US$100,000. Source: USCIS and Wikipedia EB-5.',
+          benefits: [
+            'Largest economy and deepest job market in the world',
+            'Highest salaries in technology and specialised fields',
+            'Strong culture of innovation and entrepreneurship',
+            'Wide cultural diversity in major metropolitan areas',
+          ],
+          challenges: [
+            'Complex, lengthy and quota-limited processes',
+            'Expensive private healthcare tied to employment',
+            'Green card backlogs of years or decades for some nationalities',
+          ],
+          processing_time: '6–24 months, varying heavily by visa category',
+          investment_required:
+            'EB-5: US$800,000 in a targeted employment area, or US$1,050,000 otherwise',
+          language_requirement: 'English (no formal test for most categories)',
         },
         {
           language: 'es',
           description:
             'La visa EB-5 requiere una inversión de US$800,000 (TEA) o US$1,050,000, además de tasas. La H-1B tiene tarifas variables y la E-2 generalmente requiere una inversión de al menos US$100,000. Fuente: USCIS y Wikipedia EB-5.',
+          benefits: [
+            'Largest economy and deepest job market in the world',
+            'Highest salaries in technology and specialised fields',
+            'Strong culture of innovation and entrepreneurship',
+            'Wide cultural diversity in major metropolitan areas',
+          ],
+          challenges: [
+            'Complex, lengthy and quota-limited processes',
+            'Expensive private healthcare tied to employment',
+            'Green card backlogs of years or decades for some nationalities',
+          ],
+          processing_time: '6–24 months, varying heavily by visa category',
+          investment_required:
+            'EB-5: US$800,000 in a targeted employment area, or US$1,050,000 otherwise',
+          language_requirement: 'English (no formal test for most categories)',
         },
       ],
       immigration_visa_types: [
@@ -828,36 +1347,74 @@ export async function seedCountries() {
         'EntrePass',
         'Global Investor Programme',
       ],
-      processing_time: '10–40 dias úteis',
-      investment_required: '€4,000 - €30,000',
-      language_requirement: 'English (basic)',
-      job_market: 'High',
-      benefits: [
-        'Baixos impostos',
-        'Centro financeiro global',
-        'Ambiente seguro',
+      job_market: 'Strong',
+      popular_cities: [
+        'Singapore',
       ],
-      challenges: ['Custo de vida muito alto', 'Mercado competitivo'],
-      popular_cities: ['Singapore'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/singapore.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Employment Pass é processado em cerca de 10 dias úteis ou até 8 semanas para empresas estrangeiras, com serviços custando ~US$4 900 (€4k) e taxas para issuance de SGD225‑255 (€143‑€163).',
+          benefits: [
+            'Low personal income tax rates',
+            'Major global financial hub',
+            'Very high public safety',
+            'English as the language of business and administration',
+          ],
+          challenges: [
+            'Very high cost of living and housing',
+            'Highly competitive job market',
+            'Permanent residence is selective and quota-bound',
+          ],
+          processing_time: '10–40 business days',
+          investment_required:
+            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+          language_requirement: 'English (official working language)',
         },
         {
           language: 'en',
           description:
             'The Employment Pass is processed in about 10 business days or up to 8 weeks for foreign companies, with services costing around US$4,900 (€4k) and issuance fees of SGD225-255 (€143-€163).',
+          benefits: [
+            'Low personal income tax rates',
+            'Major global financial hub',
+            'Very high public safety',
+            'English as the language of business and administration',
+          ],
+          challenges: [
+            'Very high cost of living and housing',
+            'Highly competitive job market',
+            'Permanent residence is selective and quota-bound',
+          ],
+          processing_time: '10–40 business days',
+          investment_required:
+            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+          language_requirement: 'English (official working language)',
         },
         {
           language: 'es',
           description:
             'El Employment Pass se procesa en unos 10 días hábiles o hasta 8 semanas para empresas extranjeras, con servicios que cuestan alrededor de US$4,900 (€4k) y tasas de emisión de SGD225-255 (€143-€163).',
+          benefits: [
+            'Low personal income tax rates',
+            'Major global financial hub',
+            'Very high public safety',
+            'English as the language of business and administration',
+          ],
+          challenges: [
+            'Very high cost of living and housing',
+            'Highly competitive job market',
+            'Permanent residence is selective and quota-bound',
+          ],
+          processing_time: '10–40 business days',
+          investment_required:
+            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+          language_requirement: 'English (official working language)',
         },
       ],
       immigration_visa_types: [
@@ -893,36 +1450,76 @@ export async function seedCountries() {
         'Green Visa (Self-employed)',
         'Investor Visa',
       ],
-      processing_time: '2–8 semanas',
-      investment_required: '$1,360 - $4,090',
-      language_requirement: 'English (basic)',
-      job_market: 'High',
-      benefits: [
-        'Sem impostos',
-        'Infraestrutura moderna',
-        'Ambiente multicultural',
+      job_market: 'Strong',
+      popular_cities: [
+        'Dubai',
+        'Abu Dhabi',
+        'Sharjah',
       ],
-      challenges: ['Clima extremo', 'Regras de residência específicas'],
-      popular_cities: ['Dubai', 'Abu Dhabi', 'Sharjah'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_arab_emirates.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O visto de trabalho (2 anos) custa entre AED 5 000‑10 000 (~US$ 1 360‑2 720) mais Emirates ID e saúde. O Green/Investor visa exige solvência ou investimento de AED 10 milhões (~US$ 2,720,000).',
+          benefits: [
+            'No personal income tax',
+            'Modern infrastructure and global connectivity',
+            'Highly multicultural workforce',
+            'Golden Visa offers 10-year renewable residence',
+          ],
+          challenges: [
+            'Extreme summer heat',
+            'Most residence permits are tied to an employer',
+            'No path to citizenship for most residents',
+          ],
+          processing_time: '2–8 weeks',
+          investment_required:
+            'Employment visa fees from ≈US$1,360; Golden Visa investment routes from AED 2 million',
+          language_requirement: 'Arabic official; English widely used at work',
         },
         {
           language: 'en',
           description:
             'The 2-year work visa costs between AED 5,000-10,000 (~US$1,360-2,720) plus Emirates ID and health. The Green/Investor visa requires solvency or an investment of AED 10 million (~US$2,720,000).',
+          benefits: [
+            'No personal income tax',
+            'Modern infrastructure and global connectivity',
+            'Highly multicultural workforce',
+            'Golden Visa offers 10-year renewable residence',
+          ],
+          challenges: [
+            'Extreme summer heat',
+            'Most residence permits are tied to an employer',
+            'No path to citizenship for most residents',
+          ],
+          processing_time: '2–8 weeks',
+          investment_required:
+            'Employment visa fees from ≈US$1,360; Golden Visa investment routes from AED 2 million',
+          language_requirement: 'Arabic official; English widely used at work',
         },
         {
           language: 'es',
           description:
             'La visa de trabajo de 2 años cuesta entre AED 5,000-10,000 (~US$1,360-2,720) más Emirates ID y salud. La Green/Investor visa exige solvencia o una inversión de AED 10 millones (~US$2,720,000).',
+          benefits: [
+            'No personal income tax',
+            'Modern infrastructure and global connectivity',
+            'Highly multicultural workforce',
+            'Golden Visa offers 10-year renewable residence',
+          ],
+          challenges: [
+            'Extreme summer heat',
+            'Most residence permits are tied to an employer',
+            'No path to citizenship for most residents',
+          ],
+          processing_time: '2–8 weeks',
+          investment_required:
+            'Employment visa fees from ≈US$1,360; Golden Visa investment routes from AED 2 million',
+          language_requirement: 'Arabic official; English widely used at work',
         },
       ],
       immigration_visa_types: [
@@ -959,36 +1556,79 @@ export async function seedCountries() {
         'D‑8 Corporate Investment Visa',
         'F‑2 Residency by Investment',
       ],
-      processing_time: '2–4 weeks',
-      investment_required: '$45,000 - $90,000',
-      language_requirement: 'Korean (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Infraestrutura moderna',
-        'Boa qualidade de vida',
-        'Mercado tecnológico sólido',
+      popular_cities: [
+        'Seoul',
+        'Busan',
+        'Incheon',
       ],
-      challenges: ['Barreira linguística', 'Cultura corporativa intensa'],
-      popular_cities: ['Seoul', 'Busan', 'Incheon'],
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/south_korea.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'As emissões de vistos de trabalho e corporativos levam de 2 a 4 semanas; investimento mínimo de $45 000 (D‑8) a $90 000 para status F‑2 residencial por investimento.',
+          benefits: [
+            'Advanced digital and transport infrastructure',
+            'Strong technology and manufacturing sectors',
+            'National health insurance covering residents',
+            'High public safety',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding corporate work culture',
+            'Long working hours in traditional industries',
+          ],
+          processing_time: '2–4 weeks',
+          investment_required:
+            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+          language_requirement:
+            'Korean (TOPIK levels required for some residence categories)',
         },
         {
           language: 'en',
           description:
             'Work and corporate visa issuances take 2 to 4 weeks; minimum investment of $45,000 (D-8) to $90,000 for F-2 residency by investment status.',
+          benefits: [
+            'Advanced digital and transport infrastructure',
+            'Strong technology and manufacturing sectors',
+            'National health insurance covering residents',
+            'High public safety',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding corporate work culture',
+            'Long working hours in traditional industries',
+          ],
+          processing_time: '2–4 weeks',
+          investment_required:
+            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+          language_requirement:
+            'Korean (TOPIK levels required for some residence categories)',
         },
         {
           language: 'es',
           description:
             'La emisión de visados de trabajo y corporativos tarda de 2 a 4 semanas; inversión mínima de $45,000 (D-8) a $90,000 para el estatus de residencia F-2 por inversión.',
+          benefits: [
+            'Advanced digital and transport infrastructure',
+            'Strong technology and manufacturing sectors',
+            'National health insurance covering residents',
+            'High public safety',
+          ],
+          challenges: [
+            'Significant language barrier',
+            'Demanding corporate work culture',
+            'Long working hours in traditional industries',
+          ],
+          processing_time: '2–4 weeks',
+          investment_required:
+            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+          language_requirement:
+            'Korean (TOPIK levels required for some residence categories)',
         },
       ],
       immigration_visa_types: [
@@ -1023,36 +1663,82 @@ export async function seedCountries() {
         'EU Blue Card',
         'Startup Visa',
       ],
-      processing_time: '2–4 weeks (fast-track for employer-sponsored)',
-      investment_required: '€405 - €15,000',
-      language_requirement: 'English (basic)',
-      job_market: 'High',
-      benefits: [
-        'Alta qualidade de vida',
-        'Boa mobilidade na Europa',
-        'Ambiente internacional',
+      job_market: 'Strong',
+      popular_cities: [
+        'Amsterdam',
+        'Rotterdam',
+        'The Hague',
       ],
-      challenges: ['Clima chuvoso', 'Custos elevados em Amsterdam'],
-      popular_cities: ['Amsterdam', 'Rotterdam', 'The Hague'],
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/netherlands.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Permissão para Migrantes Altamente Qualificados custa €405, com processo de 2–4 semanas para empregadores reconhecidos, conforme IND.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Excellent connectivity across Europe',
+            'Very international working environment',
+            '30% ruling tax advantage for qualifying newcomers',
+          ],
+          challenges: [
+            'Severe housing shortage',
+            'Rainy and grey climate',
+            'High cost of living in Amsterdam and Utrecht',
+          ],
+          processing_time:
+            '2–4 weeks under the fast-track scheme for recognised sponsors',
+          investment_required:
+            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+          language_requirement:
+            'Dutch (English widely spoken and accepted at work)',
         },
         {
           language: 'en',
           description:
             'The Highly Skilled Migrant Permit costs €405, with a 2–4 week process for recognized employers, according to IND.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Excellent connectivity across Europe',
+            'Very international working environment',
+            '30% ruling tax advantage for qualifying newcomers',
+          ],
+          challenges: [
+            'Severe housing shortage',
+            'Rainy and grey climate',
+            'High cost of living in Amsterdam and Utrecht',
+          ],
+          processing_time:
+            '2–4 weeks under the fast-track scheme for recognised sponsors',
+          investment_required:
+            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+          language_requirement:
+            'Dutch (English widely spoken and accepted at work)',
         },
         {
           language: 'es',
           description:
             'El Permiso para Migrantes Altamente Cualificados cuesta €405, con un proceso de 2–4 semanas para empleadores reconocidos, según IND.',
+          benefits: [
+            'High quality of life and work-life balance',
+            'Excellent connectivity across Europe',
+            'Very international working environment',
+            '30% ruling tax advantage for qualifying newcomers',
+          ],
+          challenges: [
+            'Severe housing shortage',
+            'Rainy and grey climate',
+            'High cost of living in Amsterdam and Utrecht',
+          ],
+          processing_time:
+            '2–4 weeks under the fast-track scheme for recognised sponsors',
+          investment_required:
+            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+          language_requirement:
+            'Dutch (English widely spoken and accepted at work)',
         },
       ],
       immigration_visa_types: [
@@ -1081,8 +1767,7 @@ export async function seedCountries() {
           category: 'Residence Permit / Work & Study Visas',
           description:
             'Visas/residence permits for non-EU nationals to live, work, study in the Netherlands.',
-          source:
-            'https://remote.com/blog/relocation/work-visas-and-permits-netherlands',
+          source: 'https://ind.nl/en',
         },
       ],
     },
@@ -1097,36 +1782,76 @@ export async function seedCountries() {
         'Self-employment Visa',
         'Student Visa',
       ],
-      processing_time: '2–4 months',
-      investment_required: '€7,000 - €50,000',
-      language_requirement: 'Italian (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Rica herança cultural',
-        'Gastronomia de renome',
-        'Sistema de saúde acessível',
+      popular_cities: [
+        'Rome',
+        'Milan',
+        'Florence',
       ],
-      challenges: ['Burocracia estatal', 'Mercado de trabalho lento'],
-      popular_cities: ['Rome', 'Milan', 'Florence'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/italy.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Itália oferece o visto de residência eletiva para quem possui renda passiva. O processo pode levar até 4 meses, com comprovação de fundos de ao menos €31 mil por ano.',
+          benefits: [
+            'Rich cultural and historical heritage',
+            'Renowned food and lifestyle',
+            'Accessible public healthcare for residents',
+            'Citizenship by descent available to many applicants',
+          ],
+          challenges: [
+            'Layered and slow bureaucracy',
+            'Sluggish labour market and low wages',
+            'Marked economic gap between north and south',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+          language_requirement: 'Italian (basic; B1 for citizenship)',
         },
         {
           language: 'en',
           description:
             'Italy offers the elective residence visa for those with passive income. The process can take up to 4 months, requiring proof of funds of at least €31,000 per year.',
+          benefits: [
+            'Rich cultural and historical heritage',
+            'Renowned food and lifestyle',
+            'Accessible public healthcare for residents',
+            'Citizenship by descent available to many applicants',
+          ],
+          challenges: [
+            'Layered and slow bureaucracy',
+            'Sluggish labour market and low wages',
+            'Marked economic gap between north and south',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+          language_requirement: 'Italian (basic; B1 for citizenship)',
         },
         {
           language: 'es',
           description:
             'Italia ofrece la visa de residencia electiva para quienes tienen ingresos pasivos. El proceso puede tardar hasta 4 meses, requiriendo comprobante de fondos de al menos €31,000 por año.',
+          benefits: [
+            'Rich cultural and historical heritage',
+            'Renowned food and lifestyle',
+            'Accessible public healthcare for residents',
+            'Citizenship by descent available to many applicants',
+          ],
+          challenges: [
+            'Layered and slow bureaucracy',
+            'Sluggish labour market and low wages',
+            'Marked economic gap between north and south',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+          language_requirement: 'Italian (basic; B1 for citizenship)',
         },
       ],
       immigration_visa_types: [
@@ -1147,7 +1872,7 @@ export async function seedCountries() {
           category: 'Investor / Self-Employment Visa',
           description:
             'Specific visa route for self-employed persons or investors in Italy.',
-          source: 'https://immigration-italy.com/',
+          source: 'https://vistoperitalia.esteri.it/',
         },
       ],
     },
@@ -1162,36 +1887,76 @@ export async function seedCountries() {
         'Digital Nomad Visa',
         'Permanent Residence',
       ],
-      processing_time: '1–2 months',
-      investment_required: '$1,500 - $10,000',
-      language_requirement: 'Spanish (basic)',
-      job_market: 'Low',
-      benefits: [
-        'Custo de vida acessível',
-        'Beleza natural e cultura',
-        'Facilidade de residência permanente',
+      job_market: 'Weak',
+      popular_cities: [
+        'Buenos Aires',
+        'Córdoba',
+        'Rosario',
       ],
-      challenges: ['Instabilidade econômica', 'Inflação alta'],
-      popular_cities: ['Buenos Aires', 'Córdoba', 'Rosario'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/argentina.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Argentina oferece vistos temporários e permanentes de forma acessível, sendo possível aplicar com comprovação de renda modesta ou vínculo com empresas locais.',
+          benefits: [
+            'Low cost of living in US dollar terms',
+            'Simplified residence for Mercosur nationals',
+            'Naturalisation possible after two years of residence',
+            'Strong cultural life and natural diversity',
+          ],
+          challenges: [
+            'Chronic economic instability',
+            'High inflation eroding local salaries',
+            'Currency and capital controls',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Argentina offers temporary and permanent visas in an accessible way, and it is possible to apply with modest income proof or ties to local companies.',
+          benefits: [
+            'Low cost of living in US dollar terms',
+            'Simplified residence for Mercosur nationals',
+            'Naturalisation possible after two years of residence',
+            'Strong cultural life and natural diversity',
+          ],
+          challenges: [
+            'Chronic economic instability',
+            'High inflation eroding local salaries',
+            'Currency and capital controls',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'Argentina ofrece visados temporales y permanentes de forma accesible, siendo posible aplicar con comprobante de ingresos modestos o vínculo con empresas locales.',
+          benefits: [
+            'Low cost of living in US dollar terms',
+            'Simplified residence for Mercosur nationals',
+            'Naturalisation possible after two years of residence',
+            'Strong cultural life and natural diversity',
+          ],
+          challenges: [
+            'Chronic economic instability',
+            'High inflation eroding local salaries',
+            'Currency and capital controls',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -1205,8 +1970,7 @@ export async function seedCountries() {
           category: 'Working Visa / Labour Contract Visa',
           description:
             'Visa for foreign nationals working under labour contract or being transferred to Argentina for employment.',
-          source:
-            'https://www.imminetwork.com/countries/argentina/visa-and-services/',
+          source: 'https://www.argentina.gob.ar/interior/migraciones',
         },
         {
           category: 'Student Visa / Long-Term Study',
@@ -1233,36 +1997,76 @@ export async function seedCountries() {
         'Work Visa',
         'Investment Visa',
       ],
-      processing_time: '2–3 months',
-      investment_required: '$5,000 - $25,000',
-      language_requirement: 'Spanish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Estabilidade política',
-        'Boas oportunidades para empreendedores',
-        'Serviços públicos razoáveis',
+      popular_cities: [
+        'Santiago',
+        'Valparaíso',
+        'Concepción',
       ],
-      challenges: ['Alta burocracia migratória', 'Barreira linguística'],
-      popular_cities: ['Santiago', 'Valparaíso', 'Concepción'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/chile.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Chile permite a residência temporária para trabalho e investimento. Os valores exigidos começam em torno de $5.000 USD, com análise caso a caso.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Good environment for entrepreneurs',
+            'Reliable public services by regional standards',
+            'Permanent residence possible after two years',
+          ],
+          challenges: [
+            'Slow and document-heavy immigration bureaucracy',
+            'Language barrier outside Santiago',
+            'High cost of living in the capital',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of income; investment routes from ≈US$25,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Chile allows temporary residence for work and investment. The required amounts start at around $5,000 USD, with case-by-case analysis.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Good environment for entrepreneurs',
+            'Reliable public services by regional standards',
+            'Permanent residence possible after two years',
+          ],
+          challenges: [
+            'Slow and document-heavy immigration bureaucracy',
+            'Language barrier outside Santiago',
+            'High cost of living in the capital',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of income; investment routes from ≈US$25,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'Chile permite la residencia temporal para trabajo e inversión. Los valores exigidos comienzan en torno a $5,000 USD, con análisis caso a caso.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Good environment for entrepreneurs',
+            'Reliable public services by regional standards',
+            'Permanent residence possible after two years',
+          ],
+          challenges: [
+            'Slow and document-heavy immigration bureaucracy',
+            'Language barrier outside Santiago',
+            'High cost of living in the capital',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of income; investment routes from ≈US$25,000',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -1298,36 +2102,76 @@ export async function seedCountries() {
         'Job Seeker Visa',
         'Student Residence Permit',
       ],
-      processing_time: '2–4 months',
-      investment_required: '€15,000 - €50,000',
-      language_requirement: 'German (basic)',
-      job_market: 'High',
-      benefits: [
-        'Alta qualidade de vida',
-        'Ambiente seguro',
-        'Sistema de saúde excelente',
+      job_market: 'Strong',
+      popular_cities: [
+        'Vienna',
+        'Salzburg',
+        'Graz',
       ],
-      challenges: ['Idioma exigente', 'Processos seletivos complexos'],
-      popular_cities: ['Vienna', 'Salzburg', 'Graz'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/austria.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Áustria exige comprovação financeira, seguro saúde e contratos formais. A Red-White-Red Card é ideal para profissionais qualificados e investidores.',
+          benefits: [
+            'Very high quality of life',
+            'Excellent healthcare system',
+            'Safe cities with strong public transport',
+            'Central location within the EU',
+          ],
+          challenges: [
+            'Demanding German language requirements',
+            'Complex points-based selection',
+            'Quota limits on some residence categories',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+          language_requirement: 'German (A1 before arrival for most routes)',
         },
         {
           language: 'en',
           description:
             'Austria requires financial proof, health insurance, and formal contracts. The Red-White-Red Card is ideal for qualified professionals and investors.',
+          benefits: [
+            'Very high quality of life',
+            'Excellent healthcare system',
+            'Safe cities with strong public transport',
+            'Central location within the EU',
+          ],
+          challenges: [
+            'Demanding German language requirements',
+            'Complex points-based selection',
+            'Quota limits on some residence categories',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+          language_requirement: 'German (A1 before arrival for most routes)',
         },
         {
           language: 'es',
           description:
             'Austria exige comprobante financiero, seguro de salud y contratos formales. La Red-White-Red Card es ideal para profesionales calificados e inversores.',
+          benefits: [
+            'Very high quality of life',
+            'Excellent healthcare system',
+            'Safe cities with strong public transport',
+            'Central location within the EU',
+          ],
+          challenges: [
+            'Demanding German language requirements',
+            'Complex points-based selection',
+            'Quota limits on some residence categories',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+          language_requirement: 'German (A1 before arrival for most routes)',
         },
       ],
       immigration_visa_types: [
@@ -1365,39 +2209,79 @@ export async function seedCountries() {
         'Temporary Residence Permit',
         'Work Permit',
       ],
-      processing_time: '1–3 months',
-      investment_required: '$3,000 - $12,000',
-      language_requirement: 'Polish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Custo de vida baixo na UE',
-        'Boas oportunidades para trabalho técnico',
-        'Crescimento econômico estável',
+      popular_cities: [
+        'Warsaw',
+        'Krakow',
+        'Wroclaw',
       ],
-      challenges: [
-        'Barreira linguística',
-        'Serviços públicos limitados em inglês',
-      ],
-      popular_cities: ['Warsaw', 'Krakow', 'Wroclaw'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/poland.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Polônia é uma das portas de entrada mais acessíveis na Europa. Os vistos nacionais D permitem moradia e trabalho com requisitos financeiros moderados.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Growing demand for technical and IT roles',
+            'Steady economic growth',
+            'Central location for travel across Europe',
+          ],
+          challenges: [
+            'Language barrier in public services',
+            'Polish is demanding to learn',
+            'Processing times vary widely by voivodeship',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+          language_requirement:
+            'Polish (basic; required for permanent residence)',
         },
         {
           language: 'en',
           description:
             'Poland is one of the most accessible gateways in Europe. National D visas allow residence and work with moderate financial requirements.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Growing demand for technical and IT roles',
+            'Steady economic growth',
+            'Central location for travel across Europe',
+          ],
+          challenges: [
+            'Language barrier in public services',
+            'Polish is demanding to learn',
+            'Processing times vary widely by voivodeship',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+          language_requirement:
+            'Polish (basic; required for permanent residence)',
         },
         {
           language: 'es',
           description:
             'Polonia es una de las puertas de entrada más accesibles de Europa. Las visas nacionales D permiten residencia y trabajo con requisitos financieros moderados.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Growing demand for technical and IT roles',
+            'Steady economic growth',
+            'Central location for travel across Europe',
+          ],
+          challenges: [
+            'Language barrier in public services',
+            'Polish is demanding to learn',
+            'Processing times vary widely by voivodeship',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+          language_requirement:
+            'Polish (basic; required for permanent residence)',
         },
       ],
       immigration_visa_types: [
@@ -1426,36 +2310,79 @@ export async function seedCountries() {
         'Startup Permit',
         'Student Residence Permit',
       ],
-      processing_time: '2–3 months',
-      investment_required: '€6,720 - €30,000',
-      language_requirement: 'English/Finnish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Alta qualidade de vida',
-        'Educação gratuita',
-        'Natureza exuberante',
+      popular_cities: [
+        'Helsinki',
+        'Tampere',
+        'Turku',
       ],
-      challenges: ['Clima extremo', 'Mercado competitivo para estrangeiros'],
-      popular_cities: ['Helsinki', 'Tampere', 'Turku'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
         'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/finlland.png',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Finlândia exige comprovação de fundos para estudantes e empreendedores. O Startup Permit é ideal para empresas de base tecnológica e exige plano de negócio validado.',
+          benefits: [
+            'Consistently ranked among the happiest countries in the world',
+            'Free education and strong public services',
+            'Clean environment and abundant nature',
+            'Good work-life balance',
+          ],
+          challenges: [
+            'Long, dark and extremely cold winters',
+            'Finnish is a difficult language to learn',
+            'Competitive job market for non-Finnish speakers',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of funds (≈€6,720/year for students)',
+          language_requirement:
+            'Finnish or Swedish (English accepted in many workplaces)',
         },
         {
           language: 'en',
           description:
             'Finland requires proof of funds for students and entrepreneurs. The Startup Permit is ideal for technology-based companies and requires a validated business plan.',
+          benefits: [
+            'Consistently ranked among the happiest countries in the world',
+            'Free education and strong public services',
+            'Clean environment and abundant nature',
+            'Good work-life balance',
+          ],
+          challenges: [
+            'Long, dark and extremely cold winters',
+            'Finnish is a difficult language to learn',
+            'Competitive job market for non-Finnish speakers',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of funds (≈€6,720/year for students)',
+          language_requirement:
+            'Finnish or Swedish (English accepted in many workplaces)',
         },
         {
           language: 'es',
           description:
             'Finlandia exige comprobante de fondos para estudiantes y emprendedores. El Startup Permit es ideal para empresas de base tecnológica y exige un plan de negocios validado.',
+          benefits: [
+            'Consistently ranked among the happiest countries in the world',
+            'Free education and strong public services',
+            'Clean environment and abundant nature',
+            'Good work-life balance',
+          ],
+          challenges: [
+            'Long, dark and extremely cold winters',
+            'Finnish is a difficult language to learn',
+            'Competitive job market for non-Finnish speakers',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Application fees plus proof of funds (≈€6,720/year for students)',
+          language_requirement:
+            'Finnish or Swedish (English accepted in many workplaces)',
         },
       ],
       immigration_visa_types: [
@@ -1492,42 +2419,77 @@ export async function seedCountries() {
         'Work Visa (D1/D3)',
         'Student Visa (D4)',
       ],
-      processing_time: '60–90 days',
-      investment_required:
-        'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
-      language_requirement: 'Portuguese (A2 required for citizenship)',
       job_market: 'Moderate',
-      benefits: [
-        'Path to citizenship after 5 years',
-        'Affordable cost of living within the EU',
-        'CPLP agreement eases entry for Portuguese-speaking nationals',
-        'Mild climate and high safety',
+      popular_cities: [
+        'Lisboa',
+        'Porto',
+        'Braga',
+        'Faro',
       ],
-      challenges: [
-        'AIMA backlogs and long appointment queues',
-        'Pressured housing market in Lisbon and Porto',
-        'Low local salaries',
-      ],
-      popular_cities: ['Lisboa', 'Porto', 'Braga', 'Faro'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'Portugal oferece vistos de residência D1 a D8, incluindo o D7 para renda passiva e o D8 para nômades digitais, com caminho para cidadania em 5 anos.',
+          benefits: [
+            'Path to citizenship after 5 years',
+            'Affordable cost of living within the EU',
+            'CPLP agreement eases entry for Portuguese-speaking nationals',
+            'Mild climate and high safety',
+          ],
+          challenges: [
+            'AIMA backlogs and long appointment queues',
+            'Pressured housing market in Lisbon and Porto',
+            'Low local salaries',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+          language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
           language: 'en',
           description:
             'Portugal offers D1 to D8 residence visas, including the D7 for passive income and the D8 for digital nomads, with a path to citizenship after 5 years.',
+          benefits: [
+            'Path to citizenship after 5 years',
+            'Affordable cost of living within the EU',
+            'CPLP agreement eases entry for Portuguese-speaking nationals',
+            'Mild climate and high safety',
+          ],
+          challenges: [
+            'AIMA backlogs and long appointment queues',
+            'Pressured housing market in Lisbon and Porto',
+            'Low local salaries',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+          language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
           language: 'es',
           description:
             'Portugal ofrece visados de residencia D1 a D8, incluido el D7 para rentas pasivas y el D8 para nómadas digitales, con vía a la ciudadanía a los 5 años.',
+          benefits: [
+            'Path to citizenship after 5 years',
+            'Affordable cost of living within the EU',
+            'CPLP agreement eases entry for Portuguese-speaking nationals',
+            'Mild climate and high safety',
+          ],
+          challenges: [
+            'AIMA backlogs and long appointment queues',
+            'Pressured housing market in Lisbon and Porto',
+            'Low local salaries',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+          language_requirement: 'Portuguese (A2 required for citizenship)',
         },
       ],
       immigration_visa_types: [
@@ -1569,22 +2531,7 @@ export async function seedCountries() {
         'Visitor Visa (FMM)',
         'Work Visa with job offer',
       ],
-      processing_time: '10–30 days',
-      investment_required:
-        'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
-      language_requirement: 'Spanish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Low cost of living',
-        'Proximity and time-zone overlap with the United States',
-        'Accessible temporary residency requirements',
-        'Large established expat and digital nomad community',
-      ],
-      challenges: [
-        'Security varies considerably by region',
-        'INM bureaucracy and inconsistent consulate criteria',
-        'Large informal labour market',
-      ],
       popular_cities: [
         'Ciudad de México',
         'Guadalajara',
@@ -1595,21 +2542,66 @@ export async function seedCountries() {
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O México oferece residência temporária e permanente com requisitos de renda acessíveis, sendo um dos principais destinos de nômades digitais das Américas.',
+          benefits: [
+            'Low cost of living',
+            'Proximity and time-zone overlap with the United States',
+            'Accessible temporary residency requirements',
+            'Large established expat and digital nomad community',
+          ],
+          challenges: [
+            'Security varies considerably by region',
+            'INM bureaucracy and inconsistent consulate criteria',
+            'Large informal labour market',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Mexico offers temporary and permanent residency with accessible income requirements, and is one of the main digital nomad destinations in the Americas.',
+          benefits: [
+            'Low cost of living',
+            'Proximity and time-zone overlap with the United States',
+            'Accessible temporary residency requirements',
+            'Large established expat and digital nomad community',
+          ],
+          challenges: [
+            'Security varies considerably by region',
+            'INM bureaucracy and inconsistent consulate criteria',
+            'Large informal labour market',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'México ofrece residencia temporal y permanente con requisitos de ingresos accesibles, y es uno de los principales destinos de nómadas digitales de América.',
+          benefits: [
+            'Low cost of living',
+            'Proximity and time-zone overlap with the United States',
+            'Accessible temporary residency requirements',
+            'Large established expat and digital nomad community',
+          ],
+          challenges: [
+            'Security varies considerably by region',
+            'INM bureaucracy and inconsistent consulate criteria',
+            'Large informal labour market',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -1645,42 +2637,77 @@ export async function seedCountries() {
         'Student Residence Permit',
         'Family Immigration',
       ],
-      processing_time: '1–4 months',
-      investment_required:
-        'Skilled worker: salary matching Norwegian collective agreement levels',
-      language_requirement: 'Norwegian (B1 for permanent residence)',
       job_market: 'Strong',
-      benefits: [
-        'High salaries and strong worker protections',
-        'Comprehensive welfare state',
-        'Strong work-life balance',
-        'Outstanding natural environment',
+      popular_cities: [
+        'Oslo',
+        'Bergen',
+        'Trondheim',
+        'Stavanger',
       ],
-      challenges: [
-        'Very high cost of living',
-        'Difficult language for newcomers',
-        'Long, dark winters',
-      ],
-      popular_cities: ['Oslo', 'Bergen', 'Trondheim', 'Stavanger'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Noruega concede autorizações de residência para trabalhadores qualificados, estudantes e reunificação familiar, com salários altos e forte proteção social.',
+          benefits: [
+            'High salaries and strong worker protections',
+            'Comprehensive welfare state',
+            'Strong work-life balance',
+            'Outstanding natural environment',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Difficult language for newcomers',
+            'Long, dark winters',
+          ],
+          processing_time: '1–4 months',
+          investment_required:
+            'Skilled worker: salary matching Norwegian collective agreement levels',
+          language_requirement: 'Norwegian (B1 for permanent residence)',
         },
         {
           language: 'en',
           description:
             'Norway grants residence permits for skilled workers, students and family reunification, with high salaries and strong social protection.',
+          benefits: [
+            'High salaries and strong worker protections',
+            'Comprehensive welfare state',
+            'Strong work-life balance',
+            'Outstanding natural environment',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Difficult language for newcomers',
+            'Long, dark winters',
+          ],
+          processing_time: '1–4 months',
+          investment_required:
+            'Skilled worker: salary matching Norwegian collective agreement levels',
+          language_requirement: 'Norwegian (B1 for permanent residence)',
         },
         {
           language: 'es',
           description:
             'Noruega concede permisos de residencia para trabajadores cualificados, estudiantes y reagrupación familiar, con salarios altos y fuerte protección social.',
+          benefits: [
+            'High salaries and strong worker protections',
+            'Comprehensive welfare state',
+            'Strong work-life balance',
+            'Outstanding natural environment',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Difficult language for newcomers',
+            'Long, dark winters',
+          ],
+          processing_time: '1–4 months',
+          investment_required:
+            'Skilled worker: salary matching Norwegian collective agreement levels',
+          language_requirement: 'Norwegian (B1 for permanent residence)',
         },
       ],
       immigration_visa_types: [
@@ -1722,42 +2749,77 @@ export async function seedCountries() {
         'Student Residence Permit',
         'Family Reunification',
       ],
-      processing_time: '1–3 months',
-      investment_required:
-        'Pay Limit Scheme: annual salary above the statutory threshold set each year',
-      language_requirement: 'Danish (required for permanent residence)',
       job_market: 'Strong',
-      benefits: [
-        'Free education and healthcare',
-        'Consistently high quality of life',
-        'Short working week and strong labour rights',
-        'Efficient digital public services',
+      popular_cities: [
+        'Copenhagen',
+        'Aarhus',
+        'Odense',
+        'Aalborg',
       ],
-      challenges: [
-        'High income tax burden',
-        'Restrictive immigration rules',
-        'Social integration can be slow for newcomers',
-      ],
-      popular_cities: ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Dinamarca concede residência principalmente por vias de trabalho qualificado, como o Pay Limit Scheme e a Positive List, além de estudo e reunificação familiar.',
+          benefits: [
+            'Free education and healthcare',
+            'Consistently high quality of life',
+            'Short working week and strong labour rights',
+            'Efficient digital public services',
+          ],
+          challenges: [
+            'High income tax burden',
+            'Restrictive immigration rules',
+            'Social integration can be slow for newcomers',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+          language_requirement: 'Danish (required for permanent residence)',
         },
         {
           language: 'en',
           description:
             'Denmark grants residence mainly through skilled work routes such as the Pay Limit Scheme and the Positive List, alongside study and family reunification.',
+          benefits: [
+            'Free education and healthcare',
+            'Consistently high quality of life',
+            'Short working week and strong labour rights',
+            'Efficient digital public services',
+          ],
+          challenges: [
+            'High income tax burden',
+            'Restrictive immigration rules',
+            'Social integration can be slow for newcomers',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+          language_requirement: 'Danish (required for permanent residence)',
         },
         {
           language: 'es',
           description:
             'Dinamarca concede residencia principalmente por vías de trabajo cualificado, como el Pay Limit Scheme y la Positive List, además de estudio y reagrupación familiar.',
+          benefits: [
+            'Free education and healthcare',
+            'Consistently high quality of life',
+            'Short working week and strong labour rights',
+            'Efficient digital public services',
+          ],
+          challenges: [
+            'High income tax burden',
+            'Restrictive immigration rules',
+            'Social integration can be slow for newcomers',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+          language_requirement: 'Danish (required for permanent residence)',
         },
       ],
       immigration_visa_types: [
@@ -1799,42 +2861,80 @@ export async function seedCountries() {
         'Student Visa',
         'Family Reunification',
       ],
-      processing_time: '2–4 months',
-      investment_required:
-        'Single Permit: employment contract meeting the salary threshold of the relevant region',
-      language_requirement: 'Dutch, French or German depending on the region',
       job_market: 'Strong',
-      benefits: [
-        'Hosts the main EU institutions and international organisations',
-        'Central location within Western Europe',
-        'High-quality healthcare system',
-        'Multilingual working environment',
+      popular_cities: [
+        'Brussels',
+        'Antwerp',
+        'Ghent',
+        'Leuven',
       ],
-      challenges: [
-        'High tax burden',
-        'Administrative complexity split across regions',
-        'Grey and rainy climate',
-      ],
-      popular_cities: ['Brussels', 'Antwerp', 'Ghent', 'Leuven'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Bélgica concentra as instituições da UE e concede residência principalmente pelo Single Permit, que reúne autorização de trabalho e residência num só pedido.',
+          benefits: [
+            'Hosts the main EU institutions and international organisations',
+            'Central location within Western Europe',
+            'High-quality healthcare system',
+            'Multilingual working environment',
+          ],
+          challenges: [
+            'High tax burden',
+            'Administrative complexity split across regions',
+            'Grey and rainy climate',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+          language_requirement:
+            'Dutch, French or German depending on the region',
         },
         {
           language: 'en',
           description:
             'Belgium hosts the main EU institutions and grants residence mainly through the Single Permit, which combines work and residence authorisation in one application.',
+          benefits: [
+            'Hosts the main EU institutions and international organisations',
+            'Central location within Western Europe',
+            'High-quality healthcare system',
+            'Multilingual working environment',
+          ],
+          challenges: [
+            'High tax burden',
+            'Administrative complexity split across regions',
+            'Grey and rainy climate',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+          language_requirement:
+            'Dutch, French or German depending on the region',
         },
         {
           language: 'es',
           description:
             'Bélgica concentra las instituciones de la UE y concede residencia principalmente mediante el Single Permit, que reúne autorización de trabajo y residencia en una sola solicitud.',
+          benefits: [
+            'Hosts the main EU institutions and international organisations',
+            'Central location within Western Europe',
+            'High-quality healthcare system',
+            'Multilingual working environment',
+          ],
+          challenges: [
+            'High tax burden',
+            'Administrative complexity split across regions',
+            'Grey and rainy climate',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+          language_requirement:
+            'Dutch, French or German depending on the region',
         },
       ],
       immigration_visa_types: [
@@ -1876,42 +2976,77 @@ export async function seedCountries() {
         'Long-Term Business Visa (Živnostenské oprávnění)',
         'Student Long-Term Visa',
       ],
-      processing_time: '60–90 days',
-      investment_required:
-        'Proof of funds of roughly CZK 110,000 for long-term stay applications',
-      language_requirement: 'Czech (A2 for permanent residence)',
       job_market: 'Strong',
-      benefits: [
-        'Low cost of living for an EU member state',
-        'Consistently low unemployment',
-        'Central location with easy travel across Europe',
-        'Accessible freelance (živno) route',
+      popular_cities: [
+        'Prague',
+        'Brno',
+        'Ostrava',
+        'Plzeň',
       ],
-      challenges: [
-        'Czech is a demanding language to learn',
-        'Slow and paperwork-heavy administration',
-        'Language barrier outside Prague',
-      ],
-      popular_cities: ['Prague', 'Brno', 'Ostrava', 'Plzeň'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Chéquia oferece o Employee Card para trabalho, o Cartão Azul da UE para qualificados e o visto de longa duração para autônomos, com custo de vida baixo para a UE.',
+          benefits: [
+            'Low cost of living for an EU member state',
+            'Consistently low unemployment',
+            'Central location with easy travel across Europe',
+            'Accessible freelance (živno) route',
+          ],
+          challenges: [
+            'Czech is a demanding language to learn',
+            'Slow and paperwork-heavy administration',
+            'Language barrier outside Prague',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+          language_requirement: 'Czech (A2 for permanent residence)',
         },
         {
           language: 'en',
           description:
             'Czechia offers the Employee Card for work, the EU Blue Card for highly qualified professionals and a long-term visa for freelancers, with a low cost of living for the EU.',
+          benefits: [
+            'Low cost of living for an EU member state',
+            'Consistently low unemployment',
+            'Central location with easy travel across Europe',
+            'Accessible freelance (živno) route',
+          ],
+          challenges: [
+            'Czech is a demanding language to learn',
+            'Slow and paperwork-heavy administration',
+            'Language barrier outside Prague',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+          language_requirement: 'Czech (A2 for permanent residence)',
         },
         {
           language: 'es',
           description:
             'Chequia ofrece la Employee Card para trabajo, la Tarjeta Azul de la UE para cualificados y el visado de larga duración para autónomos, con bajo coste de vida para la UE.',
+          benefits: [
+            'Low cost of living for an EU member state',
+            'Consistently low unemployment',
+            'Central location with easy travel across Europe',
+            'Accessible freelance (živno) route',
+          ],
+          challenges: [
+            'Czech is a demanding language to learn',
+            'Slow and paperwork-heavy administration',
+            'Language barrier outside Prague',
+          ],
+          processing_time: '60–90 days',
+          investment_required:
+            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+          language_requirement: 'Czech (A2 for permanent residence)',
         },
       ],
       immigration_visa_types: [
@@ -1953,42 +3088,77 @@ export async function seedCountries() {
         'Financially Independent Person Visa',
         'Work Visa',
       ],
-      processing_time: '2–6 months',
-      investment_required:
-        'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
-      language_requirement: 'Greek (basic; B1 for citizenship)',
       job_market: 'Weak',
-      benefits: [
-        'One of the more accessible Golden Visa programmes in the EU',
-        'Mediterranean climate',
-        'Low cost of living relative to Western Europe',
-        'No minimum stay requirement for the Golden Visa',
+      popular_cities: [
+        'Athens',
+        'Thessaloniki',
+        'Patras',
+        'Heraklion',
       ],
-      challenges: [
-        'Weak local labour market and low wages',
-        'Slow bureaucracy',
-        'Economy still recovering from the debt crisis',
-      ],
-      popular_cities: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Grécia tem um dos Golden Visas mais acessíveis da UE, além de vistos para nômades digitais e pessoas financeiramente independentes.',
+          benefits: [
+            'One of the more accessible Golden Visa programmes in the EU',
+            'Mediterranean climate',
+            'Low cost of living relative to Western Europe',
+            'No minimum stay requirement for the Golden Visa',
+          ],
+          challenges: [
+            'Weak local labour market and low wages',
+            'Slow bureaucracy',
+            'Economy still recovering from the debt crisis',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+          language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
           language: 'en',
           description:
             'Greece runs one of the more accessible Golden Visa programmes in the EU, alongside visas for digital nomads and financially independent people.',
+          benefits: [
+            'One of the more accessible Golden Visa programmes in the EU',
+            'Mediterranean climate',
+            'Low cost of living relative to Western Europe',
+            'No minimum stay requirement for the Golden Visa',
+          ],
+          challenges: [
+            'Weak local labour market and low wages',
+            'Slow bureaucracy',
+            'Economy still recovering from the debt crisis',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+          language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
           language: 'es',
           description:
             'Grecia tiene uno de los Golden Visa más accesibles de la UE, además de visados para nómadas digitales y personas económicamente independientes.',
+          benefits: [
+            'One of the more accessible Golden Visa programmes in the EU',
+            'Mediterranean climate',
+            'Low cost of living relative to Western Europe',
+            'No minimum stay requirement for the Golden Visa',
+          ],
+          challenges: [
+            'Weak local labour market and low wages',
+            'Slow bureaucracy',
+            'Economy still recovering from the debt crisis',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+          language_requirement: 'Greek (basic; B1 for citizenship)',
         },
       ],
       immigration_visa_types: [
@@ -2030,42 +3200,77 @@ export async function seedCountries() {
         'Non-Immigrant B (work)',
         'Thailand Privilege (Elite) Visa',
       ],
-      processing_time: '15–60 days',
-      investment_required:
-        'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
-      language_requirement: 'Thai (not required for most visa routes)',
       job_market: 'Moderate',
-      benefits: [
-        'Low cost of living with high quality of life',
-        'LTR visa valid for up to 10 years',
-        'Strong infrastructure for foreign residents',
-        'Affordable and high-standard private healthcare',
+      popular_cities: [
+        'Bangkok',
+        'Chiang Mai',
+        'Phuket',
+        'Pattaya',
       ],
-      challenges: [
-        'Permanent residence is highly restricted and rarely granted',
-        'Many occupations are legally reserved for Thai nationals',
-        'Frequent reporting and renewal obligations',
-      ],
-      popular_cities: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Tailândia oferece o visto LTR de até 10 anos, o DTV para trabalho remoto e o Privilege Visa por adesão, mas a residência permanente é bastante restrita.',
+          benefits: [
+            'Low cost of living with high quality of life',
+            'LTR visa valid for up to 10 years',
+            'Strong infrastructure for foreign residents',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'Permanent residence is highly restricted and rarely granted',
+            'Many occupations are legally reserved for Thai nationals',
+            'Frequent reporting and renewal obligations',
+          ],
+          processing_time: '15–60 days',
+          investment_required:
+            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+          language_requirement: 'Thai (not required for most visa routes)',
         },
         {
           language: 'en',
           description:
             'Thailand offers the LTR visa valid for up to 10 years, the DTV for remote work and the membership-based Privilege Visa, though permanent residence remains highly restricted.',
+          benefits: [
+            'Low cost of living with high quality of life',
+            'LTR visa valid for up to 10 years',
+            'Strong infrastructure for foreign residents',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'Permanent residence is highly restricted and rarely granted',
+            'Many occupations are legally reserved for Thai nationals',
+            'Frequent reporting and renewal obligations',
+          ],
+          processing_time: '15–60 days',
+          investment_required:
+            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+          language_requirement: 'Thai (not required for most visa routes)',
         },
         {
           language: 'es',
           description:
             'Tailandia ofrece el visado LTR de hasta 10 años, el DTV para trabajo remoto y el Privilege Visa por membresía, aunque la residencia permanente es muy restringida.',
+          benefits: [
+            'Low cost of living with high quality of life',
+            'LTR visa valid for up to 10 years',
+            'Strong infrastructure for foreign residents',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'Permanent residence is highly restricted and rarely granted',
+            'Many occupations are legally reserved for Thai nationals',
+            'Frequent reporting and renewal obligations',
+          ],
+          processing_time: '15–60 days',
+          investment_required:
+            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+          language_requirement: 'Thai (not required for most visa routes)',
         },
       ],
       immigration_visa_types: [
@@ -2107,22 +3312,7 @@ export async function seedCountries() {
         'VITEM IV Student Visa',
         'Mercosur Residence Agreement',
       ],
-      processing_time: '30–90 days',
-      investment_required:
-        'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
-      language_requirement: 'Portuguese (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Simplified residence for Mercosur nationals',
-        'Low cost of living outside the main capitals',
-        'Naturalisation possible after four years of residence',
-        'Universal public healthcare system (SUS)',
-      ],
-      challenges: [
-        'Heavy and document-intensive bureaucracy',
-        'Security varies sharply by city and neighbourhood',
-        'Pronounced regional inequality',
-      ],
       popular_cities: [
         'São Paulo',
         'Rio de Janeiro',
@@ -2133,21 +3323,66 @@ export async function seedCountries() {
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Brasil oferece residência facilitada para nacionais do Mercosul, além do visto de nômade digital VITEM XIV e naturalização possível após quatro anos.',
+          benefits: [
+            'Simplified residence for Mercosur nationals',
+            'Low cost of living outside the main capitals',
+            'Naturalisation possible after four years of residence',
+            'Universal public healthcare system (SUS)',
+          ],
+          challenges: [
+            'Heavy and document-intensive bureaucracy',
+            'Security varies sharply by city and neighbourhood',
+            'Pronounced regional inequality',
+          ],
+          processing_time: '30–90 days',
+          investment_required:
+            'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
+          language_requirement: 'Portuguese (basic)',
         },
         {
           language: 'en',
           description:
             'Brazil offers simplified residence for Mercosur nationals, the VITEM XIV digital nomad visa, and naturalisation after four years of residence.',
+          benefits: [
+            'Simplified residence for Mercosur nationals',
+            'Low cost of living outside the main capitals',
+            'Naturalisation possible after four years of residence',
+            'Universal public healthcare system (SUS)',
+          ],
+          challenges: [
+            'Heavy and document-intensive bureaucracy',
+            'Security varies sharply by city and neighbourhood',
+            'Pronounced regional inequality',
+          ],
+          processing_time: '30–90 days',
+          investment_required:
+            'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
+          language_requirement: 'Portuguese (basic)',
         },
         {
           language: 'es',
           description:
             'Brasil ofrece residencia simplificada para nacionales del Mercosur, el visado de nómada digital VITEM XIV y naturalización tras cuatro años de residencia.',
+          benefits: [
+            'Simplified residence for Mercosur nationals',
+            'Low cost of living outside the main capitals',
+            'Naturalisation possible after four years of residence',
+            'Universal public healthcare system (SUS)',
+          ],
+          challenges: [
+            'Heavy and document-intensive bureaucracy',
+            'Security varies sharply by city and neighbourhood',
+            'Pronounced regional inequality',
+          ],
+          processing_time: '30–90 days',
+          investment_required:
+            'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
+          language_requirement: 'Portuguese (basic)',
         },
       ],
       immigration_visa_types: [
@@ -2161,19 +3396,22 @@ export async function seedCountries() {
           category: 'Temporary Visa (VITEM)',
           description:
             'Category covering work (V), study (IV), family reunion (XI) and remote work (XIV), granted for a defined period.',
-          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+          source:
+            'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
         },
         {
           category: 'Mercosur Residence',
           description:
             'Residence granted to nationals of Mercosur member and associated states under the regional residence agreement.',
-          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+          source:
+            'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
         },
         {
           category: 'Permanent Residence',
           description:
             'Indefinite residence granted through family ties, investment, retirement or conversion from temporary residence.',
-          source: 'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
+          source:
+            'https://www.gov.br/mj/pt-br/assuntos/seus-direitos/migracoes',
         },
       ],
     },
@@ -2189,22 +3427,7 @@ export async function seedCountries() {
         'Temporary Residence',
         'Digital Nomad Permit',
       ],
-      processing_time: '3–8 months',
-      investment_required:
-        'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
-      language_requirement: 'Spanish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Strong political and institutional stability',
-        'Direct path to permanent residence for Mercosur nationals',
-        'Comparatively high safety for the region',
-        'Territorial tax treatment for new residents',
-      ],
-      challenges: [
-        'High cost of living by regional standards',
-        'Small domestic market limits job opportunities',
-        'Residence processing can be slow',
-      ],
       popular_cities: [
         'Montevideo',
         'Punta del Este',
@@ -2215,21 +3438,66 @@ export async function seedCountries() {
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Uruguai concede residência permanente direta a nacionais do Mercosul e residência por renda comprovada, com forte estabilidade institucional.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Direct path to permanent residence for Mercosur nationals',
+            'Comparatively high safety for the region',
+            'Territorial tax treatment for new residents',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Small domestic market limits job opportunities',
+            'Residence processing can be slow',
+          ],
+          processing_time: '3–8 months',
+          investment_required:
+            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Uruguay grants direct permanent residence to Mercosur nationals and residence based on proven income, backed by strong institutional stability.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Direct path to permanent residence for Mercosur nationals',
+            'Comparatively high safety for the region',
+            'Territorial tax treatment for new residents',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Small domestic market limits job opportunities',
+            'Residence processing can be slow',
+          ],
+          processing_time: '3–8 months',
+          investment_required:
+            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'Uruguay concede residencia permanente directa a nacionales del Mercosur y residencia por ingresos acreditados, con fuerte estabilidad institucional.',
+          benefits: [
+            'Strong political and institutional stability',
+            'Direct path to permanent residence for Mercosur nationals',
+            'Comparatively high safety for the region',
+            'Territorial tax treatment for new residents',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Small domestic market limits job opportunities',
+            'Residence processing can be slow',
+          ],
+          processing_time: '3–8 months',
+          investment_required:
+            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -2271,42 +3539,77 @@ export async function seedCountries() {
         'Qualified Investor Visa',
         'Short Stay Remote Worker Visa',
       ],
-      processing_time: '3–6 months',
-      investment_required:
-        'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
-      language_requirement: 'Spanish (basic)',
       job_market: 'Moderate',
-      benefits: [
-        'Territorial tax system — foreign income is not taxed locally',
-        'US dollar used as legal tender',
-        'Pensionado programme with wide statutory discounts',
-        'Regional logistics and banking hub',
+      popular_cities: [
+        'Panama City',
+        'Boquete',
+        'Coronado',
+        'David',
       ],
-      challenges: [
-        'Applications legally require a local lawyer',
-        'High cost of living in Panama City',
-        'Marked inequality outside the capital',
-      ],
-      popular_cities: ['Panama City', 'Boquete', 'Coronado', 'David'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'O Panamá oferece o Friendly Nations Visa, o programa Pensionado para aposentados e tributação territorial, com o dólar americano como moeda oficial.',
+          benefits: [
+            'Territorial tax system — foreign income is not taxed locally',
+            'US dollar used as legal tender',
+            'Pensionado programme with wide statutory discounts',
+            'Regional logistics and banking hub',
+          ],
+          challenges: [
+            'Applications legally require a local lawyer',
+            'High cost of living in Panama City',
+            'Marked inequality outside the capital',
+          ],
+          processing_time: '3–6 months',
+          investment_required:
+            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Panama offers the Friendly Nations Visa, the Pensionado programme for retirees and territorial taxation, with the US dollar as legal tender.',
+          benefits: [
+            'Territorial tax system — foreign income is not taxed locally',
+            'US dollar used as legal tender',
+            'Pensionado programme with wide statutory discounts',
+            'Regional logistics and banking hub',
+          ],
+          challenges: [
+            'Applications legally require a local lawyer',
+            'High cost of living in Panama City',
+            'Marked inequality outside the capital',
+          ],
+          processing_time: '3–6 months',
+          investment_required:
+            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'Panamá ofrece el Friendly Nations Visa, el programa Pensionado para jubilados y tributación territorial, con el dólar estadounidense como moneda de curso legal.',
+          benefits: [
+            'Territorial tax system — foreign income is not taxed locally',
+            'US dollar used as legal tender',
+            'Pensionado programme with wide statutory discounts',
+            'Regional logistics and banking hub',
+          ],
+          challenges: [
+            'Applications legally require a local lawyer',
+            'High cost of living in Panama City',
+            'Marked inequality outside the capital',
+          ],
+          processing_time: '3–6 months',
+          investment_required:
+            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -2348,42 +3651,77 @@ export async function seedCountries() {
         'Digital Nomad Visa',
         'Inversionista Visa',
       ],
-      processing_time: '3–9 months',
-      investment_required:
-        'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
-      language_requirement: 'Spanish (basic)',
       job_market: 'Weak',
-      benefits: [
-        'Long-standing political stability and no standing army',
-        'Outstanding biodiversity and natural environment',
-        'Public healthcare system (CCSS) open to legal residents',
-        'Established digital nomad legislation',
+      popular_cities: [
+        'San José',
+        'Escazú',
+        'Tamarindo',
+        'Atenas',
       ],
-      challenges: [
-        'High cost of living by regional standards',
-        'Local labour market largely closed to foreign residents',
-        'Slow immigration processing times',
-      ],
-      popular_cities: ['San José', 'Escazú', 'Tamarindo', 'Atenas'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
       background_image: '',
-      descriptions: [
+      translations: [
         {
           language: 'pt',
           description:
             'A Costa Rica oferece as vias Rentista, Pensionado e Inversionista, além de visto específico para nômades digitais, com forte estabilidade política.',
+          benefits: [
+            'Long-standing political stability and no standing army',
+            'Outstanding biodiversity and natural environment',
+            'Public healthcare system (CCSS) open to legal residents',
+            'Established digital nomad legislation',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Local labour market largely closed to foreign residents',
+            'Slow immigration processing times',
+          ],
+          processing_time: '3–9 months',
+          investment_required:
+            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'en',
           description:
             'Costa Rica offers the Rentista, Pensionado and Inversionista routes, plus a dedicated digital nomad visa, backed by long-standing political stability.',
+          benefits: [
+            'Long-standing political stability and no standing army',
+            'Outstanding biodiversity and natural environment',
+            'Public healthcare system (CCSS) open to legal residents',
+            'Established digital nomad legislation',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Local labour market largely closed to foreign residents',
+            'Slow immigration processing times',
+          ],
+          processing_time: '3–9 months',
+          investment_required:
+            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+          language_requirement: 'Spanish (basic)',
         },
         {
           language: 'es',
           description:
             'Costa Rica ofrece las vías Rentista, Pensionado e Inversionista, además de un visado específico para nómadas digitales, con fuerte estabilidad política.',
+          benefits: [
+            'Long-standing political stability and no standing army',
+            'Outstanding biodiversity and natural environment',
+            'Public healthcare system (CCSS) open to legal residents',
+            'Established digital nomad legislation',
+          ],
+          challenges: [
+            'High cost of living by regional standards',
+            'Local labour market largely closed to foreign residents',
+            'Slow immigration processing times',
+          ],
+          processing_time: '3–9 months',
+          investment_required:
+            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+          language_requirement: 'Spanish (basic)',
         },
       ],
       immigration_visa_types: [
@@ -2416,7 +3754,7 @@ export async function seedCountries() {
   ];
 
   for (const countryData of countries) {
-    const { descriptions, immigration_visa_types, ...countryInfo } =
+    const { translations, immigration_visa_types, ...countryInfo } =
       countryData;
 
     // `background_image` is NOT NULL but may legitimately be an empty string
@@ -2434,23 +3772,16 @@ export async function seedCountries() {
       create: countryDataWithImage,
     });
 
-    if (descriptions) {
-      for (const description of descriptions) {
-        await prisma.countryDescription.upsert({
+    if (translations) {
+      for (const translation of translations) {
+        const { language, ...copy } = translation;
+
+        await prisma.countryTranslation.upsert({
           where: {
-            country_id_language: {
-              country_id: country.id,
-              language: description.language,
-            },
+            country_id_language: { country_id: country.id, language },
           },
-          update: {
-            description: description.description,
-          },
-          create: {
-            country_id: country.id,
-            language: description.language,
-            description: description.description,
-          },
+          update: copy,
+          create: { country_id: country.id, language, ...copy },
         });
       }
     }
