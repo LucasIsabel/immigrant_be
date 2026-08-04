@@ -83,3 +83,67 @@ inclusive testes E2E, já que todo controller usa `@AllowAnonymous()`.
 dos imports, por causa do hoisting), como fazem `roles.guard.spec.ts` e
 `health.e2e-spec.ts`. Desacoplar `libs/database` de `@app/config` resolveria
 a causa raiz e permitiria subir o `AppModule` inteiro em E2E.
+
+## 2026-08-04 — Deploy é automático no merge, mas não roda migration
+
+O Coolify redeploya BE e FE a cada commit no `main`. Ele **não** executa
+`prisma migrate deploy`. Ao mergear a PR que criou `country_translations`, o
+código novo subiu em 2 minutos pedindo uma tabela que não existia:
+
+```
+GET https://api.aloravia.com/api/v1/countries → HTTP 500
+The table `public.country_translations` does not exist in the current database.
+```
+
+Produção ficou fora do ar até rodar a migration à mão dentro do container.
+
+**Regra:** PR que contém migration não é "mergear e depois aplicar". A janela
+entre o deploy e a migration é downtime. Ou a migration entra no pipeline
+(`prisma migrate deploy` antes de subir o app), ou o merge é coordenado com a
+aplicação imediata da migration.
+
+**Corolário:** migration e seed são coisas diferentes. A migration restaurou o
+schema mas manteve o conteúdo antigo — os 12 países novos e a normalização só
+apareceram depois de rodar o seed separadamente.
+
+## 2026-08-04 — PR empilhada só re-aponta a base se o branch for deletado
+
+Três PRs empilhadas (`localize` → `normalize` → `p0-p1` → `main`) foram
+mergeadas na ordem `#21 → #22 → #24`, que é a ordem que eu mesmo documentei.
+Todas apareceram como MERGED. Só o conteúdo da `#21` chegou ao `main`:
+
+| Merge | Onde entrou de fato |
+| --- | --- |
+| `#21` → `main` | ✅ `main` |
+| `#22` → `feat/seed-countries-p0-p1` | ❌ branch já integrado ao main |
+| `#24` → `feat/normalize-existing-countries` | ❌ branch já integrado ao p0-p1 |
+
+O GitHub re-aponta a base de uma PR filha para o `main` **apenas quando o
+branch pai é deletado**. Sem deleção, cada merge cai num branch morto — e o
+`MERGED` na interface esconde isso.
+
+**Regra:** com pilha, mergear de cima para baixo (filha primeiro), ou deletar
+o branch pai a cada merge. E sempre confirmar com
+`git merge-base --is-ancestor <commit> origin/main` em vez de confiar no
+status da PR.
+
+## 2026-08-04 — Reportar um fix sem verificar que ele virou commit
+
+Depois de um build quebrado, corrigi três DTOs e segui em frente. A correção
+ficou no working tree e nunca foi commitada — o branch da PR carregava a
+versão quebrada, com `CreateCountryDto` reduzido de 14 para 2 campos. Só
+apareceu ao validar o `main` dias depois.
+
+**Regra:** "corrigi" só vale depois de `git status` limpo no que foi tocado.
+Fix aplicado no working tree e não commitado é fix que não existe.
+
+## 2026-08-04 — Regex para remover campo de DTO come o vizinho
+
+A remoção de campos por regex
+(`@ApiProperty\(\{[\s\S]*?\}\)` + declaração) quebrou porque
+`benefits`/`challenges` têm `example: [...]` aninhado: o `}\)` não-guloso
+casou cedo e levou junto sete campos que deveriam ficar.
+
+**Regra:** edição estrutural de TS/decorator não se faz com regex. Ou é
+edição pontual com âncora exata, ou é AST. E depois de qualquer remoção em
+massa, conferir a contagem de campos antes de commitar.
