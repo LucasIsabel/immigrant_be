@@ -1053,21 +1053,21 @@ export async function seedCountries() {
           description:
             'Schengen visa normalmente decidido em até 15 dias, conforme Migration Agency e consulados suecos.',
           benefits: [
-            'High quality of life',
-            'Generous parental leave and social benefits',
-            'Widespread English proficiency',
-            'Free higher education for EU citizens',
+            'Alta qualidade de vida',
+            'Licença parental generosa e benefícios sociais amplos',
+            'Domínio de inglês difundido na população',
+            'Ensino superior gratuito para cidadãos da UE',
           ],
           challenges: [
-            'High cost of living',
-            'Long, dark winters',
-            'Tight housing queues in Stockholm',
+            'Custo de vida alto',
+            'Invernos longos e escuros',
+            'Filas apertadas por moradia em Estocolmo',
           ],
           processing_time:
-            'Work permit: 1–4 months; Schengen visa: up to 15 days',
+            'Autorização de trabalho: 1–4 meses; visto Schengen: até 15 dias',
           investment_required:
-            'Work permit: SEK 34,470/month, equal to 90% of the national median salary',
-          language_requirement: 'Swedish (English widely spoken at work)',
+            'Autorização de trabalho: SEK 34.470/mês, equivalente a 90% do salário mediano nacional',
+          language_requirement: 'Sueco (inglês amplamente falado no trabalho)',
         },
         {
           language: 'en',
@@ -1095,21 +1095,22 @@ export async function seedCountries() {
           description:
             'Los visados Schengen suelen resolverse en un plazo de 15 días, según la Agencia Sueca de Migración y los consulados suecos.',
           benefits: [
-            'High quality of life',
-            'Generous parental leave and social benefits',
-            'Widespread English proficiency',
-            'Free higher education for EU citizens',
+            'Alta calidad de vida',
+            'Licencia parental generosa y amplios beneficios sociales',
+            'Dominio del inglés extendido en la población',
+            'Educación superior gratuita para ciudadanos de la UE',
           ],
           challenges: [
-            'High cost of living',
-            'Long, dark winters',
-            'Tight housing queues in Stockholm',
+            'Alto costo de vida',
+            'Inviernos largos y oscuros',
+            'Colas ajustadas por vivienda en Estocolmo',
           ],
           processing_time:
-            'Work permit: 1–4 months; Schengen visa: up to 15 days',
+            'Permiso de trabajo: 1–4 meses; visado Schengen: hasta 15 días',
           investment_required:
-            'Work permit: SEK 34,470/month, equal to 90% of the national median salary',
-          language_requirement: 'Swedish (English widely spoken at work)',
+            'Permiso de trabajo: SEK 34.470/mes, equivalente al 90% del salario mediano nacional',
+          language_requirement:
+            'Sueco (inglés ampliamente hablado en el trabajo)',
         },
       ],
       immigration_visa_types: [
@@ -2131,20 +2132,21 @@ export async function seedCountries() {
           description:
             'A Áustria exige comprovação financeira, seguro saúde e contratos formais. A Red-White-Red Card é ideal para profissionais qualificados e investidores.',
           benefits: [
-            'Very high quality of life',
-            'Excellent healthcare system',
-            'Safe cities with strong public transport',
-            'Central location within the EU',
+            'Qualidade de vida muito alta',
+            'Sistema de saúde excelente',
+            'Cidades seguras e transporte público forte',
+            'Localização central na UE',
           ],
           challenges: [
-            'Demanding German language requirements',
-            'Complex points-based selection',
-            'Quota limits on some residence categories',
+            'Exigências rigorosas de alemão',
+            'Seleção por pontos complexa',
+            'Cotas limitam algumas categorias de residência',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Red-White-Red Card: 70 of 100 points; Other Key Workers need €3,465/month gross',
-          language_requirement: 'German (A1 before arrival for most routes)',
+            'Red-White-Red Card: 70 de 100 pontos; Other Key Workers exige €3.465/mês bruto',
+          language_requirement:
+            'Alemão (A1 antes da chegada na maioria das vias)',
         },
         {
           language: 'en',
@@ -2171,20 +2173,21 @@ export async function seedCountries() {
           description:
             'Austria exige comprobante financiero, seguro de salud y contratos formales. La Red-White-Red Card es ideal para profesionales calificados e inversores.',
           benefits: [
-            'Very high quality of life',
-            'Excellent healthcare system',
-            'Safe cities with strong public transport',
-            'Central location within the EU',
+            'Calidad de vida muy alta',
+            'Sistema de salud excelente',
+            'Ciudades seguras y transporte público sólido',
+            'Ubicación central en la UE',
           ],
           challenges: [
-            'Demanding German language requirements',
-            'Complex points-based selection',
-            'Quota limits on some residence categories',
+            'Exigencias rigurosas de alemán',
+            'Selección por puntos compleja',
+            'Las cuotas limitan algunas categorías de residencia',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Red-White-Red Card: 70 of 100 points; Other Key Workers need €3,465/month gross',
-          language_requirement: 'German (A1 before arrival for most routes)',
+            'Red-White-Red Card: 70 de 100 puntos; Other Key Workers exige €3.465/mes bruto',
+          language_requirement:
+            'Alemán (A1 antes de la llegada en la mayoría de las vías)',
         },
       ],
       immigration_visa_types: [
@@ -2238,21 +2241,21 @@ export async function seedCountries() {
           description:
             'A Polônia é uma das portas de entrada mais acessíveis na Europa. Os vistos nacionais D permitem moradia e trabalho com requisitos financeiros moderados.',
           benefits: [
-            'Low cost of living within the EU',
-            'Growing demand for technical and IT roles',
-            'Steady economic growth',
-            'Central location for travel across Europe',
+            'Custo de vida baixo dentro da UE',
+            'Demanda crescente por perfis técnicos e de TI',
+            'Crescimento econômico consistente',
+            'Localização central para viajar pela Europa',
           ],
           challenges: [
-            'Language barrier in public services',
-            'Polish is demanding to learn',
-            'Processing times vary widely by voivodeship',
+            'Barreira linguística nos serviços públicos',
+            'O polonês é exigente de aprender',
+            'Prazos variam muito conforme a voivodia',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence and work permit: salary from PLN 13,355/month gross; fees PLN 440',
+            'Autorização de residência e trabalho: salário a partir de PLN 13.355/mês bruto; taxas de PLN 440',
           language_requirement:
-            'Polish (basic; required for permanent residence)',
+            'Polonês (básico; exigido para a residência permanente)',
         },
         {
           language: 'en',
@@ -2280,21 +2283,21 @@ export async function seedCountries() {
           description:
             'Polonia es una de las puertas de entrada más accesibles de Europa. Las visas nacionales D permiten residencia y trabajo con requisitos financieros moderados.',
           benefits: [
-            'Low cost of living within the EU',
-            'Growing demand for technical and IT roles',
-            'Steady economic growth',
-            'Central location for travel across Europe',
+            'Bajo costo de vida dentro de la UE',
+            'Demanda creciente de perfiles técnicos y de TI',
+            'Crecimiento económico constante',
+            'Ubicación central para viajar por Europa',
           ],
           challenges: [
-            'Language barrier in public services',
-            'Polish is demanding to learn',
-            'Processing times vary widely by voivodeship',
+            'Barrera idiomática en los servicios públicos',
+            'El polaco es exigente de aprender',
+            'Los plazos varían mucho según el voivodato',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence and work permit: salary from PLN 13,355/month gross; fees PLN 440',
+            'Permiso de residencia y trabajo: salario desde PLN 13.355/mes bruto; tasas de PLN 440',
           language_requirement:
-            'Polish (basic; required for permanent residence)',
+            'Polaco (básico; exigido para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -2339,21 +2342,21 @@ export async function seedCountries() {
           description:
             'A Finlândia exige comprovação de fundos para estudantes e empreendedores. O Startup Permit é ideal para empresas de base tecnológica e exige plano de negócio validado.',
           benefits: [
-            'Consistently ranked among the happiest countries in the world',
-            'Free education and strong public services',
-            'Clean environment and abundant nature',
-            'Good work-life balance',
+            'Sempre entre os países mais felizes do mundo nos rankings',
+            'Educação gratuita e serviços públicos sólidos',
+            'Ambiente limpo e natureza abundante',
+            'Bom equilíbrio entre trabalho e vida pessoal',
           ],
           challenges: [
-            'Long, dark and extremely cold winters',
-            'Finnish is a difficult language to learn',
-            'Competitive job market for non-Finnish speakers',
+            'Invernos longos, escuros e extremamente frios',
+            'O finlandês é um idioma difícil de aprender',
+            'Mercado de trabalho competitivo para quem não fala finlandês',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Student permit: €800/month set by Migri each year, plus tuition if not yet paid',
+            'Permissão de estudante: €800/mês fixados pela Migri a cada ano, mais a anuidade se ainda não paga',
           language_requirement:
-            'Finnish or Swedish (English accepted in many workplaces)',
+            'Finlandês ou sueco (inglês aceito em muitos ambientes de trabalho)',
         },
         {
           language: 'en',
@@ -2381,21 +2384,21 @@ export async function seedCountries() {
           description:
             'Finlandia exige comprobante de fondos para estudiantes y emprendedores. El Startup Permit es ideal para empresas de base tecnológica y exige un plan de negocios validado.',
           benefits: [
-            'Consistently ranked among the happiest countries in the world',
-            'Free education and strong public services',
-            'Clean environment and abundant nature',
-            'Good work-life balance',
+            'Siempre entre los países más felices del mundo en los rankings',
+            'Educación gratuita y servicios públicos sólidos',
+            'Entorno limpio y naturaleza abundante',
+            'Buen equilibrio entre trabajo y vida personal',
           ],
           challenges: [
-            'Long, dark and extremely cold winters',
-            'Finnish is a difficult language to learn',
-            'Competitive job market for non-Finnish speakers',
+            'Inviernos largos, oscuros y extremadamente fríos',
+            'El finés es un idioma difícil de aprender',
+            'Mercado laboral competitivo para quien no habla finés',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Student permit: €800/month set by Migri each year, plus tuition if not yet paid',
+            'Permiso de estudiante: €800/mes fijados por Migri cada año, más la matrícula si aún no está pagada',
           language_requirement:
-            'Finnish or Swedish (English accepted in many workplaces)',
+            'Finés o sueco (inglés aceptado en muchos entornos laborales)',
         },
       ],
       immigration_visa_types: [
@@ -2667,20 +2670,20 @@ export async function seedCountries() {
           description:
             'A Noruega concede autorizações de residência para trabalhadores qualificados, estudantes e reunificação familiar, com salários altos e forte proteção social.',
           benefits: [
-            'High salaries and strong worker protections',
-            'Comprehensive welfare state',
-            'Strong work-life balance',
-            'Outstanding natural environment',
+            'Salários altos e forte proteção ao trabalhador',
+            'Estado de bem-estar social abrangente',
+            'Bom equilíbrio entre trabalho e vida pessoal',
+            'Meio ambiente natural excepcional',
           ],
           challenges: [
-            'Very high cost of living',
-            'Difficult language for newcomers',
-            'Long, dark winters',
+            'Custo de vida muito alto',
+            'Idioma difícil para quem chega',
+            'Invernos longos e escuros',
           ],
-          processing_time: '1–4 months',
+          processing_time: '1–4 meses',
           investment_required:
-            'Skilled worker: NOK 624,700/year with a master, NOK 545,400 with a bachelor',
-          language_requirement: 'Norwegian (B1 for permanent residence)',
+            'Trabalhador qualificado: NOK 624.700/ano com mestrado, NOK 545.400 com bacharelado',
+          language_requirement: 'Norueguês (B1 para a residência permanente)',
         },
         {
           language: 'en',
@@ -2707,20 +2710,20 @@ export async function seedCountries() {
           description:
             'Noruega concede permisos de residencia para trabajadores cualificados, estudiantes y reagrupación familiar, con salarios altos y fuerte protección social.',
           benefits: [
-            'High salaries and strong worker protections',
-            'Comprehensive welfare state',
-            'Strong work-life balance',
-            'Outstanding natural environment',
+            'Salarios altos y fuerte protección al trabajador',
+            'Estado de bienestar amplio',
+            'Buen equilibrio entre trabajo y vida personal',
+            'Entorno natural excepcional',
           ],
           challenges: [
-            'Very high cost of living',
-            'Difficult language for newcomers',
-            'Long, dark winters',
+            'Costo de vida muy alto',
+            'Idioma difícil para quien llega',
+            'Inviernos largos y oscuros',
           ],
-          processing_time: '1–4 months',
+          processing_time: '1–4 meses',
           investment_required:
-            'Skilled worker: NOK 624,700/year with a master, NOK 545,400 with a bachelor',
-          language_requirement: 'Norwegian (B1 for permanent residence)',
+            'Trabajador calificado: NOK 624.700/año con máster, NOK 545.400 con grado',
+          language_requirement: 'Noruego (B1 para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -2779,20 +2782,21 @@ export async function seedCountries() {
           description:
             'A Dinamarca concede residência principalmente por vias de trabalho qualificado, como o Pay Limit Scheme e a Positive List, além de estudo e reunificação familiar.',
           benefits: [
-            'Free education and healthcare',
-            'Consistently high quality of life',
-            'Short working week and strong labour rights',
-            'Efficient digital public services',
+            'Educação e saúde gratuitas',
+            'Qualidade de vida consistentemente alta',
+            'Semana de trabalho curta e forte proteção trabalhista',
+            'Serviços públicos digitais eficientes',
           ],
           challenges: [
-            'High income tax burden',
-            'Restrictive immigration rules',
-            'Social integration can be slow for newcomers',
+            'Carga alta de imposto de renda',
+            'Regras migratórias restritivas',
+            'Integração social pode ser lenta para quem chega',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Pay Limit Scheme: DKK 552,000/year, DKK 446,000 supplementary; raised each January',
-          language_requirement: 'Danish (required for permanent residence)',
+            'Pay Limit Scheme: DKK 552.000/ano, DKK 446.000 no suplementar; elevado em janeiro',
+          language_requirement:
+            'Dinamarquês (exigido para a residência permanente)',
         },
         {
           language: 'en',
@@ -2819,20 +2823,20 @@ export async function seedCountries() {
           description:
             'Dinamarca concede residencia principalmente por vías de trabajo cualificado, como el Pay Limit Scheme y la Positive List, además de estudio y reagrupación familiar.',
           benefits: [
-            'Free education and healthcare',
-            'Consistently high quality of life',
-            'Short working week and strong labour rights',
-            'Efficient digital public services',
+            'Educación y sanidad gratuitas',
+            'Calidad de vida consistentemente alta',
+            'Semana laboral corta y fuerte protección laboral',
+            'Servicios públicos digitales eficientes',
           ],
           challenges: [
-            'High income tax burden',
-            'Restrictive immigration rules',
-            'Social integration can be slow for newcomers',
+            'Alta carga de impuesto sobre la renta',
+            'Normas migratorias restrictivas',
+            'La integración social puede ser lenta para quien llega',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Pay Limit Scheme: DKK 552,000/year, DKK 446,000 supplementary; raised each January',
-          language_requirement: 'Danish (required for permanent residence)',
+            'Pay Limit Scheme: DKK 552.000/año, DKK 446.000 en el suplementario; elevado en enero',
+          language_requirement: 'Danés (exigido para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -2891,21 +2895,21 @@ export async function seedCountries() {
           description:
             'A Bélgica concentra as instituições da UE e concede residência principalmente pelo Single Permit, que reúne autorização de trabalho e residência num só pedido.',
           benefits: [
-            'Hosts the main EU institutions and international organisations',
-            'Central location within Western Europe',
-            'High-quality healthcare system',
-            'Multilingual working environment',
+            'Sede das principais instituições da UE e de organizações internacionais',
+            'Localização central na Europa Ocidental',
+            'Sistema de saúde de alta qualidade',
+            'Ambiente de trabalho multilíngue',
           ],
           challenges: [
-            'High tax burden',
-            'Administrative complexity split across regions',
-            'Grey and rainy climate',
+            'Carga tributária alta',
+            'Complexidade administrativa dividida entre as regiões',
+            'Clima cinzento e chuvoso',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Single Permit: €47,500 in Flanders, €53,220 in Wallonia, €3,703/month in Brussels',
+            'Single Permit: €47.500 na Flandres, €53.220 na Valônia, €3.703/mês em Bruxelas',
           language_requirement:
-            'Dutch, French or German depending on the region',
+            'Holandês, francês ou alemão, conforme a região',
         },
         {
           language: 'en',
@@ -2933,21 +2937,20 @@ export async function seedCountries() {
           description:
             'Bélgica concentra las instituciones de la UE y concede residencia principalmente mediante el Single Permit, que reúne autorización de trabajo y residencia en una sola solicitud.',
           benefits: [
-            'Hosts the main EU institutions and international organisations',
-            'Central location within Western Europe',
-            'High-quality healthcare system',
-            'Multilingual working environment',
+            'Sede de las principales instituciones de la UE y de organizaciones internacionales',
+            'Ubicación central en Europa Occidental',
+            'Sistema de salud de alta calidad',
+            'Entorno laboral multilingüe',
           ],
           challenges: [
-            'High tax burden',
-            'Administrative complexity split across regions',
-            'Grey and rainy climate',
+            'Carga tributaria alta',
+            'Complejidad administrativa repartida entre las regiones',
+            'Clima gris y lluvioso',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Single Permit: €47,500 in Flanders, €53,220 in Wallonia, €3,703/month in Brussels',
-          language_requirement:
-            'Dutch, French or German depending on the region',
+            'Single Permit: €47.500 en Flandes, €53.220 en Valonia, €3.703/mes en Bruselas',
+          language_requirement: 'Neerlandés, francés o alemán, según la región',
         },
       ],
       immigration_visa_types: [
@@ -3006,20 +3009,20 @@ export async function seedCountries() {
           description:
             'A Chéquia oferece o Employee Card para trabalho, o Cartão Azul da UE para qualificados e o visto de longa duração para autônomos, com custo de vida baixo para a UE.',
           benefits: [
-            'Low cost of living for an EU member state',
-            'Consistently low unemployment',
-            'Central location with easy travel across Europe',
-            'Accessible freelance (živno) route',
+            'Custo de vida baixo para um país da UE',
+            'Desemprego consistentemente baixo',
+            'Localização central, com viagens fáceis pela Europa',
+            'Via acessível de autônomo (živno)',
           ],
           challenges: [
-            'Czech is a demanding language to learn',
-            'Slow and paperwork-heavy administration',
-            'Language barrier outside Prague',
+            'O tcheco é um idioma exigente de aprender',
+            'Administração lenta e cheia de papelada',
+            'Barreira linguística fora de Praga',
           ],
-          processing_time: '60–90 days',
+          processing_time: '60–90 dias',
           investment_required:
-            'Long-term stay: CZK 46,950 plus CZK 6,260 per month; business route CZK 156,500',
-          language_requirement: 'Czech (A2 for permanent residence)',
+            'Estadia de longa duração: CZK 46.950 mais CZK 6.260 por mês; via de negócio CZK 156.500',
+          language_requirement: 'Tcheco (A2 para a residência permanente)',
         },
         {
           language: 'en',
@@ -3046,20 +3049,20 @@ export async function seedCountries() {
           description:
             'Chequia ofrece la Employee Card para trabajo, la Tarjeta Azul de la UE para cualificados y el visado de larga duración para autónomos, con bajo coste de vida para la UE.',
           benefits: [
-            'Low cost of living for an EU member state',
-            'Consistently low unemployment',
-            'Central location with easy travel across Europe',
-            'Accessible freelance (živno) route',
+            'Bajo costo de vida para un país de la UE',
+            'Desempleo consistentemente bajo',
+            'Ubicación central, con viajes fáciles por Europa',
+            'Vía accesible de autónomo (živno)',
           ],
           challenges: [
-            'Czech is a demanding language to learn',
-            'Slow and paperwork-heavy administration',
-            'Language barrier outside Prague',
+            'El checo es un idioma exigente de aprender',
+            'Administración lenta y con mucho papeleo',
+            'Barrera idiomática fuera de Praga',
           ],
-          processing_time: '60–90 days',
+          processing_time: '60–90 días',
           investment_required:
-            'Long-term stay: CZK 46,950 plus CZK 6,260 per month; business route CZK 156,500',
-          language_requirement: 'Czech (A2 for permanent residence)',
+            'Estancia de larga duración: CZK 46.950 más CZK 6.260 por mes; vía de negocio CZK 156.500',
+          language_requirement: 'Checo (A2 para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -5363,20 +5366,20 @@ export async function seedCountries() {
           description:
             'A Islândia oferece visto de trabalho remoto de longa duração e autorizações para profissionais qualificados, com altíssima segurança e forte proteção social.',
           benefits: [
-            'Among the safest countries in the world',
-            'Dramatic natural landscapes and geothermal energy',
-            'Strong gender equality and social protections',
-            'Widespread English proficiency',
+            'Entre os países mais seguros do mundo',
+            'Paisagens naturais impressionantes e energia geotérmica',
+            'Forte igualdade de gênero e proteção social',
+            'Domínio de inglês difundido na população',
           ],
           challenges: [
-            'Very high cost of living',
-            'Long, dark winters',
-            'Tiny labour market with few openings',
+            'Custo de vida muito alto',
+            'Invernos longos e escuros',
+            'Mercado de trabalho minúsculo, com poucas vagas',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Remote work visa: ISK 1,000,000/month, or ISK 1,300,000 with family',
-          language_requirement: 'Icelandic (English widely spoken)',
+            'Visto de trabalho remoto: ISK 1.000.000/mês, ou ISK 1.300.000 com família',
+          language_requirement: 'Islandês (inglês amplamente falado)',
         },
         {
           language: 'en',
@@ -5403,20 +5406,20 @@ export async function seedCountries() {
           description:
             'Islandia ofrece un visado de trabajo remoto de larga duración y permisos para profesionales cualificados, con altísima seguridad y fuerte protección social.',
           benefits: [
-            'Among the safest countries in the world',
-            'Dramatic natural landscapes and geothermal energy',
-            'Strong gender equality and social protections',
-            'Widespread English proficiency',
+            'Entre los países más seguros del mundo',
+            'Paisajes naturales impresionantes y energía geotérmica',
+            'Fuerte igualdad de género y protección social',
+            'Dominio del inglés extendido en la población',
           ],
           challenges: [
-            'Very high cost of living',
-            'Long, dark winters',
-            'Tiny labour market with few openings',
+            'Costo de vida muy alto',
+            'Inviernos largos y oscuros',
+            'Mercado laboral minúsculo, con pocas vacantes',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Remote work visa: ISK 1,000,000/month, or ISK 1,300,000 with family',
-          language_requirement: 'Icelandic (English widely spoken)',
+            'Visado de trabajo remoto: ISK 1.000.000/mes, o ISK 1.300.000 con familia',
+          language_requirement: 'Islandés (inglés ampliamente hablado)',
         },
       ],
       immigration_visa_types: [
