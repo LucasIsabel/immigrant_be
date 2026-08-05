@@ -146,7 +146,7 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3–8 weeks for applications made outside the UK',
+          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
           language_requirement: 'English (B1 or above)',
@@ -166,7 +166,7 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3–8 weeks for applications made outside the UK',
+          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
           language_requirement: 'English (B1 or above)',
@@ -186,7 +186,7 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3–8 weeks for applications made outside the UK',
+          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
           language_requirement: 'English (B1 or above)',
@@ -1692,7 +1692,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -1714,7 +1714,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -1736,7 +1736,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; the highly skilled migrant route requires a salary above the annual threshold',
+            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -2560,7 +2560,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+            'Temporary residency: US$4,200/month in income or US$70,000 in savings, UMA-indexed',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -2580,7 +2580,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+            'Temporary residency: US$4,200/month in income or US$70,000 in savings, UMA-indexed',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -2600,7 +2600,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Temporary residency: ≈US$4,300/month in income or ≈US$73,000 in savings',
+            'Temporary residency: US$4,200/month in income or US$70,000 in savings, UMA-indexed',
           language_requirement: 'Spanish (basic)',
         },
       ],
