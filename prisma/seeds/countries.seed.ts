@@ -259,7 +259,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
+            'IRCC fees plus settlement funds of CAD 15,300, set at 50% of the LICO each year',
           language_requirement: 'English or French (CLB 7+)',
         },
         {
@@ -280,7 +280,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
+            'IRCC fees plus settlement funds of CAD 15,300, set at 50% of the LICO each year',
           language_requirement: 'English or French (CLB 7+)',
         },
         {
@@ -301,7 +301,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
+            'IRCC fees plus settlement funds of CAD 15,300, set at 50% of the LICO each year',
           language_requirement: 'English or French (CLB 7+)',
         },
       ],
@@ -837,7 +837,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
+          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -856,7 +856,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
+          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -875,7 +875,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
+          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
       ],
@@ -1692,7 +1692,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
+            'Fees from €405; skilled migrant salary €5,942/month, €4,357 under 30, set yearly',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -1714,7 +1714,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
+            'Fees from €405; skilled migrant salary €5,942/month, €4,357 under 30, set yearly',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -1736,7 +1736,7 @@ export async function seedCountries() {
           processing_time:
             '2–4 weeks under the fast-track scheme for recognised sponsors',
           investment_required:
-            'Fees from €405; highly skilled migrant salary from €5,942/month, or €4,357 under 30',
+            'Fees from €405; skilled migrant salary €5,942/month, €4,357 under 30, set yearly',
           language_requirement:
             'Dutch (English widely spoken and accepted at work)',
         },
@@ -2338,7 +2338,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
+            'Student permit: €800/month set by Migri each year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
@@ -2359,7 +2359,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
+            'Student permit: €800/month set by Migri each year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
@@ -2380,7 +2380,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
+            'Student permit: €800/month set by Migri each year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
@@ -2778,7 +2778,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
+            'Pay Limit Scheme: DKK 552,000/year, DKK 446,000 supplementary; raised each January',
           language_requirement: 'Danish (required for permanent residence)',
         },
         {
@@ -2798,7 +2798,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
+            'Pay Limit Scheme: DKK 552,000/year, DKK 446,000 supplementary; raised each January',
           language_requirement: 'Danish (required for permanent residence)',
         },
         {
@@ -2818,7 +2818,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
+            'Pay Limit Scheme: DKK 552,000/year, DKK 446,000 supplementary; raised each January',
           language_requirement: 'Danish (required for permanent residence)',
         },
       ],
@@ -3907,7 +3907,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
+            'Digital nomad: 2.5x the average net salary, €3,622.50/month, or €43,470 saved',
           language_requirement: 'Croatian (required for permanent residence)',
         },
         {
@@ -3927,7 +3927,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
+            'Digital nomad: 2.5x the average net salary, €3,622.50/month, or €43,470 saved',
           language_requirement: 'Croatian (required for permanent residence)',
         },
         {
@@ -3947,7 +3947,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
+            'Digital nomad: 2.5x the average net salary, €3,622.50/month, or €43,470 saved',
           language_requirement: 'Croatian (required for permanent residence)',
         },
       ],
@@ -5132,9 +5132,9 @@ export async function seedCountries() {
             'Very small territory and job market',
             'Three official languages raise the integration bar',
           ],
-          processing_time: '2–4 months',
+          processing_time: 'about 6 months',
           investment_required:
-            'Investor residence: from €500,000 in a new or existing company',
+            'Investor: €500,000 in a company, €3M in a management structure, €20M on deposit',
           language_requirement:
             'Luxembourgish, French or German depending on the role',
         },
@@ -5153,9 +5153,9 @@ export async function seedCountries() {
             'Very small territory and job market',
             'Three official languages raise the integration bar',
           ],
-          processing_time: '2–4 months',
+          processing_time: 'about 6 months',
           investment_required:
-            'Investor residence: from €500,000 in a new or existing company',
+            'Investor: €500,000 in a company, €3M in a management structure, €20M on deposit',
           language_requirement:
             'Luxembourgish, French or German depending on the role',
         },
@@ -5174,9 +5174,9 @@ export async function seedCountries() {
             'Very small territory and job market',
             'Three official languages raise the integration bar',
           ],
-          processing_time: '2–4 months',
+          processing_time: 'about 6 months',
           investment_required:
-            'Investor residence: from €500,000 in a new or existing company',
+            'Investor: €500,000 in a company, €3M in a management structure, €20M on deposit',
           language_requirement:
             'Luxembourgish, French or German depending on the role',
         },
@@ -5362,7 +5362,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Remote work visa: roughly ISK 1,000,000/month in income',
+            'Remote work visa: ISK 1,000,000/month, or ISK 1,300,000 with family',
           language_requirement: 'Icelandic (English widely spoken)',
         },
         {
@@ -5382,7 +5382,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Remote work visa: roughly ISK 1,000,000/month in income',
+            'Remote work visa: ISK 1,000,000/month, or ISK 1,300,000 with family',
           language_requirement: 'Icelandic (English widely spoken)',
         },
         {
@@ -5402,7 +5402,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Remote work visa: roughly ISK 1,000,000/month in income',
+            'Remote work visa: ISK 1,000,000/month, or ISK 1,300,000 with family',
           language_requirement: 'Icelandic (English widely spoken)',
         },
       ],
@@ -5473,7 +5473,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+            'Rentista: US$1,000/month in passive income; investor PEN 500,000, about US$135,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5493,7 +5493,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+            'Rentista: US$1,000/month in passive income; investor PEN 500,000, about US$135,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5513,7 +5513,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+            'Rentista: US$1,000/month in passive income; investor PEN 500,000, about US$135,000',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -5585,7 +5585,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–5 months',
           investment_required:
-            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+            'Pensionado US$1,500/month, Rentista US$2,000/month, or US$200,000 invested',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5605,7 +5605,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–5 months',
           investment_required:
-            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+            'Pensionado US$1,500/month, Rentista US$2,000/month, or US$200,000 invested',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5625,7 +5625,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–5 months',
           investment_required:
-            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+            'Pensionado US$1,500/month, Rentista US$2,000/month, or US$200,000 invested',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -5697,7 +5697,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+            'Rentista: 3x the basic salary, US$1,446/month; investor 100x, US$48,200',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5717,7 +5717,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+            'Rentista: 3x the basic salary, US$1,446/month; investor 100x, US$48,200',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -5737,7 +5737,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+            'Rentista: 3x the basic salary, US$1,446/month; investor 100x, US$48,200',
           language_requirement: 'Spanish (basic)',
         },
       ],
