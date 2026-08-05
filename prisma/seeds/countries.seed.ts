@@ -1348,6 +1348,47 @@ export async function seedCountries() {
           source:
             'https://travel.state.gov/content/travel/en/us-visas/immigrate.html',
         },
+        {
+          category: 'Visitor Visa (B-1/B-2)',
+          description:
+            'Temporary visa for tourism, visiting family, or short business trips. Requires proving strong ties to the home country.',
+          source:
+            'https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html',
+        },
+        {
+          category: 'Student Visa (F-1/M-1)',
+          description:
+            'For academic (F-1) or vocational (M-1) study at an SEVP-approved school. Requires Form I-20 and the SEVIS fee.',
+          source:
+            'https://travel.state.gov/content/travel/en/us-visas/study/student-visa.html',
+        },
+        {
+          category: 'Exchange Visitor Visa (J-1)',
+          description:
+            'For approved exchange programmes: research scholars, au pairs, trainees, camp counsellors. May carry a two-year home residency requirement.',
+          source:
+            'https://travel.state.gov/content/travel/en/us-visas/study/exchange.html',
+        },
+        {
+          category: 'Specialty Occupation Visa (H-1B)',
+          description:
+            'For roles requiring at least a bachelor degree in a specific field. Employer files the I-129 petition and the annual cap is allocated by lottery.',
+          source:
+            'https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations',
+        },
+        {
+          category: 'Intracompany Transfer Visa (L-1)',
+          description:
+            'For managers, executives and specialised-knowledge staff transferring from a related company abroad after one year of employment.',
+          source:
+            'https://www.uscis.gov/working-in-the-united-states/temporary-workers/l-1a-intracompany-transferee-executive-or-manager',
+        },
+        {
+          category: 'EB-5 Immigrant Investor Visa',
+          description:
+            'Permanent residence through investment in a US commercial enterprise that creates at least ten full-time jobs.',
+          source: 'https://www.uscis.gov/eb-5',
+        },
       ],
     },
     {
@@ -2312,6 +2353,24 @@ export async function seedCountries() {
           description:
             'Visa D permitting entry and consecutive stay in Poland for longer than 90 days and up to one year.',
           source: 'https://www.gov.pl/web/diplomacy/visas',
+        },
+        {
+          category: 'Temporary Residence Permit (karta pobytu)',
+          description:
+            'Residence card for stays over three months for work, study or family reasons. Applied for at the voivodeship office.',
+          source: 'https://www.gov.pl/web/udsc-en/temporary-residence',
+        },
+        {
+          category: 'Permanent Residence Permit',
+          description:
+            'Settlement permit available after a qualifying period of legal residence, or immediately for holders of the Karta Polaka.',
+          source: 'https://www.gov.pl/web/udsc-en/permanent-residence',
+        },
+        {
+          category: 'EU Blue Card',
+          description:
+            'Residence and work permit for highly qualified professionals with a job offer meeting the statutory salary threshold.',
+          source: 'https://www.gov.pl/web/udsc-en',
         },
       ],
     },
