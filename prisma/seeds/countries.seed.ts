@@ -146,7 +146,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -166,7 +167,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -186,7 +188,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -197,7 +200,8 @@ export async function seedCountries() {
           category: 'Visitor & Short-Stay Visas',
           description:
             'Visas for tourism, business, short stays up to six months or airport transit.',
-          source: 'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
+          source:
+            'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
         },
         {
           category: 'Work Visas',
@@ -498,7 +502,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -518,7 +523,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -538,7 +544,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
       ],
@@ -837,7 +844,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -856,7 +864,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -875,7 +884,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
       ],
@@ -1903,20 +1913,20 @@ export async function seedCountries() {
           description:
             'A Argentina oferece vistos temporários e permanentes de forma acessível, sendo possível aplicar com comprovação de renda modesta ou vínculo com empresas locais.',
           benefits: [
-            'Low cost of living in US dollar terms',
-            'Simplified residence for Mercosur nationals',
-            'Naturalisation possible after two years of residence',
-            'Strong cultural life and natural diversity',
+            'Custo de vida baixo em dólar',
+            'Residência simplificada para nacionais do Mercosul',
+            'Naturalização possível após dois anos de residência',
+            'Vida cultural intensa e diversidade natural',
           ],
           challenges: [
-            'Chronic economic instability',
-            'High inflation eroding local salaries',
-            'Currency and capital controls',
+            'Instabilidade econômica crônica',
+            'Inflação alta corroendo os salários locais',
+            'Controles cambiais e de capital',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Rentista: passive income of 5x the minimum wage, about US$2,000/month',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: renda passiva de 5x o salário mínimo, cerca de US$2.000/mês',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -1943,20 +1953,20 @@ export async function seedCountries() {
           description:
             'Argentina ofrece visados temporales y permanentes de forma accesible, siendo posible aplicar con comprobante de ingresos modestos o vínculo con empresas locales.',
           benefits: [
-            'Low cost of living in US dollar terms',
-            'Simplified residence for Mercosur nationals',
-            'Naturalisation possible after two years of residence',
-            'Strong cultural life and natural diversity',
+            'Bajo costo de vida en dólares',
+            'Residencia simplificada para nacionales del Mercosur',
+            'Naturalización posible tras dos años de residencia',
+            'Intensa vida cultural y diversidad natural',
           ],
           challenges: [
-            'Chronic economic instability',
-            'High inflation eroding local salaries',
-            'Currency and capital controls',
+            'Inestabilidad económica crónica',
+            'Inflación alta que erosiona los salarios locales',
+            'Controles cambiarios y de capital',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Rentista: passive income of 5x the minimum wage, about US$2,000/month',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: ingresos pasivos de 5x el salario mínimo, unos US$2.000/mes',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -2013,20 +2023,20 @@ export async function seedCountries() {
           description:
             'O Chile permite a residência temporária para trabalho e investimento. Os valores exigidos começam em torno de $5.000 USD, com análise caso a caso.',
           benefits: [
-            'Strong political and institutional stability',
-            'Good environment for entrepreneurs',
-            'Reliable public services by regional standards',
-            'Permanent residence possible after two years',
+            'Forte estabilidade política e institucional',
+            'Bom ambiente para empreendedores',
+            'Serviços públicos confiáveis para o padrão regional',
+            'Residência permanente possível após dois anos',
           ],
           challenges: [
-            'Slow and document-heavy immigration bureaucracy',
-            'Language barrier outside Santiago',
-            'High cost of living in the capital',
+            'Burocracia migratória lenta e cheia de documentos',
+            'Barreira linguística fora de Santiago',
+            'Custo de vida alto na capital',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Rentista: US$1,000–1,500/month in passive income; investor route from US$500,000',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$1.000–1.500/mês de renda passiva; via investidor a partir de US$500.000',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -2053,20 +2063,20 @@ export async function seedCountries() {
           description:
             'Chile permite la residencia temporal para trabajo e inversión. Los valores exigidos comienzan en torno a $5,000 USD, con análisis caso a caso.',
           benefits: [
-            'Strong political and institutional stability',
-            'Good environment for entrepreneurs',
-            'Reliable public services by regional standards',
-            'Permanent residence possible after two years',
+            'Fuerte estabilidad política e institucional',
+            'Buen entorno para emprendedores',
+            'Servicios públicos confiables para el estándar regional',
+            'Residencia permanente posible tras dos años',
           ],
           challenges: [
-            'Slow and document-heavy immigration bureaucracy',
-            'Language barrier outside Santiago',
-            'High cost of living in the capital',
+            'Burocracia migratoria lenta y con muchos documentos',
+            'Barrera idiomática fuera de Santiago',
+            'Alto costo de vida en la capital',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Rentista: US$1,000–1,500/month in passive income; investor route from US$500,000',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$1.000–1.500/mes de ingresos pasivos; vía inversionista desde US$500.000',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -3329,20 +3339,20 @@ export async function seedCountries() {
           description:
             'O Brasil oferece residência facilitada para nacionais do Mercosul, além do visto de nômade digital VITEM XIV e naturalização possível após quatro anos.',
           benefits: [
-            'Simplified residence for Mercosur nationals',
-            'Low cost of living outside the main capitals',
-            'Naturalisation possible after four years of residence',
-            'Universal public healthcare system (SUS)',
+            'Residência simplificada para nacionais do Mercosul',
+            'Custo de vida baixo fora das capitais',
+            'Naturalização possível após quatro anos de residência',
+            'Sistema público de saúde universal (SUS)',
           ],
           challenges: [
-            'Heavy and document-intensive bureaucracy',
-            'Security varies sharply by city and neighbourhood',
-            'Pronounced regional inequality',
+            'Burocracia pesada e cheia de documentos',
+            'Segurança varia muito por cidade e bairro',
+            'Desigualdade regional acentuada',
           ],
-          processing_time: '30–90 days',
+          processing_time: '30–90 dias',
           investment_required:
-            'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
-          language_requirement: 'Portuguese (basic)',
+            'Nômade digital: US$1.500/mês de renda ou US$18.000 disponíveis',
+          language_requirement: 'Português (básico)',
         },
         {
           language: 'en',
@@ -3369,20 +3379,20 @@ export async function seedCountries() {
           description:
             'Brasil ofrece residencia simplificada para nacionales del Mercosur, el visado de nómada digital VITEM XIV y naturalización tras cuatro años de residencia.',
           benefits: [
-            'Simplified residence for Mercosur nationals',
-            'Low cost of living outside the main capitals',
-            'Naturalisation possible after four years of residence',
-            'Universal public healthcare system (SUS)',
+            'Residencia simplificada para nacionales del Mercosur',
+            'Bajo costo de vida fuera de las capitales',
+            'Naturalización posible tras cuatro años de residencia',
+            'Sistema público de salud universal (SUS)',
           ],
           challenges: [
-            'Heavy and document-intensive bureaucracy',
-            'Security varies sharply by city and neighbourhood',
-            'Pronounced regional inequality',
+            'Burocracia pesada y con muchos documentos',
+            'La seguridad varía mucho según ciudad y barrio',
+            'Marcada desigualdad regional',
           ],
-          processing_time: '30–90 days',
+          processing_time: '30–90 días',
           investment_required:
-            'Digital nomad: US$1,500/month in income or US$18,000 in available funds',
-          language_requirement: 'Portuguese (basic)',
+            'Nómada digital: US$1.500/mes de ingresos o US$18.000 disponibles',
+          language_requirement: 'Portugués (básico)',
         },
       ],
       immigration_visa_types: [
@@ -3444,20 +3454,20 @@ export async function seedCountries() {
           description:
             'O Uruguai concede residência permanente direta a nacionais do Mercosul e residência por renda comprovada, com forte estabilidade institucional.',
           benefits: [
-            'Strong political and institutional stability',
-            'Direct path to permanent residence for Mercosur nationals',
-            'Comparatively high safety for the region',
-            'Territorial tax treatment for new residents',
+            'Forte estabilidade política e institucional',
+            'Caminho direto à residência permanente para nacionais do Mercosul',
+            'Segurança alta para o padrão regional',
+            'Tributação territorial para novos residentes',
           ],
           challenges: [
-            'High cost of living by regional standards',
-            'Small domestic market limits job opportunities',
-            'Residence processing can be slow',
+            'Custo de vida alto para o padrão regional',
+            'Mercado interno pequeno limita as oportunidades',
+            'Processamento da residência pode ser lento',
           ],
-          processing_time: '3–8 months',
+          processing_time: '3–8 meses',
           investment_required:
-            'No legal minimum; in practice about US$1,500/month in passive income',
-          language_requirement: 'Spanish (basic)',
+            'Sem mínimo legal; na prática cerca de US$1.500/mês de renda passiva',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -3484,20 +3494,20 @@ export async function seedCountries() {
           description:
             'Uruguay concede residencia permanente directa a nacionales del Mercosur y residencia por ingresos acreditados, con fuerte estabilidad institucional.',
           benefits: [
-            'Strong political and institutional stability',
-            'Direct path to permanent residence for Mercosur nationals',
-            'Comparatively high safety for the region',
-            'Territorial tax treatment for new residents',
+            'Fuerte estabilidad política e institucional',
+            'Camino directo a la residencia permanente para nacionales del Mercosur',
+            'Seguridad alta para el estándar regional',
+            'Tributación territorial para nuevos residentes',
           ],
           challenges: [
-            'High cost of living by regional standards',
-            'Small domestic market limits job opportunities',
-            'Residence processing can be slow',
+            'Alto costo de vida para el estándar regional',
+            'Mercado interno pequeño limita las oportunidades',
+            'El trámite de residencia puede ser lento',
           ],
-          processing_time: '3–8 months',
+          processing_time: '3–8 meses',
           investment_required:
-            'No legal minimum; in practice about US$1,500/month in passive income',
-          language_requirement: 'Spanish (basic)',
+            'Sin mínimo legal; en la práctica unos US$1.500/mes de ingresos pasivos',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -4341,20 +4351,20 @@ export async function seedCountries() {
           description:
             'A Colômbia oferece o visto V de nômade digital com validade de até dois anos, além das vias M de migrante e R de residente.',
           benefits: [
-            'Low cost of living',
-            'Digital nomad visa valid for up to two years',
-            'Time zone aligned with the United States',
-            'Stable climate throughout the year',
+            'Custo de vida baixo',
+            'Visto de nômade digital válido por até dois anos',
+            'Fuso horário alinhado com os Estados Unidos',
+            'Clima estável o ano todo',
           ],
           challenges: [
-            'Security varies sharply by region',
-            'Apostille-heavy bureaucracy',
-            'Uneven infrastructure outside the main cities',
+            'Segurança varia muito por região',
+            'Burocracia com muita exigência de apostilamento',
+            'Infraestrutura desigual fora das cidades principais',
           ],
-          processing_time: '10–30 days',
+          processing_time: '10–30 dias',
           investment_required:
-            'Digital nomad: 3x the minimum wage, about US$1,400/month; property investor 350x, about US$161,000',
-          language_requirement: 'Spanish (basic to intermediate)',
+            'Nômade digital: 3x o salário mínimo, cerca de US$1.400/mês; investidor imobiliário 350x, cerca de US$161.000',
+          language_requirement: 'Espanhol (básico a intermediário)',
         },
         {
           language: 'en',
@@ -4381,20 +4391,20 @@ export async function seedCountries() {
           description:
             'Colombia ofrece el visado V de nómada digital con vigencia de hasta dos años, además de las vías M de migrante y R de residente.',
           benefits: [
-            'Low cost of living',
-            'Digital nomad visa valid for up to two years',
-            'Time zone aligned with the United States',
-            'Stable climate throughout the year',
+            'Bajo costo de vida',
+            'Visa de nómada digital válida hasta dos años',
+            'Huso horario alineado con Estados Unidos',
+            'Clima estable durante todo el año',
           ],
           challenges: [
-            'Security varies sharply by region',
-            'Apostille-heavy bureaucracy',
-            'Uneven infrastructure outside the main cities',
+            'La seguridad varía mucho según la región',
+            'Burocracia con mucha exigencia de apostilla',
+            'Infraestructura desigual fuera de las ciudades principales',
           ],
-          processing_time: '10–30 days',
+          processing_time: '10–30 días',
           investment_required:
-            'Digital nomad: 3x the minimum wage, about US$1,400/month; property investor 350x, about US$161,000',
-          language_requirement: 'Spanish (basic to intermediate)',
+            'Nómada digital: 3x el salario mínimo, unos US$1.400/mes; inversionista inmobiliario 350x, unos US$161.000',
+          language_requirement: 'Español (básico a intermedio)',
         },
       ],
       immigration_visa_types: [
@@ -4447,20 +4457,20 @@ export async function seedCountries() {
           description:
             'O Paraguai tem um dos processos de residência mais acessíveis do mundo, com tributação territorial e residência facilitada para o Mercosul.',
           benefits: [
-            'Among the most accessible residence processes in the world',
-            'Territorial tax system — foreign income is not taxed locally',
-            'Very low cost of living',
-            'Mercosur member with regional mobility',
+            'Entre os processos de residência mais acessíveis do mundo',
+            'Sistema tributário territorial — renda estrangeira não é tributada localmente',
+            'Custo de vida muito baixo',
+            'Membro do Mercosul, com mobilidade regional',
           ],
           challenges: [
-            'Limited local labour market',
-            'Modest infrastructure outside Asunción',
-            'Extreme summer heat',
+            'Mercado de trabalho local limitado',
+            'Infraestrutura modesta fora de Assunção',
+            'Calor extremo no verão',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'No deposit since Law 6984/2022; SUACE investor route from US$70,000',
-          language_requirement: 'Spanish (Guaraní is co-official)',
+            'Sem depósito desde a Lei 6984/2022; via investidor SUACE a partir de US$70.000',
+          language_requirement: 'Espanhol (guarani é co-oficial)',
         },
         {
           language: 'en',
@@ -4487,20 +4497,20 @@ export async function seedCountries() {
           description:
             'Paraguay tiene uno de los procesos de residencia más accesibles del mundo, con tributación territorial y residencia simplificada para el Mercosur.',
           benefits: [
-            'Among the most accessible residence processes in the world',
-            'Territorial tax system — foreign income is not taxed locally',
-            'Very low cost of living',
-            'Mercosur member with regional mobility',
+            'Entre los procesos de residencia más accesibles del mundo',
+            'Sistema tributario territorial — la renta extranjera no se grava localmente',
+            'Costo de vida muy bajo',
+            'Miembro del Mercosur, con movilidad regional',
           ],
           challenges: [
-            'Limited local labour market',
-            'Modest infrastructure outside Asunción',
-            'Extreme summer heat',
+            'Mercado laboral local limitado',
+            'Infraestructura modesta fuera de Asunción',
+            'Calor extremo en verano',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'No deposit since Law 6984/2022; SUACE investor route from US$70,000',
-          language_requirement: 'Spanish (Guaraní is co-official)',
+            'Sin depósito desde la Ley 6984/2022; vía inversionista SUACE desde US$70.000',
+          language_requirement: 'Español (el guaraní es cooficial)',
         },
       ],
       immigration_visa_types: [
@@ -5461,20 +5471,20 @@ export async function seedCountries() {
           description:
             'O Peru oferece a via Rentista para quem tem renda permanente, residência facilitada pelo Mercosul e naturalização possível após dois anos.',
           benefits: [
-            'Low cost of living',
-            'Simplified residence for Mercosur nationals',
-            'Rich cultural heritage and internationally recognised gastronomy',
-            'Naturalisation possible after two years of residence',
+            'Custo de vida baixo',
+            'Residência simplificada para nacionais do Mercosul',
+            'Patrimônio cultural rico e gastronomia reconhecida internacionalmente',
+            'Naturalização possível após dois anos de residência',
           ],
           challenges: [
-            'Political instability in recent years',
-            'Uneven public services',
-            'Marked inequality between Lima and the interior',
+            'Instabilidade política nos últimos anos',
+            'Serviços públicos desiguais',
+            'Desigualdade marcada entre Lima e o interior',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Rentista: US$1,000/month in passive income; investor PEN 500,000, about US$135,000',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$1.000/mês de renda passiva; investidor PEN 500.000, cerca de US$135.000',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -5501,20 +5511,20 @@ export async function seedCountries() {
           description:
             'Perú ofrece la vía Rentista para quienes tienen renta permanente, residencia simplificada por el Mercosur y naturalización tras dos años.',
           benefits: [
-            'Low cost of living',
-            'Simplified residence for Mercosur nationals',
-            'Rich cultural heritage and internationally recognised gastronomy',
-            'Naturalisation possible after two years of residence',
+            'Bajo costo de vida',
+            'Residencia simplificada para nacionales del Mercosur',
+            'Rico patrimonio cultural y gastronomía reconocida internacionalmente',
+            'Naturalización posible tras dos años de residencia',
           ],
           challenges: [
-            'Political instability in recent years',
-            'Uneven public services',
-            'Marked inequality between Lima and the interior',
+            'Inestabilidad política en los últimos años',
+            'Servicios públicos desiguales',
+            'Marcada desigualdad entre Lima y el interior',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Rentista: US$1,000/month in passive income; investor PEN 500,000, about US$135,000',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$1.000/mes de ingresos pasivos; inversionista PEN 500.000, unos US$135.000',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -5685,20 +5695,20 @@ export async function seedCountries() {
           description:
             'O Equador usa o dólar americano como moeda oficial e tem requisitos de residência acessíveis, com as vias Rentista, Profissional e de Investidor.',
           benefits: [
-            'The US dollar is the official currency, removing exchange risk',
-            'Very low cost of living',
-            'Accessible residence requirements',
-            'Diverse geography from the Andes to the Amazon and the coast',
+            'O dólar americano é a moeda oficial, o que elimina risco cambial',
+            'Custo de vida muito baixo',
+            'Requisitos de residência acessíveis',
+            'Geografia diversa, dos Andes à Amazônia e ao litoral',
           ],
           challenges: [
-            'Rising insecurity in coastal cities',
-            'Limited local job market for foreigners',
-            'Political and economic volatility',
+            'Insegurança crescente nas cidades do litoral',
+            'Mercado de trabalho local limitado para estrangeiros',
+            'Volatilidade política e econômica',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Rentista: 3x the basic salary, US$1,446/month; investor 100x, US$48,200',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: 3x o salário básico, US$1.446/mês; investidor 100x, US$48.200',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -5725,20 +5735,20 @@ export async function seedCountries() {
           description:
             'Ecuador usa el dólar estadounidense como moneda oficial y tiene requisitos de residencia accesibles, mediante las vías Rentista, Profesional e Inversionista.',
           benefits: [
-            'The US dollar is the official currency, removing exchange risk',
-            'Very low cost of living',
-            'Accessible residence requirements',
-            'Diverse geography from the Andes to the Amazon and the coast',
+            'El dólar estadounidense es la moneda oficial, lo que elimina el riesgo cambiario',
+            'Costo de vida muy bajo',
+            'Requisitos de residencia accesibles',
+            'Geografía diversa, de los Andes a la Amazonía y la costa',
           ],
           challenges: [
-            'Rising insecurity in coastal cities',
-            'Limited local job market for foreigners',
-            'Political and economic volatility',
+            'Inseguridad creciente en las ciudades de la costa',
+            'Mercado laboral local limitado para extranjeros',
+            'Volatilidad política y económica',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Rentista: 3x the basic salary, US$1,446/month; investor 100x, US$48,200',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: 3x el salario básico, US$1.446/mes; inversionista 100x, US$48.200',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
