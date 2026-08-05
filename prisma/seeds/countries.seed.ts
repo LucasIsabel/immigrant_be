@@ -497,8 +497,8 @@ export async function seedCountries() {
             'Long working hours in traditional sectors',
           ],
           processing_time:
-            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
-          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+            'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
+          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -517,8 +517,8 @@ export async function seedCountries() {
             'Long working hours in traditional sectors',
           ],
           processing_time:
-            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
-          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+            'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
+          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -537,8 +537,8 @@ export async function seedCountries() {
             'Long working hours in traditional sectors',
           ],
           processing_time:
-            '≈1 week for consular issuance once the Certificate of Eligibility is granted',
-          investment_required: 'Consular fees plus proof of funds (≈¥500,000)',
+            'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
+          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
       ],
@@ -728,7 +728,7 @@ export async function seedCountries() {
           ],
           processing_time: 'Skilled Migrant Category: ~12–16 months',
           investment_required:
-            'Application fees plus proof of funds (≈NZD 20,000)',
+            'Skilled Migrant: 6 points plus a skilled job offer; student visa needs NZD 20,000/year',
           language_requirement: 'English (IELTS 6.5 or above)',
         },
         {
@@ -748,7 +748,7 @@ export async function seedCountries() {
           ],
           processing_time: 'Skilled Migrant Category: ~12–16 months',
           investment_required:
-            'Application fees plus proof of funds (≈NZD 20,000)',
+            'Skilled Migrant: 6 points plus a skilled job offer; student visa needs NZD 20,000/year',
           language_requirement: 'English (IELTS 6.5 or above)',
         },
         {
@@ -768,7 +768,7 @@ export async function seedCountries() {
           ],
           processing_time: 'Skilled Migrant Category: ~12–16 months',
           investment_required:
-            'Application fees plus proof of funds (≈NZD 20,000)',
+            'Skilled Migrant: 6 points plus a skilled job offer; student visa needs NZD 20,000/year',
           language_requirement: 'English (IELTS 6.5 or above)',
         },
       ],
@@ -3005,7 +3005,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+            'Long-term stay: CZK 46,950 plus CZK 6,260 per month; business route CZK 156,500',
           language_requirement: 'Czech (A2 for permanent residence)',
         },
         {
@@ -3025,7 +3025,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+            'Long-term stay: CZK 46,950 plus CZK 6,260 per month; business route CZK 156,500',
           language_requirement: 'Czech (A2 for permanent residence)',
         },
         {
@@ -3045,7 +3045,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'Proof of funds of roughly CZK 110,000 for long-term stay applications',
+            'Long-term stay: CZK 46,950 plus CZK 6,260 per month; business route CZK 156,500',
           language_requirement: 'Czech (A2 for permanent residence)',
         },
       ],
