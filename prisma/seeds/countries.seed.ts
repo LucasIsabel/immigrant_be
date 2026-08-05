@@ -5809,7 +5809,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+            'Investor visa: DT4 under VND 3 billion, DT3 from VND 3 billion, DT1 from VND 100 billion',
           language_requirement:
             'Vietnamese (English used in international companies)',
         },
@@ -5830,7 +5830,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+            'Investor visa: DT4 under VND 3 billion, DT3 from VND 3 billion, DT1 from VND 100 billion',
           language_requirement:
             'Vietnamese (English used in international companies)',
         },
@@ -5851,7 +5851,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+            'Investor visa: DT4 under VND 3 billion, DT3 from VND 3 billion, DT1 from VND 100 billion',
           language_requirement:
             'Vietnamese (English used in international companies)',
         },
@@ -5924,7 +5924,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+            'SRRV Classic: US$15,000 deposit at 50+ with a pension, US$25,000 at 40–49',
           language_requirement:
             'Filipino and English are both official languages',
         },
@@ -5945,7 +5945,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+            'SRRV Classic: US$15,000 deposit at 50+ with a pension, US$25,000 at 40–49',
           language_requirement:
             'Filipino and English are both official languages',
         },
@@ -5966,7 +5966,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+            'SRRV Classic: US$15,000 deposit at 50+ with a pension, US$25,000 at 40–49',
           language_requirement:
             'Filipino and English are both official languages',
         },
@@ -6268,7 +6268,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Work routes require an employer; permanent residence thresholds are set regionally',
+            'Work needs an employer; PR by investment from RMB 10 million, or US$500,000 in the west',
           language_requirement:
             'Mandarin (required for most roles outside multinationals)',
         },
@@ -6289,7 +6289,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Work routes require an employer; permanent residence thresholds are set regionally',
+            'Work needs an employer; PR by investment from RMB 10 million, or US$500,000 in the west',
           language_requirement:
             'Mandarin (required for most roles outside multinationals)',
         },
@@ -6310,7 +6310,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Work routes require an employer; permanent residence thresholds are set regionally',
+            'Work needs an employer; PR by investment from RMB 10 million, or US$500,000 in the west',
           language_requirement:
             'Mandarin (required for most roles outside multinationals)',
         },
