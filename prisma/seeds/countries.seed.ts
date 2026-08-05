@@ -1584,7 +1584,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 weeks',
           investment_required:
-            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+            'D-8: KRW 100 million per investor, wired from abroad; F-2 varies by programme',
           language_requirement:
             'Korean (TOPIK levels required for some residence categories)',
         },
@@ -1605,7 +1605,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 weeks',
           investment_required:
-            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+            'D-8: KRW 100 million per investor, wired from abroad; F-2 varies by programme',
           language_requirement:
             'Korean (TOPIK levels required for some residence categories)',
         },
@@ -1626,7 +1626,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 weeks',
           investment_required:
-            'D-8 corporate investment from ≈KRW 100 million; F-2 routes vary by programme',
+            'D-8: KRW 100 million per investor, wired from abroad; F-2 varies by programme',
           language_requirement:
             'Korean (TOPIK levels required for some residence categories)',
         },
@@ -6498,7 +6498,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+            'Premium Residency: SAR 800,000 one-off, or SAR 100,000/year renewable up to 5 years',
           language_requirement: 'Arabic (English used in many corporate roles)',
         },
         {
@@ -6518,7 +6518,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+            'Premium Residency: SAR 800,000 one-off, or SAR 100,000/year renewable up to 5 years',
           language_requirement: 'Arabic (English used in many corporate roles)',
         },
         {
@@ -6538,7 +6538,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+            'Premium Residency: SAR 800,000 one-off, or SAR 100,000/year renewable up to 5 years',
           language_requirement: 'Arabic (English used in many corporate roles)',
         },
       ],
