@@ -4683,7 +4683,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–6 months depending on the route',
           investment_required:
-            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+            'No financial requirement; one Jewish grandparent qualifies for Aliyah',
           language_requirement:
             'Hebrew (free ulpan courses provided to new immigrants)',
         },
@@ -4704,7 +4704,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–6 months depending on the route',
           investment_required:
-            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+            'No financial requirement; one Jewish grandparent qualifies for Aliyah',
           language_requirement:
             'Hebrew (free ulpan courses provided to new immigrants)',
         },
@@ -4725,7 +4725,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–6 months depending on the route',
           investment_required:
-            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+            'No financial requirement; one Jewish grandparent qualifies for Aliyah',
           language_requirement:
             'Hebrew (free ulpan courses provided to new immigrants)',
         },
@@ -6038,7 +6038,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+            'No investment route; professional criteria or NT$160,000/month in salary',
           language_requirement:
             'Mandarin (English used in technology and academia)',
         },
@@ -6059,7 +6059,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+            'No investment route; professional criteria or NT$160,000/month in salary',
           language_requirement:
             'Mandarin (English used in technology and academia)',
         },
@@ -6080,7 +6080,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+            'No investment route; professional criteria or NT$160,000/month in salary',
           language_requirement:
             'Mandarin (English used in technology and academia)',
         },
@@ -6153,7 +6153,7 @@ export async function seedCountries() {
           ],
           processing_time: '4–8 weeks',
           investment_required:
-            'Talent schemes are points or credential based rather than investment based',
+            'No investment route; Top Talent Pass needs HKD 2.5 million/year or a top degree',
           language_requirement:
             'Cantonese and English are both official languages',
         },
@@ -6174,7 +6174,7 @@ export async function seedCountries() {
           ],
           processing_time: '4–8 weeks',
           investment_required:
-            'Talent schemes are points or credential based rather than investment based',
+            'No investment route; Top Talent Pass needs HKD 2.5 million/year or a top degree',
           language_requirement:
             'Cantonese and English are both official languages',
         },
@@ -6195,7 +6195,7 @@ export async function seedCountries() {
           ],
           processing_time: '4–8 weeks',
           investment_required:
-            'Talent schemes are points or credential based rather than investment based',
+            'No investment route; Top Talent Pass needs HKD 2.5 million/year or a top degree',
           language_requirement:
             'Cantonese and English are both official languages',
         },
