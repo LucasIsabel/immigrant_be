@@ -1373,7 +1373,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–40 business days',
           investment_required:
-            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+            'Employment Pass from SGD 5,600/month, rising with age; GIP from SGD 10 million',
           language_requirement: 'English (official working language)',
         },
         {
@@ -1393,7 +1393,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–40 business days',
           investment_required:
-            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+            'Employment Pass from SGD 5,600/month, rising with age; GIP from SGD 10 million',
           language_requirement: 'English (official working language)',
         },
         {
@@ -1413,7 +1413,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–40 business days',
           investment_required:
-            'Employment Pass: salary above the statutory minimum; Global Investor Programme: from SGD 10 million',
+            'Employment Pass from SGD 5,600/month, rising with age; GIP from SGD 10 million',
           language_requirement: 'English (official working language)',
         },
       ],
@@ -2237,7 +2237,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+            'Residence and work permit: salary from PLN 13,355/month gross; fees PLN 440',
           language_requirement:
             'Polish (basic; required for permanent residence)',
         },
@@ -2258,7 +2258,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+            'Residence and work permit: salary from PLN 13,355/month gross; fees PLN 440',
           language_requirement:
             'Polish (basic; required for permanent residence)',
         },
@@ -2279,7 +2279,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Application fees plus proof of funds, from ≈US$3,000 depending on the route',
+            'Residence and work permit: salary from PLN 13,355/month gross; fees PLN 440',
           language_requirement:
             'Polish (basic; required for permanent residence)',
         },
@@ -2338,7 +2338,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of funds (≈€6,720/year for students)',
+            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
@@ -2359,7 +2359,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of funds (≈€6,720/year for students)',
+            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
@@ -2380,7 +2380,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of funds (≈€6,720/year for students)',
+            'Student permit: €800/month, or €9,600/year, plus tuition if not yet paid',
           language_requirement:
             'Finnish or Swedish (English accepted in many workplaces)',
         },
