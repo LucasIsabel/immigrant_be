@@ -3751,6 +3751,3169 @@ export async function seedCountries() {
         },
       ],
     },
+    {
+      name: 'Malta',
+      flag: '🇲🇹',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Malta Permanent Residence Programme (MPRP)',
+        'Nomad Residence Permit',
+        'Key Employee Initiative',
+        'Student Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Valletta',
+        'Sliema',
+        'St. Julian\'s',
+        'Gozo',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'Malta oferece o programa de residência permanente MPRP e o Nomad Residence Permit, com o inglês como língua co-oficial e acesso à UE e ao Schengen.',
+          benefits: [
+            'English is an official language',
+            'EU and Schengen member state',
+            'Mediterranean climate year round',
+            'Strong iGaming and financial services sectors',
+          ],
+          challenges: [
+            'Very small domestic market',
+            'High and rising housing costs',
+            'Heavy traffic and population density',
+          ],
+          processing_time:
+            '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
+          investment_required:
+            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+          language_requirement: 'English (co-official language)',
+        },
+        {
+          language: 'en',
+          description:
+            'Malta offers the MPRP permanent residence programme and the Nomad Residence Permit, with English as a co-official language and EU and Schengen access.',
+          benefits: [
+            'English is an official language',
+            'EU and Schengen member state',
+            'Mediterranean climate year round',
+            'Strong iGaming and financial services sectors',
+          ],
+          challenges: [
+            'Very small domestic market',
+            'High and rising housing costs',
+            'Heavy traffic and population density',
+          ],
+          processing_time:
+            '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
+          investment_required:
+            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+          language_requirement: 'English (co-official language)',
+        },
+        {
+          language: 'es',
+          description:
+            'Malta ofrece el programa de residencia permanente MPRP y el Nomad Residence Permit, con el inglés como lengua cooficial y acceso a la UE y a Schengen.',
+          benefits: [
+            'English is an official language',
+            'EU and Schengen member state',
+            'Mediterranean climate year round',
+            'Strong iGaming and financial services sectors',
+          ],
+          challenges: [
+            'Very small domestic market',
+            'High and rising housing costs',
+            'Heavy traffic and population density',
+          ],
+          processing_time:
+            '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
+          investment_required:
+            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+          language_requirement: 'English (co-official language)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://identita.gov.mt/',
+        },
+        {
+          category: 'National Long-Stay Visa (Type D)',
+          description:
+            'Visa for stays over 90 days for work, study or family reasons.',
+          source: 'https://identita.gov.mt/',
+        },
+        {
+          category: 'Malta Permanent Residence Programme (MPRP)',
+          description:
+            'Permanent residence granted through a government contribution and a qualifying property lease or purchase.',
+          source: 'https://residencymalta.gov.mt/',
+        },
+        {
+          category: 'Nomad Residence Permit',
+          description:
+            'One-year renewable permit for remote workers employed or contracted outside Malta.',
+          source: 'https://residencymalta.gov.mt/',
+        },
+      ],
+    },
+    {
+      name: 'Croatia',
+      flag: '🇭🇷',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Digital Nomad Residence Permit',
+        'Work Permit',
+        'Student Residence',
+        'Family Reunification',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Zagreb',
+        'Split',
+        'Dubrovnik',
+        'Rijeka',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Croácia oferece autorização de residência para nômades digitais com isenção de imposto sobre renda estrangeira, além das vias de trabalho e estudo.',
+          benefits: [
+            'Digital nomad permit exempts foreign income from local tax',
+            'EU member and part of the Schengen area since 2023',
+            'Extensive Adriatic coastline',
+            'Moderate cost of living for the EU',
+          ],
+          challenges: [
+            'Croatian is demanding to learn',
+            'Limited local labour market',
+            'Economy heavily dependent on seasonal tourism',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+          language_requirement: 'Croatian (required for permanent residence)',
+        },
+        {
+          language: 'en',
+          description:
+            'Croatia offers a digital nomad residence permit that exempts foreign income from local tax, alongside the usual work and study routes.',
+          benefits: [
+            'Digital nomad permit exempts foreign income from local tax',
+            'EU member and part of the Schengen area since 2023',
+            'Extensive Adriatic coastline',
+            'Moderate cost of living for the EU',
+          ],
+          challenges: [
+            'Croatian is demanding to learn',
+            'Limited local labour market',
+            'Economy heavily dependent on seasonal tourism',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+          language_requirement: 'Croatian (required for permanent residence)',
+        },
+        {
+          language: 'es',
+          description:
+            'Croacia ofrece un permiso de residencia para nómadas digitales que exime del impuesto local sobre la renta extranjera, además de las vías de trabajo y estudio.',
+          benefits: [
+            'Digital nomad permit exempts foreign income from local tax',
+            'EU member and part of the Schengen area since 2023',
+            'Extensive Adriatic coastline',
+            'Moderate cost of living for the EU',
+          ],
+          challenges: [
+            'Croatian is demanding to learn',
+            'Limited local labour market',
+            'Economy heavily dependent on seasonal tourism',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+          language_requirement: 'Croatian (required for permanent residence)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description:
+            'Visa for stays of up to 90 days in any 180-day period for tourism or business.',
+          source: 'https://mup.gov.hr/en',
+        },
+        {
+          category: 'Digital Nomad Residence Permit',
+          description:
+            'Temporary stay of up to one year for remote workers not employed by a Croatian company.',
+          source: 'https://mup.gov.hr/en',
+        },
+        {
+          category: 'Temporary Stay for Work',
+          description:
+            'Residence and work permit tied to a Croatian employer or self-employment.',
+          source: 'https://mup.gov.hr/en',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Available after five years of continuous legal residence, subject to language requirements.',
+          source: 'https://mup.gov.hr/en',
+        },
+      ],
+    },
+    {
+      name: 'Estonia',
+      flag: '🇪🇪',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Digital Nomad Visa (Type D)',
+        'Startup Visa',
+        'EU Blue Card',
+        'Student Residence Permit',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Tallinn',
+        'Tartu',
+        'Pärnu',
+        'Narva',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Estônia foi o primeiro país a criar um visto formal de nômade digital e oferece serviços públicos totalmente digitais, além do Startup Visa.',
+          benefits: [
+            'First country in the world to create a formal digital nomad visa',
+            'e-Residency and fully digital public services',
+            'Strong startup ecosystem relative to population',
+            'Lean and fast administration',
+          ],
+          challenges: [
+            'Estonian is a difficult language for most learners',
+            'Long, dark winters',
+            'Small domestic market',
+          ],
+          processing_time: '15–30 days',
+          investment_required:
+            'Digital nomad: roughly €4,500/month in gross income over the previous six months',
+          language_requirement: 'Estonian (B1 for permanent residence)',
+        },
+        {
+          language: 'en',
+          description:
+            'Estonia was the first country to create a formal digital nomad visa and offers fully digital public services, alongside the Startup Visa.',
+          benefits: [
+            'First country in the world to create a formal digital nomad visa',
+            'e-Residency and fully digital public services',
+            'Strong startup ecosystem relative to population',
+            'Lean and fast administration',
+          ],
+          challenges: [
+            'Estonian is a difficult language for most learners',
+            'Long, dark winters',
+            'Small domestic market',
+          ],
+          processing_time: '15–30 days',
+          investment_required:
+            'Digital nomad: roughly €4,500/month in gross income over the previous six months',
+          language_requirement: 'Estonian (B1 for permanent residence)',
+        },
+        {
+          language: 'es',
+          description:
+            'Estonia fue el primer país en crear un visado formal de nómada digital y ofrece servicios públicos totalmente digitales, además del Startup Visa.',
+          benefits: [
+            'First country in the world to create a formal digital nomad visa',
+            'e-Residency and fully digital public services',
+            'Strong startup ecosystem relative to population',
+            'Lean and fast administration',
+          ],
+          challenges: [
+            'Estonian is a difficult language for most learners',
+            'Long, dark winters',
+            'Small domestic market',
+          ],
+          processing_time: '15–30 days',
+          investment_required:
+            'Digital nomad: roughly €4,500/month in gross income over the previous six months',
+          language_requirement: 'Estonian (B1 for permanent residence)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description: 'Visa for stays of up to 90 days in any 180-day period.',
+          source: 'https://www.politsei.ee/en',
+        },
+        {
+          category: 'Digital Nomad Visa (Type D)',
+          description:
+            'Long-stay visa for remote workers with an employer or clients outside Estonia.',
+          source: 'https://www.politsei.ee/en',
+        },
+        {
+          category: 'Startup Visa',
+          description:
+            'Route for founders of innovative startups validated by an expert committee.',
+          source: 'https://www.startupestonia.ee/',
+        },
+        {
+          category: 'Long-Term Residence Permit',
+          description:
+            'Available after five years of residence, subject to Estonian language and income requirements.',
+          source: 'https://www.politsei.ee/en',
+        },
+      ],
+    },
+    {
+      name: 'Hungary',
+      flag: '🇭🇺',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'White Card (Digital Nomad)',
+        'Work Permit',
+        'Student Residence Permit',
+        'Guest Investor Residence',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Budapest',
+        'Debrecen',
+        'Szeged',
+        'Pécs',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Hungria oferece o White Card para trabalhadores remotos e o Guest Investor Residence, com um dos custos de vida mais baixos da UE.',
+          benefits: [
+            'Low cost of living within the EU',
+            'White Card route for remote workers',
+            'Central location for travel across Europe',
+            'Rich thermal spa and cultural scene',
+          ],
+          challenges: [
+            'Hungarian is linguistically isolated and hard to learn',
+            'Restrictive immigration policy',
+            'Low local wages',
+          ],
+          processing_time: '30–70 days',
+          investment_required:
+            'White Card: roughly €3,000/month in income; Guest Investor Programme: from €250,000',
+          language_requirement: 'Hungarian (required for naturalisation)',
+        },
+        {
+          language: 'en',
+          description:
+            'Hungary offers the White Card for remote workers and the Guest Investor Residence, with one of the lowest costs of living in the EU.',
+          benefits: [
+            'Low cost of living within the EU',
+            'White Card route for remote workers',
+            'Central location for travel across Europe',
+            'Rich thermal spa and cultural scene',
+          ],
+          challenges: [
+            'Hungarian is linguistically isolated and hard to learn',
+            'Restrictive immigration policy',
+            'Low local wages',
+          ],
+          processing_time: '30–70 days',
+          investment_required:
+            'White Card: roughly €3,000/month in income; Guest Investor Programme: from €250,000',
+          language_requirement: 'Hungarian (required for naturalisation)',
+        },
+        {
+          language: 'es',
+          description:
+            'Hungría ofrece la White Card para trabajadores remotos y el Guest Investor Residence, con uno de los costes de vida más bajos de la UE.',
+          benefits: [
+            'Low cost of living within the EU',
+            'White Card route for remote workers',
+            'Central location for travel across Europe',
+            'Rich thermal spa and cultural scene',
+          ],
+          challenges: [
+            'Hungarian is linguistically isolated and hard to learn',
+            'Restrictive immigration policy',
+            'Low local wages',
+          ],
+          processing_time: '30–70 days',
+          investment_required:
+            'White Card: roughly €3,000/month in income; Guest Investor Programme: from €250,000',
+          language_requirement: 'Hungarian (required for naturalisation)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description: 'Visa for stays of up to 90 days in any 180-day period.',
+          source: 'https://oif.gov.hu/en/',
+        },
+        {
+          category: 'White Card (Digital Nomad Residence Permit)',
+          description:
+            'One-year renewable permit for remote workers earning income from outside Hungary.',
+          source: 'https://oif.gov.hu/en/',
+        },
+        {
+          category: 'Residence Permit for Employment',
+          description:
+            'Permit tied to a Hungarian employer, issued together with the work authorisation.',
+          source: 'https://oif.gov.hu/en/',
+        },
+        {
+          category: 'Guest Investor Residence Permit',
+          description:
+            'Ten-year residence granted through qualifying investment in real estate funds or bonds.',
+          source: 'https://oif.gov.hu/en/',
+        },
+      ],
+    },
+    {
+      name: 'Turkey',
+      flag: '🇹🇷',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Citizenship by Investment',
+        'Short-Term Residence Permit',
+        'Work Permit',
+        'Digital Nomad Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Istanbul',
+        'Ankara',
+        'Izmir',
+        'Antalya',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Turquia tem uma das vias mais rápidas de cidadania por investimento e oferece vistos de residência de curto prazo e para nômades digitais.',
+          benefits: [
+            'One of the fastest citizenship-by-investment routes in the world',
+            'Low cost of living',
+            'Bridge location between Europe and Asia',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'High inflation and currency volatility',
+            'Political instability',
+            'Residence restricted in districts with high foreigner density',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Citizenship by investment: from US$400,000 in real estate held for three years',
+          language_requirement: 'Turkish (required for citizenship)',
+        },
+        {
+          language: 'en',
+          description:
+            'Turkey runs one of the fastest citizenship-by-investment routes in the world, alongside short-term residence and digital nomad permits.',
+          benefits: [
+            'One of the fastest citizenship-by-investment routes in the world',
+            'Low cost of living',
+            'Bridge location between Europe and Asia',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'High inflation and currency volatility',
+            'Political instability',
+            'Residence restricted in districts with high foreigner density',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Citizenship by investment: from US$400,000 in real estate held for three years',
+          language_requirement: 'Turkish (required for citizenship)',
+        },
+        {
+          language: 'es',
+          description:
+            'Turquía tiene una de las vías más rápidas de ciudadanía por inversión, además de permisos de residencia de corta duración y para nómadas digitales.',
+          benefits: [
+            'One of the fastest citizenship-by-investment routes in the world',
+            'Low cost of living',
+            'Bridge location between Europe and Asia',
+            'Affordable and high-standard private healthcare',
+          ],
+          challenges: [
+            'High inflation and currency volatility',
+            'Political instability',
+            'Residence restricted in districts with high foreigner density',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Citizenship by investment: from US$400,000 in real estate held for three years',
+          language_requirement: 'Turkish (required for citizenship)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / e-Visa',
+          description:
+            'Short-term entry for tourism or business, with duration depending on nationality.',
+          source: 'https://www.evisa.gov.tr/en/',
+        },
+        {
+          category: 'Short-Term Residence Permit',
+          description:
+            'Renewable residence for property owners, remote workers and long-stay visitors.',
+          source: 'https://www.goc.gov.tr/',
+        },
+        {
+          category: 'Work Permit',
+          description:
+            'Permit tied to a Turkish employer, granted together with residence rights.',
+          source: 'https://www.csgb.gov.tr/',
+        },
+        {
+          category: 'Citizenship by Investment',
+          description:
+            'Turkish citizenship granted through qualifying real estate, capital or deposit investment.',
+          source: 'https://www.goc.gov.tr/',
+        },
+      ],
+    },
+    {
+      name: 'Colombia',
+      flag: '🇨🇴',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Visa V Digital Nomad',
+        'Visa M Migrant',
+        'Visa R Resident',
+        'Work Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Bogotá',
+        'Medellín',
+        'Cartagena',
+        'Cali',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Colômbia oferece o visto V de nômade digital com validade de até dois anos, além das vias M de migrante e R de residente.',
+          benefits: [
+            'Low cost of living',
+            'Digital nomad visa valid for up to two years',
+            'Time zone aligned with the United States',
+            'Stable climate throughout the year',
+          ],
+          challenges: [
+            'Security varies sharply by region',
+            'Apostille-heavy bureaucracy',
+            'Uneven infrastructure outside the main cities',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+          language_requirement: 'Spanish (basic to intermediate)',
+        },
+        {
+          language: 'en',
+          description:
+            'Colombia offers the V digital nomad visa valid for up to two years, alongside the M migrant and R resident routes.',
+          benefits: [
+            'Low cost of living',
+            'Digital nomad visa valid for up to two years',
+            'Time zone aligned with the United States',
+            'Stable climate throughout the year',
+          ],
+          challenges: [
+            'Security varies sharply by region',
+            'Apostille-heavy bureaucracy',
+            'Uneven infrastructure outside the main cities',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+          language_requirement: 'Spanish (basic to intermediate)',
+        },
+        {
+          language: 'es',
+          description:
+            'Colombia ofrece el visado V de nómada digital con vigencia de hasta dos años, además de las vías M de migrante y R de residente.',
+          benefits: [
+            'Low cost of living',
+            'Digital nomad visa valid for up to two years',
+            'Time zone aligned with the United States',
+            'Stable climate throughout the year',
+          ],
+          challenges: [
+            'Security varies sharply by region',
+            'Apostille-heavy bureaucracy',
+            'Uneven infrastructure outside the main cities',
+          ],
+          processing_time: '10–30 days',
+          investment_required:
+            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+          language_requirement: 'Spanish (basic to intermediate)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Visa (Type V)',
+          description:
+            'Short and medium-term visa covering tourism, business and remote work.',
+          source: 'https://www.cancilleria.gov.co/',
+        },
+        {
+          category: 'Migrant Visa (Type M)',
+          description:
+            'Multi-year visa for work, investment, family ties or retirement.',
+          source: 'https://www.cancilleria.gov.co/',
+        },
+        {
+          category: 'Resident Visa (Type R)',
+          description:
+            'Indefinite residence granted after several years on a Migrant visa or by direct investment.',
+          source: 'https://www.cancilleria.gov.co/',
+        },
+      ],
+    },
+    {
+      name: 'Paraguay',
+      flag: '🇵🇾',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Permanent Residence',
+        'Mercosur Residence',
+        'SUACE Investor Residence',
+        'Temporary Residence',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Asunción',
+        'Ciudad del Este',
+        'Encarnación',
+        'San Lorenzo',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Paraguai tem um dos processos de residência mais acessíveis do mundo, com tributação territorial e residência facilitada para o Mercosul.',
+          benefits: [
+            'Among the most accessible residence processes in the world',
+            'Territorial tax system — foreign income is not taxed locally',
+            'Very low cost of living',
+            'Mercosur member with regional mobility',
+          ],
+          challenges: [
+            'Limited local labour market',
+            'Modest infrastructure outside Asunción',
+            'Extreme summer heat',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+          language_requirement: 'Spanish (Guaraní is co-official)',
+        },
+        {
+          language: 'en',
+          description:
+            'Paraguay has one of the most accessible residence processes in the world, with territorial taxation and simplified residence for Mercosur nationals.',
+          benefits: [
+            'Among the most accessible residence processes in the world',
+            'Territorial tax system — foreign income is not taxed locally',
+            'Very low cost of living',
+            'Mercosur member with regional mobility',
+          ],
+          challenges: [
+            'Limited local labour market',
+            'Modest infrastructure outside Asunción',
+            'Extreme summer heat',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+          language_requirement: 'Spanish (Guaraní is co-official)',
+        },
+        {
+          language: 'es',
+          description:
+            'Paraguay tiene uno de los procesos de residencia más accesibles del mundo, con tributación territorial y residencia simplificada para el Mercosur.',
+          benefits: [
+            'Among the most accessible residence processes in the world',
+            'Territorial tax system — foreign income is not taxed locally',
+            'Very low cost of living',
+            'Mercosur member with regional mobility',
+          ],
+          challenges: [
+            'Limited local labour market',
+            'Modest infrastructure outside Asunción',
+            'Extreme summer heat',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+          language_requirement: 'Spanish (Guaraní is co-official)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, with duration depending on nationality.',
+          source: 'https://www.migraciones.gov.py/',
+        },
+        {
+          category: 'Temporary Residence',
+          description:
+            'Residence for a defined period based on work, study or family ties.',
+          source: 'https://www.migraciones.gov.py/',
+        },
+        {
+          category: 'Mercosur Residence',
+          description:
+            'Simplified residence for nationals of Mercosur member and associated states.',
+          source: 'https://www.migraciones.gov.py/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted through a bank deposit, family ties or qualifying investment.',
+          source: 'https://www.migraciones.gov.py/',
+        },
+      ],
+    },
+    {
+      name: 'Malaysia',
+      flag: '🇲🇾',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Malaysia My Second Home (MM2H)',
+        'DE Rantau Nomad Pass',
+        'Employment Pass',
+        'Student Pass',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Kuala Lumpur',
+        'Penang',
+        'Johor Bahru',
+        'Kota Kinabalu',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Malásia oferece o MM2H para residência de longa duração e o DE Rantau para nômades digitais, com inglês amplamente falado.',
+          benefits: [
+            'English widely used in business and daily life',
+            'Low cost of living',
+            'MM2H offers long-term renewable residence',
+            'Affordable, high-standard private healthcare',
+          ],
+          challenges: [
+            'MM2H requirements have changed repeatedly in recent years',
+            'Permanent residence is rarely granted',
+            'Constant heat and humidity',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'MM2H: fixed deposit from RM500,000 depending on the tier',
+          language_requirement: 'Malay official; English widely spoken',
+        },
+        {
+          language: 'en',
+          description:
+            'Malaysia offers MM2H for long-term residence and the DE Rantau pass for digital nomads, with English widely spoken.',
+          benefits: [
+            'English widely used in business and daily life',
+            'Low cost of living',
+            'MM2H offers long-term renewable residence',
+            'Affordable, high-standard private healthcare',
+          ],
+          challenges: [
+            'MM2H requirements have changed repeatedly in recent years',
+            'Permanent residence is rarely granted',
+            'Constant heat and humidity',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'MM2H: fixed deposit from RM500,000 depending on the tier',
+          language_requirement: 'Malay official; English widely spoken',
+        },
+        {
+          language: 'es',
+          description:
+            'Malasia ofrece el MM2H para residencia de larga duración y el DE Rantau para nómadas digitales, con el inglés ampliamente hablado.',
+          benefits: [
+            'English widely used in business and daily life',
+            'Low cost of living',
+            'MM2H offers long-term renewable residence',
+            'Affordable, high-standard private healthcare',
+          ],
+          challenges: [
+            'MM2H requirements have changed repeatedly in recent years',
+            'Permanent residence is rarely granted',
+            'Constant heat and humidity',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'MM2H: fixed deposit from RM500,000 depending on the tier',
+          language_requirement: 'Malay official; English widely spoken',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Social Visit Pass',
+          description:
+            'Short-term entry for tourism or business, with duration depending on nationality.',
+          source: 'https://www.imi.gov.my/',
+        },
+        {
+          category: 'Employment Pass',
+          description:
+            'Work and residence pass tied to a Malaysian employer, issued by category of salary and skill.',
+          source: 'https://www.imi.gov.my/',
+        },
+        {
+          category: 'Malaysia My Second Home (MM2H)',
+          description:
+            'Long-term renewable residence granted through a fixed deposit and proof of income.',
+          source: 'https://www.imi.gov.my/',
+        },
+        {
+          category: 'DE Rantau Nomad Pass',
+          description:
+            'Pass for remote professionals in digital fields working for clients outside Malaysia.',
+          source: 'https://mdec.my/derantau',
+        },
+      ],
+    },
+    {
+      name: 'Israel',
+      flag: '🇮🇱',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Aliyah (Law of Return)',
+        'B/1 Work Visa',
+        'A/2 Student Visa',
+        'A/5 Temporary Residence',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Tel Aviv',
+        'Jerusalem',
+        'Haifa',
+        'Be\'er Sheva',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'Israel concede cidadania a judeus e seus descendentes pela Lei do Retorno, com pacote de absorção para novos imigrantes e setor de tecnologia forte.',
+          benefits: [
+            'Law of Return grants citizenship to Jews and their descendants',
+            'Absorption package of benefits for new immigrants',
+            'Very strong technology and research sector',
+            'Universal health coverage',
+          ],
+          challenges: [
+            'High cost of living, especially housing',
+            'Regional security situation',
+            'Military service obligations apply to some age groups',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+          language_requirement:
+            'Hebrew (free ulpan courses provided to new immigrants)',
+        },
+        {
+          language: 'en',
+          description:
+            'Israel grants citizenship to Jews and their descendants under the Law of Return, with an absorption package for new immigrants and a strong technology sector.',
+          benefits: [
+            'Law of Return grants citizenship to Jews and their descendants',
+            'Absorption package of benefits for new immigrants',
+            'Very strong technology and research sector',
+            'Universal health coverage',
+          ],
+          challenges: [
+            'High cost of living, especially housing',
+            'Regional security situation',
+            'Military service obligations apply to some age groups',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+          language_requirement:
+            'Hebrew (free ulpan courses provided to new immigrants)',
+        },
+        {
+          language: 'es',
+          description:
+            'Israel concede la ciudadanía a judíos y sus descendientes por la Ley del Retorno, con un paquete de absorción para nuevos inmigrantes y un fuerte sector tecnológico.',
+          benefits: [
+            'Law of Return grants citizenship to Jews and their descendants',
+            'Absorption package of benefits for new immigrants',
+            'Very strong technology and research sector',
+            'Universal health coverage',
+          ],
+          challenges: [
+            'High cost of living, especially housing',
+            'Regional security situation',
+            'Military service obligations apply to some age groups',
+          ],
+          processing_time: '1–6 months depending on the route',
+          investment_required:
+            'Aliyah has no financial requirement; proof of Jewish ancestry is required instead',
+          language_requirement:
+            'Hebrew (free ulpan courses provided to new immigrants)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa (B/2)',
+          description: 'Short-term entry for tourism, generally up to 90 days.',
+          source:
+            'https://www.gov.il/en/departments/population_and_immigration_authority',
+        },
+        {
+          category: 'Work Visa (B/1)',
+          description: 'Work and residence permit tied to an Israeli employer.',
+          source:
+            'https://www.gov.il/en/departments/population_and_immigration_authority',
+        },
+        {
+          category: 'Aliyah (Law of Return)',
+          description:
+            'Immigration and citizenship for Jews, their children and grandchildren, and their spouses.',
+          source: 'https://www.gov.il/en/departments/jewish_agency',
+        },
+        {
+          category: 'Temporary Residence (A/5)',
+          description:
+            'Renewable residence for spouses of citizens and other qualifying categories.',
+          source:
+            'https://www.gov.il/en/departments/population_and_immigration_authority',
+        },
+      ],
+    },
+    {
+      name: 'Qatar',
+      flag: '🇶🇦',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Work Residence Permit',
+        'Permanent Residency Permit',
+        'Family Residence Visa',
+        'Investor Residence',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Doha',
+        'Al Rayyan',
+        'Lusail',
+        'Al Wakrah',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Catar não cobra imposto de renda sobre pessoa física e oferece residência por trabalho ou investimento imobiliário, com infraestrutura moderna.',
+          benefits: [
+            'No personal income tax',
+            'High salaries for skilled expatriates',
+            'Modern infrastructure and global connectivity',
+            'Very low crime rates',
+          ],
+          challenges: [
+            'Most residence permits are tied to an employer',
+            'Permanent residency is quota-limited and rarely granted',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+          language_requirement: 'Arabic official; English used widely at work',
+        },
+        {
+          language: 'en',
+          description:
+            'Qatar levies no personal income tax and offers residence through employment or qualifying real estate investment, with modern infrastructure.',
+          benefits: [
+            'No personal income tax',
+            'High salaries for skilled expatriates',
+            'Modern infrastructure and global connectivity',
+            'Very low crime rates',
+          ],
+          challenges: [
+            'Most residence permits are tied to an employer',
+            'Permanent residency is quota-limited and rarely granted',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+          language_requirement: 'Arabic official; English used widely at work',
+        },
+        {
+          language: 'es',
+          description:
+            'Catar no cobra impuesto sobre la renta personal y ofrece residencia por empleo o inversión inmobiliaria, con infraestructura moderna.',
+          benefits: [
+            'No personal income tax',
+            'High salaries for skilled expatriates',
+            'Modern infrastructure and global connectivity',
+            'Very low crime rates',
+          ],
+          challenges: [
+            'Most residence permits are tied to an employer',
+            'Permanent residency is quota-limited and rarely granted',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+          language_requirement: 'Arabic official; English used widely at work',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visit Visa',
+          description:
+            'Short-term entry for tourism or business, with duration depending on nationality.',
+          source: 'https://portal.moi.gov.qa/',
+        },
+        {
+          category: 'Work Residence Permit',
+          description:
+            'Residence tied to a Qatari employer, covering the employee and eligible dependants.',
+          source: 'https://portal.moi.gov.qa/',
+        },
+        {
+          category: 'Investor Residence',
+          description:
+            'Residence granted through qualifying real estate purchase above the statutory threshold.',
+          source: 'https://portal.moi.gov.qa/',
+        },
+        {
+          category: 'Permanent Residency Permit',
+          description:
+            'Indefinite residence granted under an annual quota to qualifying long-term residents.',
+          source: 'https://portal.moi.gov.qa/',
+        },
+      ],
+    },
+    {
+      name: 'Indonesia',
+      flag: '🇮🇩',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Second Home Visa',
+        'E33G Remote Worker KITAS',
+        'Investor KITAS',
+        'Golden Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Jakarta',
+        'Denpasar',
+        'Ubud',
+        'Bandung',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Indonésia oferece o Second Home Visa e o KITAS de trabalhador remoto, que não tributa renda estrangeira, com Bali como polo consolidado.',
+          benefits: [
+            'Low cost of living',
+            'Remote worker route does not tax income earned abroad',
+            'Bali is an established hub for remote professionals',
+            'Enormous geographic and cultural diversity',
+          ],
+          challenges: [
+            'Visa rules change frequently',
+            'Local administration varies between provinces',
+            'Uneven infrastructure outside major centres',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Second Home Visa: roughly IDR 2 billion held in a state bank; remote worker route: US$60,000 in annual income',
+          language_requirement: 'Indonesian (basic)',
+        },
+        {
+          language: 'en',
+          description:
+            'Indonesia offers the Second Home Visa and the remote worker KITAS, which does not tax foreign income, with Bali as an established hub.',
+          benefits: [
+            'Low cost of living',
+            'Remote worker route does not tax income earned abroad',
+            'Bali is an established hub for remote professionals',
+            'Enormous geographic and cultural diversity',
+          ],
+          challenges: [
+            'Visa rules change frequently',
+            'Local administration varies between provinces',
+            'Uneven infrastructure outside major centres',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Second Home Visa: roughly IDR 2 billion held in a state bank; remote worker route: US$60,000 in annual income',
+          language_requirement: 'Indonesian (basic)',
+        },
+        {
+          language: 'es',
+          description:
+            'Indonesia ofrece el Second Home Visa y el KITAS de trabajador remoto, que no grava la renta extranjera, con Bali como polo consolidado.',
+          benefits: [
+            'Low cost of living',
+            'Remote worker route does not tax income earned abroad',
+            'Bali is an established hub for remote professionals',
+            'Enormous geographic and cultural diversity',
+          ],
+          challenges: [
+            'Visa rules change frequently',
+            'Local administration varies between provinces',
+            'Uneven infrastructure outside major centres',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Second Home Visa: roughly IDR 2 billion held in a state bank; remote worker route: US$60,000 in annual income',
+          language_requirement: 'Indonesian (basic)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visa on Arrival / Tourist Visa',
+          description:
+            'Short-term entry for tourism, extendable once for most nationalities.',
+          source: 'https://www.imigrasi.go.id/',
+        },
+        {
+          category: 'Remote Worker KITAS (E33G)',
+          description:
+            'One-year permit for remote professionals earning income from employers outside Indonesia.',
+          source: 'https://www.imigrasi.go.id/',
+        },
+        {
+          category: 'Second Home Visa',
+          description:
+            'Five or ten-year residence granted through a deposit in a state bank or qualifying property.',
+          source: 'https://www.imigrasi.go.id/',
+        },
+        {
+          category: 'Investor KITAS',
+          description:
+            'Residence tied to shareholding in an Indonesian company above the statutory threshold.',
+          source: 'https://www.imigrasi.go.id/',
+        },
+      ],
+    },
+    {
+      name: 'Romania',
+      flag: '🇷🇴',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Digital Nomad Visa',
+        'Long-Stay Visa (Type D)',
+        'EU Blue Card',
+        'Student Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Bucharest',
+        'Cluj-Napoca',
+        'Timișoara',
+        'Brașov',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Romênia oferece visto de nômade digital e vias de trabalho na UE, com custo de vida baixo e uma das melhores infraestruturas de internet da Europa.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Among the fastest internet infrastructure in Europe',
+            'Growing technology sector',
+            'Romanian is a Romance language, easier for Latin speakers',
+          ],
+          challenges: [
+            'Slow administration',
+            'Low local wages',
+            'Infrastructure uneven outside the major cities',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €3,700/month in income over the previous six months',
+          language_requirement: 'Romanian (basic)',
+        },
+        {
+          language: 'en',
+          description:
+            'Romania offers a digital nomad visa and EU work routes, with a low cost of living and some of the fastest internet infrastructure in Europe.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Among the fastest internet infrastructure in Europe',
+            'Growing technology sector',
+            'Romanian is a Romance language, easier for Latin speakers',
+          ],
+          challenges: [
+            'Slow administration',
+            'Low local wages',
+            'Infrastructure uneven outside the major cities',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €3,700/month in income over the previous six months',
+          language_requirement: 'Romanian (basic)',
+        },
+        {
+          language: 'es',
+          description:
+            'Rumanía ofrece visado de nómada digital y vías de trabajo en la UE, con bajo coste de vida y una de las mejores infraestructuras de internet de Europa.',
+          benefits: [
+            'Low cost of living within the EU',
+            'Among the fastest internet infrastructure in Europe',
+            'Growing technology sector',
+            'Romanian is a Romance language, easier for Latin speakers',
+          ],
+          challenges: [
+            'Slow administration',
+            'Low local wages',
+            'Infrastructure uneven outside the major cities',
+          ],
+          processing_time: '30–60 days',
+          investment_required:
+            'Digital nomad: roughly €3,700/month in income over the previous six months',
+          language_requirement: 'Romanian (basic)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description: 'Visa for stays of up to 90 days in any 180-day period.',
+          source: 'https://igi.mai.gov.ro/en/',
+        },
+        {
+          category: 'Digital Nomad Visa',
+          description:
+            'Long-stay visa for remote workers with employers or clients outside Romania.',
+          source: 'https://igi.mai.gov.ro/en/',
+        },
+        {
+          category: 'Long-Stay Visa (Type D)',
+          description:
+            'Visa for work, study, business or family reunification beyond 90 days.',
+          source: 'https://igi.mai.gov.ro/en/',
+        },
+        {
+          category: 'Long-Term Residence',
+          description:
+            'Available after five years of continuous legal residence.',
+          source: 'https://igi.mai.gov.ro/en/',
+        },
+      ],
+    },
+    {
+      name: 'Luxembourg',
+      flag: '🇱🇺',
+      region: 'Europe',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Salaried Worker Authorisation',
+        'EU Blue Card',
+        'Investor Residence',
+        'Student Residence Permit',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Luxembourg City',
+        'Esch-sur-Alzette',
+        'Differdange',
+        'Dudelange',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'Luxemburgo concentra instituições da UE e o setor financeiro, com os salários mais altos do bloco e ambiente de trabalho trilíngue.',
+          benefits: [
+            'Among the highest salaries in the European Union',
+            'Major financial and EU institutional hub',
+            'Trilingual working environment',
+            'Central position within Western Europe',
+          ],
+          challenges: [
+            'Extremely high housing costs',
+            'Very small territory and job market',
+            'Three official languages raise the integration bar',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Investor residence: from €500,000 in a new or existing company',
+          language_requirement:
+            'Luxembourgish, French or German depending on the role',
+        },
+        {
+          language: 'en',
+          description:
+            'Luxembourg hosts EU institutions and a major financial sector, with among the highest salaries in the bloc and a trilingual working environment.',
+          benefits: [
+            'Among the highest salaries in the European Union',
+            'Major financial and EU institutional hub',
+            'Trilingual working environment',
+            'Central position within Western Europe',
+          ],
+          challenges: [
+            'Extremely high housing costs',
+            'Very small territory and job market',
+            'Three official languages raise the integration bar',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Investor residence: from €500,000 in a new or existing company',
+          language_requirement:
+            'Luxembourgish, French or German depending on the role',
+        },
+        {
+          language: 'es',
+          description:
+            'Luxemburgo concentra instituciones de la UE y el sector financiero, con los salarios más altos del bloque y un entorno laboral trilingüe.',
+          benefits: [
+            'Among the highest salaries in the European Union',
+            'Major financial and EU institutional hub',
+            'Trilingual working environment',
+            'Central position within Western Europe',
+          ],
+          challenges: [
+            'Extremely high housing costs',
+            'Very small territory and job market',
+            'Three official languages raise the integration bar',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Investor residence: from €500,000 in a new or existing company',
+          language_requirement:
+            'Luxembourgish, French or German depending on the role',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description: 'Visa for stays of up to 90 days in any 180-day period.',
+          source: 'https://guichet.public.lu/en.html',
+        },
+        {
+          category: 'Long-Stay Visa (Type D)',
+          description:
+            'Visa for work, study or family reunification beyond 90 days.',
+          source: 'https://guichet.public.lu/en.html',
+        },
+        {
+          category: 'EU Blue Card',
+          description:
+            'Permit for highly qualified workers with a degree and a salary above the national threshold.',
+          source: 'https://guichet.public.lu/en.html',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Available after five years of continuous legal residence.',
+          source: 'https://guichet.public.lu/en.html',
+        },
+      ],
+    },
+    {
+      name: 'Cyprus',
+      flag: '🇨🇾',
+      region: 'Europe',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Permanent Residence by Investment',
+        'Digital Nomad Visa',
+        'Work Permit',
+        'Student Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Nicosia',
+        'Limassol',
+        'Larnaca',
+        'Paphos',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Chipre oferece residência permanente por investimento a partir de €300.000 e visto de nômade digital, com regime fiscal favorável a não-domiciliados.',
+          benefits: [
+            'English widely spoken in business and services',
+            'Favourable tax regime for non-domiciled residents',
+            'Mediterranean climate year round',
+            'EU member state',
+          ],
+          challenges: [
+            'Not part of the Schengen area',
+            'Small domestic market',
+            'Island division limits movement in the north',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+          language_requirement:
+            'Greek official; English widely used in business',
+        },
+        {
+          language: 'en',
+          description:
+            'Cyprus offers permanent residence by investment from €300,000 and a digital nomad visa, with a favourable tax regime for non-domiciled residents.',
+          benefits: [
+            'English widely spoken in business and services',
+            'Favourable tax regime for non-domiciled residents',
+            'Mediterranean climate year round',
+            'EU member state',
+          ],
+          challenges: [
+            'Not part of the Schengen area',
+            'Small domestic market',
+            'Island division limits movement in the north',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+          language_requirement:
+            'Greek official; English widely used in business',
+        },
+        {
+          language: 'es',
+          description:
+            'Chipre ofrece residencia permanente por inversión desde 300.000 € y visado de nómada digital, con un régimen fiscal favorable para no domiciliados.',
+          benefits: [
+            'English widely spoken in business and services',
+            'Favourable tax regime for non-domiciled residents',
+            'Mediterranean climate year round',
+            'EU member state',
+          ],
+          challenges: [
+            'Not part of the Schengen area',
+            'Small domestic market',
+            'Island division limits movement in the north',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+          language_requirement:
+            'Greek official; English widely used in business',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa',
+          description:
+            'Visa for stays of up to 90 days for tourism or business.',
+          source: 'https://www.moi.gov.cy/',
+        },
+        {
+          category: 'Digital Nomad Visa',
+          description:
+            'One-year renewable residence for remote workers earning income from abroad.',
+          source: 'https://www.moi.gov.cy/',
+        },
+        {
+          category: 'Employment Permit',
+          description: 'Work and residence permit tied to a Cypriot employer.',
+          source: 'https://www.moi.gov.cy/',
+        },
+        {
+          category: 'Permanent Residence by Investment',
+          description:
+            'Fast-track permanent residence granted through qualifying property or capital investment.',
+          source: 'https://www.moi.gov.cy/',
+        },
+      ],
+    },
+    {
+      name: 'Iceland',
+      flag: '🇮🇸',
+      region: 'Europe',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Long-Term Remote Work Visa',
+        'Work Permit for Qualified Professionals',
+        'Student Residence Permit',
+        'Family Reunification',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Reykjavík',
+        'Akureyri',
+        'Hafnarfjörður',
+        'Kópavogur',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Islândia oferece visto de trabalho remoto de longa duração e autorizações para profissionais qualificados, com altíssima segurança e forte proteção social.',
+          benefits: [
+            'Among the safest countries in the world',
+            'Dramatic natural landscapes and geothermal energy',
+            'Strong gender equality and social protections',
+            'Widespread English proficiency',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Long, dark winters',
+            'Tiny labour market with few openings',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Remote work visa: roughly ISK 1,000,000/month in income',
+          language_requirement: 'Icelandic (English widely spoken)',
+        },
+        {
+          language: 'en',
+          description:
+            'Iceland offers a long-term remote work visa and permits for qualified professionals, with very high safety and strong social protections.',
+          benefits: [
+            'Among the safest countries in the world',
+            'Dramatic natural landscapes and geothermal energy',
+            'Strong gender equality and social protections',
+            'Widespread English proficiency',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Long, dark winters',
+            'Tiny labour market with few openings',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Remote work visa: roughly ISK 1,000,000/month in income',
+          language_requirement: 'Icelandic (English widely spoken)',
+        },
+        {
+          language: 'es',
+          description:
+            'Islandia ofrece un visado de trabajo remoto de larga duración y permisos para profesionales cualificados, con altísima seguridad y fuerte protección social.',
+          benefits: [
+            'Among the safest countries in the world',
+            'Dramatic natural landscapes and geothermal energy',
+            'Strong gender equality and social protections',
+            'Widespread English proficiency',
+          ],
+          challenges: [
+            'Very high cost of living',
+            'Long, dark winters',
+            'Tiny labour market with few openings',
+          ],
+          processing_time: '2–3 months',
+          investment_required:
+            'Remote work visa: roughly ISK 1,000,000/month in income',
+          language_requirement: 'Icelandic (English widely spoken)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Short-Stay Visa (Schengen Type C)',
+          description: 'Visa for stays of up to 90 days in any 180-day period.',
+          source: 'https://utl.is/index.php/en/',
+        },
+        {
+          category: 'Long-Term Remote Work Visa',
+          description:
+            'Six-month visa for high-income remote workers employed outside Iceland.',
+          source: 'https://utl.is/index.php/en/',
+        },
+        {
+          category: 'Residence Permit for Qualified Professionals',
+          description:
+            'Permit for workers with skills in shortage, tied to an Icelandic employer.',
+          source: 'https://utl.is/index.php/en/',
+        },
+        {
+          category: 'Permanent Residence Permit',
+          description:
+            'Available after four years of continuous legal residence and Icelandic language study.',
+          source: 'https://utl.is/index.php/en/',
+        },
+      ],
+    },
+    {
+      name: 'Peru',
+      flag: '🇵🇪',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Rentista Visa',
+        'Work Visa',
+        'Investor Visa',
+        'Mercosur Residence',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Lima',
+        'Arequipa',
+        'Cusco',
+        'Trujillo',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Peru oferece a via Rentista para quem tem renda permanente, residência facilitada pelo Mercosul e naturalização possível após dois anos.',
+          benefits: [
+            'Low cost of living',
+            'Simplified residence for Mercosur nationals',
+            'Rich cultural heritage and internationally recognised gastronomy',
+            'Naturalisation possible after two years of residence',
+          ],
+          challenges: [
+            'Political instability in recent years',
+            'Uneven public services',
+            'Marked inequality between Lima and the interior',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'en',
+          description:
+            'Peru offers the Rentista route for those with permanent income, simplified Mercosur residence and naturalisation after two years.',
+          benefits: [
+            'Low cost of living',
+            'Simplified residence for Mercosur nationals',
+            'Rich cultural heritage and internationally recognised gastronomy',
+            'Naturalisation possible after two years of residence',
+          ],
+          challenges: [
+            'Political instability in recent years',
+            'Uneven public services',
+            'Marked inequality between Lima and the interior',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'es',
+          description:
+            'Perú ofrece la vía Rentista para quienes tienen renta permanente, residencia simplificada por el Mercosur y naturalización tras dos años.',
+          benefits: [
+            'Low cost of living',
+            'Simplified residence for Mercosur nationals',
+            'Rich cultural heritage and internationally recognised gastronomy',
+            'Naturalisation possible after two years of residence',
+          ],
+          challenges: [
+            'Political instability in recent years',
+            'Uneven public services',
+            'Marked inequality between Lima and the interior',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,000/month in permanent income; investor route from roughly US$135,000',
+          language_requirement: 'Spanish (basic)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, with the authorised period set on arrival.',
+          source: 'https://www.gob.pe/migraciones',
+        },
+        {
+          category: 'Rentista Visa',
+          description:
+            'Residence for foreigners with permanent income generated outside Peru.',
+          source: 'https://www.gob.pe/migraciones',
+        },
+        {
+          category: 'Work Visa',
+          description:
+            'Residence tied to an employment contract with a Peruvian company.',
+          source: 'https://www.gob.pe/migraciones',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted after qualifying periods on temporary status or by family ties.',
+          source: 'https://www.gob.pe/migraciones',
+        },
+      ],
+    },
+    {
+      name: 'Dominican Republic',
+      flag: '🇩🇴',
+      region: 'North America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Rentista and Pensionado Residence',
+        'Investor Residence',
+        'Work Visa',
+        'Temporary Residence',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Santo Domingo',
+        'Santiago',
+        'Punta Cana',
+        'Puerto Plata',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A República Dominicana tem via rápida de residência para aposentados e rentistas, com cidadania possível após seis meses de residência permanente.',
+          benefits: [
+            'Fast-track residence for pensioners and rentiers',
+            'Low cost of living',
+            'Caribbean climate and extensive coastline',
+            'Citizenship possible after six months of permanent residence',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Uneven infrastructure outside tourist areas',
+            'Exposure to the Atlantic hurricane season',
+          ],
+          processing_time: '2–5 months',
+          investment_required:
+            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'en',
+          description:
+            'The Dominican Republic offers a fast-track residence route for pensioners and rentiers, with citizenship possible after six months of permanent residence.',
+          benefits: [
+            'Fast-track residence for pensioners and rentiers',
+            'Low cost of living',
+            'Caribbean climate and extensive coastline',
+            'Citizenship possible after six months of permanent residence',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Uneven infrastructure outside tourist areas',
+            'Exposure to the Atlantic hurricane season',
+          ],
+          processing_time: '2–5 months',
+          investment_required:
+            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'es',
+          description:
+            'La República Dominicana tiene una vía rápida de residencia para jubilados y rentistas, con ciudadanía posible tras seis meses de residencia permanente.',
+          benefits: [
+            'Fast-track residence for pensioners and rentiers',
+            'Low cost of living',
+            'Caribbean climate and extensive coastline',
+            'Citizenship possible after six months of permanent residence',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Uneven infrastructure outside tourist areas',
+            'Exposure to the Atlantic hurricane season',
+          ],
+          processing_time: '2–5 months',
+          investment_required:
+            'Pensionado: roughly US$1,500/month in pension income; investor route from US$200,000',
+          language_requirement: 'Spanish (basic)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, generally up to 30 days and extendable.',
+          source: 'https://www.migracion.gob.do/',
+        },
+        {
+          category: 'Temporary Residence',
+          description:
+            'One-year renewable residence for work, study or family reasons.',
+          source: 'https://www.migracion.gob.do/',
+        },
+        {
+          category: 'Pensionado / Rentista Residence',
+          description:
+            'Fast-track residence for retirees and those with stable passive income.',
+          source: 'https://www.migracion.gob.do/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted after temporary status or through qualifying investment.',
+          source: 'https://www.migracion.gob.do/',
+        },
+      ],
+    },
+    {
+      name: 'Ecuador',
+      flag: '🇪🇨',
+      region: 'South America',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Rentista Visa',
+        'Professional Visa',
+        'Investor Visa',
+        'Mercosur Residence',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Quito',
+        'Guayaquil',
+        'Cuenca',
+        'Loja',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Equador usa o dólar americano como moeda oficial e tem requisitos de residência acessíveis, com as vias Rentista, Profissional e de Investidor.',
+          benefits: [
+            'The US dollar is the official currency, removing exchange risk',
+            'Very low cost of living',
+            'Accessible residence requirements',
+            'Diverse geography from the Andes to the Amazon and the coast',
+          ],
+          challenges: [
+            'Rising insecurity in coastal cities',
+            'Limited local job market for foreigners',
+            'Political and economic volatility',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'en',
+          description:
+            'Ecuador uses the US dollar as its official currency and has accessible residence requirements, through the Rentista, Professional and Investor routes.',
+          benefits: [
+            'The US dollar is the official currency, removing exchange risk',
+            'Very low cost of living',
+            'Accessible residence requirements',
+            'Diverse geography from the Andes to the Amazon and the coast',
+          ],
+          challenges: [
+            'Rising insecurity in coastal cities',
+            'Limited local job market for foreigners',
+            'Political and economic volatility',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+          language_requirement: 'Spanish (basic)',
+        },
+        {
+          language: 'es',
+          description:
+            'Ecuador usa el dólar estadounidense como moneda oficial y tiene requisitos de residencia accesibles, mediante las vías Rentista, Profesional e Inversionista.',
+          benefits: [
+            'The US dollar is the official currency, removing exchange risk',
+            'Very low cost of living',
+            'Accessible residence requirements',
+            'Diverse geography from the Andes to the Amazon and the coast',
+          ],
+          challenges: [
+            'Rising insecurity in coastal cities',
+            'Limited local job market for foreigners',
+            'Political and economic volatility',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Rentista: roughly US$1,350/month in stable income; investor route from roughly US$47,000',
+          language_requirement: 'Spanish (basic)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Short-term entry for tourism, generally up to 90 days per year.',
+          source: 'https://www.cancilleria.gob.ec/',
+        },
+        {
+          category: 'Temporary Resident Visa',
+          description:
+            'Two-year residence for work, study, investment or stable income.',
+          source: 'https://www.cancilleria.gob.ec/',
+        },
+        {
+          category: 'Mercosur Residence',
+          description:
+            'Simplified residence for nationals of Mercosur member and associated states.',
+          source: 'https://www.cancilleria.gob.ec/',
+        },
+        {
+          category: 'Permanent Resident Visa',
+          description:
+            'Indefinite residence available after 21 months on temporary status.',
+          source: 'https://www.cancilleria.gob.ec/',
+        },
+      ],
+    },
+    {
+      name: 'Vietnam',
+      flag: '🇻🇳',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Work Permit and Temporary Residence Card',
+        'Investor Visa (DT)',
+        'Business Visa (DN)',
+        'Student Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Ho Chi Minh City',
+        'Hanoi',
+        'Da Nang',
+        'Nha Trang',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Vietnã oferece autorização de trabalho com cartão de residência temporária e vistos de investidor, com custo de vida muito baixo e economia em rápido crescimento.',
+          benefits: [
+            'Very low cost of living',
+            'One of the fastest-growing economies in Asia',
+            'Established expatriate communities in the main cities',
+            'Strong demand for foreign engineers and language teachers',
+          ],
+          challenges: [
+            'No general route to permanent residence for most foreigners',
+            'Work permits are tied to the employer',
+            'Vietnamese is tonal and difficult for most learners',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+          language_requirement:
+            'Vietnamese (English used in international companies)',
+        },
+        {
+          language: 'en',
+          description:
+            'Vietnam offers work permits with a temporary residence card and investor visas, with a very low cost of living and a fast-growing economy.',
+          benefits: [
+            'Very low cost of living',
+            'One of the fastest-growing economies in Asia',
+            'Established expatriate communities in the main cities',
+            'Strong demand for foreign engineers and language teachers',
+          ],
+          challenges: [
+            'No general route to permanent residence for most foreigners',
+            'Work permits are tied to the employer',
+            'Vietnamese is tonal and difficult for most learners',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+          language_requirement:
+            'Vietnamese (English used in international companies)',
+        },
+        {
+          language: 'es',
+          description:
+            'Vietnam ofrece permisos de trabajo con tarjeta de residencia temporal y visados de inversor, con un coste de vida muy bajo y una economía en rápido crecimiento.',
+          benefits: [
+            'Very low cost of living',
+            'One of the fastest-growing economies in Asia',
+            'Established expatriate communities in the main cities',
+            'Strong demand for foreign engineers and language teachers',
+          ],
+          challenges: [
+            'No general route to permanent residence for most foreigners',
+            'Work permits are tied to the employer',
+            'Vietnamese is tonal and difficult for most learners',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'Investor visa tiers begin at roughly VND 3 billion in registered capital',
+          language_requirement:
+            'Vietnamese (English used in international companies)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / e-Visa',
+          description:
+            'Short-term entry for tourism, issued online for most nationalities.',
+          source: 'https://evisa.gov.vn/',
+        },
+        {
+          category: 'Business Visa (DN)',
+          description:
+            'Entry for commercial activity with a sponsoring Vietnamese company.',
+          source: 'https://evisa.gov.vn/',
+        },
+        {
+          category: 'Work Permit and Temporary Residence Card',
+          description:
+            'Work authorisation tied to an employer, with a residence card of up to two years.',
+          source: 'https://dolab.gov.vn/',
+        },
+        {
+          category: 'Investor Visa (DT)',
+          description:
+            'Multi-year visa granted by tier according to the capital invested in a Vietnamese company.',
+          source: 'https://evisa.gov.vn/',
+        },
+      ],
+    },
+    {
+      name: 'Philippines',
+      flag: '🇵🇭',
+      region: 'Asia',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Special Resident Retiree Visa (SRRV)',
+        '9(g) Pre-Arranged Employment Visa',
+        'Special Investor Resident Visa',
+        'Student Visa',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Manila',
+        'Cebu',
+        'Davao',
+        'Baguio',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'As Filipinas têm o inglês como língua oficial e oferecem o SRRV, residência renovável por tempo indeterminado para aposentados e investidores.',
+          benefits: [
+            'English is an official language and widely spoken',
+            'Very low cost of living',
+            'SRRV offers indefinite renewable residence',
+            'Large archipelago with varied places to live',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Frequent typhoons',
+            'Congested infrastructure in Metro Manila',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+          language_requirement:
+            'Filipino and English are both official languages',
+        },
+        {
+          language: 'en',
+          description:
+            'The Philippines has English as an official language and offers the SRRV, an indefinitely renewable residence for retirees and investors.',
+          benefits: [
+            'English is an official language and widely spoken',
+            'Very low cost of living',
+            'SRRV offers indefinite renewable residence',
+            'Large archipelago with varied places to live',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Frequent typhoons',
+            'Congested infrastructure in Metro Manila',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+          language_requirement:
+            'Filipino and English are both official languages',
+        },
+        {
+          language: 'es',
+          description:
+            'Filipinas tiene el inglés como lengua oficial y ofrece el SRRV, una residencia renovable indefinidamente para jubilados e inversores.',
+          benefits: [
+            'English is an official language and widely spoken',
+            'Very low cost of living',
+            'SRRV offers indefinite renewable residence',
+            'Large archipelago with varied places to live',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Frequent typhoons',
+            'Congested infrastructure in Metro Manila',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'SRRV: deposit from US$10,000 for pensioners, higher for applicants without a pension',
+          language_requirement:
+            'Filipino and English are both official languages',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / Visa Waiver',
+          description:
+            'Short-term entry for tourism, extendable in country for most nationalities.',
+          source: 'https://immigration.gov.ph/',
+        },
+        {
+          category: 'Pre-Arranged Employment Visa 9(g)',
+          description: 'Work and residence visa tied to a Philippine employer.',
+          source: 'https://immigration.gov.ph/',
+        },
+        {
+          category: 'Special Resident Retiree Visa (SRRV)',
+          description:
+            'Indefinite renewable residence granted through a bank deposit, with reduced thresholds for pensioners.',
+          source: 'https://pra.gov.ph/',
+        },
+        {
+          category: 'Special Investor Resident Visa',
+          description:
+            'Residence granted through qualifying investment in a Philippine company.',
+          source: 'https://boi.gov.ph/',
+        },
+      ],
+    },
+    {
+      name: 'Taiwan',
+      flag: '🇹🇼',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Employment Gold Card',
+        'Work Permit and ARC',
+        'Entrepreneur Visa',
+        'Student Visa',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Taipei',
+        'Kaohsiung',
+        'Taichung',
+        'Tainan',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'Taiwan oferece o Employment Gold Card, que reúne visto, autorização de trabalho e residência num pedido só, com seguro de saúde universal bem avaliado.',
+          benefits: [
+            'Employment Gold Card bundles visa, work permit and residence in one application',
+            'Universal health insurance rated among the best in the world',
+            'Very high public safety',
+            'Leading semiconductor and technology sector',
+          ],
+          challenges: [
+            'Mandarin is demanding for most learners',
+            'Exposure to typhoons and earthquakes',
+            'Geopolitical uncertainty',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+          language_requirement:
+            'Mandarin (English used in technology and academia)',
+        },
+        {
+          language: 'en',
+          description:
+            'Taiwan offers the Employment Gold Card, which bundles visa, work permit and residence in a single application, with highly rated universal health insurance.',
+          benefits: [
+            'Employment Gold Card bundles visa, work permit and residence in one application',
+            'Universal health insurance rated among the best in the world',
+            'Very high public safety',
+            'Leading semiconductor and technology sector',
+          ],
+          challenges: [
+            'Mandarin is demanding for most learners',
+            'Exposure to typhoons and earthquakes',
+            'Geopolitical uncertainty',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+          language_requirement:
+            'Mandarin (English used in technology and academia)',
+        },
+        {
+          language: 'es',
+          description:
+            'Taiwán ofrece la Employment Gold Card, que reúne visado, permiso de trabajo y residencia en una sola solicitud, con un seguro de salud universal bien valorado.',
+          benefits: [
+            'Employment Gold Card bundles visa, work permit and residence in one application',
+            'Universal health insurance rated among the best in the world',
+            'Very high public safety',
+            'Leading semiconductor and technology sector',
+          ],
+          challenges: [
+            'Mandarin is demanding for most learners',
+            'Exposure to typhoons and earthquakes',
+            'Geopolitical uncertainty',
+          ],
+          processing_time: '1–2 months',
+          investment_required:
+            'The Gold Card is granted on professional criteria rather than a fixed investment amount',
+          language_requirement:
+            'Mandarin (English used in technology and academia)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Visa',
+          description:
+            'Short-term entry for tourism or business, with duration depending on nationality.',
+          source: 'https://www.boca.gov.tw/',
+        },
+        {
+          category: 'Employment Gold Card',
+          description:
+            'Four-in-one card combining resident visa, work permit, residence card and re-entry permit for qualified professionals.',
+          source: 'https://goldcard.nat.gov.tw/',
+        },
+        {
+          category: 'Work Permit and Alien Resident Certificate',
+          description:
+            'Work authorisation tied to a Taiwanese employer, with a residence certificate.',
+          source: 'https://www.immigration.gov.tw/',
+        },
+        {
+          category: 'Permanent Residence (APRC)',
+          description:
+            'Available after five years of continuous legal residence with qualifying income.',
+          source: 'https://www.immigration.gov.tw/',
+        },
+      ],
+    },
+    {
+      name: 'Hong Kong',
+      flag: '🇭🇰',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Top Talent Pass Scheme',
+        'Quality Migrant Admission Scheme',
+        'General Employment Policy',
+        'Student Visa',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Hong Kong Island',
+        'Kowloon',
+        'New Territories',
+        'Sha Tin',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'Hong Kong oferece esquemas de talento como o Top Talent Pass, com tributação baixa e residência permanente após sete anos de permanência contínua.',
+          benefits: [
+            'Low and simple personal tax rates',
+            'Major global financial hub',
+            'English widely used in business and government',
+            'Permanent residence after seven years of continuous stay',
+          ],
+          challenges: [
+            'Among the most expensive housing markets in the world',
+            'Very small average living spaces',
+            'Political changes since 2020 have shifted the environment',
+          ],
+          processing_time: '4–8 weeks',
+          investment_required:
+            'Talent schemes are points or credential based rather than investment based',
+          language_requirement:
+            'Cantonese and English are both official languages',
+        },
+        {
+          language: 'en',
+          description:
+            'Hong Kong offers talent schemes such as the Top Talent Pass, with low taxation and permanent residence after seven years of continuous stay.',
+          benefits: [
+            'Low and simple personal tax rates',
+            'Major global financial hub',
+            'English widely used in business and government',
+            'Permanent residence after seven years of continuous stay',
+          ],
+          challenges: [
+            'Among the most expensive housing markets in the world',
+            'Very small average living spaces',
+            'Political changes since 2020 have shifted the environment',
+          ],
+          processing_time: '4–8 weeks',
+          investment_required:
+            'Talent schemes are points or credential based rather than investment based',
+          language_requirement:
+            'Cantonese and English are both official languages',
+        },
+        {
+          language: 'es',
+          description:
+            'Hong Kong ofrece esquemas de talento como el Top Talent Pass, con baja tributación y residencia permanente tras siete años de estancia continua.',
+          benefits: [
+            'Low and simple personal tax rates',
+            'Major global financial hub',
+            'English widely used in business and government',
+            'Permanent residence after seven years of continuous stay',
+          ],
+          challenges: [
+            'Among the most expensive housing markets in the world',
+            'Very small average living spaces',
+            'Political changes since 2020 have shifted the environment',
+          ],
+          processing_time: '4–8 weeks',
+          investment_required:
+            'Talent schemes are points or credential based rather than investment based',
+          language_requirement:
+            'Cantonese and English are both official languages',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Entry',
+          description:
+            'Visa-free or visa-required short entry for tourism, depending on nationality.',
+          source: 'https://www.immd.gov.hk/eng/',
+        },
+        {
+          category: 'General Employment Policy',
+          description:
+            'Employment visa for professionals with a confirmed offer from a Hong Kong employer.',
+          source: 'https://www.immd.gov.hk/eng/',
+        },
+        {
+          category: 'Top Talent Pass Scheme',
+          description:
+            'Two-year visa for high earners and graduates of top-ranked universities, without a prior job offer.',
+          source: 'https://www.immd.gov.hk/eng/',
+        },
+        {
+          category: 'Right of Abode',
+          description:
+            'Permanent residence granted after seven years of continuous ordinary residence.',
+          source: 'https://www.immd.gov.hk/eng/',
+        },
+      ],
+    },
+    {
+      name: 'China',
+      flag: '🇨🇳',
+      region: 'Asia',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Z Work Visa and Residence Permit',
+        'R Visa for High-Level Talent',
+        'X1 Student Visa',
+        'Permanent Residence',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Shanghai',
+        'Beijing',
+        'Shenzhen',
+        'Guangzhou',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A China concede o visto Z de trabalho com autorização de residência e o visto R para talentos de alto nível, com mercado interno vasto e infraestrutura avançada.',
+          benefits: [
+            'Vast domestic market and career opportunities',
+            'Advanced infrastructure and extensive high-speed rail',
+            'Low cost of living outside the first-tier cities',
+            'Strong demand for specialised foreign professionals',
+          ],
+          challenges: [
+            'Permanent residence is notoriously difficult to obtain',
+            'Significant language barrier outside international companies',
+            'Internet restrictions and limited administrative transparency',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Work routes require an employer; permanent residence thresholds are set regionally',
+          language_requirement:
+            'Mandarin (required for most roles outside multinationals)',
+        },
+        {
+          language: 'en',
+          description:
+            'China grants the Z work visa with a residence permit and the R visa for high-level talent, with a vast domestic market and advanced infrastructure.',
+          benefits: [
+            'Vast domestic market and career opportunities',
+            'Advanced infrastructure and extensive high-speed rail',
+            'Low cost of living outside the first-tier cities',
+            'Strong demand for specialised foreign professionals',
+          ],
+          challenges: [
+            'Permanent residence is notoriously difficult to obtain',
+            'Significant language barrier outside international companies',
+            'Internet restrictions and limited administrative transparency',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Work routes require an employer; permanent residence thresholds are set regionally',
+          language_requirement:
+            'Mandarin (required for most roles outside multinationals)',
+        },
+        {
+          language: 'es',
+          description:
+            'China concede el visado Z de trabajo con permiso de residencia y el visado R para talento de alto nivel, con un vasto mercado interno e infraestructura avanzada.',
+          benefits: [
+            'Vast domestic market and career opportunities',
+            'Advanced infrastructure and extensive high-speed rail',
+            'Low cost of living outside the first-tier cities',
+            'Strong demand for specialised foreign professionals',
+          ],
+          challenges: [
+            'Permanent residence is notoriously difficult to obtain',
+            'Significant language barrier outside international companies',
+            'Internet restrictions and limited administrative transparency',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Work routes require an employer; permanent residence thresholds are set regionally',
+          language_requirement:
+            'Mandarin (required for most roles outside multinationals)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa (L)',
+          description:
+            'Short-term entry for tourism, with duration depending on nationality and consulate.',
+          source: 'https://www.nia.gov.cn/',
+        },
+        {
+          category: 'Work Visa (Z) and Residence Permit',
+          description:
+            'Employment visa converted into a residence permit after arrival, tied to the employer.',
+          source: 'https://www.nia.gov.cn/',
+        },
+        {
+          category: 'Talent Visa (R)',
+          description:
+            'Visa for high-level foreign talent in fields prioritised by the state.',
+          source: 'https://www.nia.gov.cn/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted to a limited number of applicants by investment, employment or family ties.',
+          source: 'https://www.nia.gov.cn/',
+        },
+      ],
+    },
+    {
+      name: 'India',
+      flag: '🇮🇳',
+      region: 'Asia',
+      difficulty: 'Hard',
+      difficulty_score: 4,
+      visa_options: [
+        'Employment Visa',
+        'Business Visa',
+        'Overseas Citizen of India (OCI)',
+        'Student Visa',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Bengaluru',
+        'Mumbai',
+        'Delhi',
+        'Hyderabad',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Índia usa amplamente o inglês em contexto profissional e oferece o visto de emprego e o status OCI, que garante entrada vitalícia a pessoas de origem indiana.',
+          benefits: [
+            'English widely used in professional and official settings',
+            'Very low cost of living',
+            'Large and fast-growing technology sector',
+            'OCI status offers lifelong entry for people of Indian origin',
+          ],
+          challenges: [
+            'No general path to citizenship for foreigners',
+            'Heavy and paper-based bureaucracy',
+            'Air quality and infrastructure strain in the major cities',
+          ],
+          processing_time: '2–6 weeks',
+          investment_required:
+            'Employment visa requires an annual salary above the statutory threshold',
+          language_requirement:
+            'English is widely used in business and administration',
+        },
+        {
+          language: 'en',
+          description:
+            'India uses English widely in professional settings and offers the employment visa and OCI status, which grants lifelong entry to people of Indian origin.',
+          benefits: [
+            'English widely used in professional and official settings',
+            'Very low cost of living',
+            'Large and fast-growing technology sector',
+            'OCI status offers lifelong entry for people of Indian origin',
+          ],
+          challenges: [
+            'No general path to citizenship for foreigners',
+            'Heavy and paper-based bureaucracy',
+            'Air quality and infrastructure strain in the major cities',
+          ],
+          processing_time: '2–6 weeks',
+          investment_required:
+            'Employment visa requires an annual salary above the statutory threshold',
+          language_requirement:
+            'English is widely used in business and administration',
+        },
+        {
+          language: 'es',
+          description:
+            'India usa ampliamente el inglés en el ámbito profesional y ofrece el visado de empleo y el estatus OCI, que garantiza entrada vitalicia a personas de origen indio.',
+          benefits: [
+            'English widely used in professional and official settings',
+            'Very low cost of living',
+            'Large and fast-growing technology sector',
+            'OCI status offers lifelong entry for people of Indian origin',
+          ],
+          challenges: [
+            'No general path to citizenship for foreigners',
+            'Heavy and paper-based bureaucracy',
+            'Air quality and infrastructure strain in the major cities',
+          ],
+          processing_time: '2–6 weeks',
+          investment_required:
+            'Employment visa requires an annual salary above the statutory threshold',
+          language_requirement:
+            'English is widely used in business and administration',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / e-Visa',
+          description:
+            'Short-term entry for tourism, issued online for most nationalities.',
+          source: 'https://indianvisaonline.gov.in/',
+        },
+        {
+          category: 'Employment Visa',
+          description:
+            'Work visa tied to an Indian employer, subject to a minimum salary threshold.',
+          source: 'https://indianfrro.gov.in/',
+        },
+        {
+          category: 'Business Visa',
+          description:
+            'Entry for commercial activity without taking up local employment.',
+          source: 'https://indianvisaonline.gov.in/',
+        },
+        {
+          category: 'Overseas Citizen of India (OCI)',
+          description:
+            'Lifelong visa and residence rights for people of Indian origin and their spouses.',
+          source: 'https://ociservices.gov.in/',
+        },
+      ],
+    },
+    {
+      name: 'Saudi Arabia',
+      flag: '🇸🇦',
+      region: 'Asia',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Premium Residency',
+        'Work Visa and Iqama',
+        'Investor Visa',
+        'Student Visa',
+      ],
+      job_market: 'Strong',
+      popular_cities: [
+        'Riyadh',
+        'Jeddah',
+        'Dammam',
+        'Al Khobar',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A Arábia Saudita oferece a Premium Residency, que dispensa patrocinador local, sem imposto de renda sobre pessoa física e com forte demanda por profissionais especializados.',
+          benefits: [
+            'No personal income tax',
+            'Premium Residency removes the need for a local sponsor',
+            'Rapid economic diversification under Vision 2030',
+            'High salaries for specialised professionals',
+          ],
+          challenges: [
+            'Most work visas remain tied to an employer sponsor',
+            'Strict social and legal norms',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+          language_requirement: 'Arabic (English used in many corporate roles)',
+        },
+        {
+          language: 'en',
+          description:
+            'Saudi Arabia offers Premium Residency, which removes the need for a local sponsor, with no personal income tax and strong demand for specialised professionals.',
+          benefits: [
+            'No personal income tax',
+            'Premium Residency removes the need for a local sponsor',
+            'Rapid economic diversification under Vision 2030',
+            'High salaries for specialised professionals',
+          ],
+          challenges: [
+            'Most work visas remain tied to an employer sponsor',
+            'Strict social and legal norms',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+          language_requirement: 'Arabic (English used in many corporate roles)',
+        },
+        {
+          language: 'es',
+          description:
+            'Arabia Saudí ofrece la Premium Residency, que elimina la necesidad de un patrocinador local, sin impuesto sobre la renta personal y con fuerte demanda de profesionales especializados.',
+          benefits: [
+            'No personal income tax',
+            'Premium Residency removes the need for a local sponsor',
+            'Rapid economic diversification under Vision 2030',
+            'High salaries for specialised professionals',
+          ],
+          challenges: [
+            'Most work visas remain tied to an employer sponsor',
+            'Strict social and legal norms',
+            'Extreme summer heat',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Premium Residency: one-off fee of SAR 800,000, or SAR 100,000 per year for the renewable tier',
+          language_requirement: 'Arabic (English used in many corporate roles)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visit Visa / Tourist e-Visa',
+          description:
+            'Short-term entry for tourism or business, issued online for eligible nationalities.',
+          source: 'https://visa.mofa.gov.sa/',
+        },
+        {
+          category: 'Work Visa and Iqama',
+          description:
+            'Employment visa converted into a residence permit sponsored by the employer.',
+          source: 'https://www.moi.gov.sa/',
+        },
+        {
+          category: 'Premium Residency',
+          description:
+            'Residence without a local sponsor, in a permanent tier or an annually renewable tier.',
+          source: 'https://www.moi.gov.sa/',
+        },
+        {
+          category: 'Investor Visa',
+          description:
+            'Residence granted through qualifying investment in a Saudi company or project.',
+          source: 'https://misa.gov.sa/',
+        },
+      ],
+    },
+    {
+      name: 'South Africa',
+      flag: '🇿🇦',
+      region: 'Africa',
+      difficulty: 'Moderate',
+      difficulty_score: 3,
+      visa_options: [
+        'Critical Skills Work Visa',
+        'General Work Visa',
+        'Business Visa',
+        'Permanent Residence',
+      ],
+      job_market: 'Moderate',
+      popular_cities: [
+        'Cape Town',
+        'Johannesburg',
+        'Durban',
+        'Pretoria',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'A África do Sul oferece o Critical Skills Work Visa com caminho para residência permanente, com o inglês entre as línguas oficiais e custo de vida baixo.',
+          benefits: [
+            'English widely spoken across business and administration',
+            'Low cost of living by Western standards',
+            'Established permanent residence route for critical skills',
+            'Outstanding natural environment and climate',
+          ],
+          challenges: [
+            'High crime rates in several major cities',
+            'Electricity load shedding and infrastructure instability',
+            'Slow and unpredictable visa processing',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Business visa: from ZAR 5,000,000 in capital, with exemptions for priority sectors',
+          language_requirement:
+            'English is one of the official languages and dominant in business',
+        },
+        {
+          language: 'en',
+          description:
+            'South Africa offers the Critical Skills Work Visa with a path to permanent residence, with English among the official languages and a low cost of living.',
+          benefits: [
+            'English widely spoken across business and administration',
+            'Low cost of living by Western standards',
+            'Established permanent residence route for critical skills',
+            'Outstanding natural environment and climate',
+          ],
+          challenges: [
+            'High crime rates in several major cities',
+            'Electricity load shedding and infrastructure instability',
+            'Slow and unpredictable visa processing',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Business visa: from ZAR 5,000,000 in capital, with exemptions for priority sectors',
+          language_requirement:
+            'English is one of the official languages and dominant in business',
+        },
+        {
+          language: 'es',
+          description:
+            'Sudáfrica ofrece el Critical Skills Work Visa con vía a la residencia permanente, con el inglés entre las lenguas oficiales y un bajo coste de vida.',
+          benefits: [
+            'English widely spoken across business and administration',
+            'Low cost of living by Western standards',
+            'Established permanent residence route for critical skills',
+            'Outstanding natural environment and climate',
+          ],
+          challenges: [
+            'High crime rates in several major cities',
+            'Electricity load shedding and infrastructure instability',
+            'Slow and unpredictable visa processing',
+          ],
+          processing_time: '2–6 months',
+          investment_required:
+            'Business visa: from ZAR 5,000,000 in capital, with exemptions for priority sectors',
+          language_requirement:
+            'English is one of the official languages and dominant in business',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Visitor Visa',
+          description:
+            'Short-term entry for tourism or business, with duration depending on nationality.',
+          source: 'https://www.dha.gov.za/',
+        },
+        {
+          category: 'Critical Skills Work Visa',
+          description:
+            'Work visa for occupations on the national critical skills list, with a route to permanent residence.',
+          source: 'https://www.dha.gov.za/',
+        },
+        {
+          category: 'General Work Visa',
+          description:
+            'Work visa tied to an employer that has demonstrated no suitable local candidate.',
+          source: 'https://www.dha.gov.za/',
+        },
+        {
+          category: 'Permanent Residence',
+          description:
+            'Indefinite residence granted through critical skills, business, family ties or five years of work.',
+          source: 'https://www.dha.gov.za/',
+        },
+      ],
+    },
+    {
+      name: 'Morocco',
+      flag: '🇲🇦',
+      region: 'Africa',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Carte de Séjour (Residence Card)',
+        'Work Permit',
+        'Investor Residence',
+        'Student Residence',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Casablanca',
+        'Marrakesh',
+        'Rabat',
+        'Tangier',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Marrocos permite entrada sem visto por até 90 dias para muitas nacionalidades e concede a Carte de Séjour, com custo de vida baixo e francês amplamente falado.',
+          benefits: [
+            'Visa-free entry for many nationalities for up to 90 days',
+            'Very low cost of living',
+            'Close proximity and short flights to Europe',
+            'French widely spoken in business and administration',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Slow and paper-based bureaucracy',
+            'Arabic or French is needed for daily life',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+          language_requirement:
+            'Arabic and Amazigh official; French widely used in business',
+        },
+        {
+          language: 'en',
+          description:
+            'Morocco allows visa-free entry for up to 90 days for many nationalities and grants the Carte de Séjour, with a low cost of living and French widely spoken.',
+          benefits: [
+            'Visa-free entry for many nationalities for up to 90 days',
+            'Very low cost of living',
+            'Close proximity and short flights to Europe',
+            'French widely spoken in business and administration',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Slow and paper-based bureaucracy',
+            'Arabic or French is needed for daily life',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+          language_requirement:
+            'Arabic and Amazigh official; French widely used in business',
+        },
+        {
+          language: 'es',
+          description:
+            'Marruecos permite la entrada sin visado hasta 90 días para muchas nacionalidades y concede la Carte de Séjour, con bajo coste de vida y francés ampliamente hablado.',
+          benefits: [
+            'Visa-free entry for many nationalities for up to 90 days',
+            'Very low cost of living',
+            'Close proximity and short flights to Europe',
+            'French widely spoken in business and administration',
+          ],
+          challenges: [
+            'Limited local labour market for foreigners',
+            'Slow and paper-based bureaucracy',
+            'Arabic or French is needed for daily life',
+          ],
+          processing_time: '2–4 months',
+          investment_required:
+            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+          language_requirement:
+            'Arabic and Amazigh official; French widely used in business',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Entry',
+          description:
+            'Visa-free or visa-required short entry for tourism, depending on nationality.',
+          source: 'https://www.consulat.ma/',
+        },
+        {
+          category: 'Carte de Séjour (Residence Card)',
+          description:
+            'Residence card for stays beyond 90 days, renewable and tied to a declared purpose.',
+          source: 'https://www.consulat.ma/',
+        },
+        {
+          category: 'Work Permit',
+          description:
+            'Employment authorisation validated by the labour authorities and tied to a Moroccan employer.',
+          source: 'https://www.emploi.gov.ma/',
+        },
+        {
+          category: 'Long-Term Residence Card',
+          description:
+            'Ten-year renewable card available after several years of continuous legal residence.',
+          source: 'https://www.consulat.ma/',
+        },
+      ],
+    },
+    {
+      name: 'Egypt',
+      flag: '🇪🇬',
+      region: 'Africa',
+      difficulty: 'Easy',
+      difficulty_score: 2,
+      visa_options: [
+        'Residence by Investment',
+        'Work Permit',
+        'Tourist Residence Permit',
+        'Student Residence',
+      ],
+      job_market: 'Weak',
+      popular_cities: [
+        'Cairo',
+        'Alexandria',
+        'Giza',
+        'Hurghada',
+      ],
+      created_at: '2026-08-05T00:00:00Z',
+      updated_at: '2026-08-05T00:00:00Z',
+      // Intentionally blank: artwork will be uploaded to R2 manually.
+      background_image: '',
+      translations: [
+        {
+          language: 'pt',
+          description:
+            'O Egito oferece residência por investimento com caminho para cidadania, custo de vida muito baixo e clima quente o ano inteiro.',
+          benefits: [
+            'Very low cost of living',
+            'Residence by investment route with a path to citizenship',
+            'Warm climate throughout the year',
+            'Major historical and archaeological heritage',
+          ],
+          challenges: [
+            'Heavy bureaucracy',
+            'Currency volatility',
+            'Limited local labour market for foreigners',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+          language_requirement:
+            'Arabic (English used in international business)',
+        },
+        {
+          language: 'en',
+          description:
+            'Egypt offers residence by investment with a path to citizenship, a very low cost of living and a warm climate year round.',
+          benefits: [
+            'Very low cost of living',
+            'Residence by investment route with a path to citizenship',
+            'Warm climate throughout the year',
+            'Major historical and archaeological heritage',
+          ],
+          challenges: [
+            'Heavy bureaucracy',
+            'Currency volatility',
+            'Limited local labour market for foreigners',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+          language_requirement:
+            'Arabic (English used in international business)',
+        },
+        {
+          language: 'es',
+          description:
+            'Egipto ofrece residencia por inversión con vía a la ciudadanía, un coste de vida muy bajo y clima cálido todo el año.',
+          benefits: [
+            'Very low cost of living',
+            'Residence by investment route with a path to citizenship',
+            'Warm climate throughout the year',
+            'Major historical and archaeological heritage',
+          ],
+          challenges: [
+            'Heavy bureaucracy',
+            'Currency volatility',
+            'Limited local labour market for foreigners',
+          ],
+          processing_time: '1–3 months',
+          investment_required:
+            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+          language_requirement:
+            'Arabic (English used in international business)',
+        },
+      ],
+      immigration_visa_types: [
+        {
+          category: 'Tourist Visa / e-Visa',
+          description:
+            'Short-term entry for tourism, issued online or on arrival for many nationalities.',
+          source: 'https://visa2egypt.gov.eg/',
+        },
+        {
+          category: 'Tourist Residence Permit',
+          description:
+            'Renewable residence permit for long-stay visitors without local employment.',
+          source: 'https://www.moi.gov.eg/',
+        },
+        {
+          category: 'Work Permit and Residence',
+          description:
+            'Employment authorisation tied to an Egyptian employer, with matching residence.',
+          source: 'https://www.manpower.gov.eg/',
+        },
+        {
+          category: 'Residence by Investment',
+          description:
+            'Residence granted by tier through deposit, property or business investment, with a route to citizenship.',
+          source: 'https://www.gafi.gov.eg/',
+        },
+      ],
+    },
   ];
 
   for (const countryData of countries) {
