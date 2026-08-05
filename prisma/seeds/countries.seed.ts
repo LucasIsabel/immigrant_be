@@ -1915,7 +1915,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+            'Rentista: passive income of 5x the minimum wage, about US$2,000/month',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -1935,7 +1935,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+            'Rentista: passive income of 5x the minimum wage, about US$2,000/month',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -1955,7 +1955,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Application fees from ≈US$1,500; investor routes from ≈US$10,000',
+            'Rentista: passive income of 5x the minimum wage, about US$2,000/month',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -2025,7 +2025,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of income; investment routes from ≈US$25,000',
+            'Rentista: US$1,000–1,500/month in passive income; investor route from US$500,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -2045,7 +2045,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of income; investment routes from ≈US$25,000',
+            'Rentista: US$1,000–1,500/month in passive income; investor route from US$500,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -2065,7 +2065,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Application fees plus proof of income; investment routes from ≈US$25,000',
+            'Rentista: US$1,000–1,500/month in passive income; investor route from US$500,000',
           language_requirement: 'Spanish (basic)',
         },
       ],
