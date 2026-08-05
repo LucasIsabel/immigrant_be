@@ -490,21 +490,21 @@ export async function seedCountries() {
           description:
             'O visto japonês é emitido em cerca de uma semana (após aprovação), de acordo com o MFA do Japão.',
           benefits: [
-            'Advanced infrastructure and public transport',
-            'Very high public safety',
-            'Universal health insurance',
-            'Points-based fast track to permanent residence for skilled professionals',
+            'Infraestrutura e transporte público avançados',
+            'Segurança pública muito alta',
+            'Seguro-saúde universal',
+            'Via rápida por pontos à residência permanente para profissionais qualificados',
           ],
           challenges: [
-            'Significant language barrier',
-            'Demanding cultural and workplace integration',
-            'Long working hours in traditional sectors',
+            'Barreira linguística significativa',
+            'Integração cultural e no trabalho é exigente',
+            'Jornadas longas em setores tradicionais',
           ],
           processing_time:
-            'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
+            'Certificate of Eligibility: 1–3 meses; emissão consular ~1 semana depois disso',
           investment_required:
-            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
-          language_requirement: 'Japanese (JLPT N2 recommended)',
+            'Varia conforme o status de residência; o visto de nômade digital exige ¥10 milhões/ano',
+          language_requirement: 'Japonês (JLPT N2 recomendado)',
         },
         {
           language: 'en',
@@ -532,21 +532,21 @@ export async function seedCountries() {
           description:
             'Japón emite visados en aproximadamente una semana tras la aprobación, según el Ministerio de Asuntos Exteriores.',
           benefits: [
-            'Advanced infrastructure and public transport',
-            'Very high public safety',
-            'Universal health insurance',
-            'Points-based fast track to permanent residence for skilled professionals',
+            'Infraestructura y transporte público avanzados',
+            'Seguridad pública muy alta',
+            'Seguro de salud universal',
+            'Vía rápida por puntos a la residencia permanente para profesionales calificados',
           ],
           challenges: [
-            'Significant language barrier',
-            'Demanding cultural and workplace integration',
-            'Long working hours in traditional sectors',
+            'Barrera idiomática significativa',
+            'La integración cultural y laboral es exigente',
+            'Jornadas largas en sectores tradicionales',
           ],
           processing_time:
-            'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
+            'Certificate of Eligibility: 1–3 meses; emisión consular ~1 semana después',
           investment_required:
-            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
-          language_requirement: 'Japanese (JLPT N2 recommended)',
+            'Varía según el estatus de residencia; el visado de nómada digital exige ¥10 millones/año',
+          language_requirement: 'Japonés (JLPT N2 recomendado)',
         },
       ],
       immigration_visa_types: [
@@ -1375,20 +1375,20 @@ export async function seedCountries() {
           description:
             'O Employment Pass é processado em cerca de 10 dias úteis ou até 8 semanas para empresas estrangeiras, com serviços custando ~US$4 900 (€4k) e taxas para issuance de SGD225‑255 (€143‑€163).',
           benefits: [
-            'Low personal income tax rates',
-            'Major global financial hub',
-            'Very high public safety',
-            'English as the language of business and administration',
+            'Alíquotas baixas de imposto de renda pessoal',
+            'Grande polo financeiro global',
+            'Segurança pública muito alta',
+            'Inglês como idioma dos negócios e da administração',
           ],
           challenges: [
-            'Very high cost of living and housing',
-            'Highly competitive job market',
-            'Permanent residence is selective and quota-bound',
+            'Custo de vida e de moradia muito altos',
+            'Mercado de trabalho muito competitivo',
+            'Residência permanente é seletiva e sujeita a cotas',
           ],
-          processing_time: '10–40 business days',
+          processing_time: '10–40 dias úteis',
           investment_required:
-            'Employment Pass from SGD 5,600/month, rising with age; GIP from SGD 10 million',
-          language_requirement: 'English (official working language)',
+            'Employment Pass a partir de SGD 5.600/mês, subindo com a idade; GIP a partir de SGD 10 milhões',
+          language_requirement: 'Inglês (idioma oficial de trabalho)',
         },
         {
           language: 'en',
@@ -1415,20 +1415,20 @@ export async function seedCountries() {
           description:
             'El Employment Pass se procesa en unos 10 días hábiles o hasta 8 semanas para empresas extranjeras, con servicios que cuestan alrededor de US$4,900 (€4k) y tasas de emisión de SGD225-255 (€143-€163).',
           benefits: [
-            'Low personal income tax rates',
-            'Major global financial hub',
-            'Very high public safety',
-            'English as the language of business and administration',
+            'Tasas bajas de impuesto sobre la renta personal',
+            'Gran polo financiero global',
+            'Seguridad pública muy alta',
+            'Inglés como idioma de los negocios y la administración',
           ],
           challenges: [
-            'Very high cost of living and housing',
-            'Highly competitive job market',
-            'Permanent residence is selective and quota-bound',
+            'Costo de vida y de vivienda muy altos',
+            'Mercado laboral muy competitivo',
+            'La residencia permanente es selectiva y sujeta a cuotas',
           ],
-          processing_time: '10–40 business days',
+          processing_time: '10–40 días hábiles',
           investment_required:
-            'Employment Pass from SGD 5,600/month, rising with age; GIP from SGD 10 million',
-          language_requirement: 'English (official working language)',
+            'Employment Pass desde SGD 5.600/mes, subiendo con la edad; GIP desde SGD 10 millones',
+          language_requirement: 'Inglés (idioma oficial de trabajo)',
         },
       ],
       immigration_visa_types: [
@@ -1586,21 +1586,21 @@ export async function seedCountries() {
           description:
             'As emissões de vistos de trabalho e corporativos levam de 2 a 4 semanas; investimento mínimo de $45 000 (D‑8) a $90 000 para status F‑2 residencial por investimento.',
           benefits: [
-            'Advanced digital and transport infrastructure',
-            'Strong technology and manufacturing sectors',
-            'National health insurance covering residents',
-            'High public safety',
+            'Infraestrutura digital e de transporte avançada',
+            'Setores fortes de tecnologia e manufatura',
+            'Seguro-saúde nacional que cobre residentes',
+            'Segurança pública alta',
           ],
           challenges: [
-            'Significant language barrier',
-            'Demanding corporate work culture',
-            'Long working hours in traditional industries',
+            'Barreira linguística significativa',
+            'Cultura corporativa exigente',
+            'Jornadas longas nas indústrias tradicionais',
           ],
-          processing_time: '2–4 weeks',
+          processing_time: '2–4 semanas',
           investment_required:
-            'D-8: KRW 100 million per investor, wired from abroad; F-2 varies by programme',
+            'D-8: KRW 100 milhões por investidor, remetidos do exterior; F-2 varia conforme o programa',
           language_requirement:
-            'Korean (TOPIK levels required for some residence categories)',
+            'Coreano (níveis de TOPIK exigidos em algumas categorias de residência)',
         },
         {
           language: 'en',
@@ -1628,21 +1628,21 @@ export async function seedCountries() {
           description:
             'La emisión de visados de trabajo y corporativos tarda de 2 a 4 semanas; inversión mínima de $45,000 (D-8) a $90,000 para el estatus de residencia F-2 por inversión.',
           benefits: [
-            'Advanced digital and transport infrastructure',
-            'Strong technology and manufacturing sectors',
-            'National health insurance covering residents',
-            'High public safety',
+            'Infraestructura digital y de transporte avanzada',
+            'Sectores fuertes de tecnología y manufactura',
+            'Seguro de salud nacional que cubre a residentes',
+            'Alta seguridad pública',
           ],
           challenges: [
-            'Significant language barrier',
-            'Demanding corporate work culture',
-            'Long working hours in traditional industries',
+            'Barrera idiomática significativa',
+            'Cultura corporativa exigente',
+            'Jornadas largas en las industrias tradicionales',
           ],
-          processing_time: '2–4 weeks',
+          processing_time: '2–4 semanas',
           investment_required:
-            'D-8: KRW 100 million per investor, wired from abroad; F-2 varies by programme',
+            'D-8: KRW 100 millones por inversionista, remitidos desde el exterior; F-2 varía según el programa',
           language_requirement:
-            'Korean (TOPIK levels required for some residence categories)',
+            'Coreano (niveles de TOPIK exigidos en algunas categorías de residencia)',
         },
       ],
       immigration_visa_types: [
@@ -3233,20 +3233,21 @@ export async function seedCountries() {
           description:
             'A Tailândia oferece o visto LTR de até 10 anos, o DTV para trabalho remoto e o Privilege Visa por adesão, mas a residência permanente é bastante restrita.',
           benefits: [
-            'Low cost of living with high quality of life',
-            'LTR visa valid for up to 10 years',
-            'Strong infrastructure for foreign residents',
-            'Affordable and high-standard private healthcare',
+            'Custo de vida baixo com alta qualidade de vida',
+            'O visto LTR vale por até 10 anos',
+            'Boa infraestrutura para residentes estrangeiros',
+            'Saúde privada acessível e de bom padrão',
           ],
           challenges: [
-            'Permanent residence is highly restricted and rarely granted',
-            'Many occupations are legally reserved for Thai nationals',
-            'Frequent reporting and renewal obligations',
+            'A residência permanente é muito restrita e raramente concedida',
+            'Várias profissões são reservadas por lei a tailandeses',
+            'Obrigações frequentes de reporte e renovação',
           ],
-          processing_time: '15–60 days',
+          processing_time: '15–60 dias',
           investment_required:
-            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
-          language_requirement: 'Thai (not required for most visa routes)',
+            'LTR: US$80.000/ano de renda passiva; Privilege Visa a partir de THB 650.000',
+          language_requirement:
+            'Tailandês (não exigido na maioria das vias de visto)',
         },
         {
           language: 'en',
@@ -3273,20 +3274,21 @@ export async function seedCountries() {
           description:
             'Tailandia ofrece el visado LTR de hasta 10 años, el DTV para trabajo remoto y el Privilege Visa por membresía, aunque la residencia permanente es muy restringida.',
           benefits: [
-            'Low cost of living with high quality of life',
-            'LTR visa valid for up to 10 years',
-            'Strong infrastructure for foreign residents',
-            'Affordable and high-standard private healthcare',
+            'Costo de vida bajo con alta calidad de vida',
+            'El visado LTR vale hasta 10 años',
+            'Buena infraestructura para residentes extranjeros',
+            'Sanidad privada accesible y de buen nivel',
           ],
           challenges: [
-            'Permanent residence is highly restricted and rarely granted',
-            'Many occupations are legally reserved for Thai nationals',
-            'Frequent reporting and renewal obligations',
+            'La residencia permanente es muy restringida y rara vez se concede',
+            'Varias profesiones están reservadas por ley a tailandeses',
+            'Obligaciones frecuentes de reporte y renovación',
           ],
-          processing_time: '15–60 days',
+          processing_time: '15–60 días',
           investment_required:
-            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
-          language_requirement: 'Thai (not required for most visa routes)',
+            'LTR: US$80.000/año de ingresos pasivos; Privilege Visa desde THB 650.000',
+          language_requirement:
+            'Tailandés (no exigido en la mayoría de las vías de visado)',
         },
       ],
       immigration_visa_types: [
@@ -4576,20 +4578,20 @@ export async function seedCountries() {
           description:
             'A Malásia oferece o MM2H para residência de longa duração e o DE Rantau para nômades digitais, com inglês amplamente falado.',
           benefits: [
-            'English widely used in business and daily life',
-            'Low cost of living',
-            'MM2H offers long-term renewable residence',
-            'Affordable, high-standard private healthcare',
+            'Inglês muito usado nos negócios e no dia a dia',
+            'Custo de vida baixo',
+            'O MM2H oferece residência de longa duração renovável',
+            'Saúde privada acessível e de bom padrão',
           ],
           challenges: [
-            'MM2H requirements have changed repeatedly in recent years',
-            'Permanent residence is rarely granted',
-            'Constant heat and humidity',
+            'As exigências do MM2H mudaram várias vezes nos últimos anos',
+            'A residência permanente é raramente concedida',
+            'Calor e umidade constantes',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'MM2H Silver: US$150,000 deposit plus RM600,000 property; Gold US$500,000; Platinum US$1M',
-          language_requirement: 'Malay official; English widely spoken',
+            'MM2H Silver: depósito de US$150.000 mais imóvel de RM600.000; Gold US$500.000; Platinum US$1 milhão',
+          language_requirement: 'Malaio oficial; inglês amplamente falado',
         },
         {
           language: 'en',
@@ -4616,20 +4618,20 @@ export async function seedCountries() {
           description:
             'Malasia ofrece el MM2H para residencia de larga duración y el DE Rantau para nómadas digitales, con el inglés ampliamente hablado.',
           benefits: [
-            'English widely used in business and daily life',
-            'Low cost of living',
-            'MM2H offers long-term renewable residence',
-            'Affordable, high-standard private healthcare',
+            'Inglés muy usado en los negocios y en el día a día',
+            'Costo de vida bajo',
+            'El MM2H ofrece residencia de larga duración renovable',
+            'Sanidad privada accesible y de buen nivel',
           ],
           challenges: [
-            'MM2H requirements have changed repeatedly in recent years',
-            'Permanent residence is rarely granted',
-            'Constant heat and humidity',
+            'Los requisitos del MM2H cambiaron varias veces en los últimos años',
+            'La residencia permanente rara vez se concede',
+            'Calor y humedad constantes',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'MM2H Silver: US$150,000 deposit plus RM600,000 property; Gold US$500,000; Platinum US$1M',
-          language_requirement: 'Malay official; English widely spoken',
+            'MM2H Silver: depósito de US$150.000 más inmueble de RM600.000; Gold US$500.000; Platinum US$1 millón',
+          language_requirement: 'Malayo oficial; inglés ampliamente hablado',
         },
       ],
       immigration_visa_types: [
@@ -6043,21 +6045,21 @@ export async function seedCountries() {
           description:
             'Taiwan oferece o Employment Gold Card, que reúne visto, autorização de trabalho e residência num pedido só, com seguro de saúde universal bem avaliado.',
           benefits: [
-            'Employment Gold Card bundles visa, work permit and residence in one application',
-            'Universal health insurance rated among the best in the world',
-            'Very high public safety',
-            'Leading semiconductor and technology sector',
+            'O Employment Gold Card reúne visto, autorização de trabalho e residência num pedido só',
+            'Seguro-saúde universal avaliado entre os melhores do mundo',
+            'Segurança pública muito alta',
+            'Setor de semicondutores e tecnologia de ponta',
           ],
           challenges: [
-            'Mandarin is demanding for most learners',
-            'Exposure to typhoons and earthquakes',
-            'Geopolitical uncertainty',
+            'O mandarim é exigente para a maioria',
+            'Exposição a tufões e terremotos',
+            'Incerteza geopolítica',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'No investment route; professional criteria or NT$160,000/month in salary',
+            'Não há via de investimento; critério profissional ou salário de NT$160.000/mês',
           language_requirement:
-            'Mandarin (English used in technology and academia)',
+            'Mandarim (inglês usado em tecnologia e no meio acadêmico)',
         },
         {
           language: 'en',
@@ -6085,21 +6087,21 @@ export async function seedCountries() {
           description:
             'Taiwán ofrece la Employment Gold Card, que reúne visado, permiso de trabajo y residencia en una sola solicitud, con un seguro de salud universal bien valorado.',
           benefits: [
-            'Employment Gold Card bundles visa, work permit and residence in one application',
-            'Universal health insurance rated among the best in the world',
-            'Very high public safety',
-            'Leading semiconductor and technology sector',
+            'El Employment Gold Card reúne visado, permiso de trabajo y residencia en una sola solicitud',
+            'Seguro de salud universal evaluado entre los mejores del mundo',
+            'Seguridad pública muy alta',
+            'Sector de semiconductores y tecnología de punta',
           ],
           challenges: [
-            'Mandarin is demanding for most learners',
-            'Exposure to typhoons and earthquakes',
-            'Geopolitical uncertainty',
+            'El mandarín es exigente para la mayoría',
+            'Exposición a tifones y terremotos',
+            'Incertidumbre geopolítica',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'No investment route; professional criteria or NT$160,000/month in salary',
+            'No hay vía de inversión; criterio profesional o salario de NT$160.000/mes',
           language_requirement:
-            'Mandarin (English used in technology and academia)',
+            'Mandarín (inglés usado en tecnología y en el ámbito académico)',
         },
       ],
       immigration_visa_types: [
@@ -6158,21 +6160,20 @@ export async function seedCountries() {
           description:
             'Hong Kong oferece esquemas de talento como o Top Talent Pass, com tributação baixa e residência permanente após sete anos de permanência contínua.',
           benefits: [
-            'Low and simple personal tax rates',
-            'Major global financial hub',
-            'English widely used in business and government',
-            'Permanent residence after seven years of continuous stay',
+            'Alíquotas pessoais baixas e sistema tributário simples',
+            'Grande polo financeiro global',
+            'Inglês muito usado nos negócios e no governo',
+            'Residência permanente após sete anos de permanência contínua',
           ],
           challenges: [
-            'Among the most expensive housing markets in the world',
-            'Very small average living spaces',
-            'Political changes since 2020 have shifted the environment',
+            'Entre os mercados imobiliários mais caros do mundo',
+            'Espaços de moradia muito pequenos',
+            'As mudanças políticas desde 2020 alteraram o ambiente',
           ],
-          processing_time: '4–8 weeks',
+          processing_time: '4–8 semanas',
           investment_required:
-            'No investment route; Top Talent Pass needs HKD 2.5 million/year or a top degree',
-          language_requirement:
-            'Cantonese and English are both official languages',
+            'Não há via de investimento; o Top Talent Pass exige HKD 2,5 milhões/ano ou diploma de universidade de topo',
+          language_requirement: 'Cantonês e inglês são ambos idiomas oficiais',
         },
         {
           language: 'en',
@@ -6200,21 +6201,21 @@ export async function seedCountries() {
           description:
             'Hong Kong ofrece esquemas de talento como el Top Talent Pass, con baja tributación y residencia permanente tras siete años de estancia continua.',
           benefits: [
-            'Low and simple personal tax rates',
-            'Major global financial hub',
-            'English widely used in business and government',
-            'Permanent residence after seven years of continuous stay',
+            'Tasas personales bajas y sistema tributario simple',
+            'Gran polo financiero global',
+            'Inglés muy usado en los negocios y el gobierno',
+            'Residencia permanente tras siete años de permanencia continua',
           ],
           challenges: [
-            'Among the most expensive housing markets in the world',
-            'Very small average living spaces',
-            'Political changes since 2020 have shifted the environment',
+            'Entre los mercados inmobiliarios más caros del mundo',
+            'Espacios de vivienda muy pequeños',
+            'Los cambios políticos desde 2020 alteraron el entorno',
           ],
-          processing_time: '4–8 weeks',
+          processing_time: '4–8 semanas',
           investment_required:
-            'No investment route; Top Talent Pass needs HKD 2.5 million/year or a top degree',
+            'No hay vía de inversión; el Top Talent Pass exige HKD 2,5 millones/año o título de universidad de primer nivel',
           language_requirement:
-            'Cantonese and English are both official languages',
+            'El cantonés y el inglés son ambos idiomas oficiales',
         },
       ],
       immigration_visa_types: [
@@ -6273,21 +6274,21 @@ export async function seedCountries() {
           description:
             'A China concede o visto Z de trabalho com autorização de residência e o visto R para talentos de alto nível, com mercado interno vasto e infraestrutura avançada.',
           benefits: [
-            'Vast domestic market and career opportunities',
-            'Advanced infrastructure and extensive high-speed rail',
-            'Low cost of living outside the first-tier cities',
-            'Strong demand for specialised foreign professionals',
+            'Mercado interno vasto e amplas oportunidades de carreira',
+            'Infraestrutura avançada e malha extensa de trem de alta velocidade',
+            'Custo de vida baixo fora das cidades de primeiro escalão',
+            'Demanda forte por profissionais estrangeiros especializados',
           ],
           challenges: [
-            'Permanent residence is notoriously difficult to obtain',
-            'Significant language barrier outside international companies',
-            'Internet restrictions and limited administrative transparency',
+            'A residência permanente é notoriamente difícil de obter',
+            'Barreira linguística significativa fora de empresas internacionais',
+            'Restrições de internet e pouca transparência administrativa',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Work needs an employer; PR by investment from RMB 10 million, or US$500,000 in the west',
+            'Trabalho exige empregador; residência permanente por investimento a partir de RMB 10 milhões, ou US$500.000 no oeste do país',
           language_requirement:
-            'Mandarin (required for most roles outside multinationals)',
+            'Mandarim (exigido na maioria das funções fora de multinacionais)',
         },
         {
           language: 'en',
@@ -6315,21 +6316,21 @@ export async function seedCountries() {
           description:
             'China concede el visado Z de trabajo con permiso de residencia y el visado R para talento de alto nivel, con un vasto mercado interno e infraestructura avanzada.',
           benefits: [
-            'Vast domestic market and career opportunities',
-            'Advanced infrastructure and extensive high-speed rail',
-            'Low cost of living outside the first-tier cities',
-            'Strong demand for specialised foreign professionals',
+            'Mercado interno vasto y amplias oportunidades de carrera',
+            'Infraestructura avanzada y red extensa de tren de alta velocidad',
+            'Costo de vida bajo fuera de las ciudades de primer nivel',
+            'Fuerte demanda de profesionales extranjeros especializados',
           ],
           challenges: [
-            'Permanent residence is notoriously difficult to obtain',
-            'Significant language barrier outside international companies',
-            'Internet restrictions and limited administrative transparency',
+            'La residencia permanente es notoriamente difícil de obtener',
+            'Barrera idiomática significativa fuera de empresas internacionales',
+            'Restricciones de internet y poca transparencia administrativa',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Work needs an employer; PR by investment from RMB 10 million, or US$500,000 in the west',
+            'El trabajo exige empleador; residencia permanente por inversión desde RMB 10 millones, o US$500.000 en el oeste del país',
           language_requirement:
-            'Mandarin (required for most roles outside multinationals)',
+            'Mandarín (exigido en la mayoría de los puestos fuera de multinacionales)',
         },
       ],
       immigration_visa_types: [
