@@ -1480,20 +1480,20 @@ export async function seedCountries() {
           description:
             'O visto de trabalho (2 anos) custa entre AED 5 000‑10 000 (~US$ 1 360‑2 720) mais Emirates ID e saúde. O Green/Investor visa exige solvência ou investimento de AED 10 milhões (~US$ 2,720,000).',
           benefits: [
-            'No personal income tax',
-            'Modern infrastructure and global connectivity',
-            'Highly multicultural workforce',
-            'Golden Visa offers 10-year renewable residence',
+            'Sem imposto de renda pessoal',
+            'Infraestrutura moderna e conectividade global',
+            'Força de trabalho altamente multicultural',
+            'O Golden Visa oferece residência renovável de 10 anos',
           ],
           challenges: [
-            'Extreme summer heat',
-            'Most residence permits are tied to an employer',
-            'No path to citizenship for most residents',
+            'Calor extremo no verão',
+            'A maioria das autorizações de residência é vinculada ao empregador',
+            'Não há caminho à cidadania para a maioria dos residentes',
           ],
-          processing_time: '2–8 weeks',
+          processing_time: '2–8 semanas',
           investment_required:
-            'Employment visa fees from ≈US$1,360; Golden Visa investment routes from AED 2 million',
-          language_requirement: 'Arabic official; English widely used at work',
+            'Taxas do visto de trabalho a partir de ≈US$1.360; vias de investimento do Golden Visa a partir de AED 2 milhões',
+          language_requirement: 'Árabe oficial; inglês muito usado no trabalho',
         },
         {
           language: 'en',
@@ -1520,20 +1520,20 @@ export async function seedCountries() {
           description:
             'La visa de trabajo de 2 años cuesta entre AED 5,000-10,000 (~US$1,360-2,720) más Emirates ID y salud. La Green/Investor visa exige solvencia o una inversión de AED 10 millones (~US$2,720,000).',
           benefits: [
-            'No personal income tax',
-            'Modern infrastructure and global connectivity',
-            'Highly multicultural workforce',
-            'Golden Visa offers 10-year renewable residence',
+            'Sin impuesto sobre la renta personal',
+            'Infraestructura moderna y conectividad global',
+            'Fuerza laboral altamente multicultural',
+            'El Golden Visa ofrece residencia renovable de 10 años',
           ],
           challenges: [
-            'Extreme summer heat',
-            'Most residence permits are tied to an employer',
-            'No path to citizenship for most residents',
+            'Calor extremo en verano',
+            'La mayoría de los permisos de residencia está vinculada al empleador',
+            'No hay camino a la ciudadanía para la mayoría de los residentes',
           ],
-          processing_time: '2–8 weeks',
+          processing_time: '2–8 semanas',
           investment_required:
-            'Employment visa fees from ≈US$1,360; Golden Visa investment routes from AED 2 million',
-          language_requirement: 'Arabic official; English widely used at work',
+            'Tasas del visado de trabajo desde ≈US$1.360; vías de inversión del Golden Visa desde AED 2 millones',
+          language_requirement: 'Árabe oficial; inglés muy usado en el trabajo',
         },
       ],
       immigration_visa_types: [
@@ -4690,21 +4690,21 @@ export async function seedCountries() {
           description:
             'Israel concede cidadania a judeus e seus descendentes pela Lei do Retorno, com pacote de absorção para novos imigrantes e setor de tecnologia forte.',
           benefits: [
-            'Law of Return grants citizenship to Jews and their descendants',
-            'Absorption package of benefits for new immigrants',
-            'Very strong technology and research sector',
-            'Universal health coverage',
+            'A Lei do Retorno concede cidadania a judeus e seus descendentes',
+            'Pacote de absorção com benefícios para novos imigrantes',
+            'Setor de tecnologia e pesquisa muito forte',
+            'Cobertura universal de saúde',
           ],
           challenges: [
-            'High cost of living, especially housing',
-            'Regional security situation',
-            'Military service obligations apply to some age groups',
+            'Custo de vida alto, sobretudo de moradia',
+            'Situação de segurança regional',
+            'Obrigações de serviço militar se aplicam a algumas faixas etárias',
           ],
-          processing_time: '1–6 months depending on the route',
+          processing_time: '1–6 meses, conforme a via',
           investment_required:
-            'No financial requirement; one Jewish grandparent qualifies for Aliyah',
+            'Sem requisito financeiro; um avô judeu já qualifica para o Aliyah',
           language_requirement:
-            'Hebrew (free ulpan courses provided to new immigrants)',
+            'Hebraico (cursos de ulpan gratuitos para novos imigrantes)',
         },
         {
           language: 'en',
@@ -4732,21 +4732,21 @@ export async function seedCountries() {
           description:
             'Israel concede la ciudadanía a judíos y sus descendientes por la Ley del Retorno, con un paquete de absorción para nuevos inmigrantes y un fuerte sector tecnológico.',
           benefits: [
-            'Law of Return grants citizenship to Jews and their descendants',
-            'Absorption package of benefits for new immigrants',
-            'Very strong technology and research sector',
-            'Universal health coverage',
+            'La Ley del Retorno concede ciudadanía a judíos y sus descendientes',
+            'Paquete de absorción con beneficios para nuevos inmigrantes',
+            'Sector de tecnología e investigación muy fuerte',
+            'Cobertura universal de salud',
           ],
           challenges: [
-            'High cost of living, especially housing',
-            'Regional security situation',
-            'Military service obligations apply to some age groups',
+            'Costo de vida alto, sobre todo de vivienda',
+            'Situación de seguridad regional',
+            'Las obligaciones de servicio militar aplican a algunos grupos de edad',
           ],
-          processing_time: '1–6 months depending on the route',
+          processing_time: '1–6 meses, según la vía',
           investment_required:
-            'No financial requirement; one Jewish grandparent qualifies for Aliyah',
+            'Sin requisito financiero; un abuelo judío ya califica para el Aliyah',
           language_requirement:
-            'Hebrew (free ulpan courses provided to new immigrants)',
+            'Hebreo (cursos de ulpán gratuitos para nuevos inmigrantes)',
         },
       ],
       immigration_visa_types: [
@@ -4806,20 +4806,20 @@ export async function seedCountries() {
           description:
             'O Catar não cobra imposto de renda sobre pessoa física e oferece residência por trabalho ou investimento imobiliário, com infraestrutura moderna.',
           benefits: [
-            'No personal income tax',
-            'High salaries for skilled expatriates',
-            'Modern infrastructure and global connectivity',
-            'Very low crime rates',
+            'Sem imposto de renda pessoal',
+            'Salários altos para expatriados qualificados',
+            'Infraestrutura moderna e conectividade global',
+            'Índices de criminalidade muito baixos',
           ],
           challenges: [
-            'Most residence permits are tied to an employer',
-            'Permanent residency is quota-limited and rarely granted',
-            'Extreme summer heat',
+            'A maioria das autorizações de residência é vinculada ao empregador',
+            'A residência permanente é limitada por cota e raramente concedida',
+            'Calor extremo no verão',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence from QAR 730,000 in freehold property; permanent residency from QAR 3.65 million',
-          language_requirement: 'Arabic official; English used widely at work',
+            'Residência a partir de QAR 730.000 em imóvel de propriedade plena; residência permanente a partir de QAR 3,65 milhões',
+          language_requirement: 'Árabe oficial; inglês muito usado no trabalho',
         },
         {
           language: 'en',
@@ -4846,20 +4846,20 @@ export async function seedCountries() {
           description:
             'Catar no cobra impuesto sobre la renta personal y ofrece residencia por empleo o inversión inmobiliaria, con infraestructura moderna.',
           benefits: [
-            'No personal income tax',
-            'High salaries for skilled expatriates',
-            'Modern infrastructure and global connectivity',
-            'Very low crime rates',
+            'Sin impuesto sobre la renta personal',
+            'Salarios altos para expatriados calificados',
+            'Infraestructura moderna y conectividad global',
+            'Índices de criminalidad muy bajos',
           ],
           challenges: [
-            'Most residence permits are tied to an employer',
-            'Permanent residency is quota-limited and rarely granted',
-            'Extreme summer heat',
+            'La mayoría de los permisos de residencia está vinculada al empleador',
+            'La residencia permanente está limitada por cuota y rara vez se concede',
+            'Calor extremo en verano',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence from QAR 730,000 in freehold property; permanent residency from QAR 3.65 million',
-          language_requirement: 'Arabic official; English used widely at work',
+            'Residencia desde QAR 730.000 en inmueble de propiedad plena; residencia permanente desde QAR 3,65 millones',
+          language_requirement: 'Árabe oficial; inglés muy usado en el trabajo',
         },
       ],
       immigration_visa_types: [
@@ -4918,20 +4918,20 @@ export async function seedCountries() {
           description:
             'A Indonésia oferece o Second Home Visa e o KITAS de trabalhador remoto, que não tributa renda estrangeira, com Bali como polo consolidado.',
           benefits: [
-            'Low cost of living',
-            'Remote worker route does not tax income earned abroad',
-            'Bali is an established hub for remote professionals',
-            'Enormous geographic and cultural diversity',
+            'Custo de vida baixo',
+            'A via de trabalhador remoto não tributa renda ganha no exterior',
+            'Bali é um polo consolidado de profissionais remotos',
+            'Diversidade geográfica e cultural enorme',
           ],
           challenges: [
-            'Visa rules change frequently',
-            'Local administration varies between provinces',
-            'Uneven infrastructure outside major centres',
+            'As regras de visto mudam com frequência',
+            'A administração local varia entre as províncias',
+            'Infraestrutura desigual fora dos grandes centros',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Second Home Visa: roughly IDR 2 billion held in a state bank; remote worker route: US$60,000 in annual income',
-          language_requirement: 'Indonesian (basic)',
+            'Second Home Visa: cerca de IDR 2 bilhões em banco estatal; via de trabalhador remoto: US$60.000 de renda anual',
+          language_requirement: 'Indonésio (básico)',
         },
         {
           language: 'en',
@@ -4958,20 +4958,20 @@ export async function seedCountries() {
           description:
             'Indonesia ofrece el Second Home Visa y el KITAS de trabajador remoto, que no grava la renta extranjera, con Bali como polo consolidado.',
           benefits: [
-            'Low cost of living',
-            'Remote worker route does not tax income earned abroad',
-            'Bali is an established hub for remote professionals',
-            'Enormous geographic and cultural diversity',
+            'Costo de vida bajo',
+            'La vía de trabajador remoto no grava la renta obtenida en el exterior',
+            'Bali es un polo consolidado de profesionales remotos',
+            'Enorme diversidad geográfica y cultural',
           ],
           challenges: [
-            'Visa rules change frequently',
-            'Local administration varies between provinces',
-            'Uneven infrastructure outside major centres',
+            'Las reglas de visado cambian con frecuencia',
+            'La administración local varía entre las provincias',
+            'Infraestructura desigual fuera de los grandes centros',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Second Home Visa: roughly IDR 2 billion held in a state bank; remote worker route: US$60,000 in annual income',
-          language_requirement: 'Indonesian (basic)',
+            'Second Home Visa: unos IDR 2 mil millones en banco estatal; vía de trabajador remoto: US$60.000 de ingresos anuales',
+          language_requirement: 'Indonesio (básico)',
         },
       ],
       immigration_visa_types: [
@@ -5816,21 +5816,21 @@ export async function seedCountries() {
           description:
             'O Vietnã oferece autorização de trabalho com cartão de residência temporária e vistos de investidor, com custo de vida muito baixo e economia em rápido crescimento.',
           benefits: [
-            'Very low cost of living',
-            'One of the fastest-growing economies in Asia',
-            'Established expatriate communities in the main cities',
-            'Strong demand for foreign engineers and language teachers',
+            'Custo de vida muito baixo',
+            'Uma das economias que mais crescem na Ásia',
+            'Comunidades de expatriados consolidadas nas principais cidades',
+            'Demanda forte por engenheiros e professores de idiomas estrangeiros',
           ],
           challenges: [
-            'No general route to permanent residence for most foreigners',
-            'Work permits are tied to the employer',
-            'Vietnamese is tonal and difficult for most learners',
+            'Não há via geral de residência permanente para a maioria dos estrangeiros',
+            'As autorizações de trabalho são vinculadas ao empregador',
+            'O vietnamita é tonal e difícil para a maioria',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Investor visa: DT4 under VND 3 billion, DT3 from VND 3 billion, DT1 from VND 100 billion',
+            'Visto de investidor: DT4 abaixo de VND 3 bilhões, DT3 a partir de VND 3 bilhões, DT1 a partir de VND 100 bilhões',
           language_requirement:
-            'Vietnamese (English used in international companies)',
+            'Vietnamita (inglês usado em empresas internacionais)',
         },
         {
           language: 'en',
@@ -5858,21 +5858,21 @@ export async function seedCountries() {
           description:
             'Vietnam ofrece permisos de trabajo con tarjeta de residencia temporal y visados de inversor, con un coste de vida muy bajo y una economía en rápido crecimiento.',
           benefits: [
-            'Very low cost of living',
-            'One of the fastest-growing economies in Asia',
-            'Established expatriate communities in the main cities',
-            'Strong demand for foreign engineers and language teachers',
+            'Costo de vida muy bajo',
+            'Una de las economías que más crecen en Asia',
+            'Comunidades de expatriados consolidadas en las principales ciudades',
+            'Fuerte demanda de ingenieros y profesores de idiomas extranjeros',
           ],
           challenges: [
-            'No general route to permanent residence for most foreigners',
-            'Work permits are tied to the employer',
-            'Vietnamese is tonal and difficult for most learners',
+            'No hay vía general de residencia permanente para la mayoría de los extranjeros',
+            'Los permisos de trabajo están vinculados al empleador',
+            'El vietnamita es tonal y difícil para la mayoría',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Investor visa: DT4 under VND 3 billion, DT3 from VND 3 billion, DT1 from VND 100 billion',
+            'Visado de inversionista: DT4 por debajo de VND 3 mil millones, DT3 desde VND 3 mil millones, DT1 desde VND 100 mil millones',
           language_requirement:
-            'Vietnamese (English used in international companies)',
+            'Vietnamita (inglés usado en empresas internacionales)',
         },
       ],
       immigration_visa_types: [
@@ -5931,21 +5931,20 @@ export async function seedCountries() {
           description:
             'As Filipinas têm o inglês como língua oficial e oferecem o SRRV, residência renovável por tempo indeterminado para aposentados e investidores.',
           benefits: [
-            'English is an official language and widely spoken',
-            'Very low cost of living',
-            'SRRV offers indefinite renewable residence',
-            'Large archipelago with varied places to live',
+            'O inglês é idioma oficial e amplamente falado',
+            'Custo de vida muito baixo',
+            'O SRRV oferece residência renovável por prazo indeterminado',
+            'Arquipélago grande, com lugares variados para viver',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Frequent typhoons',
-            'Congested infrastructure in Metro Manila',
+            'Mercado de trabalho local limitado para estrangeiros',
+            'Tufões frequentes',
+            'Infraestrutura congestionada na Grande Manila',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'SRRV Classic: US$15,000 deposit at 50+ with a pension, US$25,000 at 40–49',
-          language_requirement:
-            'Filipino and English are both official languages',
+            'SRRV Classic: depósito de US$15.000 aos 50+ com pensão, US$25.000 entre 40 e 49',
+          language_requirement: 'Filipino e inglês são ambos idiomas oficiais',
         },
         {
           language: 'en',
@@ -5973,21 +5972,21 @@ export async function seedCountries() {
           description:
             'Filipinas tiene el inglés como lengua oficial y ofrece el SRRV, una residencia renovable indefinidamente para jubilados e inversores.',
           benefits: [
-            'English is an official language and widely spoken',
-            'Very low cost of living',
-            'SRRV offers indefinite renewable residence',
-            'Large archipelago with varied places to live',
+            'El inglés es idioma oficial y ampliamente hablado',
+            'Costo de vida muy bajo',
+            'El SRRV ofrece residencia renovable por plazo indefinido',
+            'Archipiélago grande, con lugares variados para vivir',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Frequent typhoons',
-            'Congested infrastructure in Metro Manila',
+            'Mercado laboral local limitado para extranjeros',
+            'Tifones frecuentes',
+            'Infraestructura congestionada en el Gran Manila',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'SRRV Classic: US$15,000 deposit at 50+ with a pension, US$25,000 at 40–49',
+            'SRRV Classic: depósito de US$15.000 a los 50+ con pensión, US$25.000 entre 40 y 49',
           language_requirement:
-            'Filipino and English are both official languages',
+            'El filipino y el inglés son ambos idiomas oficiales',
         },
       ],
       immigration_visa_types: [
@@ -6389,21 +6388,21 @@ export async function seedCountries() {
           description:
             'A Índia usa amplamente o inglês em contexto profissional e oferece o visto de emprego e o status OCI, que garante entrada vitalícia a pessoas de origem indiana.',
           benefits: [
-            'English widely used in professional and official settings',
-            'Very low cost of living',
-            'Large and fast-growing technology sector',
-            'OCI status offers lifelong entry for people of Indian origin',
+            'Inglês muito usado em ambientes profissionais e oficiais',
+            'Custo de vida muito baixo',
+            'Setor de tecnologia grande e em rápido crescimento',
+            'O status de OCI dá entrada vitalícia a pessoas de origem indiana',
           ],
           challenges: [
-            'No general path to citizenship for foreigners',
-            'Heavy and paper-based bureaucracy',
-            'Air quality and infrastructure strain in the major cities',
+            'Não há caminho geral à cidadania para estrangeiros',
+            'Burocracia pesada e baseada em papel',
+            'Qualidade do ar e infraestrutura sob pressão nas grandes cidades',
           ],
-          processing_time: '2–6 weeks',
+          processing_time: '2–6 semanas',
           investment_required:
-            'Employment visa: gross salary from US$25,000/year, about INR 16.25 lakh',
+            'Visto de emprego: salário bruto a partir de US$25.000/ano, cerca de INR 16,25 lakh',
           language_requirement:
-            'English is widely used in business and administration',
+            'O inglês é muito usado nos negócios e na administração',
         },
         {
           language: 'en',
@@ -6431,21 +6430,21 @@ export async function seedCountries() {
           description:
             'India usa ampliamente el inglés en el ámbito profesional y ofrece el visado de empleo y el estatus OCI, que garantiza entrada vitalicia a personas de origen indio.',
           benefits: [
-            'English widely used in professional and official settings',
-            'Very low cost of living',
-            'Large and fast-growing technology sector',
-            'OCI status offers lifelong entry for people of Indian origin',
+            'Inglés muy usado en entornos profesionales y oficiales',
+            'Costo de vida muy bajo',
+            'Sector tecnológico grande y en rápido crecimiento',
+            'El estatus de OCI da entrada vitalicia a personas de origen indio',
           ],
           challenges: [
-            'No general path to citizenship for foreigners',
-            'Heavy and paper-based bureaucracy',
-            'Air quality and infrastructure strain in the major cities',
+            'No hay camino general a la ciudadanía para extranjeros',
+            'Burocracia pesada y basada en papel',
+            'Calidad del aire e infraestructura bajo presión en las grandes ciudades',
           ],
-          processing_time: '2–6 weeks',
+          processing_time: '2–6 semanas',
           investment_required:
-            'Employment visa: gross salary from US$25,000/year, about INR 16.25 lakh',
+            'Visado de empleo: salario bruto desde US$25.000/año, unos INR 16,25 lakh',
           language_requirement:
-            'English is widely used in business and administration',
+            'El inglés es muy usado en los negocios y la administración',
         },
       ],
       immigration_visa_types: [
@@ -6504,20 +6503,21 @@ export async function seedCountries() {
           description:
             'A Arábia Saudita oferece a Premium Residency, que dispensa patrocinador local, sem imposto de renda sobre pessoa física e com forte demanda por profissionais especializados.',
           benefits: [
-            'No personal income tax',
-            'Premium Residency removes the need for a local sponsor',
-            'Rapid economic diversification under Vision 2030',
-            'High salaries for specialised professionals',
+            'Sem imposto de renda pessoal',
+            'A Premium Residency dispensa a necessidade de patrocinador local',
+            'Diversificação econômica acelerada sob o Vision 2030',
+            'Salários altos para profissionais especializados',
           ],
           challenges: [
-            'Most work visas remain tied to an employer sponsor',
-            'Strict social and legal norms',
-            'Extreme summer heat',
+            'A maioria dos vistos de trabalho segue vinculada a um empregador patrocinador',
+            'Normas sociais e legais rígidas',
+            'Calor extremo no verão',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Premium Residency: SAR 800,000 one-off, or SAR 100,000/year renewable up to 5 years',
-          language_requirement: 'Arabic (English used in many corporate roles)',
+            'Premium Residency: SAR 800.000 à vista, ou SAR 100.000/ano renovável por até 5 anos',
+          language_requirement:
+            'Árabe (inglês usado em muitas funções corporativas)',
         },
         {
           language: 'en',
@@ -6544,20 +6544,21 @@ export async function seedCountries() {
           description:
             'Arabia Saudí ofrece la Premium Residency, que elimina la necesidad de un patrocinador local, sin impuesto sobre la renta personal y con fuerte demanda de profesionales especializados.',
           benefits: [
-            'No personal income tax',
-            'Premium Residency removes the need for a local sponsor',
-            'Rapid economic diversification under Vision 2030',
-            'High salaries for specialised professionals',
+            'Sin impuesto sobre la renta personal',
+            'La Premium Residency elimina la necesidad de un patrocinador local',
+            'Diversificación económica acelerada bajo Vision 2030',
+            'Salarios altos para profesionales especializados',
           ],
           challenges: [
-            'Most work visas remain tied to an employer sponsor',
-            'Strict social and legal norms',
-            'Extreme summer heat',
+            'La mayoría de los visados de trabajo sigue vinculada a un empleador patrocinador',
+            'Normas sociales y legales estrictas',
+            'Calor extremo en verano',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Premium Residency: SAR 800,000 one-off, or SAR 100,000/year renewable up to 5 years',
-          language_requirement: 'Arabic (English used in many corporate roles)',
+            'Premium Residency: SAR 800.000 al contado, o SAR 100.000/año renovable hasta 5 años',
+          language_requirement:
+            'Árabe (inglés usado en muchos puestos corporativos)',
         },
       ],
       immigration_visa_types: [
