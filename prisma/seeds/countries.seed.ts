@@ -3456,7 +3456,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–8 months',
           investment_required:
-            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+            'No legal minimum; in practice about US$1,500/month in passive income',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3476,7 +3476,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–8 months',
           investment_required:
-            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+            'No legal minimum; in practice about US$1,500/month in passive income',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3496,7 +3496,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–8 months',
           investment_required:
-            'Proof of stable monthly income of roughly US$1,500, or qualifying property investment',
+            'No legal minimum; in practice about US$1,500/month in passive income',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -3568,7 +3568,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–6 months',
           investment_required:
-            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+            'Friendly Nations: US$200,000 in property or a 3-year deposit; Qualified Investor from US$300,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3588,7 +3588,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–6 months',
           investment_required:
-            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+            'Friendly Nations: US$200,000 in property or a 3-year deposit; Qualified Investor from US$300,000',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3608,7 +3608,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–6 months',
           investment_required:
-            'Friendly Nations: US$5,000 bank deposit plus an economic tie; Qualified Investor: from US$300,000',
+            'Friendly Nations: US$200,000 in property or a 3-year deposit; Qualified Investor from US$300,000',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -4459,7 +4459,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+            'No deposit since Law 6984/2022; SUACE investor route from US$70,000',
           language_requirement: 'Spanish (Guaraní is co-official)',
         },
         {
@@ -4479,7 +4479,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+            'No deposit since Law 6984/2022; SUACE investor route from US$70,000',
           language_requirement: 'Spanish (Guaraní is co-official)',
         },
         {
@@ -4499,7 +4499,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Permanent residence: roughly US$5,000 in a local bank deposit; investor route from roughly US$70,000',
+            'No deposit since Law 6984/2022; SUACE investor route from US$70,000',
           language_requirement: 'Spanish (Guaraní is co-official)',
         },
       ],
