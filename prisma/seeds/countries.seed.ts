@@ -43,7 +43,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–45 days',
           investment_required:
-            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+            'Digital nomad visa: €34,188/year (200% of the minimum wage), plus application fees',
           language_requirement: 'Spanish (basic to intermediate)',
         },
         {
@@ -63,7 +63,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–45 days',
           investment_required:
-            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+            'Digital nomad visa: €34,188/year (200% of the minimum wage), plus application fees',
           language_requirement: 'Spanish (basic to intermediate)',
         },
         {
@@ -83,7 +83,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–45 days',
           investment_required:
-            '≈€31,752/year in income for the digital nomad visa, plus application fees',
+            'Digital nomad visa: €34,188/year (200% of the minimum wage), plus application fees',
           language_requirement: 'Spanish (basic to intermediate)',
         },
       ],
@@ -259,7 +259,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
           language_requirement: 'English or French (CLB 7+)',
         },
         {
@@ -280,7 +280,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
           language_requirement: 'English or French (CLB 7+)',
         },
         {
@@ -301,7 +301,7 @@ export async function seedCountries() {
           processing_time:
             '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
           investment_required:
-            'IRCC fees plus proof of settlement funds (≈CAD 13,000 for a single applicant)',
+            'IRCC fees plus settlement funds of ≈CAD 15,300 for a single applicant, indexed yearly',
           language_requirement: 'English or French (CLB 7+)',
         },
       ],
@@ -383,7 +383,7 @@ export async function seedCountries() {
           processing_time:
             'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
           investment_required:
-            'Application fees plus proof of funds (≈AUD 20,000)',
+            'Visa charges only — no fixed settlement funds; the 190 needs a state-set financial declaration',
           language_requirement: 'English (IELTS 6 or above)',
         },
         {
@@ -404,7 +404,7 @@ export async function seedCountries() {
           processing_time:
             'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
           investment_required:
-            'Application fees plus proof of funds (≈AUD 20,000)',
+            'Visa charges only — no fixed settlement funds; the 190 needs a state-set financial declaration',
           language_requirement: 'English (IELTS 6 or above)',
         },
         {
@@ -425,7 +425,7 @@ export async function seedCountries() {
           processing_time:
             'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
           investment_required:
-            'Application fees plus proof of funds (≈AUD 20,000)',
+            'Visa charges only — no fixed settlement funds; the 190 needs a state-set financial declaration',
           language_requirement: 'English (IELTS 6 or above)',
         },
       ],
