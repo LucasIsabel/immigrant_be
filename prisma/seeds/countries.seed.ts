@@ -2448,7 +2448,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: €920/month in passive income (€11,040/year); D8: €3,680/month in remote income. Both are indexed to the national minimum wage and rise with it',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
@@ -2468,7 +2468,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: €920/month in passive income (€11,040/year); D8: €3,680/month in remote income. Both are indexed to the national minimum wage and rise with it',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
@@ -2488,7 +2488,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: €920/month in passive income (€11,040/year); D8: €3,680/month in remote income. Both are indexed to the national minimum wage and rise with it',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
       ],
@@ -3117,7 +3117,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €800,000 in Attica, Thessaloniki, Mykonos, Santorini and islands over 3,100 residents; €400,000 elsewhere; €250,000 only for listed-building restorations and commercial-to-residential conversions',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
@@ -3137,7 +3137,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €800,000 in Attica, Thessaloniki, Mykonos, Santorini and islands over 3,100 residents; €400,000 elsewhere; €250,000 only for listed-building restorations and commercial-to-residential conversions',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
@@ -3157,7 +3157,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €800,000 in Attica, Thessaloniki, Mykonos, Santorini and islands over 3,100 residents; €400,000 elsewhere; €250,000 only for listed-building restorations and commercial-to-residential conversions',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
       ],
@@ -3229,7 +3229,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR Wealthy Pensioner: US$80,000/year in passive income, or US$40,000/year plus US$250,000 in qualifying Thai assets; Privilege Visa from THB 650,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
         {
@@ -3249,7 +3249,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR Wealthy Pensioner: US$80,000/year in passive income, or US$40,000/year plus US$250,000 in qualifying Thai assets; Privilege Visa from THB 650,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
         {
@@ -3269,7 +3269,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR Wealthy Pensioner: US$80,000/year in passive income, or US$40,000/year plus US$250,000 in qualifying Thai assets; Privilege Visa from THB 650,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
       ],
@@ -3793,7 +3793,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: €99,000 in government payments (contribution, administrative fee and donation) plus a qualifying property — purchase from €375,000 or rent from €14,000/year',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
         {
@@ -3814,7 +3814,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: €99,000 in government payments (contribution, administrative fee and donation) plus a qualifying property — purchase from €375,000 or rent from €14,000/year',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
         {
@@ -3835,7 +3835,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: €99,000 in government payments (contribution, administrative fee and donation) plus a qualifying property — purchase from €375,000 or rent from €14,000/year',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
       ],
