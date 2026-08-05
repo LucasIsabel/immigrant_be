@@ -404,6 +404,7 @@ model VisaSteps {
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @updatedAt @map("updated_at")
 
+  @@unique([visa_type_id, language])
   @@map("visa_steps")
 }
 
