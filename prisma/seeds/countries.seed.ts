@@ -31,20 +31,20 @@ export async function seedCountries() {
           description:
             'A Espanha oferece vistos de trabalho, estudos e residência não-lucrativa/digital nomad, com prazos entre 15 e 45 dias úteis.',
           benefits: [
-            'Pleasant Mediterranean climate',
-            'Affordable cost of living for Western Europe',
-            'Rich cultural life and strong regional identity',
-            'Citizenship after 10 years, or 2 for Ibero-American nationals',
+            'Clima mediterrâneo agradável',
+            'Custo de vida acessível para a Europa Ocidental',
+            'Vida cultural rica e forte identidade regional',
+            'Cidadania após 10 anos, ou 2 para ibero-americanos',
           ],
           challenges: [
-            'Persistently high unemployment',
-            'Slow provincial bureaucracy',
-            'Low local salaries relative to Western Europe',
+            'Desemprego persistentemente alto',
+            'Burocracia provincial lenta',
+            'Salários locais baixos para o padrão da Europa Ocidental',
           ],
-          processing_time: '15–45 days',
+          processing_time: '15–45 dias',
           investment_required:
-            'Digital nomad visa: €34,188/year (200% of the minimum wage), plus application fees',
-          language_requirement: 'Spanish (basic to intermediate)',
+            'Visto de nômade digital: €34.188/ano (200% do salário mínimo), mais as taxas',
+          language_requirement: 'Espanhol (básico a intermediário)',
         },
         {
           language: 'en',
@@ -71,20 +71,20 @@ export async function seedCountries() {
           description:
             'España ofrece visados de trabajo, estudios y residencia no lucrativa/digital nomad, procesados entre 15 y 45 días hábiles.',
           benefits: [
-            'Pleasant Mediterranean climate',
-            'Affordable cost of living for Western Europe',
-            'Rich cultural life and strong regional identity',
-            'Citizenship after 10 years, or 2 for Ibero-American nationals',
+            'Clima mediterráneo agradable',
+            'Costo de vida accesible para Europa Occidental',
+            'Vida cultural rica y fuerte identidad regional',
+            'Ciudadanía tras 10 años, o 2 para iberoamericanos',
           ],
           challenges: [
-            'Persistently high unemployment',
-            'Slow provincial bureaucracy',
-            'Low local salaries relative to Western Europe',
+            'Desempleo persistentemente alto',
+            'Burocracia provincial lenta',
+            'Salarios locales bajos para el estándar de Europa Occidental',
           ],
-          processing_time: '15–45 days',
+          processing_time: '15–45 días',
           investment_required:
-            'Digital nomad visa: €34,188/year (200% of the minimum wage), plus application fees',
-          language_requirement: 'Spanish (basic to intermediate)',
+            'Visado de nómada digital: €34.188/año (200% del salario mínimo), más las tasas',
+          language_requirement: 'Español (básico a intermedio)',
         },
       ],
       immigration_visa_types: [
@@ -136,21 +136,21 @@ export async function seedCountries() {
           description:
             'O Reino Unido oferece o Skilled Worker Visa com decisão em cerca de 3 semanas (externo) e até 8 semanas interno.',
           benefits: [
-            'High earning potential',
-            'Access to a global job market',
-            'English-speaking environment',
-            'Settlement possible after five years',
+            'Alto potencial de ganhos',
+            'Acesso a um mercado de trabalho global',
+            'Ambiente de língua inglesa',
+            'Settlement possível após cinco anos',
           ],
           challenges: [
-            'Expensive cost of living, especially in London',
-            'Frequent immigration policy changes',
-            'High cumulative visa and health surcharge costs',
+            'Custo de vida caro, sobretudo em Londres',
+            'Mudanças frequentes na política migratória',
+            'Custo acumulado alto de visto e health surcharge',
           ],
           processing_time:
-            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+            '3 semanas de fora do Reino Unido; 8 semanas para trocar ou estender de dentro',
           investment_required:
-            'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
-          language_requirement: 'English (B1 or above)',
+            'Skilled Worker: salário a partir de £38.700/ano; taxa de £819 mais £1.035/ano de surcharge',
+          language_requirement: 'Inglês (B1 ou superior)',
         },
         {
           language: 'en',
@@ -178,21 +178,21 @@ export async function seedCountries() {
           description:
             'El Reino Unido ofrece el Skilled Worker Visa, con decisión en unas 3 semanas desde el exterior y 8 dentro.',
           benefits: [
-            'High earning potential',
-            'Access to a global job market',
-            'English-speaking environment',
-            'Settlement possible after five years',
+            'Alto potencial de ingresos',
+            'Acceso a un mercado laboral global',
+            'Entorno de habla inglesa',
+            'Settlement posible tras cinco años',
           ],
           challenges: [
-            'Expensive cost of living, especially in London',
-            'Frequent immigration policy changes',
-            'High cumulative visa and health surcharge costs',
+            'Costo de vida caro, sobre todo en Londres',
+            'Cambios frecuentes en la política migratoria',
+            'Alto costo acumulado de visado y health surcharge',
           ],
           processing_time:
-            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+            '3 semanas desde fuera del Reino Unido; 8 semanas para cambiar o extender desde dentro',
           investment_required:
-            'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
-          language_requirement: 'English (B1 or above)',
+            'Skilled Worker: salario desde £38.700/año; tasa de £819 más £1.035/año de surcharge',
+          language_requirement: 'Inglés (B1 o superior)',
         },
       ],
       immigration_visa_types: [
@@ -609,22 +609,22 @@ export async function seedCountries() {
           description:
             'A Alemanha processa pedidos de Blue Card e Skilled Workers Visa em 2–4 meses, segundo o BAMF.',
           benefits: [
-            'Large and stable economy',
-            'Statutory health insurance system',
-            'Free or low-cost higher education',
-            'Permanent residence possible after 21–33 months with the EU Blue Card',
+            'Economia grande e estável',
+            'Sistema legal de seguro-saúde',
+            'Ensino superior gratuito ou de baixo custo',
+            'Residência permanente possível em 21–33 meses com o EU Blue Card',
           ],
           challenges: [
-            'Language barrier outside international companies',
-            'Paper-heavy public administration',
-            'Tight housing market in major cities',
+            'Barreira linguística fora de empresas internacionais',
+            'Administração pública ainda muito baseada em papel',
+            'Mercado imobiliário apertado nas grandes cidades',
           ],
           processing_time:
-            '2–4 months for the EU Blue Card and the Skilled Worker visa',
+            '2–4 meses para o EU Blue Card e o visto de trabalhador qualificado',
           investment_required:
-            'Application fees plus proof of funds (≈€11,904/year in a blocked account)',
+            'Taxas mais comprovação de fundos (≈€11.904/ano em conta bloqueada)',
           language_requirement:
-            'German (B1 recommended; some roles accept English)',
+            'Alemão (B1 recomendado; algumas funções aceitam inglês)',
         },
         {
           language: 'en',
@@ -653,22 +653,22 @@ export async function seedCountries() {
           description:
             'Alemania procesa los visados Blue Card y de trabajadores cualificados en 2–4 meses, según la BAMF.',
           benefits: [
-            'Large and stable economy',
-            'Statutory health insurance system',
-            'Free or low-cost higher education',
-            'Permanent residence possible after 21–33 months with the EU Blue Card',
+            'Economía grande y estable',
+            'Sistema legal de seguro médico',
+            'Educación superior gratuita o de bajo costo',
+            'Residencia permanente posible en 21–33 meses con la EU Blue Card',
           ],
           challenges: [
-            'Language barrier outside international companies',
-            'Paper-heavy public administration',
-            'Tight housing market in major cities',
+            'Barrera idiomática fuera de empresas internacionales',
+            'Administración pública aún muy basada en papel',
+            'Mercado inmobiliario tensionado en las grandes ciudades',
           ],
           processing_time:
-            '2–4 months for the EU Blue Card and the Skilled Worker visa',
+            '2–4 meses para la EU Blue Card y el visado de trabajador calificado',
           investment_required:
-            'Application fees plus proof of funds (≈€11,904/year in a blocked account)',
+            'Tasas más prueba de fondos (≈€11.904/año en cuenta bloqueada)',
           language_requirement:
-            'German (B1 recommended; some roles accept English)',
+            'Alemán (B1 recomendado; algunos puestos aceptan inglés)',
         },
       ],
       immigration_visa_types: [
@@ -833,20 +833,20 @@ export async function seedCountries() {
           description:
             'O Critical Skills Employment Permit leva aproximadamente 8–12 semanas, conforme o INIS.',
           benefits: [
-            'English-speaking EU member state',
-            'Major hub for technology and pharmaceutical employers',
-            'Welcoming culture for newcomers',
-            'Citizenship possible after five years of reckonable residence',
+            'País da UE de língua inglesa',
+            'Grande polo de empregadores de tecnologia e farmacêutica',
+            'Cultura acolhedora para quem chega',
+            'Cidadania possível após cinco anos de residência computável',
           ],
           challenges: [
-            'Severe housing shortage and high rents',
-            'Rainy climate year round',
-            'High cost of living in Dublin',
+            'Escassez grave de moradia e aluguéis altos',
+            'Clima chuvoso o ano todo',
+            'Custo de vida alto em Dublin',
           ],
-          processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
+          processing_time: 'Critical Skills Employment Permit: ~8–12 semanas',
           investment_required:
-            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
-          language_requirement: 'English',
+            'Critical Skills Permit: €40.904/ano, ou €68.911 sem diploma na área; elevado anualmente',
+          language_requirement: 'Inglês',
         },
         {
           language: 'en',
@@ -873,20 +873,20 @@ export async function seedCountries() {
           description:
             'El Critical Skills Employment Permit tarda unas 8–12 semanas, según el INIS irlandés.',
           benefits: [
-            'English-speaking EU member state',
-            'Major hub for technology and pharmaceutical employers',
-            'Welcoming culture for newcomers',
-            'Citizenship possible after five years of reckonable residence',
+            'País de la UE de habla inglesa',
+            'Gran polo de empleadores de tecnología y farmacéutica',
+            'Cultura acogedora para quien llega',
+            'Ciudadanía posible tras cinco años de residencia computable',
           ],
           challenges: [
-            'Severe housing shortage and high rents',
-            'Rainy climate year round',
-            'High cost of living in Dublin',
+            'Escasez grave de vivienda y alquileres altos',
+            'Clima lluvioso todo el año',
+            'Alto costo de vida en Dublín',
           ],
-          processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
+          processing_time: 'Critical Skills Employment Permit: ~8–12 semanas',
           investment_required:
-            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
-          language_requirement: 'English',
+            'Critical Skills Permit: €40.904/año, o €68.911 sin título en el área; elevado anualmente',
+          language_requirement: 'Inglés',
         },
       ],
       immigration_visa_types: [
@@ -949,20 +949,20 @@ export async function seedCountries() {
           description:
             'O “Passeport Talent” exige investimento de €30 k (empreendedor) a €300 k (investidor), com visto emitido em até 2 meses pelo France‑Visas.',
           benefits: [
-            'Strong public healthcare system',
-            'Rich cultural life',
-            'Free movement within the EU',
-            'Talent Passport offers a multi-year route for skilled workers',
+            'Sistema público de saúde robusto',
+            'Vida cultural rica',
+            'Livre circulação dentro da UE',
+            'O Talent Passport oferece uma via plurianual para qualificados',
           ],
           challenges: [
-            'Layered bureaucracy',
-            'High cost of living in Paris',
-            'Language barrier outside international workplaces',
+            'Burocracia com muitas instâncias',
+            'Custo de vida alto em Paris',
+            'Barreira linguística fora de ambientes internacionais',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Talent Passport: €39,582/year; EU Blue Card €59,373; business creator: €30,000 invested',
-          language_requirement: 'French (basic; B1 for naturalisation)',
+            'Talent Passport: €39.582/ano; EU Blue Card €59.373; criação de empresa: €30.000 investidos',
+          language_requirement: 'Francês (básico; B1 para a naturalização)',
         },
         {
           language: 'en',
@@ -989,20 +989,20 @@ export async function seedCountries() {
           description:
             'El “Passeport Talent” exige una inversión de 30.000 € (emprendedor) a 300.000 € (inversor), con visado emitido en hasta 2 meses por France-Visas.',
           benefits: [
-            'Strong public healthcare system',
-            'Rich cultural life',
-            'Free movement within the EU',
-            'Talent Passport offers a multi-year route for skilled workers',
+            'Sistema público de salud robusto',
+            'Vida cultural rica',
+            'Libre circulación dentro de la UE',
+            'El Talent Passport ofrece una vía plurianual para calificados',
           ],
           challenges: [
-            'Layered bureaucracy',
-            'High cost of living in Paris',
-            'Language barrier outside international workplaces',
+            'Burocracia con muchas instancias',
+            'Alto costo de vida en París',
+            'Barrera idiomática fuera de entornos internacionales',
           ],
-          processing_time: '1–2 months',
+          processing_time: '1–2 meses',
           investment_required:
-            'Talent Passport: €39,582/year; EU Blue Card €59,373; business creator: €30,000 invested',
-          language_requirement: 'French (basic; B1 for naturalisation)',
+            'Talent Passport: €39.582/año; EU Blue Card €59.373; creación de empresa: €30.000 invertidos',
+          language_requirement: 'Francés (básico; B1 para la naturalización)',
         },
       ],
       immigration_visa_types: [
@@ -1163,21 +1163,21 @@ export async function seedCountries() {
           description:
             'O visto de trabalho suíço L Permit demora entre 2 e 3 meses, segundo Migration Switzerland.',
           benefits: [
-            'Among the highest salaries in the world',
-            'Economic and political stability',
-            'Excellent public services and infrastructure',
-            'Central location within Europe',
+            'Entre os salários mais altos do mundo',
+            'Estabilidade econômica e política',
+            'Serviços públicos e infraestrutura excelentes',
+            'Localização central na Europa',
           ],
           challenges: [
-            'Very high cost of living',
-            'Strict quotas for non-EU workers',
-            'Highly competitive job market for foreigners',
+            'Custo de vida muito alto',
+            'Cotas rígidas para trabalhadores de fora da UE',
+            'Mercado de trabalho muito competitivo para estrangeiros',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Lump-sum taxation route: minimum taxable base of CHF 435,000, higher in some cantons',
+            'Via da tributação por gasto: base tributável mínima de CHF 435.000, maior em alguns cantões',
           language_requirement:
-            'German, French or Italian depending on the canton',
+            'Alemão, francês ou italiano, conforme o cantão',
         },
         {
           language: 'en',
@@ -1205,21 +1205,20 @@ export async function seedCountries() {
           description:
             'La visa de trabajo suiza L Permit tarda entre 2 y 3 meses, según Migration Switzerland.',
           benefits: [
-            'Among the highest salaries in the world',
-            'Economic and political stability',
-            'Excellent public services and infrastructure',
-            'Central location within Europe',
+            'Entre los salarios más altos del mundo',
+            'Estabilidad económica y política',
+            'Servicios públicos e infraestructura excelentes',
+            'Ubicación central en Europa',
           ],
           challenges: [
-            'Very high cost of living',
-            'Strict quotas for non-EU workers',
-            'Highly competitive job market for foreigners',
+            'Costo de vida muy alto',
+            'Cuotas rígidas para trabajadores de fuera de la UE',
+            'Mercado laboral muy competitivo para extranjeros',
           ],
-          processing_time: '2–3 months',
+          processing_time: '2–3 meses',
           investment_required:
-            'Lump-sum taxation route: minimum taxable base of CHF 435,000, higher in some cantons',
-          language_requirement:
-            'German, French or Italian depending on the canton',
+            'Vía de la tributación por gasto: base imponible mínima de CHF 435.000, mayor en algunos cantones',
+          language_requirement: 'Alemán, francés o italiano, según el cantón',
         },
       ],
       immigration_visa_types: [
@@ -1693,22 +1692,22 @@ export async function seedCountries() {
           description:
             'A Permissão para Migrantes Altamente Qualificados custa €405, com processo de 2–4 semanas para empregadores reconhecidos, conforme IND.',
           benefits: [
-            'High quality of life and work-life balance',
-            'Excellent connectivity across Europe',
-            'Very international working environment',
-            '30% ruling tax advantage for qualifying newcomers',
+            'Alta qualidade de vida e equilíbrio entre trabalho e vida pessoal',
+            'Excelente conectividade com o resto da Europa',
+            'Ambiente de trabalho muito internacional',
+            'Vantagem fiscal da regra dos 30% para quem se qualifica',
           ],
           challenges: [
-            'Severe housing shortage',
-            'Rainy and grey climate',
-            'High cost of living in Amsterdam and Utrecht',
+            'Escassez grave de moradia',
+            'Clima chuvoso e cinzento',
+            'Custo de vida alto em Amsterdã e Utrecht',
           ],
           processing_time:
-            '2–4 weeks under the fast-track scheme for recognised sponsors',
+            '2–4 semanas pelo regime acelerado para patrocinadores reconhecidos',
           investment_required:
-            'Fees from €405; skilled migrant salary €5,942/month, €4,357 under 30, set yearly',
+            'Taxas a partir de €405; salário de migrante qualificado €5.942/mês, €4.357 abaixo de 30 anos, revisto todo ano',
           language_requirement:
-            'Dutch (English widely spoken and accepted at work)',
+            'Holandês (inglês amplamente falado e aceito no trabalho)',
         },
         {
           language: 'en',
@@ -1737,22 +1736,22 @@ export async function seedCountries() {
           description:
             'El Permiso para Migrantes Altamente Cualificados cuesta €405, con un proceso de 2–4 semanas para empleadores reconocidos, según IND.',
           benefits: [
-            'High quality of life and work-life balance',
-            'Excellent connectivity across Europe',
-            'Very international working environment',
-            '30% ruling tax advantage for qualifying newcomers',
+            'Alta calidad de vida y equilibrio entre trabajo y vida personal',
+            'Excelente conectividad con el resto de Europa',
+            'Entorno laboral muy internacional',
+            'Ventaja fiscal de la regla del 30% para quienes califican',
           ],
           challenges: [
-            'Severe housing shortage',
-            'Rainy and grey climate',
-            'High cost of living in Amsterdam and Utrecht',
+            'Escasez grave de vivienda',
+            'Clima lluvioso y gris',
+            'Alto costo de vida en Ámsterdam y Utrecht',
           ],
           processing_time:
-            '2–4 weeks under the fast-track scheme for recognised sponsors',
+            '2–4 semanas por el régimen acelerado para patrocinadores reconocidos',
           investment_required:
-            'Fees from €405; skilled migrant salary €5,942/month, €4,357 under 30, set yearly',
+            'Tasas desde €405; salario de migrante calificado €5.942/mes, €4.357 por debajo de 30 años, revisado cada año',
           language_requirement:
-            'Dutch (English widely spoken and accepted at work)',
+            'Neerlandés (inglés ampliamente hablado y aceptado en el trabajo)',
         },
       ],
       immigration_visa_types: [
@@ -1812,20 +1811,20 @@ export async function seedCountries() {
           description:
             'A Itália oferece o visto de residência eletiva para quem possui renda passiva. O processo pode levar até 4 meses, com comprovação de fundos de ao menos €31 mil por ano.',
           benefits: [
-            'Rich cultural and historical heritage',
-            'Renowned food and lifestyle',
-            'Accessible public healthcare for residents',
-            'Citizenship by descent available to many applicants',
+            'Patrimônio cultural e histórico riquíssimo',
+            'Gastronomia e estilo de vida reconhecidos',
+            'Saúde pública acessível a residentes',
+            'Cidadania por descendência disponível a muitos candidatos',
           ],
           challenges: [
-            'Layered and slow bureaucracy',
-            'Sluggish labour market and low wages',
-            'Marked economic gap between north and south',
+            'Burocracia lenta e cheia de instâncias',
+            'Mercado de trabalho estagnado e salários baixos',
+            'Diferença econômica marcada entre norte e sul',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Elective residency: €31,160/year in passive income; investor visa from €250,000',
-          language_requirement: 'Italian (basic; B1 for citizenship)',
+            'Residência eletiva: €31.160/ano de renda passiva; visto de investidor a partir de €250.000',
+          language_requirement: 'Italiano (básico; B1 para a cidadania)',
         },
         {
           language: 'en',
@@ -1852,20 +1851,20 @@ export async function seedCountries() {
           description:
             'Italia ofrece la visa de residencia electiva para quienes tienen ingresos pasivos. El proceso puede tardar hasta 4 meses, requiriendo comprobante de fondos de al menos €31,000 por año.',
           benefits: [
-            'Rich cultural and historical heritage',
-            'Renowned food and lifestyle',
-            'Accessible public healthcare for residents',
-            'Citizenship by descent available to many applicants',
+            'Patrimonio cultural e histórico riquísimo',
+            'Gastronomía y estilo de vida reconocidos',
+            'Sanidad pública accesible para residentes',
+            'Ciudadanía por descendencia disponible para muchos solicitantes',
           ],
           challenges: [
-            'Layered and slow bureaucracy',
-            'Sluggish labour market and low wages',
-            'Marked economic gap between north and south',
+            'Burocracia lenta y con muchas instancias',
+            'Mercado laboral estancado y salarios bajos',
+            'Marcada diferencia económica entre norte y sur',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2–4 meses',
           investment_required:
-            'Elective residency: €31,160/year in passive income; investor visa from €250,000',
-          language_requirement: 'Italian (basic; B1 for citizenship)',
+            'Residencia electiva: €31.160/año de ingresos pasivos; visado de inversionista desde €250.000',
+          language_requirement: 'Italiano (básico; B1 para la ciudadanía)',
         },
       ],
       immigration_visa_types: [
@@ -2450,20 +2449,20 @@ export async function seedCountries() {
           description:
             'Portugal oferece vistos de residência D1 a D8, incluindo o D7 para renda passiva e o D8 para nômades digitais, com caminho para cidadania em 5 anos.',
           benefits: [
-            'Path to citizenship after 5 years',
-            'Affordable cost of living within the EU',
-            'CPLP agreement eases entry for Portuguese-speaking nationals',
-            'Mild climate and high safety',
+            'Caminho à cidadania após 5 anos',
+            'Custo de vida acessível dentro da UE',
+            'O acordo da CPLP facilita a entrada de nacionais lusófonos',
+            'Clima ameno e alta segurança',
           ],
           challenges: [
-            'AIMA backlogs and long appointment queues',
-            'Pressured housing market in Lisbon and Porto',
-            'Low local salaries',
+            'Filas da AIMA e demora para conseguir agendamento',
+            'Mercado imobiliário pressionado em Lisboa e no Porto',
+            'Salários locais baixos',
           ],
-          processing_time: '60–90 days',
+          processing_time: '60–90 dias',
           investment_required:
-            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
-          language_requirement: 'Portuguese (A2 required for citizenship)',
+            'D7: €920/mês; D8: €3.680/mês — ambos indexados ao salário mínimo nacional',
+          language_requirement: 'Português (A2 exigido para a cidadania)',
         },
         {
           language: 'en',
@@ -2490,20 +2489,20 @@ export async function seedCountries() {
           description:
             'Portugal ofrece visados de residencia D1 a D8, incluido el D7 para rentas pasivas y el D8 para nómadas digitales, con vía a la ciudadanía a los 5 años.',
           benefits: [
-            'Path to citizenship after 5 years',
-            'Affordable cost of living within the EU',
-            'CPLP agreement eases entry for Portuguese-speaking nationals',
-            'Mild climate and high safety',
+            'Camino a la ciudadanía tras 5 años',
+            'Costo de vida accesible dentro de la UE',
+            'El acuerdo de la CPLP facilita la entrada de nacionales lusófonos',
+            'Clima templado y alta seguridad',
           ],
           challenges: [
-            'AIMA backlogs and long appointment queues',
-            'Pressured housing market in Lisbon and Porto',
-            'Low local salaries',
+            'Colas de la AIMA y demora para conseguir cita',
+            'Mercado inmobiliario tensionado en Lisboa y Oporto',
+            'Salarios locales bajos',
           ],
-          processing_time: '60–90 days',
+          processing_time: '60–90 días',
           investment_required:
-            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
-          language_requirement: 'Portuguese (A2 required for citizenship)',
+            'D7: €920/mes; D8: €3.680/mes — ambos indexados al salario mínimo nacional',
+          language_requirement: 'Portugués (A2 exigido para la ciudadanía)',
         },
       ],
       immigration_visa_types: [
