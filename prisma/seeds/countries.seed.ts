@@ -3680,7 +3680,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–9 months',
           investment_required:
-            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+            'Rentista: US$2,500/month for two years; Inversionista US$200,000 after the reduced tier lapsed',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3700,7 +3700,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–9 months',
           investment_required:
-            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+            'Rentista: US$2,500/month for two years; Inversionista US$200,000 after the reduced tier lapsed',
           language_requirement: 'Spanish (basic)',
         },
         {
@@ -3720,7 +3720,7 @@ export async function seedCountries() {
           ],
           processing_time: '3–9 months',
           investment_required:
-            'Rentista: US$2,500/month for two years; Inversionista: from US$150,000',
+            'Rentista: US$2,500/month for two years; Inversionista US$200,000 after the reduced tier lapsed',
           language_requirement: 'Spanish (basic)',
         },
       ],
@@ -4353,7 +4353,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+            'Digital nomad: 3x the minimum wage, about US$1,400/month; property investor 350x, about US$161,000',
           language_requirement: 'Spanish (basic to intermediate)',
         },
         {
@@ -4373,7 +4373,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+            'Digital nomad: 3x the minimum wage, about US$1,400/month; property investor 350x, about US$161,000',
           language_requirement: 'Spanish (basic to intermediate)',
         },
         {
@@ -4393,7 +4393,7 @@ export async function seedCountries() {
           ],
           processing_time: '10–30 days',
           investment_required:
-            'Digital nomad: roughly US$1,000/month in income; investor route from roughly US$130,000',
+            'Digital nomad: 3x the minimum wage, about US$1,400/month; property investor 350x, about US$161,000',
           language_requirement: 'Spanish (basic to intermediate)',
         },
       ],
@@ -5023,7 +5023,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €3,700/month in income over the previous six months',
+            'Digital nomad: 3x the average gross salary, about €5,600/month',
           language_requirement: 'Romanian (basic)',
         },
         {
@@ -5043,7 +5043,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €3,700/month in income over the previous six months',
+            'Digital nomad: 3x the average gross salary, about €5,600/month',
           language_requirement: 'Romanian (basic)',
         },
         {
@@ -5063,7 +5063,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €3,700/month in income over the previous six months',
+            'Digital nomad: 3x the average gross salary, about €5,600/month',
           language_requirement: 'Romanian (basic)',
         },
       ],
