@@ -197,19 +197,19 @@ export async function seedCountries() {
           category: 'Visitor & Short-Stay Visas',
           description:
             'Visas for tourism, business, short stays up to six months or airport transit.',
-          source: 'https://www.gov.uk/browse/visas-immigration/visit-the-uk',
+          source: 'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
         },
         {
           category: 'Work Visas',
           description:
             'Visas for work including the Skilled Worker visa, Graduate visa, Health & Care Worker visa, etc.',
-          source: 'https://www.gov.uk/browse/visas-immigration/work-in-the-uk',
+          source: 'https://www.gov.uk/browse/visas-immigration/work-visas',
         },
         {
           category: 'Study Visas',
           description:
             'Visas for students to study in the UK, including full-time study and graduate routes.',
-          source: 'https://www.gov.uk/browse/visas-immigration/student-visa',
+          source: 'https://www.gov.uk/browse/visas-immigration/study-visas',
         },
         {
           category: 'Family & Settlement Visas',
@@ -1528,7 +1528,7 @@ export async function seedCountries() {
           description:
             'Visas for tourism or visiting the UAE, including single-entry, multiple-entry, 30-day and 60-day stays.',
           source:
-            'https://u.ae/en/information-and-services/visa-and-emirates-id/visas',
+            'https://u.ae/en/information-and-services/visa-and-emirates-id',
         },
         {
           category: 'Residence Visa / Work / Long Term Stay',
@@ -1747,7 +1747,7 @@ export async function seedCountries() {
           description:
             'Visa for stays up to 90 days in the Netherlands (and Schengen area) for tourism, business, visiting family.',
           source:
-            'https://www.government.nl/topics/immigration-to-the-netherlands/question-and-answer/which-visa-do-i-need-to-travel-to-the-netherlands',
+            'https://www.government.nl/topics/immigration-to-the-netherlands',
         },
         {
           category: 'Airport Transit Visa',
@@ -4178,25 +4178,25 @@ export async function seedCountries() {
         {
           category: 'Short-Stay Visa (Schengen Type C)',
           description: 'Visa for stays of up to 90 days in any 180-day period.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'White Card (Digital Nomad Residence Permit)',
           description:
             'One-year renewable permit for remote workers earning income from outside Hungary.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'Residence Permit for Employment',
           description:
             'Permit tied to a Hungarian employer, issued together with the work authorisation.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'Guest Investor Residence Permit',
           description:
             'Ten-year residence granted through qualifying investment in real estate funds or bonds.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
       ],
     },
