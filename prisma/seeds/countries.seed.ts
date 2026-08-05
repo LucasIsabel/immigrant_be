@@ -3907,7 +3907,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
           language_requirement: 'Croatian (required for permanent residence)',
         },
         {
@@ -3927,7 +3927,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
           language_requirement: 'Croatian (required for permanent residence)',
         },
         {
@@ -3947,7 +3947,7 @@ export async function seedCountries() {
           ],
           processing_time: '30–60 days',
           investment_required:
-            'Digital nomad: roughly €2,870/month in income, or equivalent savings covering the whole stay',
+            'Digital nomad: €3,622.50/month, or €43,470 in savings for a 12-month stay',
           language_requirement: 'Croatian (required for permanent residence)',
         },
       ],
@@ -5246,9 +5246,9 @@ export async function seedCountries() {
             'Small domestic market',
             'Island division limits movement in the north',
           ],
-          processing_time: '2–4 months',
+          processing_time: '6 months for the fast-track investment route',
           investment_required:
-            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+            'Permanent residence: €300,000 in new-build property plus €50,000/year in secured income',
           language_requirement:
             'Greek official; English widely used in business',
         },
@@ -5267,9 +5267,9 @@ export async function seedCountries() {
             'Small domestic market',
             'Island division limits movement in the north',
           ],
-          processing_time: '2–4 months',
+          processing_time: '6 months for the fast-track investment route',
           investment_required:
-            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+            'Permanent residence: €300,000 in new-build property plus €50,000/year in secured income',
           language_requirement:
             'Greek official; English widely used in business',
         },
@@ -5288,9 +5288,9 @@ export async function seedCountries() {
             'Small domestic market',
             'Island division limits movement in the north',
           ],
-          processing_time: '2–4 months',
+          processing_time: '6 months for the fast-track investment route',
           investment_required:
-            'Permanent residence by investment: from €300,000 in property or qualifying assets',
+            'Permanent residence: €300,000 in new-build property plus €50,000/year in secured income',
           language_requirement:
             'Greek official; English widely used in business',
         },
@@ -6840,7 +6840,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+            'Residence by property purchase: US$50,000 for one year, US$100,000 for three, US$200,000 for five',
           language_requirement:
             'Arabic (English used in international business)',
         },
@@ -6861,7 +6861,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+            'Residence by property purchase: US$50,000 for one year, US$100,000 for three, US$200,000 for five',
           language_requirement:
             'Arabic (English used in international business)',
         },
@@ -6882,7 +6882,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Residence by investment: from US$50,000 in a deposit, property or business, depending on the tier',
+            'Residence by property purchase: US$50,000 for one year, US$100,000 for three, US$200,000 for five',
           language_requirement:
             'Arabic (English used in international business)',
         },
