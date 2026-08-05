@@ -3121,20 +3121,20 @@ export async function seedCountries() {
           description:
             'A Grécia tem um dos Golden Visas mais acessíveis da UE, além de vistos para nômades digitais e pessoas financeiramente independentes.',
           benefits: [
-            'One of the more accessible Golden Visa programmes in the EU',
-            'Mediterranean climate',
-            'Low cost of living relative to Western Europe',
-            'No minimum stay requirement for the Golden Visa',
+            'Um dos programas de Golden Visa mais acessíveis da UE',
+            'Clima mediterrâneo',
+            'Custo de vida baixo em relação à Europa Ocidental',
+            'O Golden Visa não exige permanência mínima no país',
           ],
           challenges: [
-            'Weak local labour market and low wages',
-            'Slow bureaucracy',
-            'Economy still recovering from the debt crisis',
+            'Mercado de trabalho local fraco e salários baixos',
+            'Burocracia lenta',
+            'Economia ainda se recuperando da crise da dívida',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
-          language_requirement: 'Greek (basic; B1 for citizenship)',
+            'Golden Visa: €800.000 na Ática, em Salonica e nas ilhas maiores; €400.000 no resto do país',
+          language_requirement: 'Grego (básico; B1 para a cidadania)',
         },
         {
           language: 'en',
@@ -3161,20 +3161,20 @@ export async function seedCountries() {
           description:
             'Grecia tiene uno de los Golden Visa más accesibles de la UE, además de visados para nómadas digitales y personas económicamente independientes.',
           benefits: [
-            'One of the more accessible Golden Visa programmes in the EU',
-            'Mediterranean climate',
-            'Low cost of living relative to Western Europe',
-            'No minimum stay requirement for the Golden Visa',
+            'Uno de los programas de Golden Visa más accesibles de la UE',
+            'Clima mediterráneo',
+            'Costo de vida bajo en relación con Europa Occidental',
+            'El Golden Visa no exige permanencia mínima en el país',
           ],
           challenges: [
-            'Weak local labour market and low wages',
-            'Slow bureaucracy',
-            'Economy still recovering from the debt crisis',
+            'Mercado laboral local débil y salarios bajos',
+            'Burocracia lenta',
+            'Economía aún recuperándose de la crisis de deuda',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
-          language_requirement: 'Greek (basic; B1 for citizenship)',
+            'Golden Visa: €800.000 en el Ática, Salónica y las islas mayores; €400.000 en el resto del país',
+          language_requirement: 'Griego (básico; B1 para la ciudadanía)',
         },
       ],
       immigration_visa_types: [
@@ -3796,21 +3796,21 @@ export async function seedCountries() {
           description:
             'Malta oferece o programa de residência permanente MPRP e o Nomad Residence Permit, com o inglês como língua co-oficial e acesso à UE e ao Schengen.',
           benefits: [
-            'English is an official language',
-            'EU and Schengen member state',
-            'Mediterranean climate year round',
-            'Strong iGaming and financial services sectors',
+            'O inglês é idioma oficial',
+            'Membro da UE e do espaço Schengen',
+            'Clima mediterrâneo o ano todo',
+            'Setores fortes de iGaming e serviços financeiros',
           ],
           challenges: [
-            'Very small domestic market',
-            'High and rising housing costs',
-            'Heavy traffic and population density',
+            'Mercado interno muito pequeno',
+            'Custo de moradia alto e em alta',
+            'Trânsito pesado e densidade populacional elevada',
           ],
           processing_time:
-            '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
+            '4–6 meses para o MPRP; 30–40 dias para o Nomad Residence Permit',
           investment_required:
-            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
-          language_requirement: 'English (co-official language)',
+            'MPRP: €99.000 em pagamentos ao governo mais imóvel a partir de €375.000 para comprar ou €14.000/ano para alugar',
+          language_requirement: 'Inglês (idioma co-oficial)',
         },
         {
           language: 'en',
@@ -3838,21 +3838,21 @@ export async function seedCountries() {
           description:
             'Malta ofrece el programa de residencia permanente MPRP y el Nomad Residence Permit, con el inglés como lengua cooficial y acceso a la UE y a Schengen.',
           benefits: [
-            'English is an official language',
-            'EU and Schengen member state',
-            'Mediterranean climate year round',
-            'Strong iGaming and financial services sectors',
+            'El inglés es idioma oficial',
+            'Miembro de la UE y del espacio Schengen',
+            'Clima mediterráneo durante todo el año',
+            'Sectores fuertes de iGaming y servicios financieros',
           ],
           challenges: [
-            'Very small domestic market',
-            'High and rising housing costs',
-            'Heavy traffic and population density',
+            'Mercado interno muy pequeño',
+            'Costo de vivienda alto y en alza',
+            'Tráfico pesado y densidad poblacional elevada',
           ],
           processing_time:
-            '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
+            '4–6 meses para el MPRP; 30–40 días para el Nomad Residence Permit',
           investment_required:
-            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
-          language_requirement: 'English (co-official language)',
+            'MPRP: €99.000 en pagos al gobierno más inmueble desde €375.000 para comprar o €14.000/año para alquilar',
+          language_requirement: 'Inglés (idioma cooficial)',
         },
       ],
       immigration_visa_types: [
@@ -3911,20 +3911,20 @@ export async function seedCountries() {
           description:
             'A Croácia oferece autorização de residência para nômades digitais com isenção de imposto sobre renda estrangeira, além das vias de trabalho e estudo.',
           benefits: [
-            'Digital nomad permit exempts foreign income from local tax',
-            'EU member and part of the Schengen area since 2023',
-            'Extensive Adriatic coastline',
-            'Moderate cost of living for the EU',
+            'A permissão de nômade digital isenta a renda estrangeira de imposto local',
+            'Membro da UE e do espaço Schengen desde 2023',
+            'Litoral adriático extenso',
+            'Custo de vida moderado para o padrão da UE',
           ],
           challenges: [
-            'Croatian is demanding to learn',
-            'Limited local labour market',
-            'Economy heavily dependent on seasonal tourism',
+            'O croata é exigente de aprender',
+            'Mercado de trabalho local limitado',
+            'Economia muito dependente do turismo sazonal',
           ],
-          processing_time: '30–60 days',
+          processing_time: '30–60 dias',
           investment_required:
-            'Digital nomad: 2.5x the average net salary, €3,622.50/month, or €43,470 saved',
-          language_requirement: 'Croatian (required for permanent residence)',
+            'Nômade digital: 2,5x o salário médio líquido, €3.622,50/mês, ou €43.470 em poupança',
+          language_requirement: 'Croata (exigido para a residência permanente)',
         },
         {
           language: 'en',
@@ -3951,20 +3951,21 @@ export async function seedCountries() {
           description:
             'Croacia ofrece un permiso de residencia para nómadas digitales que exime del impuesto local sobre la renta extranjera, además de las vías de trabajo y estudio.',
           benefits: [
-            'Digital nomad permit exempts foreign income from local tax',
-            'EU member and part of the Schengen area since 2023',
-            'Extensive Adriatic coastline',
-            'Moderate cost of living for the EU',
+            'El permiso de nómada digital exime la renta extranjera del impuesto local',
+            'Miembro de la UE y del espacio Schengen desde 2023',
+            'Litoral adriático extenso',
+            'Costo de vida moderado para el estándar de la UE',
           ],
           challenges: [
-            'Croatian is demanding to learn',
-            'Limited local labour market',
-            'Economy heavily dependent on seasonal tourism',
+            'El croata es exigente de aprender',
+            'Mercado laboral local limitado',
+            'Economía muy dependiente del turismo estacional',
           ],
-          processing_time: '30–60 days',
+          processing_time: '30–60 días',
           investment_required:
-            'Digital nomad: 2.5x the average net salary, €3,622.50/month, or €43,470 saved',
-          language_requirement: 'Croatian (required for permanent residence)',
+            'Nómada digital: 2,5x el salario medio neto, €3.622,50/mes, o €43.470 en ahorros',
+          language_requirement:
+            'Croata (exigido para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -4023,20 +4024,20 @@ export async function seedCountries() {
           description:
             'A Estônia foi o primeiro país a criar um visto formal de nômade digital e oferece serviços públicos totalmente digitais, além do Startup Visa.',
           benefits: [
-            'First country in the world to create a formal digital nomad visa',
-            'e-Residency and fully digital public services',
-            'Strong startup ecosystem relative to population',
-            'Lean and fast administration',
+            'Primeiro país do mundo a criar um visto formal de nômade digital',
+            'e-Residency e serviços públicos totalmente digitais',
+            'Ecossistema de startups forte em relação à população',
+            'Administração enxuta e rápida',
           ],
           challenges: [
-            'Estonian is a difficult language for most learners',
-            'Long, dark winters',
-            'Small domestic market',
+            'O estoniano é um idioma difícil para a maioria',
+            'Invernos longos e escuros',
+            'Mercado interno pequeno',
           ],
-          processing_time: '15–30 days',
+          processing_time: '15–30 dias',
           investment_required:
-            'Digital nomad: roughly €4,500/month in gross income over the previous six months',
-          language_requirement: 'Estonian (B1 for permanent residence)',
+            'Nômade digital: cerca de €4.500/mês de renda bruta nos seis meses anteriores',
+          language_requirement: 'Estoniano (B1 para a residência permanente)',
         },
         {
           language: 'en',
@@ -4063,20 +4064,20 @@ export async function seedCountries() {
           description:
             'Estonia fue el primer país en crear un visado formal de nómada digital y ofrece servicios públicos totalmente digitales, además del Startup Visa.',
           benefits: [
-            'First country in the world to create a formal digital nomad visa',
-            'e-Residency and fully digital public services',
-            'Strong startup ecosystem relative to population',
-            'Lean and fast administration',
+            'Primer país del mundo en crear un visado formal de nómada digital',
+            'e-Residency y servicios públicos totalmente digitales',
+            'Ecosistema de startups fuerte en relación con la población',
+            'Administración ágil y rápida',
           ],
           challenges: [
-            'Estonian is a difficult language for most learners',
-            'Long, dark winters',
-            'Small domestic market',
+            'El estonio es un idioma difícil para la mayoría',
+            'Inviernos largos y oscuros',
+            'Mercado interno pequeño',
           ],
-          processing_time: '15–30 days',
+          processing_time: '15–30 días',
           investment_required:
-            'Digital nomad: roughly €4,500/month in gross income over the previous six months',
-          language_requirement: 'Estonian (B1 for permanent residence)',
+            'Nómada digital: unos €4.500/mes de ingresos brutos en los seis meses anteriores',
+          language_requirement: 'Estonio (B1 para la residencia permanente)',
         },
       ],
       immigration_visa_types: [
@@ -4134,20 +4135,20 @@ export async function seedCountries() {
           description:
             'A Hungria oferece o White Card para trabalhadores remotos e o Guest Investor Residence, com um dos custos de vida mais baixos da UE.',
           benefits: [
-            'Low cost of living within the EU',
-            'White Card route for remote workers',
-            'Central location for travel across Europe',
-            'Rich thermal spa and cultural scene',
+            'Custo de vida baixo dentro da UE',
+            'Via do White Card para trabalhadores remotos',
+            'Localização central para viajar pela Europa',
+            'Cena termal e cultural rica',
           ],
           challenges: [
-            'Hungarian is linguistically isolated and hard to learn',
-            'Restrictive immigration policy',
-            'Low local wages',
+            'O húngaro é linguisticamente isolado e difícil de aprender',
+            'Política migratória restritiva',
+            'Salários locais baixos',
           ],
-          processing_time: '30–70 days',
+          processing_time: '30–70 dias',
           investment_required:
-            'White Card: roughly €3,000/month in income; Guest Investor Programme: from €250,000',
-          language_requirement: 'Hungarian (required for naturalisation)',
+            'White Card: cerca de €3.000/mês de renda; Guest Investor Programme: a partir de €250.000',
+          language_requirement: 'Húngaro (exigido para a naturalização)',
         },
         {
           language: 'en',
@@ -4174,20 +4175,20 @@ export async function seedCountries() {
           description:
             'Hungría ofrece la White Card para trabajadores remotos y el Guest Investor Residence, con uno de los costes de vida más bajos de la UE.',
           benefits: [
-            'Low cost of living within the EU',
-            'White Card route for remote workers',
-            'Central location for travel across Europe',
-            'Rich thermal spa and cultural scene',
+            'Bajo costo de vida dentro de la UE',
+            'Vía del White Card para trabajadores remotos',
+            'Ubicación central para viajar por Europa',
+            'Rica escena termal y cultural',
           ],
           challenges: [
-            'Hungarian is linguistically isolated and hard to learn',
-            'Restrictive immigration policy',
-            'Low local wages',
+            'El húngaro está lingüísticamente aislado y es difícil de aprender',
+            'Política migratoria restrictiva',
+            'Salarios locales bajos',
           ],
-          processing_time: '30–70 days',
+          processing_time: '30–70 días',
           investment_required:
-            'White Card: roughly €3,000/month in income; Guest Investor Programme: from €250,000',
-          language_requirement: 'Hungarian (required for naturalisation)',
+            'White Card: unos €3.000/mes de ingresos; Guest Investor Programme: desde €250.000',
+          language_requirement: 'Húngaro (exigido para la naturalización)',
         },
       ],
       immigration_visa_types: [
@@ -4245,20 +4246,20 @@ export async function seedCountries() {
           description:
             'A Turquia tem uma das vias mais rápidas de cidadania por investimento e oferece vistos de residência de curto prazo e para nômades digitais.',
           benefits: [
-            'One of the fastest citizenship-by-investment routes in the world',
-            'Low cost of living',
-            'Bridge location between Europe and Asia',
-            'Affordable and high-standard private healthcare',
+            'Uma das vias de cidadania por investimento mais rápidas do mundo',
+            'Custo de vida baixo',
+            'Posição de ponte entre a Europa e a Ásia',
+            'Saúde privada acessível e de bom padrão',
           ],
           challenges: [
-            'High inflation and currency volatility',
-            'Political instability',
-            'Residence restricted in districts with high foreigner density',
+            'Inflação alta e volatilidade cambial',
+            'Instabilidade política',
+            'Residência restrita em bairros com alta densidade de estrangeiros',
           ],
-          processing_time: '1–6 months depending on the route',
+          processing_time: '1–6 meses, conforme a via',
           investment_required:
-            'Citizenship by investment: from US$400,000 in real estate held for three years',
-          language_requirement: 'Turkish (required for citizenship)',
+            'Cidadania por investimento: a partir de US$400.000 em imóvel mantido por três anos',
+          language_requirement: 'Turco (exigido para a cidadania)',
         },
         {
           language: 'en',
@@ -4285,20 +4286,20 @@ export async function seedCountries() {
           description:
             'Turquía tiene una de las vías más rápidas de ciudadanía por inversión, además de permisos de residencia de corta duración y para nómadas digitales.',
           benefits: [
-            'One of the fastest citizenship-by-investment routes in the world',
-            'Low cost of living',
-            'Bridge location between Europe and Asia',
-            'Affordable and high-standard private healthcare',
+            'Una de las vías de ciudadanía por inversión más rápidas del mundo',
+            'Costo de vida bajo',
+            'Posición de puente entre Europa y Asia',
+            'Sanidad privada accesible y de buen nivel',
           ],
           challenges: [
-            'High inflation and currency volatility',
-            'Political instability',
-            'Residence restricted in districts with high foreigner density',
+            'Inflación alta y volatilidad cambiaria',
+            'Inestabilidad política',
+            'Residencia restringida en barrios con alta densidad de extranjeros',
           ],
-          processing_time: '1–6 months depending on the route',
+          processing_time: '1–6 meses, según la vía',
           investment_required:
-            'Citizenship by investment: from US$400,000 in real estate held for three years',
-          language_requirement: 'Turkish (required for citizenship)',
+            'Ciudadanía por inversión: desde US$400.000 en inmueble mantenido por tres años',
+          language_requirement: 'Turco (exigido para la ciudadanía)',
         },
       ],
       immigration_visa_types: [
@@ -5027,20 +5028,20 @@ export async function seedCountries() {
           description:
             'A Romênia oferece visto de nômade digital e vias de trabalho na UE, com custo de vida baixo e uma das melhores infraestruturas de internet da Europa.',
           benefits: [
-            'Low cost of living within the EU',
-            'Among the fastest internet infrastructure in Europe',
-            'Growing technology sector',
-            'Romanian is a Romance language, easier for Latin speakers',
+            'Custo de vida baixo dentro da UE',
+            'Entre as melhores infraestruturas de internet da Europa',
+            'Setor de tecnologia em crescimento',
+            'O romeno é língua românica, mais fácil para quem fala latinas',
           ],
           challenges: [
-            'Slow administration',
-            'Low local wages',
-            'Infrastructure uneven outside the major cities',
+            'Administração lenta',
+            'Salários locais baixos',
+            'Infraestrutura desigual fora das cidades grandes',
           ],
-          processing_time: '30–60 days',
+          processing_time: '30–60 dias',
           investment_required:
-            'Digital nomad: 3x the average gross salary, about €5,600/month',
-          language_requirement: 'Romanian (basic)',
+            'Nômade digital: 3x o salário médio bruto, cerca de €5.600/mês',
+          language_requirement: 'Romeno (básico)',
         },
         {
           language: 'en',
@@ -5067,20 +5068,20 @@ export async function seedCountries() {
           description:
             'Rumanía ofrece visado de nómada digital y vías de trabajo en la UE, con bajo coste de vida y una de las mejores infraestructuras de internet de Europa.',
           benefits: [
-            'Low cost of living within the EU',
-            'Among the fastest internet infrastructure in Europe',
-            'Growing technology sector',
-            'Romanian is a Romance language, easier for Latin speakers',
+            'Bajo costo de vida dentro de la UE',
+            'Entre las mejores infraestructuras de internet de Europa',
+            'Sector tecnológico en crecimiento',
+            'El rumano es lengua romance, más fácil para hispanohablantes',
           ],
           challenges: [
-            'Slow administration',
-            'Low local wages',
-            'Infrastructure uneven outside the major cities',
+            'Administración lenta',
+            'Salarios locales bajos',
+            'Infraestructura desigual fuera de las ciudades grandes',
           ],
-          processing_time: '30–60 days',
+          processing_time: '30–60 días',
           investment_required:
-            'Digital nomad: 3x the average gross salary, about €5,600/month',
-          language_requirement: 'Romanian (basic)',
+            'Nómada digital: 3x el salario medio bruto, unos €5.600/mes',
+          language_requirement: 'Rumano (básico)',
         },
       ],
       immigration_visa_types: [
@@ -5138,21 +5139,21 @@ export async function seedCountries() {
           description:
             'Luxemburgo concentra instituições da UE e o setor financeiro, com os salários mais altos do bloco e ambiente de trabalho trilíngue.',
           benefits: [
-            'Among the highest salaries in the European Union',
-            'Major financial and EU institutional hub',
-            'Trilingual working environment',
-            'Central position within Western Europe',
+            'Entre os salários mais altos da União Europeia',
+            'Grande polo financeiro e sede de instituições da UE',
+            'Ambiente de trabalho trilíngue',
+            'Posição central na Europa Ocidental',
           ],
           challenges: [
-            'Extremely high housing costs',
-            'Very small territory and job market',
-            'Three official languages raise the integration bar',
+            'Custo de moradia altíssimo',
+            'Território e mercado de trabalho muito pequenos',
+            'Três idiomas oficiais elevam a barreira de integração',
           ],
-          processing_time: 'about 6 months',
+          processing_time: 'cerca de 6 meses',
           investment_required:
-            'Investor: €500,000 in a company, €3M in a management structure, €20M on deposit',
+            'Investidor: €500.000 em empresa, €3 milhões em estrutura de gestão, €20 milhões em depósito',
           language_requirement:
-            'Luxembourgish, French or German depending on the role',
+            'Luxemburguês, francês ou alemão, conforme a função',
         },
         {
           language: 'en',
@@ -5180,21 +5181,21 @@ export async function seedCountries() {
           description:
             'Luxemburgo concentra instituciones de la UE y el sector financiero, con los salarios más altos del bloque y un entorno laboral trilingüe.',
           benefits: [
-            'Among the highest salaries in the European Union',
-            'Major financial and EU institutional hub',
-            'Trilingual working environment',
-            'Central position within Western Europe',
+            'Entre los salarios más altos de la Unión Europea',
+            'Gran polo financiero y sede de instituciones de la UE',
+            'Entorno laboral trilingüe',
+            'Posición central en Europa Occidental',
           ],
           challenges: [
-            'Extremely high housing costs',
-            'Very small territory and job market',
-            'Three official languages raise the integration bar',
+            'Costo de vivienda altísimo',
+            'Territorio y mercado laboral muy pequeños',
+            'Tres idiomas oficiales elevan la barrera de integración',
           ],
-          processing_time: 'about 6 months',
+          processing_time: 'unos 6 meses',
           investment_required:
-            'Investor: €500,000 in a company, €3M in a management structure, €20M on deposit',
+            'Inversionista: €500.000 en empresa, €3 millones en estructura de gestión, €20 millones en depósito',
           language_requirement:
-            'Luxembourgish, French or German depending on the role',
+            'Luxemburgués, francés o alemán, según el puesto',
         },
       ],
       immigration_visa_types: [
@@ -5252,21 +5253,21 @@ export async function seedCountries() {
           description:
             'O Chipre oferece residência permanente por investimento a partir de €300.000 e visto de nômade digital, com regime fiscal favorável a não-domiciliados.',
           benefits: [
-            'English widely spoken in business and services',
-            'Favourable tax regime for non-domiciled residents',
-            'Mediterranean climate year round',
-            'EU member state',
+            'Inglês amplamente falado nos negócios e serviços',
+            'Regime tributário favorável para residentes non-domiciled',
+            'Clima mediterrâneo o ano todo',
+            'País membro da UE',
           ],
           challenges: [
-            'Not part of the Schengen area',
-            'Small domestic market',
-            'Island division limits movement in the north',
+            'Não faz parte do espaço Schengen',
+            'Mercado interno pequeno',
+            'A divisão da ilha limita a circulação no norte',
           ],
-          processing_time: '6 months for the fast-track investment route',
+          processing_time: '6 meses pela via acelerada de investimento',
           investment_required:
-            'Permanent residence: €300,000 in new-build property plus €50,000/year in secured income',
+            'Residência permanente: €300.000 em imóvel novo mais €50.000/ano de renda comprovada',
           language_requirement:
-            'Greek official; English widely used in business',
+            'Grego oficial; inglês muito usado nos negócios',
         },
         {
           language: 'en',
@@ -5294,21 +5295,21 @@ export async function seedCountries() {
           description:
             'Chipre ofrece residencia permanente por inversión desde 300.000 € y visado de nómada digital, con un régimen fiscal favorable para no domiciliados.',
           benefits: [
-            'English widely spoken in business and services',
-            'Favourable tax regime for non-domiciled residents',
-            'Mediterranean climate year round',
-            'EU member state',
+            'Inglés ampliamente hablado en los negocios y servicios',
+            'Régimen tributario favorable para residentes non-domiciled',
+            'Clima mediterráneo durante todo el año',
+            'País miembro de la UE',
           ],
           challenges: [
-            'Not part of the Schengen area',
-            'Small domestic market',
-            'Island division limits movement in the north',
+            'No forma parte del espacio Schengen',
+            'Mercado interno pequeño',
+            'La división de la isla limita la circulación en el norte',
           ],
-          processing_time: '6 months for the fast-track investment route',
+          processing_time: '6 meses por la vía acelerada de inversión',
           investment_required:
-            'Permanent residence: €300,000 in new-build property plus €50,000/year in secured income',
+            'Residencia permanente: €300.000 en inmueble nuevo más €50.000/año de ingresos acreditados',
           language_requirement:
-            'Greek official; English widely used in business',
+            'Griego oficial; inglés muy usado en los negocios',
         },
       ],
       immigration_visa_types: [
