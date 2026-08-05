@@ -6,6 +6,6 @@
 --
 -- Confirmed zero duplicate pairs in production before writing this, so the
 -- index builds without a cleanup step. Adding it now, before the bulk seed of
--- the remaining 227 visa types, keeps the risk from scaling with the volume.
+-- the remaining 236 visa types, keeps the risk from scaling with the volume.
 CREATE UNIQUE INDEX "visa_steps_visa_type_id_language_key"
     ON "visa_steps"("visa_type_id", "language");
