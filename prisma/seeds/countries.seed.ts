@@ -197,19 +197,19 @@ export async function seedCountries() {
           category: 'Visitor & Short-Stay Visas',
           description:
             'Visas for tourism, business, short stays up to six months or airport transit.',
-          source: 'https://www.gov.uk/browse/visas-immigration/visit-the-uk',
+          source: 'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
         },
         {
           category: 'Work Visas',
           description:
             'Visas for work including the Skilled Worker visa, Graduate visa, Health & Care Worker visa, etc.',
-          source: 'https://www.gov.uk/browse/visas-immigration/work-in-the-uk',
+          source: 'https://www.gov.uk/browse/visas-immigration/work-visas',
         },
         {
           category: 'Study Visas',
           description:
             'Visas for students to study in the UK, including full-time study and graduate routes.',
-          source: 'https://www.gov.uk/browse/visas-immigration/student-visa',
+          source: 'https://www.gov.uk/browse/visas-immigration/study-visas',
         },
         {
           category: 'Family & Settlement Visas',
@@ -1528,7 +1528,7 @@ export async function seedCountries() {
           description:
             'Visas for tourism or visiting the UAE, including single-entry, multiple-entry, 30-day and 60-day stays.',
           source:
-            'https://u.ae/en/information-and-services/visa-and-emirates-id/visas',
+            'https://u.ae/en/information-and-services/visa-and-emirates-id',
         },
         {
           category: 'Residence Visa / Work / Long Term Stay',
@@ -1747,7 +1747,7 @@ export async function seedCountries() {
           description:
             'Visa for stays up to 90 days in the Netherlands (and Schengen area) for tourism, business, visiting family.',
           source:
-            'https://www.government.nl/topics/immigration-to-the-netherlands/question-and-answer/which-visa-do-i-need-to-travel-to-the-netherlands',
+            'https://www.government.nl/topics/immigration-to-the-netherlands',
         },
         {
           category: 'Airport Transit Visa',
@@ -2448,7 +2448,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
@@ -2468,7 +2468,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
         {
@@ -2488,7 +2488,7 @@ export async function seedCountries() {
           ],
           processing_time: '60–90 days',
           investment_required:
-            'D7: ≈€10,440/year in passive income; D8: ≈€3,480/month in remote income',
+            'D7: €920/month; D8: €3,680/month — both indexed to the national minimum wage',
           language_requirement: 'Portuguese (A2 required for citizenship)',
         },
       ],
@@ -3117,7 +3117,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
@@ -3137,7 +3137,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
         {
@@ -3157,7 +3157,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'Golden Visa: €250,000 to €800,000 in real estate depending on the region',
+            'Golden Visa: €800,000 in Attica, Thessaloniki and the larger islands; €400,000 elsewhere',
           language_requirement: 'Greek (basic; B1 for citizenship)',
         },
       ],
@@ -3229,7 +3229,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
         {
@@ -3249,7 +3249,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
         {
@@ -3269,7 +3269,7 @@ export async function seedCountries() {
           ],
           processing_time: '15–60 days',
           investment_required:
-            'LTR: US$80,000 annual income or US$500,000 in assets; Privilege Visa: from THB 900,000',
+            'LTR: US$80,000/year in passive income; Privilege Visa from THB 650,000',
           language_requirement: 'Thai (not required for most visa routes)',
         },
       ],
@@ -3793,7 +3793,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
         {
@@ -3814,7 +3814,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
         {
@@ -3835,7 +3835,7 @@ export async function seedCountries() {
           processing_time:
             '4–6 months for the MPRP; 30–40 days for the Nomad Residence Permit',
           investment_required:
-            'MPRP: government contribution plus a qualifying property lease or purchase, from roughly €150,000 overall',
+            'MPRP: €99,000 in government payments plus property from €375,000 to buy or €14,000/year to rent',
           language_requirement: 'English (co-official language)',
         },
       ],
@@ -4178,25 +4178,25 @@ export async function seedCountries() {
         {
           category: 'Short-Stay Visa (Schengen Type C)',
           description: 'Visa for stays of up to 90 days in any 180-day period.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'White Card (Digital Nomad Residence Permit)',
           description:
             'One-year renewable permit for remote workers earning income from outside Hungary.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'Residence Permit for Employment',
           description:
             'Permit tied to a Hungarian employer, issued together with the work authorisation.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
         {
           category: 'Guest Investor Residence Permit',
           description:
             'Ten-year residence granted through qualifying investment in real estate funds or bonds.',
-          source: 'https://oif.gov.hu/en/',
+          source: 'https://oif.gov.hu/',
         },
       ],
     },
