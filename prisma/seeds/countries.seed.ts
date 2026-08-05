@@ -951,7 +951,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+            'Talent Passport: €39,582/year; EU Blue Card €59,373; business creator: €30,000 invested',
           language_requirement: 'French (basic; B1 for naturalisation)',
         },
         {
@@ -971,7 +971,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+            'Talent Passport: €39,582/year; EU Blue Card €59,373; business creator: €30,000 invested',
           language_requirement: 'French (basic; B1 for naturalisation)',
         },
         {
@@ -991,7 +991,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–2 months',
           investment_required:
-            'Varies by route: from ≈€30,000 in proven income up to €300,000 for investor categories',
+            'Talent Passport: €39,582/year; EU Blue Card €59,373; business creator: €30,000 invested',
           language_requirement: 'French (basic; B1 for naturalisation)',
         },
       ],
@@ -2666,7 +2666,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–4 months',
           investment_required:
-            'Skilled worker: salary matching Norwegian collective agreement levels',
+            'Skilled worker: NOK 624,700/year with a master, NOK 545,400 with a bachelor',
           language_requirement: 'Norwegian (B1 for permanent residence)',
         },
         {
@@ -2686,7 +2686,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–4 months',
           investment_required:
-            'Skilled worker: salary matching Norwegian collective agreement levels',
+            'Skilled worker: NOK 624,700/year with a master, NOK 545,400 with a bachelor',
           language_requirement: 'Norwegian (B1 for permanent residence)',
         },
         {
@@ -2706,7 +2706,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–4 months',
           investment_required:
-            'Skilled worker: salary matching Norwegian collective agreement levels',
+            'Skilled worker: NOK 624,700/year with a master, NOK 545,400 with a bachelor',
           language_requirement: 'Norwegian (B1 for permanent residence)',
         },
       ],
@@ -2890,7 +2890,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+            'Single Permit: €47,500 in Flanders, €53,220 in Wallonia, €3,703/month in Brussels',
           language_requirement:
             'Dutch, French or German depending on the region',
         },
@@ -2911,7 +2911,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+            'Single Permit: €47,500 in Flanders, €53,220 in Wallonia, €3,703/month in Brussels',
           language_requirement:
             'Dutch, French or German depending on the region',
         },
@@ -2932,7 +2932,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Single Permit: employment contract meeting the salary threshold of the relevant region',
+            'Single Permit: €47,500 in Flanders, €53,220 in Wallonia, €3,703/month in Brussels',
           language_requirement:
             'Dutch, French or German depending on the region',
         },
