@@ -1056,7 +1056,7 @@ export async function seedCountries() {
           processing_time:
             'Work permit: 1–4 months; Schengen visa: up to 15 days',
           investment_required:
-            'Application fees plus a salary meeting the statutory maintenance requirement',
+            'Work permit: SEK 34,470/month, equal to 90% of the national median salary',
           language_requirement: 'Swedish (English widely spoken at work)',
         },
         {
@@ -1077,7 +1077,7 @@ export async function seedCountries() {
           processing_time:
             'Work permit: 1–4 months; Schengen visa: up to 15 days',
           investment_required:
-            'Application fees plus a salary meeting the statutory maintenance requirement',
+            'Work permit: SEK 34,470/month, equal to 90% of the national median salary',
           language_requirement: 'Swedish (English widely spoken at work)',
         },
         {
@@ -1098,7 +1098,7 @@ export async function seedCountries() {
           processing_time:
             'Work permit: 1–4 months; Schengen visa: up to 15 days',
           investment_required:
-            'Application fees plus a salary meeting the statutory maintenance requirement',
+            'Work permit: SEK 34,470/month, equal to 90% of the national median salary',
           language_requirement: 'Swedish (English widely spoken at work)',
         },
       ],
@@ -1165,7 +1165,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+            'Lump-sum taxation route: minimum taxable base of CHF 435,000, higher in some cantons',
           language_requirement:
             'German, French or Italian depending on the canton',
         },
@@ -1186,7 +1186,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+            'Lump-sum taxation route: minimum taxable base of CHF 435,000, higher in some cantons',
           language_requirement:
             'German, French or Italian depending on the canton',
         },
@@ -1207,7 +1207,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–3 months',
           investment_required:
-            'Permit fees plus proof of means (CHF 100,000–300,000 for non-working residence routes)',
+            'Lump-sum taxation route: minimum taxable base of CHF 435,000, higher in some cantons',
           language_requirement:
             'German, French or Italian depending on the canton',
         },
@@ -2130,7 +2130,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+            'Red-White-Red Card: 70 of 100 points; Other Key Workers need €3,465/month gross',
           language_requirement: 'German (A1 before arrival for most routes)',
         },
         {
@@ -2150,7 +2150,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+            'Red-White-Red Card: 70 of 100 points; Other Key Workers need €3,465/month gross',
           language_requirement: 'German (A1 before arrival for most routes)',
         },
         {
@@ -2170,7 +2170,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Application fees plus proof of funds; the Red-White-Red Card requires meeting a points threshold',
+            'Red-White-Red Card: 70 of 100 points; Other Key Workers need €3,465/month gross',
           language_requirement: 'German (A1 before arrival for most routes)',
         },
       ],
