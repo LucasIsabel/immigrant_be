@@ -146,7 +146,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -166,7 +167,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -186,7 +188,8 @@ export async function seedCountries() {
             'Frequent immigration policy changes',
             'High cumulative visa and health surcharge costs',
           ],
-          processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
+          processing_time:
+            '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
             'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
@@ -197,7 +200,8 @@ export async function seedCountries() {
           category: 'Visitor & Short-Stay Visas',
           description:
             'Visas for tourism, business, short stays up to six months or airport transit.',
-          source: 'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
+          source:
+            'https://www.gov.uk/browse/visas-immigration/tourist-short-stay-visas',
         },
         {
           category: 'Work Visas',
@@ -246,21 +250,21 @@ export async function seedCountries() {
           description:
             'O sistema Express Entry processa 80% dos pedidos em até 6 meses, e aplicações fora do Canadá levam +3‑4 meses para retorno de documentos.',
           benefits: [
-            'Publicly funded healthcare',
-            'High-quality education system',
-            'Strong multicultural integration',
-            'Clear path from temporary status to permanent residence',
+            'Saúde pública custeada pelo Estado',
+            'Sistema educacional de alta qualidade',
+            'Forte integração multicultural',
+            'Caminho claro do status temporário à residência permanente',
           ],
           challenges: [
-            'Harsh winters across most of the country',
-            'High cost of living in Toronto and Vancouver',
-            'Competitive Express Entry cut-off scores',
+            'Invernos rigorosos na maior parte do país',
+            'Custo de vida alto em Toronto e Vancouver',
+            'Notas de corte competitivas no Express Entry',
           ],
           processing_time:
-            '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
+            '80% dos pedidos de PR em até 6 meses; some 3–4 meses se aplicar do exterior',
           investment_required:
-            'IRCC fees plus settlement funds of CAD 15,300, set at 50% of the LICO each year',
-          language_requirement: 'English or French (CLB 7+)',
+            'Taxas do IRCC mais fundos de estabelecimento de CAD 15.300, fixados em 50% do LICO a cada ano',
+          language_requirement: 'Inglês ou francês (CLB 7+)',
         },
         {
           language: 'en',
@@ -288,21 +292,21 @@ export async function seedCountries() {
           description:
             'El sistema Express Entry de Canadá procesa el 80 % de solicitudes de residencia permanente en 6 meses, con 3–4 meses adicionales para devolución de pasaporte en el exterior.',
           benefits: [
-            'Publicly funded healthcare',
-            'High-quality education system',
-            'Strong multicultural integration',
-            'Clear path from temporary status to permanent residence',
+            'Sanidad pública financiada por el Estado',
+            'Sistema educativo de alta calidad',
+            'Fuerte integración multicultural',
+            'Camino claro del estatus temporal a la residencia permanente',
           ],
           challenges: [
-            'Harsh winters across most of the country',
-            'High cost of living in Toronto and Vancouver',
-            'Competitive Express Entry cut-off scores',
+            'Inviernos rigurosos en la mayor parte del país',
+            'Alto costo de vida en Toronto y Vancouver',
+            'Puntajes de corte competitivos en Express Entry',
           ],
           processing_time:
-            '80% of PR applications within 6 months; add 3–4 months when applying from abroad',
+            '80% de las solicitudes de PR en 6 meses; suma 3–4 meses si aplicas desde el exterior',
           investment_required:
-            'IRCC fees plus settlement funds of CAD 15,300, set at 50% of the LICO each year',
-          language_requirement: 'English or French (CLB 7+)',
+            'Tasas del IRCC más fondos de asentamiento de CAD 15.300, fijados en 50% del LICO cada año',
+          language_requirement: 'Inglés o francés (CLB 7+)',
         },
       ],
       immigration_visa_types: [
@@ -370,21 +374,21 @@ export async function seedCountries() {
           description:
             'O visto Skilled Permanente leva cerca de 10 meses, e o temporário (482) tem tempo mediano de 98 dias, segundo governo austríaco.',
           benefits: [
-            'High quality of life',
-            'Medicare public healthcare',
-            'Low crime rates',
-            'Strong wages and workplace protections',
+            'Alta qualidade de vida',
+            'Saúde pública pelo Medicare',
+            'Baixos índices de criminalidade',
+            'Salários altos e forte proteção trabalhista',
           ],
           challenges: [
-            'High housing costs in major cities',
-            'Geographic distance from Europe and the Americas',
-            'Points-tested migration with fluctuating cut-offs',
+            'Custo alto de moradia nas grandes cidades',
+            'Distância geográfica da Europa e das Américas',
+            'Migração por pontos com notas de corte flutuantes',
           ],
           processing_time:
-            'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
+            'Skilled (Permanente): ~10 meses; Skilled (Temporário): mediana de ~98 dias',
           investment_required:
-            'Visa charges only — no fixed settlement funds; the 190 needs a state-set financial declaration',
-          language_requirement: 'English (IELTS 6 or above)',
+            'Só as taxas do visto — não há fundos de estabelecimento fixos; o 190 exige declaração financeira definida pelo estado',
+          language_requirement: 'Inglês (IELTS 6 ou superior)',
         },
         {
           language: 'en',
@@ -412,21 +416,21 @@ export async function seedCountries() {
           description:
             'Los visados cualificados permanentes de Australia tardan unos 10 meses, mientras que el 482 temporal tiene un tiempo medio de 98 días, según el Ministerio.',
           benefits: [
-            'High quality of life',
-            'Medicare public healthcare',
-            'Low crime rates',
-            'Strong wages and workplace protections',
+            'Alta calidad de vida',
+            'Sanidad pública por Medicare',
+            'Bajos índices de criminalidad',
+            'Salarios altos y fuerte protección laboral',
           ],
           challenges: [
-            'High housing costs in major cities',
-            'Geographic distance from Europe and the Americas',
-            'Points-tested migration with fluctuating cut-offs',
+            'Alto costo de vivienda en las grandes ciudades',
+            'Distancia geográfica de Europa y las Américas',
+            'Migración por puntos con notas de corte fluctuantes',
           ],
           processing_time:
-            'Skilled (Permanent): ~10 months; Skilled (Temporary): ~98 days median',
+            'Skilled (Permanente): ~10 meses; Skilled (Temporal): mediana de ~98 días',
           investment_required:
-            'Visa charges only — no fixed settlement funds; the 190 needs a state-set financial declaration',
-          language_requirement: 'English (IELTS 6 or above)',
+            'Solo las tasas del visado — no hay fondos de asentamiento fijos; el 190 exige declaración financiera definida por el estado',
+          language_requirement: 'Inglés (IELTS 6 o superior)',
         },
       ],
       immigration_visa_types: [
@@ -498,7 +502,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -518,7 +523,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
         {
@@ -538,7 +544,8 @@ export async function seedCountries() {
           ],
           processing_time:
             'Certificate of Eligibility: 1–3 months; consular issuance ~1 week after that',
-          investment_required: 'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
+          investment_required:
+            'Varies by status of residence; the digital nomad visa requires ¥10 million/year',
           language_requirement: 'Japanese (JLPT N2 recommended)',
         },
       ],
@@ -716,20 +723,20 @@ export async function seedCountries() {
           description:
             'O visto Skilled Migrant leva aproximadamente 12–16 meses, conforme o Immigration NZ.',
           benefits: [
-            'High quality of life and work-life balance',
-            'Outstanding natural environment',
-            'Low crime rates',
-            'Straightforward residence pathway for skilled workers',
+            'Alta qualidade de vida e equilíbrio entre trabalho e vida pessoal',
+            'Meio ambiente natural excepcional',
+            'Baixos índices de criminalidade',
+            'Caminho direto à residência para trabalhadores qualificados',
           ],
           challenges: [
-            'Geographic isolation and expensive flights',
-            'Small domestic job market',
-            'High housing costs in Auckland',
+            'Isolamento geográfico e passagens caras',
+            'Mercado de trabalho interno pequeno',
+            'Custo alto de moradia em Auckland',
           ],
-          processing_time: 'Skilled Migrant Category: ~12–16 months',
+          processing_time: 'Skilled Migrant Category: ~12–16 meses',
           investment_required:
-            'Skilled Migrant: 6 points plus a skilled job offer; student visa needs NZD 20,000/year',
-          language_requirement: 'English (IELTS 6.5 or above)',
+            'Skilled Migrant: 6 pontos mais oferta de emprego qualificado; o visto de estudante exige NZD 20.000/ano',
+          language_requirement: 'Inglês (IELTS 6.5 ou superior)',
         },
         {
           language: 'en',
@@ -756,20 +763,20 @@ export async function seedCountries() {
           description:
             'El visado Skilled Migrant tarda aproximadamente 12–16 meses, según Immigration New Zealand.',
           benefits: [
-            'High quality of life and work-life balance',
-            'Outstanding natural environment',
-            'Low crime rates',
-            'Straightforward residence pathway for skilled workers',
+            'Alta calidad de vida y equilibrio entre trabajo y vida personal',
+            'Entorno natural excepcional',
+            'Bajos índices de criminalidad',
+            'Camino directo a la residencia para trabajadores calificados',
           ],
           challenges: [
-            'Geographic isolation and expensive flights',
-            'Small domestic job market',
-            'High housing costs in Auckland',
+            'Aislamiento geográfico y pasajes caros',
+            'Mercado laboral interno pequeño',
+            'Alto costo de vivienda en Auckland',
           ],
-          processing_time: 'Skilled Migrant Category: ~12–16 months',
+          processing_time: 'Skilled Migrant Category: ~12–16 meses',
           investment_required:
-            'Skilled Migrant: 6 points plus a skilled job offer; student visa needs NZD 20,000/year',
-          language_requirement: 'English (IELTS 6.5 or above)',
+            'Skilled Migrant: 6 puntos más oferta de empleo calificado; el visado de estudiante exige NZD 20.000/año',
+          language_requirement: 'Inglés (IELTS 6.5 o superior)',
         },
       ],
       immigration_visa_types: [
@@ -837,7 +844,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -856,7 +864,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
         {
@@ -875,7 +884,8 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
+          investment_required:
+            'Critical Skills Permit: €40,904/year, or €68,911 without a degree; raised annually',
           language_requirement: 'English',
         },
       ],
@@ -1263,20 +1273,22 @@ export async function seedCountries() {
           description:
             'O visto EB‑5 exige investimento de US$ 800 000 (TEA) ou US$ 1.050 000, além de taxas. O H‑1B tem tarifas que variam e o E‑2 geralmente exige investimento de pelo menos US$ 100 000. Fonte: USCIS e Wikipedia EB‑5.',
           benefits: [
-            'Largest economy and deepest job market in the world',
-            'Highest salaries in technology and specialised fields',
-            'Strong culture of innovation and entrepreneurship',
-            'Wide cultural diversity in major metropolitan areas',
+            'Maior economia e mercado de trabalho mais profundo do mundo',
+            'Salários mais altos em tecnologia e áreas especializadas',
+            'Forte cultura de inovação e empreendedorismo',
+            'Ampla diversidade cultural nas grandes metrópoles',
           ],
           challenges: [
-            'Complex, lengthy and quota-limited processes',
-            'Expensive private healthcare tied to employment',
-            'Green card backlogs of years or decades for some nationalities',
+            'Processos complexos, longos e limitados por cotas',
+            'Saúde privada cara e atrelada ao emprego',
+            'Fila do green card de anos ou décadas para algumas nacionalidades',
           ],
-          processing_time: '6–24 months, varying heavily by visa category',
+          processing_time:
+            '6–24 meses, variando muito conforme a categoria do visto',
           investment_required:
-            'EB-5: US$800,000 in a targeted employment area, or US$1,050,000 otherwise',
-          language_requirement: 'English (no formal test for most categories)',
+            'EB-5: US$800.000 em área de emprego prioritário, ou US$1.050.000 fora dela',
+          language_requirement:
+            'Inglês (sem teste formal na maioria das categorias)',
         },
         {
           language: 'en',
@@ -1303,20 +1315,22 @@ export async function seedCountries() {
           description:
             'La visa EB-5 requiere una inversión de US$800,000 (TEA) o US$1,050,000, además de tasas. La H-1B tiene tarifas variables y la E-2 generalmente requiere una inversión de al menos US$100,000. Fuente: USCIS y Wikipedia EB-5.',
           benefits: [
-            'Largest economy and deepest job market in the world',
-            'Highest salaries in technology and specialised fields',
-            'Strong culture of innovation and entrepreneurship',
-            'Wide cultural diversity in major metropolitan areas',
+            'Mayor economía y mercado laboral más profundo del mundo',
+            'Salarios más altos en tecnología y áreas especializadas',
+            'Fuerte cultura de innovación y emprendimiento',
+            'Amplia diversidad cultural en las grandes metrópolis',
           ],
           challenges: [
-            'Complex, lengthy and quota-limited processes',
-            'Expensive private healthcare tied to employment',
-            'Green card backlogs of years or decades for some nationalities',
+            'Procesos complejos, largos y limitados por cuotas',
+            'Sanidad privada cara y atada al empleo',
+            'Filas de green card de años o décadas para algunas nacionalidades',
           ],
-          processing_time: '6–24 months, varying heavily by visa category',
+          processing_time:
+            '6–24 meses, variando mucho según la categoría de visado',
           investment_required:
-            'EB-5: US$800,000 in a targeted employment area, or US$1,050,000 otherwise',
-          language_requirement: 'English (no formal test for most categories)',
+            'EB-5: US$800.000 en área de empleo prioritario, o US$1.050.000 fuera de ella',
+          language_requirement:
+            'Inglés (sin examen formal en la mayoría de las categorías)',
         },
       ],
       immigration_visa_types: [
@@ -2548,20 +2562,20 @@ export async function seedCountries() {
           description:
             'O México oferece residência temporária e permanente com requisitos de renda acessíveis, sendo um dos principais destinos de nômades digitais das Américas.',
           benefits: [
-            'Low cost of living',
-            'Proximity and time-zone overlap with the United States',
-            'Accessible temporary residency requirements',
-            'Large established expat and digital nomad community',
+            'Custo de vida baixo',
+            'Proximidade e sobreposição de fuso com os Estados Unidos',
+            'Requisitos acessíveis de residência temporária',
+            'Comunidade grande e consolidada de expatriados e nômades digitais',
           ],
           challenges: [
-            'Security varies considerably by region',
-            'INM bureaucracy and inconsistent consulate criteria',
-            'Large informal labour market',
+            'Segurança varia bastante por região',
+            'Burocracia do INM e critérios inconsistentes entre consulados',
+            'Mercado de trabalho informal extenso',
           ],
-          processing_time: '10–30 days',
+          processing_time: '10–30 dias',
           investment_required:
-            'Temporary residency: US$4,200/month in income or US$70,000 in savings, UMA-indexed',
-          language_requirement: 'Spanish (basic)',
+            'Residência temporária: US$4.200/mês de renda ou US$70.000 em poupança, indexado à UMA',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -2588,20 +2602,20 @@ export async function seedCountries() {
           description:
             'México ofrece residencia temporal y permanente con requisitos de ingresos accesibles, y es uno de los principales destinos de nómadas digitales de América.',
           benefits: [
-            'Low cost of living',
-            'Proximity and time-zone overlap with the United States',
-            'Accessible temporary residency requirements',
-            'Large established expat and digital nomad community',
+            'Bajo costo de vida',
+            'Cercanía y coincidencia horaria con Estados Unidos',
+            'Requisitos accesibles de residencia temporal',
+            'Comunidad amplia y consolidada de expatriados y nómadas digitales',
           ],
           challenges: [
-            'Security varies considerably by region',
-            'INM bureaucracy and inconsistent consulate criteria',
-            'Large informal labour market',
+            'La seguridad varía bastante según la región',
+            'Burocracia del INM y criterios inconsistentes entre consulados',
+            'Mercado laboral informal extenso',
           ],
-          processing_time: '10–30 days',
+          processing_time: '10–30 días',
           investment_required:
-            'Temporary residency: US$4,200/month in income or US$70,000 in savings, UMA-indexed',
-          language_requirement: 'Spanish (basic)',
+            'Residencia temporal: US$4.200/mes de ingresos o US$70.000 en ahorros, indexado a la UMA',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -3556,20 +3570,20 @@ export async function seedCountries() {
           description:
             'O Panamá oferece o Friendly Nations Visa, o programa Pensionado para aposentados e tributação territorial, com o dólar americano como moeda oficial.',
           benefits: [
-            'Territorial tax system — foreign income is not taxed locally',
-            'US dollar used as legal tender',
-            'Pensionado programme with wide statutory discounts',
-            'Regional logistics and banking hub',
+            'Sistema tributário territorial — renda estrangeira não é tributada localmente',
+            'Dólar americano em circulação legal',
+            'Programa Pensionado com amplos descontos previstos em lei',
+            'Polo regional de logística e serviços bancários',
           ],
           challenges: [
-            'Applications legally require a local lawyer',
-            'High cost of living in Panama City',
-            'Marked inequality outside the capital',
+            'A lei exige advogado local para protocolar o pedido',
+            'Custo de vida alto na Cidade do Panamá',
+            'Desigualdade acentuada fora da capital',
           ],
-          processing_time: '3–6 months',
+          processing_time: '3–6 meses',
           investment_required:
-            'Friendly Nations: US$200,000 in property or a 3-year deposit; Qualified Investor from US$300,000',
-          language_requirement: 'Spanish (basic)',
+            'Friendly Nations: US$200.000 em imóvel ou depósito de 3 anos; Qualified Investor a partir de US$300.000',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -3596,20 +3610,20 @@ export async function seedCountries() {
           description:
             'Panamá ofrece el Friendly Nations Visa, el programa Pensionado para jubilados y tributación territorial, con el dólar estadounidense como moneda de curso legal.',
           benefits: [
-            'Territorial tax system — foreign income is not taxed locally',
-            'US dollar used as legal tender',
-            'Pensionado programme with wide statutory discounts',
-            'Regional logistics and banking hub',
+            'Sistema tributario territorial — la renta extranjera no se grava localmente',
+            'Dólar estadounidense de curso legal',
+            'Programa Pensionado con amplios descuentos previstos por ley',
+            'Centro regional de logística y servicios bancarios',
           ],
           challenges: [
-            'Applications legally require a local lawyer',
-            'High cost of living in Panama City',
-            'Marked inequality outside the capital',
+            'La ley exige abogado local para presentar la solicitud',
+            'Alto costo de vida en Ciudad de Panamá',
+            'Marcada desigualdad fuera de la capital',
           ],
-          processing_time: '3–6 months',
+          processing_time: '3–6 meses',
           investment_required:
-            'Friendly Nations: US$200,000 in property or a 3-year deposit; Qualified Investor from US$300,000',
-          language_requirement: 'Spanish (basic)',
+            'Friendly Nations: US$200.000 en inmueble o depósito a 3 años; Qualified Investor desde US$300.000',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -3668,20 +3682,20 @@ export async function seedCountries() {
           description:
             'A Costa Rica oferece as vias Rentista, Pensionado e Inversionista, além de visto específico para nômades digitais, com forte estabilidade política.',
           benefits: [
-            'Long-standing political stability and no standing army',
-            'Outstanding biodiversity and natural environment',
-            'Public healthcare system (CCSS) open to legal residents',
-            'Established digital nomad legislation',
+            'Estabilidade política de longa data e ausência de forças armadas',
+            'Biodiversidade e meio ambiente excepcionais',
+            'Sistema público de saúde (CCSS) aberto a residentes legais',
+            'Legislação consolidada para nômades digitais',
           ],
           challenges: [
-            'High cost of living by regional standards',
-            'Local labour market largely closed to foreign residents',
-            'Slow immigration processing times',
+            'Custo de vida alto para o padrão regional',
+            'Mercado de trabalho local praticamente fechado a residentes estrangeiros',
+            'Prazos migratórios lentos',
           ],
-          processing_time: '3–9 months',
+          processing_time: '3–9 meses',
           investment_required:
-            'Rentista: US$2,500/month for two years; Inversionista US$200,000 after the reduced tier lapsed',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$2.500/mês por dois anos; Inversionista US$200.000 após a caducidade do tier reduzido',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -3708,20 +3722,20 @@ export async function seedCountries() {
           description:
             'Costa Rica ofrece las vías Rentista, Pensionado e Inversionista, además de un visado específico para nómadas digitales, con fuerte estabilidad política.',
           benefits: [
-            'Long-standing political stability and no standing army',
-            'Outstanding biodiversity and natural environment',
-            'Public healthcare system (CCSS) open to legal residents',
-            'Established digital nomad legislation',
+            'Estabilidad política de larga data y ausencia de fuerzas armadas',
+            'Biodiversidad y entorno natural excepcionales',
+            'Sistema público de salud (CCSS) abierto a residentes legales',
+            'Legislación consolidada para nómadas digitales',
           ],
           challenges: [
-            'High cost of living by regional standards',
-            'Local labour market largely closed to foreign residents',
-            'Slow immigration processing times',
+            'Alto costo de vida para el estándar regional',
+            'Mercado laboral local prácticamente cerrado a residentes extranjeros',
+            'Plazos migratorios lentos',
           ],
-          processing_time: '3–9 months',
+          processing_time: '3–9 meses',
           investment_required:
-            'Rentista: US$2,500/month for two years; Inversionista US$200,000 after the reduced tier lapsed',
-          language_requirement: 'Spanish (basic)',
+            'Rentista: US$2.500/mes por dos años; Inversionista US$200.000 tras la caducidad del tramo reducido',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -5573,20 +5587,20 @@ export async function seedCountries() {
           description:
             'A República Dominicana tem via rápida de residência para aposentados e rentistas, com cidadania possível após seis meses de residência permanente.',
           benefits: [
-            'Fast-track residence for pensioners and rentiers',
-            'Low cost of living',
-            'Caribbean climate and extensive coastline',
-            'Citizenship possible after six months of permanent residence',
+            'Residência acelerada para aposentados e rentistas',
+            'Custo de vida baixo',
+            'Clima caribenho e litoral extenso',
+            'Cidadania possível após seis meses de residência permanente',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Uneven infrastructure outside tourist areas',
-            'Exposure to the Atlantic hurricane season',
+            'Mercado de trabalho local limitado para estrangeiros',
+            'Infraestrutura desigual fora das áreas turísticas',
+            'Exposição à temporada de furacões do Atlântico',
           ],
-          processing_time: '2–5 months',
+          processing_time: '2–5 meses',
           investment_required:
-            'Pensionado US$1,500/month, Rentista US$2,000/month, or US$200,000 invested',
-          language_requirement: 'Spanish (basic)',
+            'Pensionado US$1.500/mês, Rentista US$2.000/mês, ou US$200.000 investidos',
+          language_requirement: 'Espanhol (básico)',
         },
         {
           language: 'en',
@@ -5613,20 +5627,20 @@ export async function seedCountries() {
           description:
             'La República Dominicana tiene una vía rápida de residencia para jubilados y rentistas, con ciudadanía posible tras seis meses de residencia permanente.',
           benefits: [
-            'Fast-track residence for pensioners and rentiers',
-            'Low cost of living',
-            'Caribbean climate and extensive coastline',
-            'Citizenship possible after six months of permanent residence',
+            'Residencia acelerada para jubilados y rentistas',
+            'Bajo costo de vida',
+            'Clima caribeño y litoral extenso',
+            'Ciudadanía posible tras seis meses de residencia permanente',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Uneven infrastructure outside tourist areas',
-            'Exposure to the Atlantic hurricane season',
+            'Mercado laboral local limitado para extranjeros',
+            'Infraestructura desigual fuera de las zonas turísticas',
+            'Exposición a la temporada de huracanes del Atlántico',
           ],
-          processing_time: '2–5 months',
+          processing_time: '2–5 meses',
           investment_required:
-            'Pensionado US$1,500/month, Rentista US$2,000/month, or US$200,000 invested',
-          language_requirement: 'Spanish (basic)',
+            'Pensionado US$1.500/mes, Rentista US$2.000/mes, o US$200.000 invertidos',
+          language_requirement: 'Español (básico)',
         },
       ],
       immigration_visa_types: [
@@ -6598,21 +6612,21 @@ export async function seedCountries() {
           description:
             'A África do Sul oferece o Critical Skills Work Visa com caminho para residência permanente, com o inglês entre as línguas oficiais e custo de vida baixo.',
           benefits: [
-            'English widely spoken across business and administration',
-            'Low cost of living by Western standards',
-            'Established permanent residence route for critical skills',
-            'Outstanding natural environment and climate',
+            'Inglês amplamente falado nos negócios e na administração',
+            'Custo de vida baixo para o padrão ocidental',
+            'Rota consolidada de residência permanente para competências críticas',
+            'Meio ambiente e clima excepcionais',
           ],
           challenges: [
-            'High crime rates in several major cities',
-            'Electricity load shedding and infrastructure instability',
-            'Slow and unpredictable visa processing',
+            'Índices altos de criminalidade em várias cidades grandes',
+            'Cortes programados de energia e instabilidade de infraestrutura',
+            'Processamento de vistos lento e imprevisível',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'Business visa: from ZAR 5,000,000 in capital, with exemptions for priority sectors',
+            'Business visa: a partir de ZAR 5.000.000 em capital, com isenções para setores prioritários',
           language_requirement:
-            'English is one of the official languages and dominant in business',
+            'O inglês é um dos idiomas oficiais e predomina nos negócios',
         },
         {
           language: 'en',
@@ -6640,21 +6654,21 @@ export async function seedCountries() {
           description:
             'Sudáfrica ofrece el Critical Skills Work Visa con vía a la residencia permanente, con el inglés entre las lenguas oficiales y un bajo coste de vida.',
           benefits: [
-            'English widely spoken across business and administration',
-            'Low cost of living by Western standards',
-            'Established permanent residence route for critical skills',
-            'Outstanding natural environment and climate',
+            'Inglés ampliamente hablado en los negocios y la administración',
+            'Bajo costo de vida para el estándar occidental',
+            'Ruta consolidada de residencia permanente para competencias críticas',
+            'Entorno natural y clima excepcionales',
           ],
           challenges: [
-            'High crime rates in several major cities',
-            'Electricity load shedding and infrastructure instability',
-            'Slow and unpredictable visa processing',
+            'Altos índices de criminalidad en varias ciudades grandes',
+            'Cortes programados de electricidad e inestabilidad de infraestructura',
+            'Tramitación de visados lenta e impredecible',
           ],
-          processing_time: '2–6 months',
+          processing_time: '2–6 meses',
           investment_required:
-            'Business visa: from ZAR 5,000,000 in capital, with exemptions for priority sectors',
+            'Business visa: desde ZAR 5.000.000 en capital, con exenciones para sectores prioritarios',
           language_requirement:
-            'English is one of the official languages and dominant in business',
+            'El inglés es uno de los idiomas oficiales y predomina en los negocios',
         },
       ],
       immigration_visa_types: [
@@ -6713,21 +6727,21 @@ export async function seedCountries() {
           description:
             'O Marrocos permite entrada sem visto por até 90 dias para muitas nacionalidades e concede a Carte de Séjour, com custo de vida baixo e francês amplamente falado.',
           benefits: [
-            'Visa-free entry for many nationalities for up to 90 days',
-            'Very low cost of living',
-            'Close proximity and short flights to Europe',
-            'French widely spoken in business and administration',
+            'Entrada sem visto por até 90 dias para muitas nacionalidades',
+            'Custo de vida muito baixo',
+            'Proximidade da Europa e voos curtos',
+            'Francês amplamente falado nos negócios e na administração',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Slow and paper-based bureaucracy',
-            'Arabic or French is needed for daily life',
+            'Mercado de trabalho local limitado para estrangeiros',
+            'Burocracia lenta e baseada em papel',
+            'Árabe ou francês é necessário no dia a dia',
           ],
-          processing_time: '2 weeks to 3 months',
+          processing_time: '2 semanas a 3 meses',
           investment_required:
-            'No published income threshold; in practice US$1,000–1,500/month for retirees',
+            'Não há limiar de renda publicado; na prática US$1.000–1.500/mês para aposentados',
           language_requirement:
-            'Arabic and Amazigh official; French widely used in business',
+            'Árabe e amazigh oficiais; francês muito usado nos negócios',
         },
         {
           language: 'en',
@@ -6755,21 +6769,21 @@ export async function seedCountries() {
           description:
             'Marruecos permite la entrada sin visado hasta 90 días para muchas nacionalidades y concede la Carte de Séjour, con bajo coste de vida y francés ampliamente hablado.',
           benefits: [
-            'Visa-free entry for many nationalities for up to 90 days',
-            'Very low cost of living',
-            'Close proximity and short flights to Europe',
-            'French widely spoken in business and administration',
+            'Entrada sin visado hasta 90 días para muchas nacionalidades',
+            'Costo de vida muy bajo',
+            'Cercanía a Europa y vuelos cortos',
+            'Francés ampliamente hablado en los negocios y la administración',
           ],
           challenges: [
-            'Limited local labour market for foreigners',
-            'Slow and paper-based bureaucracy',
-            'Arabic or French is needed for daily life',
+            'Mercado laboral local limitado para extranjeros',
+            'Burocracia lenta y basada en papel',
+            'Se necesita árabe o francés en el día a día',
           ],
-          processing_time: '2 weeks to 3 months',
+          processing_time: '2 semanas a 3 meses',
           investment_required:
-            'No published income threshold; in practice US$1,000–1,500/month for retirees',
+            'No hay umbral de ingresos publicado; en la práctica US$1.000–1.500/mes para jubilados',
           language_requirement:
-            'Arabic and Amazigh official; French widely used in business',
+            'Árabe y amazigh oficiales; francés muy usado en los negocios',
         },
       ],
       immigration_visa_types: [
@@ -6828,21 +6842,21 @@ export async function seedCountries() {
           description:
             'O Egito oferece residência por investimento com caminho para cidadania, custo de vida muito baixo e clima quente o ano inteiro.',
           benefits: [
-            'Very low cost of living',
-            'Residence by investment route with a path to citizenship',
-            'Warm climate throughout the year',
-            'Major historical and archaeological heritage',
+            'Custo de vida muito baixo',
+            'Rota de residência por investimento com caminho à cidadania',
+            'Clima quente o ano todo',
+            'Patrimônio histórico e arqueológico de grande porte',
           ],
           challenges: [
-            'Heavy bureaucracy',
-            'Currency volatility',
-            'Limited local labour market for foreigners',
+            'Burocracia pesada',
+            'Volatilidade cambial',
+            'Mercado de trabalho local limitado para estrangeiros',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence by property purchase: US$50,000 for one year, US$100,000 for three, US$200,000 for five',
+            'Residência por compra de imóvel: US$50.000 por um ano, US$100.000 por três, US$200.000 por cinco',
           language_requirement:
-            'Arabic (English used in international business)',
+            'Árabe (inglês usado nos negócios internacionais)',
         },
         {
           language: 'en',
@@ -6870,21 +6884,21 @@ export async function seedCountries() {
           description:
             'Egipto ofrece residencia por inversión con vía a la ciudadanía, un coste de vida muy bajo y clima cálido todo el año.',
           benefits: [
-            'Very low cost of living',
-            'Residence by investment route with a path to citizenship',
-            'Warm climate throughout the year',
-            'Major historical and archaeological heritage',
+            'Costo de vida muy bajo',
+            'Ruta de residencia por inversión con camino a la ciudadanía',
+            'Clima cálido durante todo el año',
+            'Patrimonio histórico y arqueológico de gran envergadura',
           ],
           challenges: [
-            'Heavy bureaucracy',
-            'Currency volatility',
-            'Limited local labour market for foreigners',
+            'Burocracia pesada',
+            'Volatilidad cambiaria',
+            'Mercado laboral local limitado para extranjeros',
           ],
-          processing_time: '1–3 months',
+          processing_time: '1–3 meses',
           investment_required:
-            'Residence by property purchase: US$50,000 for one year, US$100,000 for three, US$200,000 for five',
+            'Residencia por compra de inmueble: US$50.000 por un año, US$100.000 por tres, US$200.000 por cinco',
           language_requirement:
-            'Arabic (English used in international business)',
+            'Árabe (inglés usado en los negocios internacionales)',
         },
       ],
       immigration_visa_types: [
