@@ -4571,7 +4571,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'MM2H: fixed deposit from RM500,000 depending on the tier',
+            'MM2H Silver: US$150,000 deposit plus RM600,000 property; Gold US$500,000; Platinum US$1M',
           language_requirement: 'Malay official; English widely spoken',
         },
         {
@@ -4591,7 +4591,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'MM2H: fixed deposit from RM500,000 depending on the tier',
+            'MM2H Silver: US$150,000 deposit plus RM600,000 property; Gold US$500,000; Platinum US$1M',
           language_requirement: 'Malay official; English widely spoken',
         },
         {
@@ -4611,7 +4611,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 months',
           investment_required:
-            'MM2H: fixed deposit from RM500,000 depending on the tier',
+            'MM2H Silver: US$150,000 deposit plus RM600,000 property; Gold US$500,000; Platinum US$1M',
           language_requirement: 'Malay official; English widely spoken',
         },
       ],
@@ -4799,7 +4799,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+            'Residence from QAR 730,000 in freehold property; permanent residency from QAR 3.65 million',
           language_requirement: 'Arabic official; English used widely at work',
         },
         {
@@ -4819,7 +4819,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+            'Residence from QAR 730,000 in freehold property; permanent residency from QAR 3.65 million',
           language_requirement: 'Arabic official; English used widely at work',
         },
         {
@@ -4839,7 +4839,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Investor residency: from QAR 1,000,000 in qualifying real estate',
+            'Residence from QAR 730,000 in freehold property; permanent residency from QAR 3.65 million',
           language_requirement: 'Arabic official; English used widely at work',
         },
       ],
