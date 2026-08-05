@@ -148,7 +148,7 @@ export async function seedCountries() {
           ],
           processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
-            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+            'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
         },
         {
@@ -168,7 +168,7 @@ export async function seedCountries() {
           ],
           processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
-            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+            'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
         },
         {
@@ -188,7 +188,7 @@ export async function seedCountries() {
           ],
           processing_time: '3 weeks from outside the UK; 8 weeks to switch or extend from inside',
           investment_required:
-            'Visa fee plus Immigration Health Surcharge and Certificate of Sponsorship fee',
+            'Skilled Worker: salary from £38,700/year; visa fee £819 plus £1,035/year surcharge',
           language_requirement: 'English (B1 or above)',
         },
       ],
@@ -6383,7 +6383,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 weeks',
           investment_required:
-            'Employment visa requires an annual salary above the statutory threshold',
+            'Employment visa: gross salary from US$25,000/year, about INR 16.25 lakh',
           language_requirement:
             'English is widely used in business and administration',
         },
@@ -6404,7 +6404,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 weeks',
           investment_required:
-            'Employment visa requires an annual salary above the statutory threshold',
+            'Employment visa: gross salary from US$25,000/year, about INR 16.25 lakh',
           language_requirement:
             'English is widely used in business and administration',
         },
@@ -6425,7 +6425,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–6 weeks',
           investment_required:
-            'Employment visa requires an annual salary above the statutory threshold',
+            'Employment visa: gross salary from US$25,000/year, about INR 16.25 lakh',
           language_requirement:
             'English is widely used in business and administration',
         },
@@ -6723,9 +6723,9 @@ export async function seedCountries() {
             'Slow and paper-based bureaucracy',
             'Arabic or French is needed for daily life',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2 weeks to 3 months',
           investment_required:
-            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+            'No published income threshold; in practice US$1,000–1,500/month for retirees',
           language_requirement:
             'Arabic and Amazigh official; French widely used in business',
         },
@@ -6744,9 +6744,9 @@ export async function seedCountries() {
             'Slow and paper-based bureaucracy',
             'Arabic or French is needed for daily life',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2 weeks to 3 months',
           investment_required:
-            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+            'No published income threshold; in practice US$1,000–1,500/month for retirees',
           language_requirement:
             'Arabic and Amazigh official; French widely used in business',
         },
@@ -6765,9 +6765,9 @@ export async function seedCountries() {
             'Slow and paper-based bureaucracy',
             'Arabic or French is needed for daily life',
           ],
-          processing_time: '2–4 months',
+          processing_time: '2 weeks to 3 months',
           investment_required:
-            'Residence requires proof of sufficient means; investor thresholds vary by sector',
+            'No published income threshold; in practice US$1,000–1,500/month for retirees',
           language_requirement:
             'Arabic and Amazigh official; French widely used in business',
         },
