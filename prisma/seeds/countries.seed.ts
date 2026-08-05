@@ -837,7 +837,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
           language_requirement: 'English',
         },
         {
@@ -856,7 +856,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
           language_requirement: 'English',
         },
         {
@@ -875,7 +875,7 @@ export async function seedCountries() {
             'High cost of living in Dublin',
           ],
           processing_time: 'Critical Skills Employment Permit: ~8–12 weeks',
-          investment_required: 'Permit fees plus proof of funds (≈€12,000)',
+          investment_required: 'Critical Skills Permit: salary from €40,904/year, or €68,911 without a relevant degree',
           language_requirement: 'English',
         },
       ],
@@ -1810,7 +1810,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+            'Elective residency: €31,160/year in passive income; investor visa from €250,000',
           language_requirement: 'Italian (basic; B1 for citizenship)',
         },
         {
@@ -1830,7 +1830,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+            'Elective residency: €31,160/year in passive income; investor visa from €250,000',
           language_requirement: 'Italian (basic; B1 for citizenship)',
         },
         {
@@ -1850,7 +1850,7 @@ export async function seedCountries() {
           ],
           processing_time: '2–4 months',
           investment_required:
-            'Elective residency: ≈€31,000/year in passive income; investor visa from €250,000',
+            'Elective residency: €31,160/year in passive income; investor visa from €250,000',
           language_requirement: 'Italian (basic; B1 for citizenship)',
         },
       ],
@@ -2778,7 +2778,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
           language_requirement: 'Danish (required for permanent residence)',
         },
         {
@@ -2798,7 +2798,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
           language_requirement: 'Danish (required for permanent residence)',
         },
         {
@@ -2818,7 +2818,7 @@ export async function seedCountries() {
           ],
           processing_time: '1–3 months',
           investment_required:
-            'Pay Limit Scheme: annual salary above the statutory threshold set each year',
+            'Pay Limit Scheme: DKK 552,000/year, or DKK 446,000 under the supplementary scheme',
           language_requirement: 'Danish (required for permanent residence)',
         },
       ],
