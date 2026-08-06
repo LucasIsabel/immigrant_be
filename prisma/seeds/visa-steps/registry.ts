@@ -2,6 +2,7 @@ import { argentina } from './argentina';
 import { australia } from './australia';
 import { brazil } from './brazil';
 import { canada } from './canada';
+import { colombia } from './colombia';
 import { chile } from './chile';
 import { france } from './france';
 import { ireland } from './ireland';
@@ -9,6 +10,7 @@ import { germany } from './germany';
 import { italy } from './italy';
 import { japan } from './japan';
 import { netherlands } from './netherlands';
+import { paraguay } from './paraguay';
 import { newZealand } from './new-zealand';
 import { portugal } from './portugal';
 import { spain } from './spain';
@@ -36,6 +38,7 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Brazil: brazil,
   Canada: canada,
   Chile: chile,
+  Colombia: colombia,
   France: france,
   Germany: germany,
   Ireland: ireland,
@@ -43,6 +46,7 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Japan: japan,
   Netherlands: netherlands,
   'New Zealand': newZealand,
+  Paraguay: paraguay,
   Portugal: portugal,
   Spain: spain,
   Switzerland: switzerland,
