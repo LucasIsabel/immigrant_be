@@ -1,4 +1,7 @@
 import { canada } from './canada';
+import { france } from './france';
+import { germany } from './germany';
+import { italy } from './italy';
 import { portugal } from './portugal';
 import { spain } from './spain';
 import type { CountryVisaSteps } from './types';
@@ -19,6 +22,9 @@ import { unitedStates } from './united-states';
  */
 export const REGISTRY: Record<string, CountryVisaSteps> = {
   Canada: canada,
+  France: france,
+  Germany: germany,
+  Italy: italy,
   Portugal: portugal,
   Spain: spain,
   'United Kingdom': unitedKingdom,
