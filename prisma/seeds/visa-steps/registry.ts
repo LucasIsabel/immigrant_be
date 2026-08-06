@@ -4,6 +4,8 @@ import { brazil } from './brazil';
 import { canada } from './canada';
 import { colombia } from './colombia';
 import { chile } from './chile';
+import { costaRica } from './costa-rica';
+import { dominicanRepublic } from './dominican-republic';
 import { ecuador } from './ecuador';
 import { france } from './france';
 import { ireland } from './ireland';
@@ -43,6 +45,8 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Canada: canada,
   Chile: chile,
   Colombia: colombia,
+  'Costa Rica': costaRica,
+  'Dominican Republic': dominicanRepublic,
   Ecuador: ecuador,
   France: france,
   Germany: germany,
