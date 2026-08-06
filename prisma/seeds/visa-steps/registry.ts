@@ -14,12 +14,14 @@ import { italy } from './italy';
 import { japan } from './japan';
 import { mexico } from './mexico';
 import { netherlands } from './netherlands';
+import { norway } from './norway';
 import { panama } from './panama';
 import { paraguay } from './paraguay';
 import { newZealand } from './new-zealand';
 import { peru } from './peru';
 import { portugal } from './portugal';
 import { spain } from './spain';
+import { sweden } from './sweden';
 import { switzerland } from './switzerland';
 import type { CountryVisaSteps } from './types';
 import { unitedKingdom } from './united-kingdom';
@@ -56,11 +58,13 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Mexico: mexico,
   Netherlands: netherlands,
   'New Zealand': newZealand,
+  Norway: norway,
   Panama: panama,
   Paraguay: paraguay,
   Peru: peru,
   Portugal: portugal,
   Spain: spain,
+  Sweden: sweden,
   Switzerland: switzerland,
   'United Kingdom': unitedKingdom,
   'United States': unitedStates,
