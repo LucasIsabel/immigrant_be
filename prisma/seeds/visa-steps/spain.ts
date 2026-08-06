@@ -626,4 +626,246 @@ export const spain: CountryVisaSteps = {
       },
     ],
   },
+
+  'Permanent Residence / EU Long-Term Resident': {
+    core_documents: [
+      {
+        en: [
+          'Valid passport',
+          'Plus every TIE card issued during the period of residence.',
+        ],
+        pt: [
+          'Passaporte válido',
+          'Além de todos os cartões TIE emitidos durante o período de residência.',
+        ],
+        es: [
+          'Pasaporte vigente',
+          'Además de todas las tarjetas TIE emitidas durante el periodo de residencia.',
+        ],
+      },
+      {
+        en: [
+          'Form EX-11, completed',
+          'The specific form for long-term residence. Using the wrong EX form gets the file returned.',
+        ],
+        pt: [
+          'Formulário EX-11 preenchido',
+          'É o formulário específico da residência de longa duração. Usar o EX errado faz o processo ser devolvido.',
+        ],
+        es: [
+          'Formulario EX-11 cumplimentado',
+          'Es el formulario específico de la residencia de larga duración. Usar el EX equivocado hace que devuelvan el expediente.',
+        ],
+      },
+      {
+        en: [
+          'Proof of five years of continuous legal residence',
+          'Absences must not exceed six consecutive months, nor ten months in total across the five years.',
+        ],
+        pt: [
+          'Comprovação de cinco anos de residência legal contínua',
+          'As ausências não podem passar de seis meses seguidos, nem de dez meses somados ao longo dos cinco anos.',
+        ],
+        es: [
+          'Prueba de cinco años de residencia legal continuada',
+          'Las ausencias no pueden superar seis meses seguidos, ni diez meses sumados a lo largo de los cinco años.',
+        ],
+      },
+      {
+        en: [
+          'Certificate of registration on the padrón',
+          'The empadronamiento is what documents where and since when you have lived somewhere.',
+        ],
+        pt: [
+          'Certificado de empadronamiento',
+          'É o empadronamiento que documenta onde e desde quando você mora.',
+        ],
+        es: [
+          'Certificado de empadronamiento',
+          'El empadronamiento es lo que documenta dónde y desde cuándo vive.',
+        ],
+      },
+      {
+        en: [
+          'Three recent passport photographs',
+          'To Spanish specification, on a white background.',
+        ],
+        pt: [
+          'Três fotografias recentes tipo passe',
+          'No padrão espanhol, em fundo branco.',
+        ],
+        es: [
+          'Tres fotografías recientes tipo carné',
+          'Según el estándar español, con fondo blanco.',
+        ],
+      },
+    ],
+    financial_requirements: [
+      {
+        en: [
+          'Proof of income over the period',
+          'Employment contracts, payslips or self-employed returns covering the five years.',
+        ],
+        pt: [
+          'Comprovação de renda ao longo do período',
+          'Contratos de trabalho, holerites ou declarações de autônomo cobrindo os cinco anos.',
+        ],
+        es: [
+          'Prueba de ingresos a lo largo del periodo',
+          'Contratos de trabajo, nóminas o declaraciones de autónomo que cubran los cinco años.',
+        ],
+      },
+      {
+        en: [
+          'Social security contribution history',
+          'The vida laboral report, which also evidences the continuity of your residence.',
+        ],
+        pt: [
+          'Histórico de contribuições à seguridade social',
+          'O relatório de vida laboral, que também comprova a continuidade da residência.',
+        ],
+        es: [
+          'Historial de cotizaciones a la seguridad social',
+          'El informe de vida laboral, que además acredita la continuidad de la residencia.',
+        ],
+      },
+      {
+        en: [
+          'Tax situation in order',
+          'No outstanding debts with the tax agency or with social security.',
+        ],
+        pt: [
+          'Situação fiscal regularizada',
+          'Sem débitos pendentes com a agência tributária nem com a seguridade social.',
+        ],
+        es: [
+          'Situación fiscal regularizada',
+          'Sin deudas pendientes con la agencia tributaria ni con la seguridad social.',
+        ],
+        priority: 2,
+      },
+    ],
+    submission_fees: [
+      {
+        en: [
+          'Apply at the Oficina de Extranjería',
+          'Filed inside Spain, in the province where you live, with a prior appointment.',
+        ],
+        pt: [
+          'Submeter o pedido na Oficina de Extranjería',
+          'Feito dentro da Espanha, na província onde você mora, com cita previa.',
+        ],
+        es: [
+          'Presentar la solicitud en la Oficina de Extranjería',
+          'Se hace dentro de España, en la provincia donde reside, con cita previa.',
+        ],
+      },
+      {
+        en: [
+          'Pay the tasa modelo 790 código 052',
+          'Paid at a bank before submission; take the stamped receipt with the file.',
+        ],
+        pt: [
+          'Pagar a tasa modelo 790 código 052',
+          'Paga no banco antes da entrega; leve o comprovante carimbado junto do processo.',
+        ],
+        es: [
+          'Pagar la tasa modelo 790 código 052',
+          'Se paga en el banco antes de presentar; lleve el justificante sellado con el expediente.',
+        ],
+      },
+      {
+        en: [
+          'Apply before the current card expires',
+          'Filing late turns a renewal into an irregularity, and the five-year count can be lost.',
+        ],
+        pt: [
+          'Pedir antes de o cartão atual vencer',
+          'Pedir com atraso transforma uma renovação em irregularidade, e a contagem dos cinco anos pode se perder.',
+        ],
+        es: [
+          'Solicitar antes de que caduque la tarjeta actual',
+          'Solicitar tarde convierte una renovación en irregularidad, y el cómputo de los cinco años puede perderse.',
+        ],
+      },
+    ],
+    biometrics_health: [
+      {
+        en: [
+          'Fingerprinting appointment for the TIE',
+          'Booked separately, after the application is approved.',
+        ],
+        pt: [
+          'Cita para a toma de huellas do TIE',
+          'Agendada à parte, depois de o pedido ser aprovado.',
+        ],
+        es: [
+          'Cita para la toma de huellas del TIE',
+          'Se reserva aparte, después de que aprueben la solicitud.',
+        ],
+      },
+      {
+        en: [
+          'Registration with the public health system',
+          'Evidence of it also helps to demonstrate continuity of residence.',
+        ],
+        pt: [
+          'Inscrição no sistema público de saúde',
+          'O comprovativo também ajuda a demonstrar continuidade de residência.',
+        ],
+        es: [
+          'Inscripción en el sistema público de salud',
+          'El comprobante también ayuda a demostrar la continuidad de la residencia.',
+        ],
+        priority: 2,
+        required: false,
+      },
+    ],
+    post_approval_steps: [
+      {
+        en: [
+          'Collect the long-term residence TIE',
+          'The card is renewed every five years, but the right itself no longer expires.',
+        ],
+        pt: [
+          'Retirar o TIE de longa duração',
+          'O cartão é renovado a cada cinco anos, mas o direito em si já não caduca.',
+        ],
+        es: [
+          'Recoger el TIE de larga duración',
+          'La tarjeta se renueva cada cinco años, pero el derecho en sí ya no caduca.',
+        ],
+      },
+      {
+        en: [
+          'Note that long absences can still cost the status',
+          'Twelve consecutive months outside the European Union, or six years outside Spain, ends it.',
+        ],
+        pt: [
+          'Saber que ausências longas ainda podem custar o estatuto',
+          'Doze meses seguidos fora da União Europeia, ou seis anos fora da Espanha, o extinguem.',
+        ],
+        es: [
+          'Saber que las ausencias largas aún pueden costar el estatus',
+          'Doce meses seguidos fuera de la Unión Europea, o seis años fuera de España, lo extinguen.',
+        ],
+      },
+      {
+        en: [
+          'Consider applying for nationality',
+          'Nationals of Ibero-American countries qualify after two years of legal residence, well before long-term residence is reached.',
+        ],
+        pt: [
+          'Avaliar o pedido de nacionalidade',
+          'Nacionais de países ibero-americanos qualificam com dois anos de residência legal, bem antes de se atingir a residência de longa duração.',
+        ],
+        es: [
+          'Evaluar la solicitud de nacionalidad',
+          'Los nacionales de países iberoamericanos califican con dos años de residencia legal, mucho antes de alcanzar la residencia de larga duración.',
+        ],
+        priority: 2,
+        required: false,
+      },
+    ],
+  },
 };
