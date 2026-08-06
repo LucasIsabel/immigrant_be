@@ -1,12 +1,16 @@
 import { PrismaClient } from '../../generated/prisma';
 import { seedCountries } from './countries.seed';
 import { seedBlogCategories } from './blog-categories.seed';
+import { seedVisaSteps } from './visa-steps';
 
 const prisma = new PrismaClient();
 
 async function main() {
   try {
     await seedCountries();
+    // After the countries: the steps resolve their visa type by
+    // (country name, category), so the types have to exist first.
+    await seedVisaSteps();
     await seedBlogCategories();
     console.log('Database seeded successfully');
   } catch (error) {
