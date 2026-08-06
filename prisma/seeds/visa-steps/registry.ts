@@ -4,13 +4,17 @@ import { brazil } from './brazil';
 import { canada } from './canada';
 import { colombia } from './colombia';
 import { chile } from './chile';
+import { costaRica } from './costa-rica';
+import { dominicanRepublic } from './dominican-republic';
 import { ecuador } from './ecuador';
 import { france } from './france';
 import { ireland } from './ireland';
 import { germany } from './germany';
 import { italy } from './italy';
 import { japan } from './japan';
+import { mexico } from './mexico';
 import { netherlands } from './netherlands';
+import { panama } from './panama';
 import { paraguay } from './paraguay';
 import { newZealand } from './new-zealand';
 import { peru } from './peru';
@@ -41,14 +45,18 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Canada: canada,
   Chile: chile,
   Colombia: colombia,
+  'Costa Rica': costaRica,
+  'Dominican Republic': dominicanRepublic,
   Ecuador: ecuador,
   France: france,
   Germany: germany,
   Ireland: ireland,
   Italy: italy,
   Japan: japan,
+  Mexico: mexico,
   Netherlands: netherlands,
   'New Zealand': newZealand,
+  Panama: panama,
   Paraguay: paraguay,
   Peru: peru,
   Portugal: portugal,
