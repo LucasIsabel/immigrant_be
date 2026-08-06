@@ -14,6 +14,7 @@ import { italy } from './italy';
 import { japan } from './japan';
 import { mexico } from './mexico';
 import { netherlands } from './netherlands';
+import { norway } from './norway';
 import { panama } from './panama';
 import { paraguay } from './paraguay';
 import { newZealand } from './new-zealand';
@@ -57,6 +58,7 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Mexico: mexico,
   Netherlands: netherlands,
   'New Zealand': newZealand,
+  Norway: norway,
   Panama: panama,
   Paraguay: paraguay,
   Peru: peru,
