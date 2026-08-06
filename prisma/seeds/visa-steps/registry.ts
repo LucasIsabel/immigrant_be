@@ -4,8 +4,10 @@ import { france } from './france';
 import { ireland } from './ireland';
 import { germany } from './germany';
 import { italy } from './italy';
+import { netherlands } from './netherlands';
 import { portugal } from './portugal';
 import { spain } from './spain';
+import { switzerland } from './switzerland';
 import type { CountryVisaSteps } from './types';
 import { unitedKingdom } from './united-kingdom';
 import { unitedStates } from './united-states';
@@ -29,8 +31,10 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Germany: germany,
   Ireland: ireland,
   Italy: italy,
+  Netherlands: netherlands,
   Portugal: portugal,
   Spain: spain,
+  Switzerland: switzerland,
   'United Kingdom': unitedKingdom,
   'United States': unitedStates,
 };
