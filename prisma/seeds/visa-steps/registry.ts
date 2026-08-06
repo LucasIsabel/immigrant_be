@@ -1,3 +1,4 @@
+import { argentina } from './argentina';
 import { australia } from './australia';
 import { canada } from './canada';
 import { france } from './france';
@@ -13,6 +14,7 @@ import { switzerland } from './switzerland';
 import type { CountryVisaSteps } from './types';
 import { unitedKingdom } from './united-kingdom';
 import { unitedStates } from './united-states';
+import { uruguay } from './uruguay';
 
 /**
  * One entry per country, keyed by `countries.name` exactly as it appears in
@@ -27,6 +29,7 @@ import { unitedStates } from './united-states';
  * a PrismaClient, which is what lets the checks run with no database.
  */
 export const REGISTRY: Record<string, CountryVisaSteps> = {
+  Argentina: argentina,
   Australia: australia,
   Canada: canada,
   France: france,
@@ -41,4 +44,5 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Switzerland: switzerland,
   'United Kingdom': unitedKingdom,
   'United States': unitedStates,
+  Uruguay: uruguay,
 };
