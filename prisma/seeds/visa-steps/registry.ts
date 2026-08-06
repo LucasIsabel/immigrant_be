@@ -20,6 +20,7 @@ import { newZealand } from './new-zealand';
 import { peru } from './peru';
 import { portugal } from './portugal';
 import { spain } from './spain';
+import { sweden } from './sweden';
 import { switzerland } from './switzerland';
 import type { CountryVisaSteps } from './types';
 import { unitedKingdom } from './united-kingdom';
@@ -61,6 +62,7 @@ export const REGISTRY: Record<string, CountryVisaSteps> = {
   Peru: peru,
   Portugal: portugal,
   Spain: spain,
+  Sweden: sweden,
   Switzerland: switzerland,
   'United Kingdom': unitedKingdom,
   'United States': unitedStates,
