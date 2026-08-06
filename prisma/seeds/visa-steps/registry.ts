@@ -1,5 +1,7 @@
+import { australia } from './australia';
 import { canada } from './canada';
 import { france } from './france';
+import { ireland } from './ireland';
 import { germany } from './germany';
 import { italy } from './italy';
 import { portugal } from './portugal';
@@ -21,9 +23,11 @@ import { unitedStates } from './united-states';
  * a PrismaClient, which is what lets the checks run with no database.
  */
 export const REGISTRY: Record<string, CountryVisaSteps> = {
+  Australia: australia,
   Canada: canada,
   France: france,
   Germany: germany,
+  Ireland: ireland,
   Italy: italy,
   Portugal: portugal,
   Spain: spain,
