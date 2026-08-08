@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   HttpCode,
@@ -15,6 +16,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
@@ -25,8 +27,11 @@ import {
 import { CountryService } from './country.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
+import { UpsertCountryTranslationDto } from './dto/upsert-country-translation.dto';
 import { CountryDto } from './dto/country.dto';
 import { CountryDetailDto } from './dto/country-detail.dto';
+import { CountryTranslationDto } from './dto/country-translation.dto';
+import { SUPPORTED_LANGUAGES } from './country-translation.util';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -144,5 +149,49 @@ export class CountryController {
   @ApiForbiddenResponse({ description: 'Admin role required' })
   remove(@Param('id') id: string) {
     return this.countryService.remove(id);
+  }
+
+  // ─── Translations ───────────────────────────────────────────────────────────
+
+  @Put(':id/translations/:language')
+  @Roles(UserRole.ADMIN)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Create or update a country translation',
+    description:
+      'Writes the localized copy of a country for a single language. ' +
+      'Editing one language leaves the others untouched.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Country ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiParam({
+    name: 'language',
+    description: 'Language code of the translation',
+    enum: SUPPORTED_LANGUAGES,
+    example: 'pt',
+  })
+  @ApiBody({ type: UpsertCountryTranslationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Translation saved successfully',
+    type: CountryTranslationDto,
+  })
+  @ApiBadRequestResponse({ description: 'Unsupported language' })
+  @ApiNotFoundResponse({ description: 'Country not found' })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Admin role required' })
+  upsertTranslation(
+    @Param('id') id: string,
+    @Param('language') language: string,
+    @Body() upsertCountryTranslationDto: UpsertCountryTranslationDto,
+  ) {
+    return this.countryService.upsertTranslation(
+      id,
+      language,
+      upsertCountryTranslationDto,
+    );
   }
 }

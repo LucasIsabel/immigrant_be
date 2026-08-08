@@ -2,15 +2,24 @@ import { PrismaService } from '@app/database';
 import { Injectable } from '@nestjs/common';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
+import { UpsertCountryTranslationDto } from './dto/upsert-country-translation.dto';
 
 @Injectable()
 export class CountryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createCountryDto: CreateCountryDto) {
+    const { translations, ...country } = createCountryDto;
+
     return this.prisma.country.create({
       data: {
-        ...createCountryDto,
+        ...country,
+        // Nested write so the country and its copy land in the same
+        // transaction — a country without translations renders blank in every
+        // language, and there is no partial state worth persisting.
+        translations: {
+          create: translations,
+        },
       },
       include: {
         translations: true,
@@ -68,6 +77,26 @@ export class CountryRepository {
   async remove(id: string) {
     return await this.prisma.country.delete({
       where: { id },
+    });
+  }
+
+  async upsertTranslation(
+    countryId: string,
+    language: string,
+    data: UpsertCountryTranslationDto,
+  ) {
+    return this.prisma.countryTranslation.upsert({
+      where: {
+        country_id_language: { country_id: countryId, language },
+      },
+      create: {
+        country_id: countryId,
+        language,
+        ...data,
+      },
+      update: {
+        ...data,
+      },
     });
   }
 

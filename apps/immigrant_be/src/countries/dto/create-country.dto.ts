@@ -1,5 +1,15 @@
-import { IsArray, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { CreateCountryTranslationDto } from './create-country-translation.dto';
 
 export class CreateCountryDto {
   @ApiProperty({
@@ -83,4 +93,16 @@ export class CreateCountryDto {
   @IsString()
   @IsNotEmpty()
   background_image: string;
+
+  @ApiProperty({
+    description:
+      'Traduções do país. Precisa incluir ao menos o idioma de fallback (en), ' +
+      'senão o país nasce sem cópia em idioma nenhum.',
+    type: [CreateCountryTranslationDto],
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateCountryTranslationDto)
+  translations: CreateCountryTranslationDto[];
 }

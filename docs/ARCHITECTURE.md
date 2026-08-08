@@ -468,6 +468,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/admin/users`                               | Users (admin)             | ADMIN                                      |
 | `/admin/roles`                               | Roles                     | ADMIN                                      |
 | `/countries`                                 | Countries                 | Misto (CRUD admin, leitura pública)        |
+| `PUT /countries/:id/translations/:language`  | Countries                 | ADMIN (upsert da cópia por idioma)         |
 | `GET /countriesnow/countries`                | CountriesNow              | Público (proxy CountriesNow + cache 24h)   |
 | `GET /countriesnow/states?country=`          | CountriesNow              | Público (estados por país; cache 24h)      |
 | `GET /countriesnow/cities?country=&state=`   | CountriesNow              | Público (cidades por estado; cache 24h)    |
@@ -617,6 +618,13 @@ Pipeline sequencial: **Lint → Test → Build**
   - O repository devolve **todos** os idiomas (`translations: true`) e o cliente escolhe;
     no BE, use o helper `pickTranslation(translations, language)`, que faz fallback para `en`
     e depois para qualquer linha existente.
+  - **Escrita**: `POST /countries` exige `translations` com pelo menos o idioma de fallback
+    (`en`) — país e cópia nascem no mesmo nested write, porque um país sem tradução renderiza
+    em branco em todos os idiomas. Para corrigir um idioma sem tocar nos outros, use
+    `PUT /countries/:id/translations/:language`, que faz upsert por `(country_id, language)`.
+  - O vocabulário de idiomas vive em `SUPPORTED_LANGUAGES` (`country-translation.util.ts`) e é
+    validado **no service**, não só no DTO: o unique aceita qualquer string, então um locale
+    digitado errado no path viraria uma linha permanente que ninguém lê.
 - `VisaSteps` armazena etapas por idioma
 - Respostas de IA adaptadas ao idioma solicitado
 - **Blog Posts**: tabela `BlogPostTranslation` persiste traduções por locale (`pt` | `en` | `es`)
