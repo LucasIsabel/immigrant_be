@@ -4,7 +4,8 @@ import {
   PlanStatus,
   PlanImmigrationVisaTypeDto,
 } from '../dto/plan-response.dto';
-type PlanWithRelations = Prisma.PlansGetPayload<{
+import type { ResolvedStepItem } from './resolve-plan-steps';
+export type PlanWithRelations = Prisma.PlansGetPayload<{
   include: {
     country: true;
     suggestion: true;
@@ -28,15 +29,19 @@ const formatVisaTypes = (
 export const formatPlanResponse = (
   data: PlanWithRelations,
   visaTypes: ImmigrationVisaType[],
+  resolved: {
+    steps: Record<string, ResolvedStepItem[]>;
+    language: string;
+  } = { steps: {}, language: '' },
 ): PlanResponseDto => {
   return {
     id: data.id,
     user_id: data.user_id,
     suggestion_id: data.suggestion_id ?? undefined,
     country_id: data.country_id ?? undefined,
-    steps: data.steps,
-    steps_completed: data.steps_completed,
-    steps_remaining: data.steps_remaining,
+    steps: resolved.steps,
+    completed_step_keys: data.completed_step_keys,
+    language: resolved.language,
     documents: data.documents,
     selected_suggestion: data.selected_suggestion ?? undefined,
     status: data.status as PlanStatus,

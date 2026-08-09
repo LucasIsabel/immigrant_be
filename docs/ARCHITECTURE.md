@@ -181,7 +181,8 @@ Countries ─────┬──── CountryTranslation (1:N) — todo o tex
                ├──── Plans (1:N)
                └──── AiBlogCronJob (1:N) — cron jobs de geração automática
 
-Plans ─────────┬──── steps (JSON)
+Plans ─────────┬──── completed_step_keys (String[]) — só a identidade do progresso
+               ├──── selected_visa_type_id — de onde o texto dos steps é lido
                ├──── documents (JSON)
                └──── status: draft | active | completed
 
@@ -464,6 +465,8 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `PATCH /users/me`                            | Users                     | Autenticado (nome, imagem, bio)            |
 | `PATCH /users/me/preferences`                | Users                     | Autenticado (emailNotificationsEnabled)    |
 | `/users/plan`                                | Users                     | Autenticado                                |
+| `GET /users/plan/:id?language=`              | Users                     | Autenticado (steps resolvidos no idioma)   |
+| `PATCH /users/plan/:id/step`                 | Users                     | Autenticado (troca `completed_step_keys`)  |
 | `/users/plan/from-country`                   | Users                     | Autenticado (criar plano a partir de país) |
 | `/admin/users`                               | Users (admin)             | ADMIN                                      |
 | `/admin/roles`                               | Roles                     | ADMIN                                      |
@@ -625,7 +628,21 @@ Pipeline sequencial: **Lint → Test → Build**
   - O vocabulário de idiomas vive em `SUPPORTED_LANGUAGES` (`country-translation.util.ts`) e é
     validado **no service**, não só no DTO: o unique aceita qualquer string, então um locale
     digitado errado no path viraria uma linha permanente que ninguém lê.
-- `VisaSteps` armazena etapas por idioma
+- `VisaSteps` armazena etapas por idioma — uma linha por `(visa_type_id, language)`.
+  - Cada item do blob carrega uma **`key` estável, idêntica nos três idiomas**, derivada do nome
+    em inglês no seed (`slugifyStepKey`). A chave é a identidade do step; `name` e `notes` são a
+    projeção dela em um idioma.
+  - **`Plans` não copia os steps.** O plano guarda só `completed_step_keys` (`String[]`) e o
+    `selected_visa_type_id`; o texto é resolvido a cada leitura de `GET /users/plan/:id?language=`.
+    É isso que faz a troca de idioma preservar o progresso — antes o plano era um retrato
+    congelado no idioma da criação, com a conclusão indexada pelo nome traduzido.
+  - Fallback de leitura: idioma pedido → `en`. **Nunca `pt`.**
+  - `progress` conta apenas os steps `required`, alinhado ao que a barra do dashboard exibe.
+    Antes o backend contava todos e os dois números discordavam.
+  - `PUT /admin/visa-steps/:id` valida **paridade de chaves** contra os outros idiomas do mesmo
+    visa type: editar um idioma pode mudar o texto, nunca o conjunto de chaves. Sem essa guarda,
+    um blob editado à mão desalinharia os idiomas e os steps desmarcariam sozinhos na troca de
+    locale.
 - Respostas de IA adaptadas ao idioma solicitado
 - **Blog Posts**: tabela `BlogPostTranslation` persiste traduções por locale (`pt` | `en` | `es`)
   - Query param `?lang=en` nos endpoints públicos aplica overlay de tradução (fallback para PT se ausente)

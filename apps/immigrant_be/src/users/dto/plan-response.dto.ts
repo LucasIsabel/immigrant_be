@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { IsArray } from 'class-validator';
 import { Prisma } from 'generated/prisma';
 
@@ -6,6 +6,57 @@ export enum PlanStatus {
   DRAFT = 'draft',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
+}
+
+/**
+ * One step of the plan, already resolved into a language.
+ *
+ * `key` is the identity and the only part the client sends back; `name` and
+ * `notes` are the projection of that key into the requested locale.
+ */
+export class PlanStepItemDto {
+  @ApiProperty({
+    description:
+      'Language-independent identity of the step. This is what goes in `completed_step_keys`.',
+    example: 'valid-passport',
+    type: String,
+  })
+  key: string;
+
+  @ApiProperty({
+    description: 'Step name in the resolved language',
+    example: 'Passaporte válido',
+    type: String,
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Step notes in the resolved language',
+    example: 'Deve valer por toda a duração do processo e da estadia.',
+    type: String,
+  })
+  notes: string;
+
+  @ApiProperty({
+    description: 'Rendering order hint',
+    example: '1',
+    type: String,
+  })
+  priority: string;
+
+  @ApiProperty({
+    description: 'Only required steps count toward the progress bar',
+    example: true,
+    type: Boolean,
+  })
+  required: boolean;
+
+  @ApiProperty({
+    description: 'Whether the key is in the plan `completed_step_keys`',
+    example: false,
+    type: Boolean,
+  })
+  completed: boolean;
 }
 
 /** Visa type as embedded in plan responses (avoids Swagger duplicate with ImmigrationVisaTypeDto from immigration-visa-type module). */
@@ -80,87 +131,45 @@ export class PlanResponseDto {
   country_id: string | null | undefined;
 
   @ApiProperty({
-    description: 'Steps of the plan',
-    example: [
-      { type: 'country', answer: 'Canada' },
-      { type: 'visa', answer: 'Express Entry' },
-    ],
-    type: Array,
-  })
-  steps: Prisma.JsonValue;
-
-  @ApiProperty({
     description:
-      'Completed steps of the plan, grouped by category. Each category contains an array of step items that have been checked off.',
+      'Steps of the selected visa type, grouped by category, already resolved into the requested language. ' +
+      'Empty when the plan has no visa type selected yet. The text is not stored on the plan — it is read from ' +
+      '`visa_steps` on every request, which is why switching language changes the copy without touching progress.',
+    type: 'object',
+    additionalProperties: {
+      type: 'array',
+      items: { $ref: getSchemaPath(PlanStepItemDto) },
+    },
     example: {
       core_documents: [
         {
-          name: 'Valid passport (applicant and sponsor)',
+          key: 'valid-passport',
+          name: 'Passaporte válido',
+          notes: 'Deve valer por toda a duração do processo e da estadia.',
+          priority: '1',
           required: true,
-          priority: 1,
-          notes:
-            'Passport must be valid for the duration of the visa process and stay.',
-          checked: true,
-        },
-      ],
-      health_and_character: [
-        {
-          name: 'Medical examination results',
-          required: true,
-          priority: 1,
-          notes: 'Must be completed with an approved panel physician.',
-          checked: true,
+          completed: true,
         },
       ],
     },
-    type: Object,
-    nullable: true,
   })
-  steps_completed: Prisma.JsonValue | null;
+  steps: Record<string, PlanStepItemDto[]>;
 
   @ApiProperty({
     description:
-      'Remaining steps of the plan, grouped by category. Each category contains an array of step items.',
-    example: {
-      core_documents: [
-        {
-          name: 'Valid passport (applicant and sponsor)',
-          required: true,
-          priority: 1,
-          notes:
-            'Passport must be valid for the duration of the visa process and stay.',
-          checked: false,
-        },
-        {
-          name: 'Completed visa application form',
-          required: true,
-          priority: 1,
-          notes:
-            'Correct form depending on family, partner, or dependent visa subclass.',
-          checked: false,
-        },
-      ],
-      health_and_character: [
-        {
-          name: 'Medical examination results',
-          required: true,
-          priority: 1,
-          notes: 'Must be completed with an approved panel physician.',
-          checked: false,
-        },
-        {
-          name: 'Police clearance certificates',
-          required: true,
-          priority: 1,
-          notes: 'Required for all countries lived in for 12 months or more.',
-          checked: false,
-        },
-      ],
-    },
-    type: Object,
-    nullable: true,
+      'Stable keys of the steps the user has completed. Language-independent — this is what survives a locale switch.',
+    type: [String],
+    example: ['valid-passport'],
   })
-  steps_remaining: Prisma.JsonValue;
+  completed_step_keys: string[];
+
+  @ApiProperty({
+    description:
+      'Language the steps were actually resolved into. Differs from the requested one when that language has no row and the fallback applied.',
+    example: 'pt',
+    type: String,
+  })
+  language: string;
 
   @ApiProperty({
     description: 'Documents required for the plan',

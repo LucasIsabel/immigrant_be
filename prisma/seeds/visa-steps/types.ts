@@ -39,6 +39,17 @@ export type StepSpec = {
   readonly pt: LocalizedStep;
   readonly es: LocalizedStep;
   /**
+   * Language-independent identity. Defaults to `slugifyStepKey(en[0])`, which
+   * is collision-free across all 4549 seeded steps today.
+   *
+   * **Rule when editing a step already in production:** if you change the
+   * English name, pin `key` to the old value. The key is what
+   * `plans.completed_step_keys` stores, so letting it drift silently unticks
+   * the step for every user who had completed it. Fixing `pt`/`es` text is
+   * always safe — the key never derives from those.
+   */
+  readonly key?: string;
+  /**
    * Rendering order hint carried over from the rows already in production.
    * Nothing reads it today — the frontend never sorts — but it is part of the
    * stored shape, so dropping it would make seeded rows differ from existing
@@ -62,8 +73,27 @@ export type CountryVisaSteps = Record<string, VisaTypeSteps>;
 export const LANGUAGES = ['pt', 'en', 'es'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
+/**
+ * Language-independent identity of a step.
+ *
+ * Derived from the English name, so the *same* value lands in all three
+ * language blobs — that is the whole point. `plans.completed_step_keys` stores
+ * these, so the user's progress survives a language switch: the key is the
+ * identity, the name and notes are a projection of it into one language.
+ */
+export function slugifyStepKey(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 /** The shape actually persisted in `visa_steps.steps`. */
 export type StoredStepItem = {
+  /** Same across languages. See `slugifyStepKey` and `StepSpec.key`. */
+  key: string;
   name: string;
   notes: string;
   checked: boolean;
@@ -94,6 +124,10 @@ export function toStoredSteps(
     stored[group] = specs.map((spec) => {
       const [name, notes] = spec[language];
       return {
+        // Always derived from `en`, never from `language` — the key must be
+        // byte-identical across the three blobs or a language switch would
+        // lose the user's progress.
+        key: spec.key ?? slugifyStepKey(spec.en[0]),
         name,
         notes,
         checked: false,

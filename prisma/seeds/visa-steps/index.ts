@@ -3,6 +3,7 @@ import { REGISTRY } from './registry';
 import {
   type CountryVisaSteps,
   LANGUAGES,
+  slugifyStepKey,
   STEP_GROUPS,
   toStoredSteps,
 } from './types';
@@ -10,42 +11,42 @@ import {
 const prisma = new PrismaClient();
 
 /**
- * Rejects a visa type whose step names are not unique across its groups.
+ * Rejects a visa type whose step keys are not unique across its groups.
  *
- * The frontend tracks completion in a `Set<string>` of names and its
- * `toggleStep(name, _category)` ignores the category argument
- * (`store/plan.store.ts`), so two items sharing a name tick and untick
- * together — in different sections of the page, with no visible cause. The
- * database cannot express this constraint, so it is enforced here.
+ * `plans.completed_step_keys` is a flat list of keys for the whole visa type,
+ * so two steps sharing a key tick and untick together — in different sections
+ * of the page, with no visible cause. The database cannot express this
+ * constraint (the keys live inside a JSON blob), so it is enforced here.
+ *
+ * The check runs once, not per language: the key derives from `en` alone, so
+ * it is the same in all three blobs by construction.
  */
-function assertUniqueNames(
+function assertUniqueKeys(
   country: string,
   category: string,
   steps: CountryVisaSteps[string],
 ): void {
-  for (const language of LANGUAGES) {
-    const seen = new Set<string>();
-    const duplicates = new Set<string>();
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
 
-    for (const group of STEP_GROUPS) {
-      for (const spec of steps[group] ?? []) {
-        const [name] = spec[language];
-        if (seen.has(name)) {
-          duplicates.add(name);
-        }
-        seen.add(name);
+  for (const group of STEP_GROUPS) {
+    for (const spec of steps[group] ?? []) {
+      const key = spec.key ?? slugifyStepKey(spec.en[0]);
+      if (seen.has(key)) {
+        duplicates.add(key);
       }
+      seen.add(key);
     }
+  }
 
-    if (duplicates.size) {
-      throw new Error(
-        `[seed] ${country} / "${category}" (${language}): step names must be unique across groups, but these repeat: ${[
-          ...duplicates,
-        ].join(
-          ', ',
-        )}. The frontend keys completion by name alone, so duplicates would toggle together.`,
-      );
-    }
+  if (duplicates.size) {
+    throw new Error(
+      `[seed] ${country} / "${category}": step keys must be unique across groups, but these repeat: ${[
+        ...duplicates,
+      ].join(
+        ', ',
+      )}. Completion is tracked by key, so duplicates would toggle together. Set an explicit \`key\` on one of them.`,
+    );
   }
 }
 
@@ -80,7 +81,7 @@ export async function seedVisaSteps() {
         continue;
       }
 
-      assertUniqueNames(countryName, category, steps);
+      assertUniqueKeys(countryName, category, steps);
 
       for (const language of LANGUAGES) {
         const stored = toStoredSteps(steps, language);

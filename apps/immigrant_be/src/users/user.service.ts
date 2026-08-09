@@ -10,16 +10,24 @@ import { CountryService } from '../countries/country.service';
 import {
   DEFAULT_LANGUAGE,
   pickTranslation,
+  SUPPORTED_LANGUAGES,
 } from '../countries/country-translation.util';
 import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { Plans, Users } from 'generated/prisma';
 import { PlanResponseDto } from './dto/plan-response.dto';
+import { formatPlanResponse } from './utils/formatter';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
-import { MarkStepDto } from './dto/mark-step.dto';
+import { UpdatePlanStepsDto } from './dto/update-plan-steps.dto';
+import {
+  intersectWithTemplate,
+  parseStoredSteps,
+  resolvePlanSteps,
+  type StoredSteps,
+} from './utils/resolve-plan-steps';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { UpdateMyPreferencesDto } from './dto/update-my-preferences.dto';
@@ -87,6 +95,7 @@ export class UserService {
   async getUserPlan(
     user: UserSession,
     plan_id: string,
+    language?: string,
   ): Promise<PlanResponseDto> {
     // Validate user session
     if (!user?.user?.id) {
@@ -100,53 +109,111 @@ export class UserService {
       throw new BadRequestException('Invalid plan ID format');
     }
 
-    // Get plan from repository
-    const plan = await this.userRepository.getUserPlan(user, plan_id);
+    // An unknown locale is not worth a 400 on a read — it degrades to the
+    // fallback, same as a language with no row.
+    const requestedLanguage =
+      language && (SUPPORTED_LANGUAGES as readonly string[]).includes(language)
+        ? language
+        : DEFAULT_LANGUAGE;
 
-    // Validate plan exists and belongs to user
-    if (!plan) {
+    const found = await this.userRepository.getUserPlanWithRelations(
+      user,
+      plan_id,
+    );
+
+    if (!found) {
       throw new NotFoundException(
         'Plan not found or does not belong to the user',
       );
     }
 
-    return plan;
+    const { data, visaTypes } = found;
+
+    // No visa type yet means no steps to resolve — the user is still on the
+    // selection screen.
+    const resolved = data.selected_visa_type_id
+      ? await this.getStepTemplate(
+          data.selected_visa_type_id,
+          requestedLanguage,
+        )
+      : null;
+
+    return formatPlanResponse(data, visaTypes, {
+      steps: resolved
+        ? resolvePlanSteps(resolved.template, data.completed_step_keys).steps
+        : {},
+      language: resolved?.language ?? requestedLanguage,
+    });
+  }
+
+  /**
+   * Loads the step template for a visa type, falling back to English.
+   *
+   * The fallback is `DEFAULT_LANGUAGE`, never Portuguese: a plan whose language
+   * has no row must degrade to the language the whole system treats as
+   * canonical, not to whichever one happened to be hardcoded in the client.
+   */
+  private async getStepTemplate(
+    visaTypeId: string,
+    language: string,
+  ): Promise<{ template: StoredSteps; language: string } | null> {
+    const requested = await this.userRepository.getVisaStepsByRecommendation(
+      visaTypeId,
+      language,
+    );
+
+    if (requested?.steps) {
+      return { template: parseStoredSteps(requested.steps), language };
+    }
+
+    if (language === DEFAULT_LANGUAGE) {
+      return null;
+    }
+
+    const fallback = await this.userRepository.getVisaStepsByRecommendation(
+      visaTypeId,
+      DEFAULT_LANGUAGE,
+    );
+
+    if (!fallback?.steps) {
+      return null;
+    }
+
+    // Reported back to the client so `language` in the response is the language
+    // the copy is actually in, not the one that was asked for.
+    return {
+      template: parseStoredSteps(fallback.steps),
+      language: DEFAULT_LANGUAGE,
+    };
   }
 
   async selectVisaType(
     user: UserSession,
     plan_id: string,
     visa_type_id: string,
-    language?: string,
   ): Promise<{ id: string }> {
-    const selectedLanguage = language ?? 'en';
+    // The plan no longer copies the steps, so this is purely a guard: picking a
+    // visa type with no template would leave the user on a page with nothing to
+    // do and no explanation.
+    const resolved = await this.getStepTemplate(visa_type_id, DEFAULT_LANGUAGE);
 
-    // Validate visa steps exist before updating the plan
-    const visaSteps = await this.userRepository.getVisaStepsByRecommendation(
-      visa_type_id,
-      selectedLanguage,
-    );
-
-    if (!visaSteps?.steps) {
+    if (!resolved || !Object.keys(resolved.template).length) {
       throw new NotFoundException(
-        'Visa steps not found for the selected visa type and language',
+        'Visa steps not found for the selected visa type',
       );
     }
 
     await this.userRepository.selectVisaType(user, plan_id, visa_type_id);
-    await this.userRepository.updatePlanStepsRemaining(
-      plan_id,
-      visaSteps.steps,
-    );
+    await this.userRepository.resetPlanSteps(plan_id);
 
     return { id: plan_id };
   }
 
-  async markStep(
+  async updateSteps(
     user: UserSession,
     plan_id: string,
-    dto: MarkStepDto,
-  ): Promise<{ id: string }> {
+    dto: UpdatePlanStepsDto,
+  ): Promise<{ id: string; progress: number }> {
     const plan = await this.userRepository.getUserPlanRaw(user, plan_id);
     if (!plan) {
       throw new NotFoundException(
@@ -154,33 +221,36 @@ export class UserService {
       );
     }
 
-    const { steps_remaining, steps_completed } = dto;
+    if (!plan.selected_visa_type_id) {
+      throw new BadRequestException(
+        'Plan has no selected visa type — there are no steps to complete',
+      );
+    }
 
-    const totalRemaining = Object.values(steps_remaining).reduce(
-      (acc, arr) => acc + arr.length,
-      0,
-    );
-    const totalCompleted = Object.values(steps_completed).reduce(
-      (acc, arr) => acc + arr.length,
-      0,
-    );
-    const total = totalRemaining + totalCompleted;
-    const progress = total > 0 ? totalCompleted / total : 0;
-
-    await this.userRepository.updatePlanStepProgress(
-      plan_id,
-      steps_remaining,
-      steps_completed,
-      progress,
+    const resolved = await this.getStepTemplate(
+      plan.selected_visa_type_id,
+      DEFAULT_LANGUAGE,
     );
 
-    return { id: plan_id };
+    if (!resolved) {
+      throw new NotFoundException(
+        'Visa steps not found for the selected visa type',
+      );
+    }
+
+    const { allKeys } = resolvePlanSteps(resolved.template, []);
+    const keys = intersectWithTemplate(dto.completed_step_keys, allKeys);
+    const { progress } = resolvePlanSteps(resolved.template, keys);
+
+    await this.userRepository.updateCompletedStepKeys(plan_id, keys, progress);
+
+    return { id: plan_id, progress };
   }
 
   async completeAllSteps(
     user: UserSession,
     plan_id: string,
-  ): Promise<{ id: string }> {
+  ): Promise<{ id: string; progress: number }> {
     const plan = await this.userRepository.getUserPlanRaw(user, plan_id);
     if (!plan) {
       throw new NotFoundException(
@@ -188,26 +258,33 @@ export class UserService {
       );
     }
 
-    const remaining =
-      (plan.steps_remaining as Record<string, any[]> | null) ?? {};
-    const completedSteps =
-      (plan.steps_completed as Record<string, any[]> | null) ?? {};
-
-    for (const [category, items] of Object.entries(remaining)) {
-      if (!completedSteps[category]) completedSteps[category] = [];
-      for (const step of items) {
-        completedSteps[category].push({ ...step, checked: true });
-      }
+    if (!plan.selected_visa_type_id) {
+      throw new BadRequestException(
+        'Plan has no selected visa type — there are no steps to complete',
+      );
     }
 
-    await this.userRepository.updatePlanStepProgress(
-      plan_id,
-      {},
-      completedSteps,
-      1,
+    const resolved = await this.getStepTemplate(
+      plan.selected_visa_type_id,
+      DEFAULT_LANGUAGE,
     );
 
-    return { id: plan_id };
+    if (!resolved) {
+      throw new NotFoundException(
+        'Visa steps not found for the selected visa type',
+      );
+    }
+
+    const { allKeys } = resolvePlanSteps(resolved.template, []);
+    const { progress } = resolvePlanSteps(resolved.template, allKeys);
+
+    await this.userRepository.updateCompletedStepKeys(
+      plan_id,
+      allKeys,
+      progress,
+    );
+
+    return { id: plan_id, progress };
   }
 
   async getUserById(userId: string): Promise<Users | null> {
