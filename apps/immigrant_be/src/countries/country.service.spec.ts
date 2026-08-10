@@ -160,4 +160,42 @@ describe('CountryService', () => {
       );
     });
   });
+
+  /**
+   * Feeds the dashboard's curated destinations. See docs/DATA_SOURCES.md — the
+   * ordering and the values shown come straight from this record, so an empty
+   * list must mean "no countries", never "the query failed".
+   */
+  describe('findAll', () => {
+    it('returns the countries with their translations', async () => {
+      const countries = [
+        {
+          ...mockCountry,
+          flag: 'https://example.com/canada-flag.png',
+          region: 'North America',
+          difficulty: 'Medium',
+          difficulty_score: 6,
+          translations: [mockTranslation('en')],
+        },
+      ];
+      mockCountryRepository.findAll.mockResolvedValue(countries);
+
+      await expect(service.findAll()).resolves.toBe(countries);
+      expect(mockCountryRepository.findAll).toHaveBeenCalled();
+    });
+
+    it('returns an empty list when there is no country registered', async () => {
+      mockCountryRepository.findAll.mockResolvedValue([]);
+
+      await expect(service.findAll()).resolves.toEqual([]);
+    });
+
+    it('propagates a failure of the source instead of returning empty', async () => {
+      mockCountryRepository.findAll.mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      await expect(service.findAll()).rejects.toThrow('connection refused');
+    });
+  });
 });

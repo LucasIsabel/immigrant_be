@@ -566,6 +566,12 @@ resposta diga **qual** dependência caiu:
 }
 ```
 
+### Origem dos dados
+
+Cada endpoint tem fonte, cadência de atualização e comportamento em falha
+documentados em [`docs/DATA_SOURCES.md`](./DATA_SOURCES.md). Endpoint novo que
+sirva dado ao usuário entra lá junto com o PR que o cria.
+
 ### Convenções de endpoints
 
 - Endpoints administrativos ficam sob `/admin/`

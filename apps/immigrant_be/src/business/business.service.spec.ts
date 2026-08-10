@@ -79,6 +79,21 @@ describe('BusinessService', () => {
 
       expect(repository.findAllByUserId).toHaveBeenCalledWith('user-id-1');
     });
+
+    /**
+     * Feeds the dashboard's businesses section. An empty list renders as "you
+     * have no business yet"; swallowing a database failure here would show that
+     * message to an owner who does have one.
+     */
+    it('propagates a failure of the source instead of returning empty', async () => {
+      repository.findAllByUserId.mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      await expect(service.getMyBusinesses('user-id-1')).rejects.toThrow(
+        'connection refused',
+      );
+    });
   });
 
   // ── create ─────────────────────────────────────────────────

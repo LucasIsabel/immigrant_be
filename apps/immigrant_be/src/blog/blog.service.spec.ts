@@ -172,6 +172,21 @@ describe('BlogService', () => {
         expect.objectContaining({ skip: 5, take: 5 }),
       );
     });
+
+    /**
+     * Alimenta a seção de notícias do dashboard. Ver docs/DATA_SOURCES.md — uma
+     * lista vazia significa "nenhum post publicado"; engolir a falha da fonte
+     * transformaria uma queda do banco nessa mesma mensagem.
+     */
+    it('propaga falha da fonte em vez de devolver lista vazia', async () => {
+      mockRepository.findPublishedPosts.mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      await expect(
+        service.findPublishedPosts({ page: 1, limit: 3 }),
+      ).rejects.toThrow('connection refused');
+    });
   });
 
   // ─── findPostBySlug ───────────────────────────────────────────────────────

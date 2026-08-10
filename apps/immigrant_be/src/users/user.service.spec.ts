@@ -307,4 +307,40 @@ describe('UserService — plan steps', () => {
       expect(repository.getUserPlanWithRelations).not.toHaveBeenCalled();
     });
   });
+
+  /**
+   * Feeds the dashboard's "active plans" section. See docs/DATA_SOURCES.md —
+   * every value shown there comes from this call, so both the happy path and
+   * the behaviour when the database is unreachable are pinned down here.
+   */
+  describe('getAllUserPlans', () => {
+    it('returns the plans of the session user', async () => {
+      const plans = [makePlan(), makePlan({ id: 'another-plan' })];
+      repository.getAllUserPlans.mockResolvedValue(plans);
+
+      await expect(service.getAllUserPlans(mockSession)).resolves.toBe(plans);
+      expect(repository.getAllUserPlans).toHaveBeenCalledWith(mockSession);
+    });
+
+    it('returns an empty list for a user with no plans', async () => {
+      repository.getAllUserPlans.mockResolvedValue([]);
+
+      await expect(service.getAllUserPlans(mockSession)).resolves.toEqual([]);
+    });
+
+    /**
+     * The failure has to propagate. Swallowing it would hand the dashboard an
+     * empty list, which renders as "you have no plans" — indistinguishable from
+     * the truth, and wrong.
+     */
+    it('propagates a failure of the source instead of returning empty', async () => {
+      repository.getAllUserPlans.mockRejectedValue(
+        new Error('connection refused'),
+      );
+
+      await expect(service.getAllUserPlans(mockSession)).rejects.toThrow(
+        'connection refused',
+      );
+    });
+  });
 });
