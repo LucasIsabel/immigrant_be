@@ -35,14 +35,19 @@ export class UserPlanResponseDto {
   country_id: string | null;
 
   @ApiProperty({
-    description: 'Steps of the plan',
-    example: [
-      { type: 'country', answer: 'Canada' },
-      { type: 'visa', answer: 'Express Entry' },
-    ],
-    type: Array,
+    description:
+      'Stable keys of the steps the user has completed. The list endpoint does not resolve the step text — use GET /users/plan/:id?language= for that.',
+    type: [String],
+    example: ['valid-passport'],
   })
-  steps: unknown;
+  completed_step_keys: string[];
+
+  @ApiProperty({
+    description: 'Fraction of the required steps completed, 0 to 1',
+    example: 0.5,
+    type: Number,
+  })
+  progress: number;
 
   @ApiProperty({
     description: 'Selected suggestion details',
