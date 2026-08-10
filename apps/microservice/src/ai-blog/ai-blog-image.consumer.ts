@@ -13,10 +13,16 @@ import {
   GENERATE_AI_BLOG_IMAGE,
   REFINE_AI_BLOG_POST,
 } from '@app/config/constants';
+import { runWithCorrelationId } from '@app/config/request-context';
+import { CorrelatedJobData } from '@app/config/job-data';
+import {
+  jobCorrelationId,
+  reportJobFailure,
+} from '../common/report-job-failure';
 
 type ImageQueueJobData =
   | GenerateBlogImageJobData
-  | { postId: string; requestedByUserId?: string };
+  | (CorrelatedJobData & { postId: string; requestedByUserId?: string });
 
 @Processor(AI_BLOG_IMAGE_QUEUE)
 export class AiBlogImageConsumer extends WorkerHost {
@@ -31,6 +37,10 @@ export class AiBlogImageConsumer extends WorkerHost {
   }
 
   async process(job: Job<ImageQueueJobData>): Promise<void> {
+    return runWithCorrelationId(jobCorrelationId(job), () => this.handle(job));
+  }
+
+  private async handle(job: Job<ImageQueueJobData>): Promise<void> {
     const userId =
       'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
 
@@ -101,6 +111,8 @@ export class AiBlogImageConsumer extends WorkerHost {
       `Job de imagem falhou: ${job.id} (post: ${job.data.postId}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,
     );
+
+    reportJobFailure(AI_BLOG_IMAGE_QUEUE, job, error);
 
     if (!isFinalAttempt(job)) return;
 

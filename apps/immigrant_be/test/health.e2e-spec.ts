@@ -29,6 +29,10 @@ import { PrismaService } from '@app/database';
 import request from 'supertest';
 import { HealthController } from '../src/health/health.controller';
 import { PrismaHealthIndicator } from '../src/health/prisma-health.indicator';
+import {
+  REDIS_HEALTH_CLIENT,
+  RedisHealthIndicator,
+} from '../src/health/redis-health.indicator';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
 
 /**
@@ -39,6 +43,7 @@ import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter
 describe('Health (e2e)', () => {
   let app: INestApplication;
   const queryRaw = jest.fn();
+  const ping = jest.fn();
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -46,7 +51,9 @@ describe('Health (e2e)', () => {
       controllers: [HealthController],
       providers: [
         PrismaHealthIndicator,
+        RedisHealthIndicator,
         { provide: PrismaService, useValue: { $queryRaw: queryRaw } },
+        { provide: REDIS_HEALTH_CLIENT, useValue: { ping, quit: jest.fn() } },
       ],
     }).compile();
 
@@ -70,9 +77,11 @@ describe('Health (e2e)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+    ping.mockResolvedValue('PONG');
   });
 
-  it('serves liveness under the /api/v1 prefix', async () => {
+  it('serves health under the /api/v1 prefix', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/health')
       .expect(200);
@@ -84,33 +93,86 @@ describe('Health (e2e)', () => {
     await request(app.getHttpServer()).get('/health').expect(404);
   });
 
-  it('reports ready when the database answers', async () => {
-    queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+  it('checks both dependencies on /health', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .expect(200);
 
+    expect(response.body.info).toEqual({
+      database: { status: 'up' },
+      redis: { status: 'up' },
+    });
+    expect(queryRaw).toHaveBeenCalled();
+    expect(ping).toHaveBeenCalled();
+  });
+
+  it('reports ready when both dependencies answer', async () => {
     const response = await request(app.getHttpServer())
       .get('/api/v1/health/ready')
       .expect(200);
 
     expect(response.body.status).toBe('ok');
     expect(response.body.info.database.status).toBe('up');
-    expect(queryRaw).toHaveBeenCalled();
+    expect(response.body.info.redis.status).toBe('up');
   });
 
-  it('reports 503 when the database is unreachable', async () => {
+  /**
+   * The point of the whole endpoint: a degraded response has to say *which*
+   * dependency is down. The filter used to flatten this into a generic message,
+   * which left an operator with a 503 and no reason.
+   */
+  it('reports 503 naming the database when it is unreachable', async () => {
     queryRaw.mockRejectedValue(new Error('connection refused'));
 
     const response = await request(app.getHttpServer())
-      .get('/api/v1/health/ready')
+      .get('/api/v1/health')
       .expect(503);
 
-    // Documents current behaviour, not desired behaviour: AllExceptionsFilter
-    // flattens every error response, so Terminus' per-indicator diagnosis
-    // (`{ error: { database: { status: 'down' } } }`) never reaches the caller.
-    // The 503 is enough for an orchestrator, but an operator gets no reason.
-    // Restoring the diagnosis belongs to the observability work (Epic 3).
-    expect(response.body).toMatchObject({
-      statusCode: 503,
-      message: expect.any(String),
+    expect(response.body.status).toBe('error');
+    expect(response.body.error.database.status).toBe('down');
+    expect(response.body.details.redis.status).toBe('up');
+  });
+
+  it('reports 503 naming redis when it is unreachable', async () => {
+    ping.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .expect(503);
+
+    expect(response.body.status).toBe('error');
+    expect(response.body.error.redis.status).toBe('down');
+    expect(response.body.details.database.status).toBe('up');
+  });
+
+  it('reports both as down when everything is unreachable', async () => {
+    queryRaw.mockRejectedValue(new Error('connection refused'));
+    ping.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/health')
+      .expect(503);
+
+    expect(response.body.error).toEqual({
+      database: { status: 'down' },
+      redis: { status: 'down' },
     });
+  });
+
+  /**
+   * Liveness must never depend on Postgres or Redis: a container health check
+   * pointed at a dependency-aware endpoint turns an outage into a restart loop.
+   */
+  it('keeps liveness green while every dependency is down', async () => {
+    queryRaw.mockRejectedValue(new Error('connection refused'));
+    ping.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/health/live')
+      .expect(200);
+
+    expect(response.body.status).toBe('ok');
+    expect(queryRaw).not.toHaveBeenCalled();
+    expect(ping).not.toHaveBeenCalled();
   });
 });

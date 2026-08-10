@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { GeminiBaseService, buildBlogCoverImagePrompt } from '@app/ai';
 import { StorageService } from '@app/storage';
+import { CorrelatedJobData } from '@app/config/job-data';
 
-export interface GenerateBlogImageJobData {
+export interface GenerateBlogImageJobData extends CorrelatedJobData {
   postId: string;
   slug: string;
   title: string;

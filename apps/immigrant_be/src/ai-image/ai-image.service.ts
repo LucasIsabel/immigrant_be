@@ -5,6 +5,7 @@ import { StorageService } from '@app/storage';
 import { AI_IMAGE_QUEUE, GENERATE_AI_IMAGE } from '@app/config/constants';
 import { AiImageRepository } from './ai-image.repository';
 import { GenerateAiImageDto } from './dto/generate-ai-image.dto';
+import { getCorrelationId } from '@app/config/request-context';
 
 @Injectable()
 export class AiImageService {
@@ -33,6 +34,7 @@ export class AiImageService {
       folder,
       isPublic,
       requestedByUserId: userId,
+      correlationId: getCorrelationId(),
     });
 
     this.logger.log(`Enqueued AI image generation job for image ${image.id}`);

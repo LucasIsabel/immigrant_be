@@ -23,6 +23,9 @@ O **Immigrant BE** é um backend construído com **NestJS** em formato **monorep
 | IA                        | Google Gemini API               |
 | Armazenamento de arquivos | Cloudflare R2 (S3-compatible)   |
 | Documentação              | Swagger (OpenAPI)               |
+| Logging                   | pino (via nestjs-pino)          |
+| Monitoramento de erros    | Sentry (`@sentry/nestjs`)       |
+| Painel de filas           | Bull Board                      |
 | Testes                    | Jest                            |
 | Runtime                   | Node.js 20                      |
 | Package Manager           | pnpm                            |
@@ -540,6 +543,29 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 
 **Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta `GeminiBaseService`, monta o input a partir do conteúdo da página, chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
+### Health
+
+| Rota                    | Checa              | Resposta                                                  |
+| ----------------------- | ------------------ | --------------------------------------------------------- |
+| `GET /health`           | Prisma + Redis     | 200 quando tudo responde; 503 nomeando o serviço que caiu |
+| `GET /health/ready`     | Prisma + Redis     | Idem                                                       |
+| `GET /health/live`      | nada               | Sempre 200 enquanto o processo estiver de pé              |
+
+O healthcheck do container deve apontar para `/health/live`. Apontá-lo para
+`/health` transforma uma queda do Postgres em loop de restart.
+
+O `AllExceptionsFilter` repassa o corpo do Terminus intacto no 503, para que a
+resposta diga **qual** dependência caiu:
+
+```json
+{
+  "status": "error",
+  "info": { "database": { "status": "up" } },
+  "error": { "redis": { "status": "down" } },
+  "details": { "database": { "status": "up" }, "redis": { "status": "down" } }
+}
+```
+
 ### Convenções de endpoints
 
 - Endpoints administrativos ficam sob `/admin/`
@@ -551,13 +577,43 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 
 ## 9. Middleware Global
 
-| Ordem | Componente              | Descrição                                  |
-| ----- | ----------------------- | ------------------------------------------ |
-| 1     | **CORS**                | Múltiplas origens, credentials: true       |
-| 2     | **ValidationPipe**      | whitelist, transform, forbidNonWhitelisted |
-| 3     | **ThrottlerGuard**      | Rate limiting (100/60s)                    |
-| 4     | **RolesGuard**          | Verifica sessão + roles no banco           |
-| 5     | **AllExceptionsFilter** | Padroniza respostas de erro com timestamp  |
+| Ordem | Componente                   | Descrição                                                       |
+| ----- | ---------------------------- | --------------------------------------------------------------- |
+| 1     | **correlationIdMiddleware**  | Abre o contexto de correlação; aceita e ecoa `x-request-id`      |
+| 2     | **pino-http**                | Log estruturado da requisição, já com `correlationId`            |
+| 3     | **CORS**                     | Múltiplas origens, credentials: true, expõe `x-request-id`       |
+| 4     | **ValidationPipe**           | whitelist, transform, forbidNonWhitelisted                       |
+| 5     | **ThrottlerGuard**           | Rate limiting (100/60s)                                          |
+| 6     | **RolesGuard**               | Verifica sessão + roles no banco                                 |
+| 7     | **AllExceptionsFilter**      | Padroniza erros, reporta 5xx ao Sentry, preserva payload do health |
+
+### Correlation ID
+
+`libs/config/src/request-context.ts` mantém um `AsyncLocalStorage` que é a fonte
+única do ID da requisição em curso. Ele é lido pelo `mixin` do pino (todo log
+sai com `correlationId`), pelo `AllExceptionsFilter` (vira a tag
+`correlation_id` no Sentry) e pelos producers de fila, que gravam
+`correlationId` no job data (`libs/config/src/job-data.ts`). Os consumers
+reidratam o contexto com `runWithCorrelationId`, usando `job.id` como fallback
+para jobs de cron e para jobs enfileirados antes do campo existir.
+
+Resultado: um request HTTP, o job que ele enfileirou e o evento de erro no
+Sentry compartilham o mesmo identificador.
+
+### Observabilidade
+
+- **Sentry** é inicializado por `apps/*/src/instrument.ts`, que precisa ser o
+  primeiro import do `main.ts` de cada app. A captura é **explícita** (no filtro
+  HTTP e em `reportJobFailure`) em vez de depender da auto-instrumentação: o
+  build é bundlado por webpack, onde os hooks de `require-in-the-middle` não são
+  confiáveis. Sem `SENTRY_DSN` o SDK sobe desabilitado.
+- **Falha de job** só é reportada na tentativa final (`isFinalAttempt`), senão
+  uma falha com `attempts: 3` viraria três alertas.
+- **Bull Board** fica em `GET /api/v1/admin/queues` — o `setGlobalPrefix` se
+  aplica à rota montada por middleware. É protegido por basic auth
+  (`BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`) e não pelo `RolesGuard`, que não
+  roda em middleware Express. Em produção o módulo só é montado se as duas
+  credenciais existirem.
 
 ---
 
@@ -674,6 +730,11 @@ Pipeline sequencial: **Lint → Test → Build**
 | `CLOUDFLARE_R2_PUBLIC_URL`        | URL pública do bucket R2                              |
 | `RESEND_API_KEY`                  | API key do Resend para envio de emails de verificação |
 | `EMAIL_FROM`                      | Email remetente (domínio verificado no Resend)        |
+| `SENTRY_DSN`                      | DSN do Sentry; sem ele o SDK fica desabilitado (opcional) |
+| `SENTRY_TRACES_SAMPLE_RATE`       | Amostragem de tracing, 0 a 1 (default: `0`)           |
+| `LOG_LEVEL`                       | Nível do pino: fatal/error/warn/info/debug/trace (default: `info`) |
+| `BULL_BOARD_USER`                 | Usuário do basic auth do Bull Board (opcional)        |
+| `BULL_BOARD_PASSWORD`             | Senha do basic auth do Bull Board (opcional; em produção o board só sobe com o par definido) |
 
 ---
 

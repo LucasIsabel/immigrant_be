@@ -8,6 +8,11 @@ import {
 import { EventsService } from '../events/events.service';
 import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import { AI_IMAGE_QUEUE, GENERATE_AI_IMAGE } from '@app/config/constants';
+import { runWithCorrelationId } from '@app/config/request-context';
+import {
+  jobCorrelationId,
+  reportJobFailure,
+} from '../common/report-job-failure';
 
 @Processor(AI_IMAGE_QUEUE)
 export class AiImageConsumer extends WorkerHost {
@@ -21,26 +26,28 @@ export class AiImageConsumer extends WorkerHost {
   }
 
   async process(job: Job<GenerateAiImageJobData>): Promise<void> {
-    if (job.name !== GENERATE_AI_IMAGE) {
-      this.logger.warn(`Unknown job name: ${job.name}`);
-      return;
-    }
+    return runWithCorrelationId(jobCorrelationId(job), async () => {
+      if (job.name !== GENERATE_AI_IMAGE) {
+        this.logger.warn(`Unknown job name: ${job.name}`);
+        return;
+      }
 
-    this.logger.log(
-      `Processing AI image job: ${job.id} (imageId: ${job.data.imageId})`,
-    );
-    await this.aiImageWorkerService.processImage(job.data);
-    this.logger.log(`AI image job completed: ${job.id}`);
+      this.logger.log(
+        `Processing AI image job: ${job.id} (imageId: ${job.data.imageId})`,
+      );
+      await this.aiImageWorkerService.processImage(job.data);
+      this.logger.log(`AI image job completed: ${job.id}`);
 
-    if (job.data.requestedByUserId) {
-      await this.eventsService.emit({
-        userId: job.data.requestedByUserId,
-        type: EVENT_TYPES.AI_IMAGE_COMPLETED,
-        title: 'Imagem gerada',
-        message: 'A imagem foi gerada e já está disponível na biblioteca.',
-        payload: { imageId: job.data.imageId },
-      });
-    }
+      if (job.data.requestedByUserId) {
+        await this.eventsService.emit({
+          userId: job.data.requestedByUserId,
+          type: EVENT_TYPES.AI_IMAGE_COMPLETED,
+          title: 'Imagem gerada',
+          message: 'A imagem foi gerada e já está disponível na biblioteca.',
+          payload: { imageId: job.data.imageId },
+        });
+      }
+    });
   }
 
   @OnWorkerEvent('failed')
@@ -52,6 +59,8 @@ export class AiImageConsumer extends WorkerHost {
       `Job de imagem falhou: ${job.id} (imageId: ${job.data.imageId}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,
     );
+
+    reportJobFailure(AI_IMAGE_QUEUE, job, error);
 
     if (!isFinalAttempt(job)) return;
 

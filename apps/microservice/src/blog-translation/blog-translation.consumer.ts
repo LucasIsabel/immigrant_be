@@ -17,6 +17,14 @@ import {
   TRANSLATE_BLOG_POST,
   TRANSLATE_ALL_PENDING,
 } from '@app/config/constants';
+import {
+  getCorrelationId,
+  runWithCorrelationId,
+} from '@app/config/request-context';
+import {
+  jobCorrelationId,
+  reportJobFailure,
+} from '../common/report-job-failure';
 
 @Processor(BLOG_TRANSLATION_QUEUE)
 export class BlogTranslationConsumer extends WorkerHost {
@@ -31,6 +39,10 @@ export class BlogTranslationConsumer extends WorkerHost {
   }
 
   async process(job: Job): Promise<void> {
+    return runWithCorrelationId(jobCorrelationId(job), () => this.handle(job));
+  }
+
+  private async handle(job: Job): Promise<void> {
     switch (job.name) {
       case TRANSLATE_BLOG_POST: {
         const data = job.data as TranslatePostJobData;
@@ -60,10 +72,12 @@ export class BlogTranslationConsumer extends WorkerHost {
           break;
         }
 
+        // The fanned-out jobs inherit this scan's ID, so one cron tick and
+        // everything it spawned share a trace.
         await this.queue.addBulk(
           pending.map((item) => ({
             name: TRANSLATE_BLOG_POST,
-            data: item,
+            data: { ...item, correlationId: getCorrelationId() },
           })),
         );
 
@@ -82,6 +96,8 @@ export class BlogTranslationConsumer extends WorkerHost {
       `Job de tradução falhou: ${job.id} (${job.name}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,
     );
+
+    reportJobFailure(BLOG_TRANSLATION_QUEUE, job, error);
 
     if (job.name !== TRANSLATE_BLOG_POST || !isFinalAttempt(job)) return;
 

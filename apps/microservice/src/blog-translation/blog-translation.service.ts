@@ -6,11 +6,12 @@ import {
   blogTranslationAiSchema,
 } from '@app/ai';
 import { BlogPostStatus } from '../../../../generated/prisma';
+import { CorrelatedJobData } from '@app/config/job-data';
 
 export const SUPPORTED_LOCALES = ['pt', 'es'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
-export interface TranslatePostJobData {
+export interface TranslatePostJobData extends CorrelatedJobData {
   postId: string;
   targetLocale: SupportedLocale;
   requestedByUserId?: string;

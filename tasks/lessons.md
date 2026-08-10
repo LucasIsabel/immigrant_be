@@ -147,3 +147,33 @@ casou cedo e levou junto sete campos que deveriam ficar.
 **Regra:** edição estrutural de TS/decorator não se faz com regex. Ou é
 edição pontual com âncora exata, ou é AST. E depois de qualquer remoção em
 massa, conferir a contagem de campos antes de commitar.
+
+## 2026-08-10 — Teste com client mockado não prova que a conexão funciona
+
+O `RedisHealthIndicator` nasceu com `lazyConnect: true` **e**
+`enableOfflineQueue: false`. Os seis testes unitários passavam — todos mockam o
+client e chamam `ping()` direto. Ao subir a aplicação de verdade, `/health`
+reportou `redis: down` com o Redis respondendo `PONG` no `redis-cli`.
+
+A causa: com `lazyConnect`, a conexão só é aberta pelo primeiro comando; com a
+fila offline desligada, esse primeiro comando é rejeitado antes de o socket
+existir. Ou seja, o indicador nunca conseguia conectar.
+
+A mesma subida revelou um segundo problema invisível no teste: sem listener de
+`error`, o client emite `Unhandled error event` a cada tentativa de reconexão
+enquanto o Redis está fora.
+
+**Regra:** integração com I/O externo não fica provada por unit test com mock.
+Antes de fechar, suba o processo contra a dependência real e exercite o ciclo
+completo — no ar, fora do ar, de volta ao ar. Para o Redis especificamente:
+`lazyConnect` exige `enableOfflineQueue` ligado, e todo client precisa de um
+handler de `error`.
+
+## 2026-08-10 — `pkill -f` casa com o próprio shell
+
+Ao reiniciar a API em verificação manual, `pkill -f "dist/apps/immigrant_be/main.js"`
+derrubou o próprio comando (exit 144): o padrão casa também com a linha de
+comando do bash que o executa.
+
+**Regra:** em script, guarde o PID (`echo $! > app.pid`) e mate por PID. Se
+precisar de `pgrep`/`pkill -f`, exclua o próprio processo.
