@@ -34,7 +34,7 @@ import {
   PlanImmigrationVisaTypeDto,
 } from './dto/plan-response.dto';
 import { UserDetailsDto } from './dto/user-detail.dto';
-import { MarkStepDto } from './dto/mark-step.dto';
+import { UpdatePlanStepsDto } from './dto/update-plan-steps.dto';
 import { MyProfileResponseDto } from './dto/my-profile-response.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { UpdateMyPreferencesDto } from './dto/update-my-preferences.dto';
@@ -164,6 +164,14 @@ export class UserController {
     example: '123e4567-e89b-12d3-a456-426614174000',
     type: String,
   })
+  @ApiQuery({
+    name: 'language',
+    description:
+      'Language to resolve the step text into (en | pt | es). Defaults to en, and falls back to en when the visa type has no row for the requested language. The completion state is language-independent, so switching only changes the copy.',
+    required: false,
+    type: String,
+    example: 'pt',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User plan retrieved successfully',
@@ -174,8 +182,12 @@ export class UserController {
     description: 'Plan not found or does not belong to the user',
   })
   @Get('/plan/:id')
-  getUserPlan(@Session() user: UserSession, @Param('id') id: string) {
-    return this.userService.getUserPlan(user, id);
+  getUserPlan(
+    @Session() user: UserSession,
+    @Param('id') id: string,
+    @Query('language') language?: string,
+  ) {
+    return this.userService.getUserPlan(user, id, language);
   }
 
   @ApiOperation({
@@ -194,12 +206,6 @@ export class UserController {
     description: 'ID of the visa type to select',
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @ApiQuery({
-    name: 'language',
-    description: 'Language to resolve visa steps (default: en)',
-    required: false,
-    type: String,
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -220,17 +226,16 @@ export class UserController {
     @Session() user: UserSession,
     @Param('plan_id') plan_id: string,
     @Param('visa_type_id') visaTypeId: string,
-    @Query('language') language?: string,
   ): Promise<{ id: string }> {
-    return this.userService.selectVisaType(user, plan_id, visaTypeId, language);
+    return this.userService.selectVisaType(user, plan_id, visaTypeId);
   }
 
   @ApiOperation({
-    summary: 'Update plan steps with full remaining and completed state',
+    summary: 'Replace the set of completed step keys',
     description:
-      'Replaces the plan step state with the full `steps_remaining` and `steps_completed` objects sent by the client. ' +
-      'The server recalculates `progress` and persists the new state. ' +
-      'Sending the legacy fields `category`, `step_name`, or `completed` will result in a 400 Bad Request.',
+      'The client owns the completion state and sends it whole, as a list of stable step keys. ' +
+      'Keys are language-independent, so the same payload is valid whatever locale the user is reading in. ' +
+      'Keys the visa type does not declare are discarded, and the server recalculates `progress` over the required steps.',
   })
   @ApiParam({
     name: 'plan_id',
@@ -238,14 +243,16 @@ export class UserController {
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiBody({ type: MarkStepDto })
+  @ApiBody({ type: UpdatePlanStepsDto })
   @ApiOkResponse({
-    description: 'Plan steps updated and progress recalculated',
-    schema: { example: { id: '123e4567-e89b-12d3-a456-426614174000' } },
+    description: 'Completed step keys replaced and progress recalculated',
+    schema: {
+      example: { id: '123e4567-e89b-12d3-a456-426614174000', progress: 0.5 },
+    },
   })
   @ApiBadRequestResponse({
     description:
-      'Validation failed — `steps_remaining` or `steps_completed` is missing or not an object',
+      '`completed_step_keys` is missing or not a string array, or the plan has no selected visa type',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -253,12 +260,12 @@ export class UserController {
   })
   @HttpCode(HttpStatus.OK)
   @Patch('/plan/:plan_id/step')
-  async markStep(
+  async updateSteps(
     @Session() session: UserSession,
     @Param('plan_id') plan_id: string,
-    @Body() dto: MarkStepDto,
-  ): Promise<{ id: string }> {
-    return this.userService.markStep(session, plan_id, dto);
+    @Body() dto: UpdatePlanStepsDto,
+  ): Promise<{ id: string; progress: number }> {
+    return this.userService.updateSteps(session, plan_id, dto);
   }
 
   @ApiOperation({ summary: 'Migrate all remaining steps to completed' })

@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REGISTRY } from './registry';
-import { LANGUAGES, STEP_GROUPS } from './types';
+import { LANGUAGES, slugifyStepKey, STEP_GROUPS } from './types';
 
 type Problem = { where: string; what: string };
 
@@ -89,8 +89,6 @@ for (const [country, visaTypeMap] of Object.entries(REGISTRY)) {
     }
 
     for (const language of LANGUAGES) {
-      const seen = new Set<string>();
-
       for (const group of groups) {
         for (const spec of steps[group] ?? []) {
           const [name, notes] = spec[language];
@@ -104,14 +102,33 @@ for (const [country, visaTypeMap] of Object.entries(REGISTRY)) {
               what: `empty notes on "${name}"`,
             });
           }
-          if (seen.has(name)) {
-            problems.push({
-              where: `${at} (${language})`,
-              what: `duplicate step name "${name}" — the frontend keys completion by name alone, so the two would toggle together`,
-            });
-          }
-          seen.add(name);
         }
+      }
+    }
+
+    // Keys are checked once, not per language: they derive from `en` alone, so
+    // they are identical in all three blobs by construction. A duplicate means
+    // two steps of this visa type share one entry in
+    // `plans.completed_step_keys`, and they would tick together.
+    const seenKeys = new Set<string>();
+
+    for (const group of groups) {
+      for (const spec of steps[group] ?? []) {
+        const key = spec.key ?? slugifyStepKey(spec.en[0]);
+
+        if (!key) {
+          problems.push({
+            where: at,
+            what: `"${spec.en[0]}" produces an empty key — set an explicit \`key\``,
+          });
+        }
+        if (seenKeys.has(key)) {
+          problems.push({
+            where: at,
+            what: `duplicate step key "${key}" — completion is tracked by key, so the two would toggle together`,
+          });
+        }
+        seenKeys.add(key);
       }
     }
 

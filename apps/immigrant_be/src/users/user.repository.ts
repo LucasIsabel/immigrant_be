@@ -8,8 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { SuggestionItem } from '../system/dto/suggestions.dto';
 import { UserSession } from '@thallesp/nestjs-better-auth';
 import { ImmigrationVisaType, Plans, Prisma, Users } from 'generated/prisma';
-import { PlanResponseDto } from './dto/plan-response.dto';
-import { formatPlanResponse } from './utils/formatter';
+import type { PlanWithRelations } from './utils/formatter';
 import { ListUsersQueryDto, UserSortBy } from './dto/list-users-query.dto';
 
 @Injectable()
@@ -30,9 +29,6 @@ export class UserRepository {
         user_id: user.user.id,
         suggestion_id,
         country_id: suggestion.country_id,
-        steps: Prisma.JsonNull,
-        steps_completed: Prisma.JsonNull,
-        steps_remaining: Prisma.JsonNull,
         selected_suggestion: JSON.parse(JSON.stringify(suggestion)),
       },
     });
@@ -53,10 +49,20 @@ export class UserRepository {
     });
   }
 
-  async getUserPlan(
+  /**
+   * The plan plus everything the response needs, unformatted.
+   *
+   * Formatting moved to the service because the step text is no longer stored
+   * on the plan — it has to be resolved against `visa_steps` in the requested
+   * language first, and the repository has no business deciding that.
+   */
+  async getUserPlanWithRelations(
     user: UserSession,
     plan_id: string,
-  ): Promise<PlanResponseDto | null> {
+  ): Promise<{
+    data: PlanWithRelations;
+    visaTypes: ImmigrationVisaType[];
+  } | null> {
     const data = await this.prisma.plans.findUnique({
       where: {
         id: plan_id,
@@ -74,9 +80,7 @@ export class UserRepository {
       return null;
     }
 
-    const visaTypes = await this.getVisaTypes(data?.country_id);
-
-    return formatPlanResponse(data, visaTypes);
+    return { data, visaTypes: await this.getVisaTypes(data.country_id) };
   }
 
   async getVisaTypes(
@@ -153,15 +157,14 @@ export class UserRepository {
     });
   }
 
-  async updatePlanStepsRemaining(planId: string, steps: Prisma.InputJsonValue) {
+  /**
+   * Clears progress when the user picks a different visa type. The step list
+   * changes wholesale, so keys from the previous type would be orphans.
+   */
+  async resetPlanSteps(planId: string) {
     return this.prisma.plans.update({
-      where: {
-        id: planId,
-      },
-      data: {
-        steps_remaining: steps,
-        steps_completed: {} as Prisma.InputJsonValue,
-      },
+      where: { id: planId },
+      data: { completed_step_keys: [], progress: 0 },
     });
   }
 
@@ -174,15 +177,14 @@ export class UserRepository {
     });
   }
 
-  async updatePlanStepProgress(
+  async updateCompletedStepKeys(
     planId: string,
-    steps_remaining: Prisma.InputJsonValue,
-    steps_completed: Prisma.InputJsonValue,
+    completed_step_keys: string[],
     progress: number,
   ) {
     return this.prisma.plans.update({
       where: { id: planId },
-      data: { steps_remaining, steps_completed, progress },
+      data: { completed_step_keys, progress },
     });
   }
 

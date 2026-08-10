@@ -335,9 +335,11 @@ model Plans {
   suggestion Suggestions? @relation(fields: [suggestion_id], references: [id], onDelete: SetNull)
   country_id String? @db.Uuid @map("country_id")
   country Country? @relation(fields: [country_id], references: [id], onDelete: SetNull)
-  steps Json? @map("steps")
-  steps_completed Json? @map("steps_completed")
-  steps_remaining Json? @map("steps_remaining")
+  /// Stable step keys the user has ticked. The step *text* is not copied here:
+  /// it lives in `visa_steps`, one row per language, and is resolved on read
+  /// from `selected_visa_type_id` + the requested locale. Storing only the
+  /// identity is what makes switching language keep the progress.
+  completed_step_keys String[] @default([]) @map("completed_step_keys")
   documents Json @map("documents") @default("[]")
   selected_suggestion Json? @map("selected_suggestion")
   status String @default("draft") @map("status")
