@@ -1,4 +1,4 @@
-import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { IsArray } from 'class-validator';
 import { Prisma } from 'generated/prisma';
 
@@ -97,6 +97,7 @@ export class PlanImmigrationVisaTypeDto {
   country_id: string;
 }
 
+@ApiExtraModels(PlanStepItemDto)
 export class PlanResponseDto {
   @ApiProperty({
     description: 'Unique identifier for the plan',
