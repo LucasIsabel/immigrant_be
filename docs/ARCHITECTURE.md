@@ -127,6 +127,23 @@ módulo/
 | **Repository** | Executar queries Prisma, mapear dados                                   | Conter lógica de negócio, lançar HTTP exceptions    |
 | **DTO**        | Validar e tipar dados de entrada/saída                                  | Conter lógica                                       |
 
+### Nome de campo em DTO é contrato de banco
+
+Os repositories espalham o DTO direto em `prisma.*.create` / `.update`, sem
+camada de mapeamento. Um campo com nome que não existe no schema não é barrado
+pela `ValidationPipe` — ele chega ao Prisma, que lança
+`PrismaClientValidationError`, e o cliente recebe um 500 opaco.
+
+Por isso:
+
+- **Campo de DTO usa o nome da coluna**, em snake_case, como no `schema.prisma`.
+- **`Update*Dto` deriva do `Create*Dto`** com `PartialType` (e `OmitType` para o
+  que não pertence ao update, como relações). Escrever o update à mão é o que
+  permite os dois lados divergirem sem ninguém perceber — foi assim que quatro
+  campos de `UpdateCountryDto` ficaram em camelCase por meses.
+- A pipe roda com `forbidNonWhitelisted: true`, então renomear campo de DTO é
+  **breaking change**: o cliente que ainda manda o nome antigo passa a levar 400.
+
 ---
 
 ## 4. Autenticação e Autorização
