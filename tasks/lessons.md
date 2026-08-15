@@ -3,6 +3,29 @@
 Padrões aprendidos trabalhando neste repositório. Cada entrada existe para
 evitar que o mesmo erro se repita.
 
+## 2026-08-15 — DTO escrito à mão é onde o contrato diverge do schema
+
+`UpdateCountryDto` era o único `Update*Dto` do repo declarado campo a campo; todos os
+outros derivam do `Create*Dto` com `PartialType`. Quatro campos dele estavam em camelCase
+contra colunas snake_case do Prisma. Como o repository espalha o DTO direto em
+`prisma.country.update`, toda edição que tocasse um deles morria em
+`PrismaClientValidationError` — 500 opaco para o cliente. Ficou meses assim.
+
+**Regra:** `Update*Dto` deriva do `Create*Dto` (`PartialType`, com `OmitType` para
+relações). Duplicar a declaração é criar dois lugares onde o nome do campo pode divergir,
+e só um deles é conferido contra o banco.
+
+## 2026-08-15 — Teste com repository mockado não cobre nome de campo
+
+O `country.service.spec.ts` passava com o bug vivo em produção: ele mocka o repository,
+então um campo com nome errado atravessa o serviço sem reclamação. Quem rejeita é o Prisma,
+duas camadas abaixo.
+
+**Regra:** quando o bug é de *nome* de campo e o repository espalha o DTO em `data`, o teste
+tem que comparar os campos do DTO com as colunas do `schema.prisma` — não exercitar o
+serviço. E vale ler o schema em vez de importar `generated/prisma`: o teste deixa de
+depender de um `prisma generate` recente.
+
 ## 2026-08-03 — Rastreamento de tasks saiu do ClickUp e foi para o GitHub Projects
 
 O Lucas decidiu que, a partir do PR das tasks desta rodada, o ClickUp deixa de ser usado nos
