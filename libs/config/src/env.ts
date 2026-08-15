@@ -25,6 +25,19 @@ export const envSchema = zod.object({
   CLOUDFLARE_R2_PUBLIC_URL: zod.string().url(),
   CLOUDFLARE_ENDPOINT: zod.string().url(),
   REDIS_URL: zod.string().url(),
+  /**
+   * Observability. All optional or defaulted on purpose: this schema is parsed
+   * at import time in every process (API, worker, seeds), so a newly required
+   * variable would break local dev, CI and any deploy that has not set it yet.
+   * Without a DSN, Sentry stays disabled instead of failing.
+   */
+  SENTRY_DSN: zod.string().url().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: zod.coerce.number().min(0).max(1).default(0),
+  LOG_LEVEL: zod
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
+  BULL_BOARD_USER: zod.string().optional(),
+  BULL_BOARD_PASSWORD: zod.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

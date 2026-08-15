@@ -8,6 +8,11 @@ import {
 import { EventsService } from '../events/events.service';
 import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import { AI_BLOG_QUEUE, GENERATE_AI_BLOG_POST } from '@app/config/constants';
+import { runWithCorrelationId } from '@app/config/request-context';
+import {
+  jobCorrelationId,
+  reportJobFailure,
+} from '../common/report-job-failure';
 
 @Processor(AI_BLOG_QUEUE)
 export class AiBlogConsumer extends WorkerHost {
@@ -21,27 +26,31 @@ export class AiBlogConsumer extends WorkerHost {
   }
 
   async process(job: Job<GenerateBlogPostJobData>): Promise<void> {
-    switch (job.name) {
-      case GENERATE_AI_BLOG_POST: {
-        this.logger.log(`Processing AI blog post generation job: ${job.id}`);
-        await this.aiBlogWorkerService.generatePost(job.data);
-        this.logger.log(`AI blog post generation completed for job: ${job.id}`);
+    return runWithCorrelationId(jobCorrelationId(job), async () => {
+      switch (job.name) {
+        case GENERATE_AI_BLOG_POST: {
+          this.logger.log(`Processing AI blog post generation job: ${job.id}`);
+          await this.aiBlogWorkerService.generatePost(job.data);
+          this.logger.log(
+            `AI blog post generation completed for job: ${job.id}`,
+          );
 
-        if (job.data.requestedByUserId) {
-          await this.eventsService.emit({
-            userId: job.data.requestedByUserId,
-            type: EVENT_TYPES.BLOG_POST_GENERATED,
-            title: 'Post gerado',
-            message:
-              'O post foi gerado e está na fila de aprovação. A imagem de capa está sendo processada.',
-            payload: {},
-          });
+          if (job.data.requestedByUserId) {
+            await this.eventsService.emit({
+              userId: job.data.requestedByUserId,
+              type: EVENT_TYPES.BLOG_POST_GENERATED,
+              title: 'Post gerado',
+              message:
+                'O post foi gerado e está na fila de aprovação. A imagem de capa está sendo processada.',
+              payload: {},
+            });
+          }
+          break;
         }
-        break;
+        default:
+          this.logger.warn(`Unknown job name: ${job.name}`);
       }
-      default:
-        this.logger.warn(`Unknown job name: ${job.name}`);
-    }
+    });
   }
 
   @OnWorkerEvent('failed')
@@ -53,6 +62,8 @@ export class AiBlogConsumer extends WorkerHost {
       `Geração de post falhou: ${job.id} (country: ${job.data.country_id}) — tentativa ${job.attemptsMade}: ${error.message}`,
       error.stack,
     );
+
+    reportJobFailure(AI_BLOG_QUEUE, job, error);
 
     if (!isFinalAttempt(job) || !job.data.requestedByUserId) return;
 

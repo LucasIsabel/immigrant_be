@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { GeminiBaseService } from '@app/ai';
 import { StorageService } from '@app/storage';
+import { CorrelatedJobData } from '@app/config/job-data';
 
-export interface GenerateAiImageJobData {
+export interface GenerateAiImageJobData extends CorrelatedJobData {
   imageId: string;
   prompt: string;
   folder: string;

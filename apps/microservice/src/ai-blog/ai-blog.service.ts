@@ -16,8 +16,10 @@ import {
 } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
+import { CorrelatedJobData } from '@app/config/job-data';
+import { getCorrelationId } from '@app/config/request-context';
 
-export interface GenerateBlogPostJobData {
+export interface GenerateBlogPostJobData extends CorrelatedJobData {
   country_id: string;
   category_id: string;
   cron_job_id?: string;
@@ -116,6 +118,8 @@ export class AiBlogWorkerService {
       title: post.title,
       countryName: country.name,
       requestedByUserId: data.requestedByUserId,
+      // Keeps the chained image job on the trace of the request that started it.
+      correlationId: getCorrelationId(),
     });
 
     // Update last_run_at on cron job if triggered by one

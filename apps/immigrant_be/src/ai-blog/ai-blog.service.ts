@@ -20,6 +20,7 @@ import {
 } from '@app/config/constants';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { PostComplexity, PoliticalTone } from '@app/ai';
+import { getCorrelationId } from '@app/config/request-context';
 
 @Injectable()
 export class AiBlogService {
@@ -47,6 +48,7 @@ export class AiBlogService {
       political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
       custom_instructions: dto.custom_instructions,
       requestedByUserId: requestedByUserId ?? undefined,
+      correlationId: getCorrelationId(),
     });
     this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
     return {
@@ -108,6 +110,7 @@ export class AiBlogService {
     const job = await this.aiBlogImageQueue.add(REFINE_AI_BLOG_POST, {
       postId: id,
       requestedByUserId: requestedByUserId ?? undefined,
+      correlationId: getCorrelationId(),
     });
     this.logger.log(
       `Enqueued AI blog post refinement job: ${job.id} for post ${id}`,
@@ -241,6 +244,7 @@ export class AiBlogService {
         complexity: dto.complexity ?? PostComplexity.SIMPLE,
         political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
         custom_instructions: dto.custom_instructions,
+        correlationId: getCorrelationId(),
       },
       { repeat: { pattern: dto.cron_expr } },
     );
