@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   IsUrl,
   MaxLength,
   Min,
@@ -14,6 +15,15 @@ import {
 import { Type } from 'class-transformer';
 
 export class TourItemDto {
+  @ApiPropertyOptional({
+    description:
+      'Identidade estável do item, gerada pelo servidor na primeira gravação. Enviar de volta ao editar para não perder a identidade.',
+    example: '3f2a1c4e-9b7d-4e1a-8c3f-2d5b6a7e8f90',
+  })
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
   @ApiProperty({ example: 'Tour Histórico de Lisboa' })
   @IsString()
   name: string;
@@ -59,6 +69,15 @@ export class TourItemDto {
 }
 
 export class ItineraryPhotoDto {
+  @ApiPropertyOptional({
+    description:
+      'Identidade estável do item, gerada pelo servidor na primeira gravação. Enviar de volta ao editar para não perder a identidade.',
+    example: '3f2a1c4e-9b7d-4e1a-8c3f-2d5b6a7e8f90',
+  })
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
   @ApiProperty({ example: 'https://cdn.example.com/photo.jpg' })
   @IsUrl()
   url: string;
@@ -75,6 +94,15 @@ export class ItineraryPhotoDto {
 }
 
 export class ItineraryLocationDto {
+  @ApiPropertyOptional({
+    description:
+      'Identidade estável do item, gerada pelo servidor na primeira gravação. Enviar de volta ao editar para não perder a identidade.',
+    example: '3f2a1c4e-9b7d-4e1a-8c3f-2d5b6a7e8f90',
+  })
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
   @ApiPropertyOptional({ example: 'Bairro Alto' })
   @IsString()
   @IsOptional()
