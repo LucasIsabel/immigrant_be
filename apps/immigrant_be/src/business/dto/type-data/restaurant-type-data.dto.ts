@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   IsUrl,
   MaxLength,
   ValidateNested,
@@ -19,6 +20,15 @@ export enum PriceRange {
 }
 
 export class MenuItemDto {
+  @ApiPropertyOptional({
+    description:
+      'Identidade estável do item, gerada pelo servidor na primeira gravação. Enviar de volta ao editar para não perder a identidade.',
+    example: '3f2a1c4e-9b7d-4e1a-8c3f-2d5b6a7e8f90',
+  })
+  @IsUUID()
+  @IsOptional()
+  id?: string;
+
   @ApiProperty({ example: 'Pizza Margherita' })
   @IsString()
   name: string;

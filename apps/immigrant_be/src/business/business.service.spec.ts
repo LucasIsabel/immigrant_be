@@ -181,7 +181,20 @@ describe('BusinessService', () => {
       const result = await service.create('user-id-1', dto);
 
       expect(result).toEqual(mockBusiness);
-      expect(repository.create).toHaveBeenCalledWith('user-id-1', dto);
+
+      // O dto chega ao repositório com os ids atribuídos, então a comparação é
+      // por conteúdo mais `id`, não por identidade com o objeto original.
+      const saved = repository.create.mock.calls[0][1];
+      expect(saved).toMatchObject({
+        ...dto,
+        typeData: expect.objectContaining({
+          languages: ['portugues', 'ingles'],
+        }),
+      });
+      expect(saved.typeData.itinerary[0]).toMatchObject({
+        name: 'Lisboa',
+        id: expect.any(String),
+      });
     });
 
     it('should throw BadRequestException for TOUR_GUIDE with invalid photo URL', () => {
@@ -426,6 +439,113 @@ describe('BusinessService', () => {
       await expect(
         service.getPublicBusinessById('non-existent'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('identidade dos itens de typeData', () => {
+    const UUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    it('gera id para cada prato do menu ao criar', async () => {
+      mockBusinessRepository.create.mockResolvedValue(mockBusiness);
+
+      await service.create('user-id-1', {
+        businessType: 'RESTAURANT',
+        name: 'Cantina',
+        city: 'Porto',
+        typeData: {
+          menu: [
+            { name: 'Bacalhau', price: 18 },
+            { name: 'Francesinha', price: 14 },
+          ],
+        },
+      } as any);
+
+      const saved = mockBusinessRepository.create.mock.calls[0][1];
+      const menu = saved.typeData.menu;
+      expect(menu).toHaveLength(2);
+      for (const item of menu) {
+        expect(item.id).toMatch(UUID);
+      }
+      expect(menu[0].id).not.toBe(menu[1].id);
+    });
+
+    /**
+     * A propriedade que faz o id valer. Se ele fosse regerado a cada gravação,
+     * editar o preço de um prato trocaria a identidade de todos — exatamente o
+     * que o id existe para evitar.
+     */
+    it('preserva o id existente ao gravar de novo', async () => {
+      mockBusinessRepository.create.mockResolvedValue(mockBusiness);
+      const existingId = '3f2a1c4e-9b7d-4e1a-8c3f-2d5b6a7e8f90';
+
+      await service.create('user-id-1', {
+        businessType: 'RESTAURANT',
+        name: 'Cantina',
+        city: 'Porto',
+        typeData: {
+          menu: [
+            { id: existingId, name: 'Bacalhau', price: 20 },
+            { name: 'Novo prato', price: 9 },
+          ],
+        },
+      } as any);
+
+      const menu = mockBusinessRepository.create.mock.calls[0][1].typeData.menu;
+      expect(menu[0].id).toBe(existingId);
+      expect(menu[1].id).toMatch(UUID);
+    });
+
+    it('cobre tours, itinerário e as fotos aninhadas do guia', async () => {
+      mockBusinessRepository.create.mockResolvedValue(mockBusiness);
+
+      await service.create('user-id-1', {
+        businessType: 'TOUR_GUIDE',
+        name: 'Guia do Douro',
+        city: 'Porto',
+        typeData: {
+          tours: [{ name: 'Douro a pé', duration: '3h', price: 40 }],
+          itinerary: [
+            {
+              name: 'Ribeira',
+              photos: [{ url: 'https://cdn.example.com/a.jpg' }],
+            },
+          ],
+        },
+      } as any);
+
+      const data = mockBusinessRepository.create.mock.calls[0][1].typeData;
+      expect(data.tours[0].id).toMatch(UUID);
+      expect(data.itinerary[0].id).toMatch(UUID);
+      expect(data.itinerary[0].photos[0].id).toMatch(UUID);
+    });
+
+    it('não mexe em typeData de tipo sem itens identificáveis', async () => {
+      mockBusinessRepository.create.mockResolvedValue(mockBusiness);
+      const typeData = { specializations: ['Imigração'] };
+
+      await service.create('user-id-1', {
+        businessType: 'LEGAL',
+        name: 'Escritório',
+        city: 'Porto',
+        typeData,
+      } as any);
+
+      expect(mockBusinessRepository.create.mock.calls[0][1].typeData).toEqual(
+        typeData,
+      );
+    });
+
+    it('atribui id também ao salvar rascunho', async () => {
+      mockBusinessRepository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+      mockBusinessRepository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', {
+        typeData: { menu: [{ name: 'Sopa', price: 5 }] },
+      } as any);
+
+      const draft = mockBusinessRepository.saveDraft.mock.calls[0][1];
+      expect(draft.typeData.menu[0].id).toMatch(UUID);
     });
   });
 });

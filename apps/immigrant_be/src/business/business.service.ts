@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { BusinessType } from '../../../../generated/prisma';
 import { BusinessRepository } from './business.repository';
@@ -21,6 +22,7 @@ const restaurantTypeDataSchema = z.object({
   menu: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         name: z.string(),
         price: z.number(),
         category: z.string().max(100).optional(),
@@ -43,6 +45,7 @@ const tourGuideTypeDataSchema = z.object({
   tours: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         name: z.string(),
         duration: z.string(),
         price: z.number(),
@@ -62,6 +65,7 @@ const tourGuideTypeDataSchema = z.object({
   itinerary: z
     .array(
       z.object({
+        id: z.string().uuid().optional(),
         name: z.string().optional(),
         description: z.string().optional(),
         country: z.string().optional(),
@@ -72,6 +76,7 @@ const tourGuideTypeDataSchema = z.object({
         photos: z
           .array(
             z.object({
+              id: z.string().uuid().optional(),
               url: z.string().url(),
               lat: z.number().optional(),
               lng: z.number().optional(),
@@ -106,7 +111,10 @@ export class BusinessService {
 
   create(userId: string, dto: CreateBusinessDto) {
     this.validateTypeData(dto.businessType, dto.typeData);
-    return this.repository.create(userId, dto);
+    return this.repository.create(userId, {
+      ...dto,
+      typeData: this.assignItemIds(dto.businessType, dto.typeData),
+    });
   }
 
   /**
@@ -121,7 +129,13 @@ export class BusinessService {
     if (dto.typeData) {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
-    return this.repository.saveDraft(id, dto as object);
+    const draft = {
+      ...dto,
+      ...(dto.typeData
+        ? { typeData: this.assignItemIds(typeToValidate, dto.typeData) }
+        : {}),
+    };
+    return this.repository.saveDraft(id, draft as object);
   }
 
   async publishDraft(id: string, userId: string) {
@@ -143,6 +157,9 @@ export class BusinessService {
       !dto.typeData;
     const updateData = {
       ...dto,
+      ...(dto.typeData
+        ? { typeData: this.assignItemIds(typeToValidate, dto.typeData) }
+        : {}),
       ...(shouldClearTypeData ? { typeData: null as unknown as object } : {}),
     };
     return this.repository.applyDraftAndClearDraft(id, updateData);
@@ -179,6 +196,67 @@ export class BusinessService {
       throw new NotFoundException('Negócio não encontrado');
     }
     return business;
+  }
+
+  /**
+   * Campos de `typeData` cujos itens carregam identidade própria.
+   *
+   * São arrays dentro de um JSON, não tabelas — então o id não vem do banco e
+   * precisa ser atribuído aqui, na escrita.
+   */
+  private static readonly ITEM_COLLECTIONS: Partial<
+    Record<BusinessType, string[]>
+  > = {
+    [BusinessType.RESTAURANT]: ['menu'],
+    [BusinessType.TOUR_GUIDE]: ['tours', 'itinerary'],
+  };
+
+  /**
+   * Preenche `id` nos itens de `typeData` que ainda não têm.
+   *
+   * Idempotente de propósito: item que já tem id mantém o mesmo. Se
+   * regerássemos a cada gravação, editar o preço de um prato trocaria a
+   * identidade de todos os itens da lista, que é justamente o que o id existe
+   * para evitar.
+   */
+  private assignItemIds(
+    businessType: BusinessType,
+    typeData?: object,
+  ): object | undefined {
+    if (!typeData) return typeData;
+
+    const collections = BusinessService.ITEM_COLLECTIONS[businessType];
+    if (!collections) return typeData;
+
+    const data = { ...(typeData as Record<string, unknown>) };
+
+    for (const field of collections) {
+      const items = data[field];
+      if (!Array.isArray(items)) continue;
+
+      data[field] = items.map((item: unknown) => {
+        if (typeof item !== 'object' || item === null) return item;
+
+        const withId = { ...(item as Record<string, unknown>) };
+        if (typeof withId.id !== 'string') {
+          withId.id = randomUUID();
+        }
+
+        // As fotos de uma parada de itinerário são a única coleção aninhada.
+        if (Array.isArray(withId.photos)) {
+          withId.photos = withId.photos.map((photo: unknown) => {
+            if (typeof photo !== 'object' || photo === null) return photo;
+            const p = { ...(photo as Record<string, unknown>) };
+            if (typeof p.id !== 'string') p.id = randomUUID();
+            return p;
+          });
+        }
+
+        return withId;
+      });
+    }
+
+    return data;
   }
 
   private validateTypeData(businessType: BusinessType, typeData?: object) {
