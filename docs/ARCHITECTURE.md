@@ -518,6 +518,7 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `PATCH /users/me/preferences`                | Users                     | Autenticado (emailNotificationsEnabled)    |
 | `/users/plan`                                | Users                     | Autenticado                                |
 | `GET /users/plan/:id?language=`              | Users                     | Autenticado (steps resolvidos no idioma)   |
+| `PATCH /users/plan/:id`                      | Users                     | Autenticado (renomeia; só `name` hoje)     |
 | `PATCH /users/plan/:id/step`                 | Users                     | Autenticado (troca `completed_step_keys`)  |
 | `/users/plan/from-country`                   | Users                     | Autenticado (criar plano a partir de país) |
 | `/admin/users`                               | Users (admin)             | ADMIN                                      |

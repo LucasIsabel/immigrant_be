@@ -56,6 +56,7 @@ const mockUserRepository = {
   getUserPlanRaw: jest.fn(),
   getUserPlanWithRelations: jest.fn(),
   updateCompletedStepKeys: jest.fn(),
+  updatePlan: jest.fn(),
   resetPlanSteps: jest.fn(),
   createUserPlan: jest.fn(),
   getAllUserPlans: jest.fn(),
@@ -166,6 +167,37 @@ describe('UserService — plan steps', () => {
         1,
       );
       expect(result.progress).toBe(1);
+    });
+  });
+
+  describe('updatePlan', () => {
+    it('renames a plan the user owns', async () => {
+      repository.getUserPlanRaw.mockResolvedValue(makePlan());
+      repository.updatePlan.mockResolvedValue(
+        makePlan({ name: 'Mudança para Portugal' }),
+      );
+
+      const result = await service.updatePlan(mockSession, PLAN_ID, {
+        name: 'Mudança para Portugal',
+      });
+
+      expect(repository.updatePlan).toHaveBeenCalledWith(PLAN_ID, {
+        name: 'Mudança para Portugal',
+      });
+      expect(result).toMatchObject({ name: 'Mudança para Portugal' });
+    });
+
+    it('refuses a plan that belongs to someone else', async () => {
+      // getUserPlanRaw filters by user_id, so "not found" and "not yours" are
+      // the same answer here — and they must be, or the 404 would leak which
+      // UUIDs exist. The repository update is keyed by id alone, so skipping
+      // this check would let a guessed UUID rename a stranger's plan.
+      repository.getUserPlanRaw.mockResolvedValue(null);
+
+      await expect(
+        service.updatePlan(mockSession, PLAN_ID, { name: 'Sequestrado' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.updatePlan).not.toHaveBeenCalled();
     });
   });
 
