@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 
@@ -24,15 +25,18 @@ function buildService(): GeminiBaseService {
 
 describe('GeminiBaseService', () => {
   let service: GeminiBaseService;
-  let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetGenerativeModel.mockReturnValue({});
     service = buildService();
-    errorSpy = jest
-      .spyOn(service['logger'], 'error')
-      .mockImplementation(() => undefined);
+    // The parse failures below are expected; silence them so the suite output
+    // stays readable. The messages themselves are asserted in the util's spec.
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('constructor', () => {
@@ -59,53 +63,31 @@ describe('GeminiBaseService', () => {
     });
   });
 
-  describe('parseJsonResponse', () => {
+  /**
+   * The parsing itself moved to `utils/json-response.util.ts` and is covered
+   * there. What matters here is that the delegation kept the contract the callers
+   * in `system` and `business-pages` depend on: parsed value or `null`, never a
+   * throw.
+   */
+  describe('parseJsonResponse (delegates to the shared util)', () => {
     it('returns the parsed value for a valid payload', () => {
-      const result = service.parseJsonResponse(
-        '```json\n{"title":"Portugal","score":9}\n```',
-        schema,
-      );
-
-      expect(result).toEqual({ title: 'Portugal', score: 9 });
-      expect(errorSpy).not.toHaveBeenCalled();
+      expect(
+        service.parseJsonResponse(
+          '```json\n{"title":"Portugal","score":9}\n```',
+          schema,
+        ),
+      ).toEqual({ title: 'Portugal', score: 9 });
     });
 
-    it('reports an empty response instead of failing silently', () => {
-      expect(service.parseJsonResponse(undefined, schema)).toBeNull();
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('empty response'),
-      );
-    });
-
-    it('distinguishes malformed JSON and logs the raw payload', () => {
+    it('returns null instead of throwing on a bad payload', () => {
       expect(service.parseJsonResponse('{not json', schema)).toBeNull();
-
-      const message = errorSpy.mock.calls[0][0] as string;
-      expect(message).toContain('not valid JSON');
-      expect(message).toContain('{not json');
-    });
-
-    it('distinguishes a schema violation and names the offending field', () => {
+      expect(service.parseJsonResponse(undefined, schema)).toBeNull();
       expect(
         service.parseJsonResponse(
           '{"title":"Portugal","score":"nine"}',
           schema,
         ),
       ).toBeNull();
-
-      const message = errorSpy.mock.calls[0][0] as string;
-      expect(message).toContain('does not match the expected schema');
-      expect(message).toContain('score');
-    });
-
-    it('truncates oversized payloads so logs stay readable', () => {
-      const huge = `{"title":"${'x'.repeat(2000)}"}`;
-
-      expect(service.parseJsonResponse(huge, schema)).toBeNull();
-
-      const message = errorSpy.mock.calls[0][0] as string;
-      expect(message).toContain('(truncated)');
-      expect(message.length).toBeLessThan(1000);
     });
   });
 

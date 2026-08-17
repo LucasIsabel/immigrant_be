@@ -1,4 +1,5 @@
 import { PrismaClient } from '../../generated/prisma';
+import { seedAiModelConfigs } from './ai-model-config.seed';
 import { seedCountries } from './countries.seed';
 import { seedBlogCategories } from './blog-categories.seed';
 import { seedVisaSteps } from './visa-steps';
@@ -12,6 +13,7 @@ async function main() {
     // (country name, category), so the types have to exist first.
     await seedVisaSteps();
     await seedBlogCategories();
+    await seedAiModelConfigs();
     console.log('Database seeded successfully');
   } catch (error) {
     console.error('Error seeding database:', error);
