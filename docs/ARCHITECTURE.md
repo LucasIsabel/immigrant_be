@@ -20,14 +20,14 @@ O **Immigrant BE** é um backend construído com **NestJS** em formato **monorep
 | Banco de dados            | PostgreSQL 16 (com pgvector)    |
 | Cache/Fila                | Redis 7 + BullMQ                |
 | Autenticação              | better-auth (sessão via cookie) |
-| IA                        | Google Gemini API               |
+| IA                        | OpenRouter (multi-modelo) + Google Gemini |
 | Armazenamento de arquivos | Cloudflare R2 (S3-compatible)   |
 | Documentação              | Swagger (OpenAPI)               |
 | Logging                   | pino (via nestjs-pino)          |
 | Monitoramento de erros    | Sentry (`@sentry/nestjs`)       |
 | Painel de filas           | Bull Board                      |
 | Testes                    | Jest                            |
-| Runtime                   | Node.js 20                      |
+| Runtime                   | Node.js 22                      |
 | Package Manager           | pnpm                            |
 
 ---
@@ -72,7 +72,7 @@ immigrant_be/
 ├── libs/                       # Bibliotecas compartilhadas
 │   ├── config/                 # Configuração da app + setup do better-auth
 │   ├── database/               # PrismaService (módulo global)
-│   ├── ai/                     # GeminiBaseService compartilhado
+│   ├── ai/                     # AiRouterService (multi-provider) + GeminiBaseService
 │   └── email/                  # Envio de emails via Resend
 │   └── storage/                # StorageService (Cloudflare R2 via S3)
 │
@@ -313,14 +313,32 @@ deve ser uma decisão humana explícita, nunca efeito colateral de rodar o seed.
 
 ---
 
-## 6. Integração com IA (Google Gemini)
+### Tabelas de IA
+
+| Tabela | Papel |
+| --- | --- |
+| `ai_model_configs` | Um registro por cenário: modelo primário + cadeia de fallback ordenada. Editável pelo painel, então trocar de modelo não é deploy. |
+| `ai_usage_logs` | Uma linha por chamada de modelo, incluindo as que falharam (`error_kind`). Existe desde o dia um porque imagem domina o custo de um post e o cron gera em loop — sem isso não há como distinguir fatura surpresa de uso normal. |
+
+---
+
+## 6. Integração com IA (OpenRouter + Gemini)
 
 ### Arquitetura
 
 ```
 libs/ai/                              # Biblioteca compartilhada de IA
-├── gemini-base.service.ts            # Classe base: client Gemini, parseJsonResponse(),
-│                                     #   generateEmbeddings(), normalizeEmbedding()
+├── ai-router.service.ts              # PORTA ÚNICA para modelos: resolve o cenário, percorre a
+│                                     #   cadeia de fallback, grava AiUsageLog
+├── model-config.service.ts           # cenário → cadeia de modelos (tabela ai_model_configs,
+│                                     #   cache 60s, defaults no código)
+├── providers/
+│   ├── ai-provider.types.ts          # AiScenario, erros InsufficientCreditsError / RateLimitedError
+│   ├── openrouter.service.ts         # texto + imagem via fetch (o SDK oficial é ESM-only)
+│   └── gemini-direct.provider.ts     # último elo da cadeia, com a chave Gemini existente
+├── utils/json-response.util.ts       # parseJsonResponse compartilhado por todos os providers
+├── gemini-base.service.ts            # Legado: client Gemini de modelo fixo, ainda usado por
+│                                     #   system, plan e business-pages
 ├── schemas/                          # Zod schemas centralizados
 │   ├── suggestions.schema.ts         # SuggestionsType
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
@@ -356,10 +374,24 @@ apps/microservice/src/ai-blog/
 
 ### Padrões para IA
 
-- Modelo de geração: `gemini-2.5-flash-lite`
-- Modelo de embeddings: `gemini-embedding-001`
-- Modelo de geração de imagens: `gemini-2.5-flash-image`
-- **Herança**: Ambos os apps estendem `GeminiBaseService` de `@app/ai` — sem código duplicado de inicialização, parsing ou embeddings
+- **Chamada nova usa `AiRouterService`**, nunca um provider direto. O caller nomeia um
+  **cenário** (`blog_writing_standard` | `blog_writing_opinion` | `blog_translation` |
+  `blog_image`), não um modelo — o mapeamento vive na tabela `ai_model_configs`, então trocar de
+  modelo é um `PUT /admin/ai/models/:scenario`, não um deploy.
+- **A cadeia de fallback termina sempre em `gemini-direct:`.** Créditos da OpenRouter são da
+  conta inteira: quando acabam (HTTP 402), nenhum modelo dela responde, e uma cadeia só de
+  OpenRouter não teria para onde cair. Um 402 coloca a OpenRouter em cooldown de 15 min para não
+  martelar a API a cada job.
+- **402 e 429 são erros diferentes.** 402 = créditos, não vale reesperar. 429 = rate limit, vale
+  uma espera curta antes de pular para o próximo modelo.
+- **Todo call gera linha em `ai_usage_logs`**, incluindo as tentativas que falharam. `cost_usd` só
+  é preenchido quando o provider informa — estimativa aqui envenenaria a auditoria.
+- **`@openrouter/sdk` não é usado**: é ESM-only e este repo é CommonJS com ts-jest. Fazê-lo
+  importar exigiria `allowJs` no monorepo ou um segundo transformer. `fetch` é nativo no Node 22 e
+  a superfície usada são dois endpoints.
+- **Legado**: `system`, `plan` e `business-pages` continuam em `GeminiBaseService`, com modelo
+  fixo e sem log de custo. Migrá-los é issue própria.
+- Modelo de embeddings: `gemini-embedding-001` (fora do roteador)
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
 - `generateImage(prompt)` em `GeminiBaseService` — retorna `Buffer | null` com dados base64 decodificados
@@ -499,6 +531,9 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                                      |
 | `/visa-steps`                                | VisaSteps                 | Misto                                      |
 | `/admin/visa-steps/translate`                | VisaSteps (tradução)      | ADMIN                                      |
+| `GET /admin/ai/models`                       | AiConfig                  | ADMIN (modelo de cada cenário)             |
+| `GET /admin/ai/models/status`                | AiConfig                  | ADMIN (cooldown/chave da OpenRouter)       |
+| `PUT /admin/ai/models/:scenario`             | AiConfig                  | ADMIN (troca modelo sem deploy)            |
 | `/system/suggestions`                        | System                    | Público                                    |
 | `/system/visa-recommendation`                | System                    | Autenticado                                |
 | `/system/sse`                                | System                    | Autenticado                                |
@@ -736,7 +771,8 @@ Pipeline sequencial: **Lint → Test → Build**
 | --------------------------------- | ----------------------------------------------------- |
 | `DATABASE_URL`                    | Connection string PostgreSQL                          |
 | `PRIVATE_KEY`                     | Chave privada (base64) para auth                      |
-| `GEMINI_API_KEY`                  | API key do Google Gemini                              |
+| `GEMINI_API_KEY`                  | API key do Google Gemini (último elo do fallback)     |
+| `OPEN_ROUTER`                     | API key da OpenRouter. Aceita também o nome canônico `OPENROUTER_API_KEY`; o código lê `OPENROUTER_API_KEY ?? OPEN_ROUTER` |
 | `NODE_ENV`                        | development / production / test                       |
 | `PORT_IMMIGRANT`                  | Porta da API (default: 3000)                          |
 | `PORT_MICROSERVICE`               | Porta do microservice (default: 6000)                 |

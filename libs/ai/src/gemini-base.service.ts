@@ -6,6 +6,10 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
+import {
+  cleanJsonResponse,
+  parseJsonResponse,
+} from './utils/json-response.util';
 
 @Injectable()
 export class GeminiBaseService {
@@ -32,54 +36,23 @@ export class GeminiBaseService {
     });
   }
 
+  /**
+   * Kept as instance methods, delegating to the shared util.
+   *
+   * `system`, `business-pages` and the blog workers all call these; moving the
+   * logic out without keeping the methods would turn a refactor into a
+   * cross-module change. The util is where every provider — Gemini or
+   * OpenRouter — now parses from.
+   */
   cleanJsonResponse(raw: string): string {
-    return raw
-      .replace(/^```json\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
+    return cleanJsonResponse(raw);
   }
 
   parseJsonResponse<T>(
     raw: string | undefined,
     schema: z.ZodType<T>,
   ): T | null {
-    if (!raw) {
-      this.logger.error('Gemini returned an empty response');
-      return null;
-    }
-
-    const cleaned = this.cleanJsonResponse(raw);
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (error) {
-      this.logger.error(
-        `Gemini response is not valid JSON: ${
-          error instanceof Error ? error.message : String(error)
-        }. Raw: ${this.truncateForLog(cleaned)}`,
-      );
-      return null;
-    }
-
-    const result = schema.safeParse(parsed);
-    if (!result.success) {
-      this.logger.error(
-        `Gemini response does not match the expected schema: ${
-          result.error.issues
-            .map((i) => `${i.path.join('.') || '<root>'}: ${i.message}`)
-            .join('; ') || 'unknown issue'
-        }. Raw: ${this.truncateForLog(cleaned)}`,
-      );
-      return null;
-    }
-
-    return result.data;
-  }
-
-  /** Keeps a failing payload readable in the logs without flooding them. */
-  private truncateForLog(text: string, max = 500): string {
-    return text.length > max ? `${text.slice(0, max)}… (truncated)` : text;
+    return parseJsonResponse(raw, schema, 'Gemini');
   }
 
   async generateEmbeddings(text: string): Promise<number[] | null> {

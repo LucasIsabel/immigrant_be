@@ -599,3 +599,48 @@ model TourGuideReview {
   @@unique([businessId, userId])
   @@map("tour_guide_reviews")
 }
+
+/// Which model answers each kind of AI request, and what to fall back to.
+///
+/// Lives in the database rather than in env vars so switching model is a row
+/// update instead of a deploy — the model market moves faster than this app
+/// ships. `fallback_models` is ordered; an entry prefixed `gemini-direct:` is
+/// served by the Gemini API instead of OpenRouter, which is what keeps a chain
+/// working when OpenRouter credits run out.
+model AiModelConfig {
+  id             String   @id @default(uuid()) @db.Uuid
+  scenario       String   @unique
+  primaryModel   String   @map("primary_model")
+  fallbackModels String[] @map("fallback_models")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_model_configs")
+}
+
+/// One row per model call, for auditing spend.
+///
+/// Exists from day one because image generation dominates the cost of a post and
+/// the cron can generate in a loop — without this there is no way to tell a
+/// surprise bill apart from normal usage. `cost_usd` is only filled when the
+/// provider reports it; an estimate here would be worse than a null.
+model AiUsageLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  scenario     String
+  model        String
+  provider     String
+  inputTokens  Int?     @map("input_tokens")
+  outputTokens Int?     @map("output_tokens")
+  costUsd      Decimal? @db.Decimal(10, 6) @map("cost_usd")
+  /// What the call was for, e.g. "blog_post" + the post id. Nullable because a
+  /// retry may run before the entity exists.
+  entityType   String?  @map("entity_type")
+  entityId     String?  @db.Uuid @map("entity_id")
+  /// Set when the call failed, so the log shows attempts and not just successes.
+  errorKind    String?  @map("error_kind")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([scenario, createdAt])
+  @@index([createdAt])
+  @@map("ai_usage_logs")
+}
