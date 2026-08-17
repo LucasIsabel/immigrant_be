@@ -21,6 +21,7 @@ import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
 import { UpdatePlanStepsDto } from './dto/update-plan-steps.dto';
 import {
   intersectWithTemplate,
@@ -207,6 +208,29 @@ export class UserService {
     await this.userRepository.resetPlanSteps(plan_id);
 
     return { id: plan_id };
+  }
+
+  /**
+   * Renames a plan.
+   *
+   * The ownership check is the whole point of going through the service: the
+   * repository update is keyed by id alone, so without this a user could rename
+   * someone else's plan by guessing a UUID.
+   */
+  async updatePlan(
+    user: UserSession,
+    plan_id: string,
+    dto: UpdatePlanDto,
+  ): Promise<Plans> {
+    const plan = await this.userRepository.getUserPlanRaw(user, plan_id);
+
+    if (!plan) {
+      throw new NotFoundException(
+        'Plan not found or does not belong to the user',
+      );
+    }
+
+    return this.userRepository.updatePlan(plan_id, { name: dto.name });
   }
 
   async updateSteps(

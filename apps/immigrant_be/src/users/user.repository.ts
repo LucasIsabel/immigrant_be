@@ -168,6 +168,10 @@ export class UserRepository {
     });
   }
 
+  async updatePlan(planId: string, data: { name: string }) {
+    return this.prisma.plans.update({ where: { id: planId }, data });
+  }
+
   async getUserPlanRaw(
     user: UserSession,
     plan_id: string,

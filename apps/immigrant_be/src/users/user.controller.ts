@@ -34,6 +34,7 @@ import {
   PlanImmigrationVisaTypeDto,
 } from './dto/plan-response.dto';
 import { UserDetailsDto } from './dto/user-detail.dto';
+import { UpdatePlanDto } from './dto/update-plan.dto';
 import { UpdatePlanStepsDto } from './dto/update-plan-steps.dto';
 import { MyProfileResponseDto } from './dto/my-profile-response.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
@@ -228,6 +229,37 @@ export class UserController {
     @Param('visa_type_id') visaTypeId: string,
   ): Promise<{ id: string }> {
     return this.userService.selectVisaType(user, plan_id, visaTypeId);
+  }
+
+  @ApiOperation({
+    summary: 'Rename a plan',
+    description:
+      'Atualiza campos próprios do plano. Hoje só `name` — `notes` e `description` existem como ' +
+      'colunas mas nada os lê ou escreve ainda.',
+  })
+  @ApiParam({
+    name: 'plan_id',
+    description: 'ID of the plan to rename',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({ type: UpdatePlanDto })
+  @ApiOkResponse({ description: 'Plano atualizado', type: UserPlanResponseDto })
+  @ApiBadRequestResponse({
+    description: '`name` ausente, em branco ou com mais de 120 caracteres',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Plan not found or does not belong to the user',
+  })
+  @HttpCode(HttpStatus.OK)
+  @Patch('/plan/:plan_id')
+  async updatePlan(
+    @Session() session: UserSession,
+    @Param('plan_id') plan_id: string,
+    @Body() dto: UpdatePlanDto,
+  ) {
+    return this.userService.updatePlan(session, plan_id, dto);
   }
 
   @ApiOperation({
