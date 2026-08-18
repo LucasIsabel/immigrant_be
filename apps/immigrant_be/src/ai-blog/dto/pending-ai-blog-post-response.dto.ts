@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { BlogPipelineStatus } from '../../../../../generated/prisma';
 import { BlogPostResponseDto } from '../../blog/dto/blog-post-response.dto';
 
 export class FeaturedCountryDto {
@@ -10,6 +11,24 @@ export class FeaturedCountryDto {
 
   @ApiProperty({ example: '🇨🇦', nullable: true })
   flag: string | null;
+}
+
+/**
+ * O erro de uma etapa do pipeline.
+ *
+ * Tipado em vez de `Json` solto: sem isto o campo sairia como `object` no
+ * contrato e o cliente gerado não conseguiria ler `message` nem `step` — que é
+ * exatamente o que a tela precisa mostrar.
+ */
+export class PipelineErrorDto {
+  @ApiProperty({ example: 'cover_image' })
+  step: string;
+
+  @ApiProperty({ example: 'Every model failed for "blog_image"' })
+  message: string;
+
+  @ApiProperty({ example: '2026-08-18T21:04:53.585Z' })
+  at: string;
 }
 
 /**
@@ -31,4 +50,44 @@ export class PendingAiBlogPostResponseDto extends BlogPostResponseDto {
     type: [String],
   })
   missing_translations: string[];
+
+  @ApiProperty({
+    description:
+      'Em que etapa da cadeia texto→tradução→imagem o post está. A fila de aprovação depende deste campo para mostrar o progresso e oferecer o retry, então ele é parte do contrato e não detalhe interno.',
+    enum: BlogPipelineStatus,
+    example: BlogPipelineStatus.READY,
+  })
+  pipeline_status: BlogPipelineStatus;
+
+  @ApiProperty({
+    description:
+      'A etapa que falhou e o motivo, quando houve falha. Existe para a tela não mandar ninguém ao log.',
+    type: PipelineErrorDto,
+    nullable: true,
+  })
+  pipeline_error: PipelineErrorDto | null;
+
+  @ApiProperty({
+    description: 'O assunto que o admin pediu, quando informou um',
+    example: 'novas metas de imigração para 2027',
+    nullable: true,
+  })
+  source_topic: string | null;
+
+  @ApiProperty({
+    description:
+      'O modelo que de fato escreveu — pode ser um elo de fallback, e é isso que o revisor precisa saber antes de aprovar',
+    example: 'moonshotai/kimi-k2.5',
+    nullable: true,
+  })
+  generated_by_model: string | null;
+
+  @ApiProperty({
+    description:
+      'Custo da geração em dólares. Number e não string: o `Decimal` do Prisma serializa como texto, e a tela precisa somar.',
+    example: 0.011,
+    type: Number,
+    nullable: true,
+  })
+  generation_cost_usd: number | null;
 }

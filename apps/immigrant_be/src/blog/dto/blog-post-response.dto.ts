@@ -49,6 +49,18 @@ export class BlogDisplayAuthorDto {
   linkedin: string | null;
 }
 
+/** Uma linha da junção post↔tag, que é o que a query devolve. */
+export class BlogPostTagDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  post_id: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  tag_id: string;
+
+  @ApiProperty({ type: BlogTagResponseDto })
+  tag: BlogTagResponseDto;
+}
+
 export class BlogPostResponseDto {
   @ApiProperty({
     description: 'ID único do post',
@@ -139,10 +151,11 @@ export class BlogPostResponseDto {
   category: BlogCategoryResponseDto;
 
   @ApiProperty({
-    description: 'Tags do post',
-    type: [BlogTagResponseDto],
+    description:
+      'Tags do post, como linhas da tabela de junção. A forma é aninhada porque é o que a query devolve — declarar a tag achatada aqui fazia o contrato prometer uma coisa e a API entregar outra, e todo cliente gerado quebrava ao ler `tags[].name`.',
+    type: [BlogPostTagDto],
   })
-  tags: BlogTagResponseDto[];
+  tags: BlogPostTagDto[];
 
   @ApiProperty({
     description: 'ID do país em destaque',

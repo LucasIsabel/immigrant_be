@@ -56,22 +56,26 @@ export class UpdateBlogPostDto {
   status?: string;
 
   @ApiProperty({
-    description: 'URL da imagem de capa',
+    description:
+      'URL da imagem de capa. `null` limpa a capa — o `@IsOptional()` deixa null passar e o Prisma apaga a coluna, que é o comportamento que a tela de edição já usava. O tipo agora diz isso; antes o contrato negava um `null` que a API aceita.',
     example: 'https://example.com/images/canada.jpg',
     required: false,
+    nullable: true,
   })
   @IsOptional()
   @IsString()
-  cover_image_url?: string;
+  cover_image_url?: string | null;
 
   @ApiProperty({
-    description: 'ID do país em destaque no post',
+    description:
+      'ID do país em destaque. `null` remove o destaque — a coluna é anulável e o `@IsOptional()` deixa null passar.',
     example: '123e4567-e89b-12d3-a456-426614174000',
     required: false,
+    nullable: true,
   })
   @IsOptional()
   @IsUUID()
-  featured_country_id?: string;
+  featured_country_id?: string | null;
 
   @ApiProperty({
     description: 'Slug do post',
@@ -84,11 +88,12 @@ export class UpdateBlogPostDto {
   @ApiProperty({
     description: 'Tempo de leitura em minutos',
     required: false,
+    nullable: true,
   })
   @IsOptional()
   @IsInt()
   @IsPositive()
-  reading_time_min?: number;
+  reading_time_min?: number | null;
 
   @ApiProperty({
     description: 'IDs das tags do post (substitui todas as tags atuais)',

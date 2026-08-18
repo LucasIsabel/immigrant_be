@@ -80,7 +80,17 @@ export class AiBlogService {
       const missing_translations = AiBlogService.REQUIRED_LOCALES.filter(
         (l) => l !== post.original_locale && !existingLocales.includes(l),
       );
-      return { ...post, missing_translations };
+      return {
+        ...post,
+        missing_translations,
+        // O `Decimal` do Prisma serializa como string; a tela soma custos e
+        // precisa de número. Converter aqui evita espalhar `Number(...)` por
+        // toda a interface.
+        generation_cost_usd:
+          post.generation_cost_usd === null
+            ? null
+            : Number(post.generation_cost_usd),
+      };
     });
   }
 
