@@ -66,6 +66,29 @@ export type AiImageResult = {
   usage: AiUsage;
 };
 
+/**
+ * Shape of the image being asked for, as opposed to its subject.
+ *
+ * Without this the request carried only a prompt, so the provider picked the
+ * geometry — and its default is square. Every consumer we have crops to a wide
+ * strip, so a square generation is a silent quality loss: the subject survives,
+ * the framing does not.
+ *
+ * Both fields cost money to get wrong. `resolution` is priced per image token,
+ * so a tier up is a bill up, not a rounding difference. `outputFormat` decides
+ * whether a photograph ships as PNG, which for this content is several times the
+ * bytes of the same image as JPEG.
+ */
+export type AiImageOptions = {
+  /** Documented tiers; the provider's own default is 1:1. */
+  aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '1:4' | '4:1';
+  resolution?: '512' | '1K' | '2K' | '4K';
+  /** Photographs belong in `jpeg`; `png` only for flat art or transparency. */
+  outputFormat?: 'png' | 'jpeg' | 'webp';
+  /** 0–100. Ignored by the provider for formats that are already lossless. */
+  outputCompression?: number;
+};
+
 export type AiProviderName = 'openrouter' | 'gemini-direct';
 
 /**
@@ -120,5 +143,9 @@ export interface AiTextProvider {
 
 export interface AiImageProvider {
   readonly name: AiProviderName;
-  generateImage(model: string, prompt: string): Promise<AiImageResult>;
+  generateImage(
+    model: string,
+    prompt: string,
+    options?: AiImageOptions,
+  ): Promise<AiImageResult>;
 }

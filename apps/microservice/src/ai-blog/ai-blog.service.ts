@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@app/database';
 import {
-  GeminiBaseService,
+  AiRouterService,
   buildBlogPostPrompt,
   blogPostAiSchema,
   PostComplexity,
@@ -39,7 +39,7 @@ export class AiBlogWorkerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gemini: GeminiBaseService,
+    private readonly aiRouter: AiRouterService,
     @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
   ) {}
 
@@ -70,14 +70,18 @@ export class AiBlogWorkerService {
       customInstructions: data.custom_instructions,
     });
 
-    const response = await this.gemini.generateContent(prompt);
-    const rawText = response.response.text();
-
-    const parsed = this.gemini.parseJsonResponse(rawText, blogPostAiSchema);
+    // Posts de rotina usam o cenário barato. As colunas de opinião, que pagam
+    // por aderência a guardrail, entram na fase das personas.
+    const { data: parsed, result } = await this.aiRouter.generateJson(
+      'blog_writing_standard',
+      prompt,
+      blogPostAiSchema,
+      { entityType: 'blog_post' },
+    );
 
     if (!parsed) {
       throw new Error(
-        `Failed to parse Gemini response for country: ${country.name}`,
+        `Failed to parse ${result.model} response for country: ${country.name}`,
       );
     }
 
@@ -99,6 +103,10 @@ export class AiBlogWorkerService {
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
         original_locale: 'en',
+        // Guardado para a fila de aprovação: saber que o post veio de um elo de
+        // fallback, e não do modelo configurado, muda como o revisor o lê.
+        generated_by_model: result.model,
+        generation_cost_usd: result.usage.costUsd,
         reading_time_min: readingTimeMin,
         author_id: authorId,
         display_author_id: data.display_author_id ?? null,
