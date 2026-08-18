@@ -36,3 +36,20 @@ export const TRANSLATE_ALL_PENDING = 'translate_all_pending';
 
 export const AI_IMAGE_QUEUE = 'ai_image_queue';
 export const GENERATE_AI_IMAGE = 'generate_ai_image';
+
+/**
+ * Filas que o admin pode inspecionar e controlar.
+ *
+ * Uma lista só, usada pela API JSON (`/admin/queues`) e pelo Bull Board.
+ * Uma constante nova de fila não entra aqui automaticamente — se o dashboard
+ * precisa vê-la, ela tem que ser adicionada. Isso evita expor fila interna
+ * (ou uma que ainda não tem worker) sem decisão explícita.
+ */
+export const ADMIN_VISIBLE_QUEUES = [
+  AI_BLOG_QUEUE,
+  AI_BLOG_IMAGE_QUEUE,
+  BLOG_TRANSLATION_QUEUE,
+  AI_IMAGE_QUEUE,
+] as const;
+
+export type AdminVisibleQueue = (typeof ADMIN_VISIBLE_QUEUES)[number];
