@@ -200,3 +200,47 @@ comando do bash que o executa.
 
 **Regra:** em script, guarde o PID (`echo $! > app.pid`) e mate por PID. Se
 precisar de `pgrep`/`pkill -f`, exclua o próprio processo.
+
+## 2026-08-18 — "Aplique a migration antes do merge" é impossível pelo container
+
+A lição de 2026-08-04 dizia para coordenar merge e migration. Em 2026-08-09 a
+`plan_completed_step_keys` mostrou que isso não basta: o merge disparou o deploy,
+o código novo subiu esperando `completed_step_keys` e o banco continuou com as
+colunas antigas. Toda rota autenticada de plano quebrou.
+
+O que pegou não foi alarme nenhum — `GET /countries` seguia 200 e `/users/plan`
+seguia 401, que é o guard de auth e não erro de banco. Foi conferir o schema de
+produção depois do merge, por desconfiança.
+
+Escrevi então a regra "aplique antes do merge". **Ela está errada**, e descobri
+tentando: o arquivo de migration viaja **dentro da imagem Docker**. Antes do
+deploy da imagem nova, o container em produção só conhece as migrations antigas:
+
+```
+$ docker exec $BE node_modules/.bin/prisma migrate deploy
+49 migrations found in prisma/migrations
+No pending migrations to apply.     # a 50ª não existe nessa imagem
+```
+
+**Regra, por tipo de migration:**
+
+- **Aditiva** (tabela nova, coluna nullable): mergear, esperar o deploy, aplicar
+  em seguida. A janela existe mas é inofensiva — o código novo tolera o banco
+  velho até tocar a tabela nova. Foi o caso da `add_ai_model_config_and_usage_log`:
+  nenhum caller usava as tabelas ainda, então a janela não teve efeito nenhum.
+- **Destrutiva** (dropa coluna que o código velho lê): a janela é downtime real e
+  nenhuma ordenação com um único deploy a evita. Ou se aceita o downtime curto e
+  se está no teclado no momento do merge, ou se aplica o SQL por fora do
+  container (`psql` direto + `prisma migrate resolve --applied`), ou se faz
+  expand/contract em duas PRs — primeiro o código para de ler a coluna, depois
+  ela cai.
+
+**Corolário — verificar, não presumir.** Depois de mergear PR com migration, o
+banco tem que concordar com o que o `docs-json` deployado declara:
+
+```bash
+curl -s https://api.aloravia.com/api/v1/docs-json | python3 -c \
+  "import json,sys; print('completed_step_keys' in json.load(sys.stdin)['components']['schemas']['PlanResponseDto']['properties'])"
+```
+
+Discordância entre os dois é produção quebrada, mesmo com rota pública em 200.
