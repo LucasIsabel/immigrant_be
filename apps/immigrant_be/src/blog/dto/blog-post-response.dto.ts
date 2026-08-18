@@ -13,6 +13,42 @@ export class BlogAuthorDto {
   image: string | null;
 }
 
+/**
+ * A assinatura editorial do post, que é outra coisa que o usuário dono do
+ * registro.
+ *
+ * Traz `bio` porque é ali que a autoria por IA se declara ao leitor — uma
+ * assinatura sem bio some com a única indicação que ele teria.
+ */
+export class BlogDisplayAuthorDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @ApiProperty({ example: 'Marina Costa' })
+  name: string;
+
+  @ApiProperty({
+    example: 'Coluna de opinião escrita por IA sob curadoria editorial.',
+    nullable: true,
+  })
+  bio: string | null;
+
+  @ApiProperty({ example: 'https://example.com/avatar.jpg', nullable: true })
+  avatar_url: string | null;
+
+  @ApiProperty({ example: 'https://example.com', nullable: true })
+  website: string | null;
+
+  @ApiProperty({ example: '@marinacosta', nullable: true })
+  twitter: string | null;
+
+  @ApiProperty({
+    example: 'https://linkedin.com/in/marinacosta',
+    nullable: true,
+  })
+  linkedin: string | null;
+}
+
 export class BlogPostResponseDto {
   @ApiProperty({
     description: 'ID único do post',
@@ -135,4 +171,19 @@ export class BlogPostResponseDto {
     example: false,
   })
   refine_needs_manual_fix: boolean;
+
+  @ApiProperty({
+    description:
+      'Assinatura editorial do post, quando houver. É esta que o leitor deve ver, não `author` — que é apenas o usuário dono do registro',
+    type: BlogDisplayAuthorDto,
+    nullable: true,
+  })
+  display_author: BlogDisplayAuthorDto | null;
+
+  @ApiProperty({
+    description:
+      'Post escrito por IA. O front depende deste campo para exibir a indicação ao leitor, então ele é parte do contrato público e não um detalhe interno',
+    example: false,
+  })
+  is_ai_generated: boolean;
 }

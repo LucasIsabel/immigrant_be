@@ -12,13 +12,12 @@ export class FeaturedCountryDto {
   flag: string | null;
 }
 
+/**
+ * `is_ai_generated` não é redeclarado aqui de propósito: ele passou a viver em
+ * `BlogPostResponseDto`. Estar declarado só neste DTO de admin era justamente o
+ * motivo de o contrato público nunca ter exposto o campo.
+ */
 export class PendingAiBlogPostResponseDto extends BlogPostResponseDto {
-  @ApiProperty({
-    description: 'Indica se o post foi gerado por IA',
-    example: true,
-  })
-  is_ai_generated: boolean;
-
   @ApiProperty({
     description: 'País em destaque associado ao post',
     type: FeaturedCountryDto,
