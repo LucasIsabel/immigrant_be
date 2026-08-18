@@ -17,6 +17,7 @@ import {
   Query,
   Session,
   Sse,
+  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { SuggestionsDto, SuggestionsResponseDto } from './dto/suggestions.dto';
@@ -103,6 +104,12 @@ export class SystemController {
     );
   }
 
+  // Nenhum recurso é criado aqui — é uma leitura que usa corpo para filtrar —,
+  // então o 201 padrão do POST no Nest nunca foi o código certo, e o
+  // `@ApiResponse` abaixo já promete 200. Sem isto o servidor responde 201
+  // enquanto o contrato diz 200, e o cliente gerado tipa sobre um código que
+  // nunca chega.
+  @HttpCode(HttpStatus.OK)
   @Post('/country/:id/visa-type')
   @ApiOperation({
     summary: 'Get best visa types for a country',
