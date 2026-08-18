@@ -24,7 +24,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/spain.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/spain.jpg',
       translations: [
         {
           language: 'pt',
@@ -129,7 +129,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_kingdom.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_kingdom.jpg',
       translations: [
         {
           language: 'pt',
@@ -243,7 +243,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/canada.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/canada.jpg',
       translations: [
         {
           language: 'pt',
@@ -367,7 +367,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/new_zealand.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/australia.jpg',
       translations: [
         {
           language: 'pt',
@@ -483,7 +483,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/australia.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/japan.jpg',
       translations: [
         {
           language: 'pt',
@@ -602,7 +602,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/japan.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/germany.jpg',
       translations: [
         {
           language: 'pt',
@@ -716,7 +716,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/new_zealand.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/new_zealand.jpg',
       translations: [
         {
           language: 'pt',
@@ -826,7 +826,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/ireland.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/ireland.jpg',
       translations: [
         {
           language: 'pt',
@@ -942,7 +942,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/france.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/france.jpg',
       translations: [
         {
           language: 'pt',
@@ -1046,7 +1046,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/sweden.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/sweden.jpg',
       translations: [
         {
           language: 'pt',
@@ -1157,7 +1157,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/switzerland.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/switzerland.jpg',
       translations: [
         {
           language: 'pt',
@@ -1266,7 +1266,7 @@ export async function seedCountries() {
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_states.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_states.jpg',
       translations: [
         {
           language: 'pt',
@@ -1409,7 +1409,7 @@ export async function seedCountries() {
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/singapore.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/singapore.jpg',
       translations: [
         {
           language: 'pt',
@@ -1514,7 +1514,7 @@ export async function seedCountries() {
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_arab_emirates.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/united_arab_emirates.jpg',
       translations: [
         {
           language: 'pt',
@@ -1620,7 +1620,7 @@ export async function seedCountries() {
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/south_korea.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/south_korea.jpg',
       translations: [
         {
           language: 'pt',
@@ -1727,7 +1727,7 @@ export async function seedCountries() {
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/netherlands.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/netherlands.jpg',
       translations: [
         {
           language: 'pt',
@@ -1846,7 +1846,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/italy.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/italy.jpg',
       translations: [
         {
           language: 'pt',
@@ -1951,7 +1951,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/argentina.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/argentina.jpg',
       translations: [
         {
           language: 'pt',
@@ -2061,7 +2061,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/chile.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/chile.jpg',
       translations: [
         {
           language: 'pt',
@@ -2166,7 +2166,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/austria.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/austria.jpg',
       translations: [
         {
           language: 'pt',
@@ -2275,7 +2275,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/poland.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/poland.jpg',
       translations: [
         {
           language: 'pt',
@@ -2394,7 +2394,7 @@ export async function seedCountries() {
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
-        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/finlland.png',
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/finland.jpg',
       translations: [
         {
           language: 'pt',
@@ -2504,7 +2504,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/portugal.jpg',
       translations: [
         {
           language: 'pt',
@@ -2616,7 +2617,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/mexico.jpg',
       translations: [
         {
           language: 'pt',
@@ -2722,7 +2724,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/norway.jpg',
       translations: [
         {
           language: 'pt',
@@ -2834,7 +2837,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/denmark.jpg',
       translations: [
         {
           language: 'pt',
@@ -2947,7 +2951,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/belgium.jpg',
       translations: [
         {
           language: 'pt',
@@ -3061,7 +3066,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/czechia.jpg',
       translations: [
         {
           language: 'pt',
@@ -3173,7 +3179,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/greece.jpg',
       translations: [
         {
           language: 'pt',
@@ -3285,7 +3292,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/thailand.jpg',
       translations: [
         {
           language: 'pt',
@@ -3399,7 +3407,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/brazil.jpg',
       translations: [
         {
           language: 'pt',
@@ -3514,7 +3523,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/uruguay.jpg',
       translations: [
         {
           language: 'pt',
@@ -3626,7 +3636,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/panama.jpg',
       translations: [
         {
           language: 'pt',
@@ -3738,7 +3749,8 @@ export async function seedCountries() {
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/costa_rica.jpg',
       translations: [
         {
           language: 'pt',
@@ -3850,7 +3862,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/malta.jpg',
       translations: [
         {
           language: 'pt',
@@ -3965,7 +3978,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/croatia.jpg',
       translations: [
         {
           language: 'pt',
@@ -4078,7 +4092,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/estonia.jpg',
       translations: [
         {
           language: 'pt',
@@ -4189,7 +4204,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/hungary.jpg',
       translations: [
         {
           language: 'pt',
@@ -4300,7 +4316,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/turkey.jpg',
       translations: [
         {
           language: 'pt',
@@ -4412,7 +4429,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/colombia.jpg',
       translations: [
         {
           language: 'pt',
@@ -4518,7 +4536,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/paraguay.jpg',
       translations: [
         {
           language: 'pt',
@@ -4630,7 +4649,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/malaysia.jpg',
       translations: [
         {
           language: 'pt',
@@ -4742,7 +4762,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/israel.jpg',
       translations: [
         {
           language: 'pt',
@@ -4858,7 +4879,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/qatar.jpg',
       translations: [
         {
           language: 'pt',
@@ -4970,7 +4992,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/indonesia.jpg',
       translations: [
         {
           language: 'pt',
@@ -5082,7 +5105,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/romania.jpg',
       translations: [
         {
           language: 'pt',
@@ -5193,7 +5217,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/luxembourg.jpg',
       translations: [
         {
           language: 'pt',
@@ -5307,7 +5332,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/cyprus.jpg',
       translations: [
         {
           language: 'pt',
@@ -5421,7 +5447,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/iceland.jpg',
       translations: [
         {
           language: 'pt',
@@ -5532,7 +5559,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/peru.jpg',
       translations: [
         {
           language: 'pt',
@@ -5644,7 +5672,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/dominican_republic.jpg',
       translations: [
         {
           language: 'pt',
@@ -5756,7 +5785,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/ecuador.jpg',
       translations: [
         {
           language: 'pt',
@@ -5868,7 +5898,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/vietnam.jpg',
       translations: [
         {
           language: 'pt',
@@ -5983,7 +6014,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/philippines.jpg',
       translations: [
         {
           language: 'pt',
@@ -6096,7 +6128,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/taiwan.jpg',
       translations: [
         {
           language: 'pt',
@@ -6211,7 +6244,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/hong_kong.jpg',
       translations: [
         {
           language: 'pt',
@@ -6325,7 +6359,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/china.jpg',
       translations: [
         {
           language: 'pt',
@@ -6440,7 +6475,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/india.jpg',
       translations: [
         {
           language: 'pt',
@@ -6555,7 +6591,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/saudi_arabia.jpg',
       translations: [
         {
           language: 'pt',
@@ -6669,7 +6706,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/south_africa.jpg',
       translations: [
         {
           language: 'pt',
@@ -6784,7 +6822,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/morocco.jpg',
       translations: [
         {
           language: 'pt',
@@ -6899,7 +6938,8 @@ export async function seedCountries() {
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
-      background_image: '',
+      background_image:
+        'https://pub-ad0067402a7e426380c50f5f62ee7fad.r2.dev/egypt.jpg',
       translations: [
         {
           language: 'pt',
