@@ -213,6 +213,12 @@ model BlogPost {
   is_ai_generated          Boolean @default(false) @map("is_ai_generated")
   refine_needs_manual_fix  Boolean @default(false) @map("refine_needs_manual_fix")
   original_locale          String  @default("en") @map("original_locale")
+  /// Qual modelo escreveu o post e quanto custou. Nulos nos posts anteriores ao
+  /// roteador e nos escritos por gente. `generated_by_model` é o modelo que de
+  /// fato respondeu — pode ser um elo de fallback, e é isso que o revisor
+  /// precisa saber antes de aprovar.
+  generated_by_model       String?  @map("generated_by_model")
+  generation_cost_usd      Decimal? @db.Decimal(10, 6) @map("generation_cost_usd")
   translations     BlogPostTranslation[]
   likes            BlogPostLike[]
 
@@ -233,6 +239,9 @@ model BlogPostTranslation {
   excerpt       String
   content       String   @db.Text
   translated_by String   @default("AI")
+  /// Complementa `translated_by`: aquele diz se foi IA ou gente, este diz qual
+  /// modelo. Nulo nas traduções anteriores ao roteador.
+  translated_by_model String? @map("translated_by_model")
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 

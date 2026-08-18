@@ -367,9 +367,11 @@ apps/microservice/src/plan/
     └── generateVisaSteps()           # Gera checklist de etapas do visto
 
 apps/microservice/src/ai-blog/
-└── ai-blog.service.ts         # Usa GeminiBaseService diretamente
-    ├── fetchGoogleNewsRss()          # Busca Google News RSS (sem API key)
-    └── generatePost()                # RSS → Gemini → BlogPost DRAFT
+├── ai-blog.service.ts         # Usa AiRouterService (blog_writing_standard)
+│   ├── fetchGoogleNewsRss()          # Busca Google News RSS (sem API key)
+│   └── generatePost()                # RSS → roteador → BlogPost DRAFT
+├── ai-blog-image.service.ts   # Capa (blog_image)
+└── ai-blog-refine.service.ts  # Imagens inline (blog_image)
 ```
 
 ### Padrões para IA
@@ -389,6 +391,15 @@ apps/microservice/src/ai-blog/
 - **`@openrouter/sdk` não é usado**: é ESM-only e este repo é CommonJS com ts-jest. Fazê-lo
   importar exigiria `allowJs` no monorepo ou um segundo transformer. `fetch` é nativo no Node 22 e
   a superfície usada são dois endpoints.
+- **Proveniência gravada no registro de negócio.** `BlogPost.generated_by_model` e
+  `generation_cost_usd`, `BlogPostTranslation.translated_by_model`. O que importa é saber que um
+  post veio de um **elo de fallback** e não do modelo configurado — a fila de aprovação não
+  distinguiria um do outro sem isso. `generation_cost_usd` fica nulo quando o provider não
+  reporta; o Gemini direto nunca reporta.
+- **O retry de imagem é a cadeia, não um laço.** O refinamento tinha três tentativas contra o
+  mesmo modelo; com a cadeia isso viraria até nove imagens pagas por marcador. Tentar modelos
+  diferentes também cobre mais tipos de falha do que insistir no mesmo. A capa, que não tinha
+  retry nenhum, ganhou o mesmo comportamento de graça.
 - **Legado**: `system`, `plan` e `business-pages` continuam em `GeminiBaseService`, com modelo
   fixo e sem log de custo. Migrá-los é issue própria.
 - Modelo de embeddings: `gemini-embedding-001` (fora do roteador)

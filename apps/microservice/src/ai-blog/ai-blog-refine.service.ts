@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { GeminiBaseService } from '@app/ai';
+import { AiRouterService } from '@app/ai';
 import { StorageService } from '@app/storage';
 import { CorrelatedJobData } from '@app/config/job-data';
 
@@ -19,7 +19,7 @@ export class AiBlogRefineService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gemini: GeminiBaseService,
+    private readonly aiRouter: AiRouterService,
     private readonly storage: StorageService,
   ) {}
 
@@ -65,23 +65,25 @@ export class AiBlogRefineService {
       const description = (match[1] ?? '').trim();
 
       const enrichedPrompt = description + IMAGE_REALISM_SUFFIX;
-      const MAX_ATTEMPTS = 3;
-      let imageBuffer: Buffer | null = null;
 
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        imageBuffer = await this.gemini.generateImage(enrichedPrompt);
-        if (imageBuffer) break;
-        if (attempt < MAX_ATTEMPTS) {
-          this.logger.warn(
-            `Attempt ${attempt}/${MAX_ATTEMPTS} failed for marker ${i + 1} in post ${data.postId}, retrying in ${attempt}s...`,
-          );
-          await new Promise((r) => setTimeout(r, attempt * 1000));
-        }
-      }
-
-      if (!imageBuffer) {
+      // O laço manual de 3 tentativas saiu daqui: o roteador já percorre a
+      // cadeia de modelos, e manter os dois daria até nove imagens pagas por
+      // marcador. Tentar modelos diferentes também cobre mais falha do que
+      // insistir no mesmo.
+      let imageBuffer: Buffer;
+      try {
+        ({ image: imageBuffer } = await this.aiRouter.generateImage(
+          'blog_image',
+          enrichedPrompt,
+          { entityType: 'blog_post', entityId: data.postId },
+        ));
+      } catch (error) {
+        // Marcador que falha é pulado, não derruba o refinamento inteiro — o
+        // post fica marcado para revisão manual mais abaixo.
         this.logger.warn(
-          `All ${MAX_ATTEMPTS} attempts failed for marker ${i + 1} in post ${data.postId}: "${description.slice(0, 50)}..."`,
+          `Todos os modelos falharam no marcador ${i + 1} do post ${data.postId}: "${description.slice(0, 50)}..." (${
+            error instanceof Error ? error.message : String(error)
+          })`,
         );
         continue;
       }

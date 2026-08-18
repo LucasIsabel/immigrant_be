@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { GeminiBaseService } from '@app/ai';
+import { AiRouterService } from '@app/ai';
 import { StorageService } from '@app/storage';
 import { CorrelatedJobData } from '@app/config/job-data';
 
@@ -19,7 +19,7 @@ export class AiImageWorkerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gemini: GeminiBaseService,
+    private readonly aiRouter: AiRouterService,
     private readonly storage: StorageService,
   ) {}
 
@@ -31,15 +31,16 @@ export class AiImageWorkerService {
       data: { status: 'processing' },
     });
 
-    const imageBuffer = await this.gemini.generateImage(prompt);
-
-    if (!imageBuffer) {
-      throw new Error(`Gemini não retornou imagem para ${imageId}`);
-    }
+    // Mesmo cenário do blog: o Media Generator produz o mesmo tipo de imagem e
+    // não tem razão para usar outro modelo nem para ficar fora do log de custo.
+    const { image } = await this.aiRouter.generateImage('blog_image', prompt, {
+      entityType: 'ai_generated_image',
+      entityId: imageId,
+    });
 
     const filename = `ai-${imageId}.png`;
     const { url, key } = await this.storage.uploadFile(
-      imageBuffer,
+      image,
       filename,
       'image/png',
       folder,

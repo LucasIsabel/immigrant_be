@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import {
-  GeminiBaseService,
+  AiRouterService,
   buildBlogTranslationPrompt,
   blogTranslationAiSchema,
 } from '@app/ai';
@@ -28,7 +28,7 @@ export class BlogTranslationWorkerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly gemini: GeminiBaseService,
+    private readonly aiRouter: AiRouterService,
   ) {}
 
   async translatePost(data: TranslatePostJobData): Promise<void> {
@@ -50,16 +50,18 @@ export class BlogTranslationWorkerService {
       content: post.content,
     });
 
-    const response = await this.gemini.generateContent(prompt);
-    const rawText = response.response.text();
-    const parsed = this.gemini.parseJsonResponse(
-      rawText,
+    // Tradução é mecânica e tem schema validando a saída, então usa o cenário
+    // barato em vez do modelo de escrita.
+    const { data: parsed, result } = await this.aiRouter.generateJson(
+      'blog_translation',
+      prompt,
       blogTranslationAiSchema,
+      { entityType: 'blog_translation', entityId: data.postId },
     );
 
     if (!parsed) {
       throw new Error(
-        `Failed to parse Gemini translation response for post ${data.postId} → ${data.targetLocale}`,
+        `Failed to parse ${result.model} translation response for post ${data.postId} → ${data.targetLocale}`,
       );
     }
 
@@ -74,12 +76,14 @@ export class BlogTranslationWorkerService {
         excerpt: parsed.excerpt,
         content: parsed.content,
         translated_by: 'AI',
+        translated_by_model: result.model,
       },
       update: {
         title: parsed.title,
         excerpt: parsed.excerpt,
         content: parsed.content,
         translated_by: 'AI',
+        translated_by_model: result.model,
       },
     });
 
