@@ -27,6 +27,7 @@ import { BusinessModule } from './business/business.module';
 import { BusinessPagesModule } from './business-pages/business-pages.module';
 import { TourGuideReviewsModule } from './tour-guide-reviews/tour-guide-reviews.module';
 import { CountriesNowModule } from './countriesnow/countriesnow.module';
+import { QueuesModule } from './queues/queues.module';
 
 /**
  * In production the queue dashboard is only mounted once credentials exist, so
@@ -63,6 +64,7 @@ const bullBoardEnabled =
     BusinessPagesModule,
     TourGuideReviewsModule,
     CountriesNowModule,
+    QueuesModule,
   ],
   providers: [
     {

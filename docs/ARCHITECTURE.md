@@ -51,6 +51,10 @@ immigrant_be/
 │   │   │   ├── visa-steps/     # Módulo de etapas de visto
 │   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
 │   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
+│   │   │   ├── ai-config/      # Modelo por cenário de IA (OpenRouter / Gemini)
+│   │   │   ├── ai-image/       # Media Generator (imagens avulsas)
+│   │   │   ├── queues/         # API JSON de inspeção/controle das filas (admin)
+│   │   │   ├── bull-board/     # Dashboard Bull Board (break-glass, /admin/queues-board)
 │   │   │   ├── storage/        # Módulo de upload de arquivos para R2
 │   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
 │   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
@@ -104,7 +108,10 @@ immigrant_be/
 
 ## 3. Padrão Arquitetural por Módulo
 
-Cada feature segue a estrutura **Controller → Service → Repository → Prisma**:
+Cada feature segue a estrutura **Controller → Service → Repository → Prisma**.
+Exceção: módulos que falam só com infraestrutura (ex.: `queues/` → BullMQ)
+não têm repository nem Prisma — o Service injeta as filas e o Controller
+expõe HTTP.
 
 ```
 módulo/
@@ -515,6 +522,22 @@ A fila `ai_image_queue` é usada pelo módulo **AI Image** (Media Generator): o 
 
 A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_all_pending` às 03:00 UTC) registrado por `BlogTranslationCronService` via `OnModuleInit`. O job `translate_all_pending` busca todos os posts PUBLISHED sem tradução para EN e ES, e enfileira jobs individuais `translate_blog_post`. O endpoint `POST /admin/blog/posts/:id/translations/enqueue` permite acionar traduções sob demanda.
 
+### API admin das filas
+
+`GET/POST/DELETE /admin/queues` (módulo `queues/`) é a API JSON que o painel
+admin consulta. Cobre só as filas em `ADMIN_VISIBLE_QUEUES`
+(`libs/config/src/constants.ts`): as quatro da tabela acima. Fila ou job
+desconhecido responde 404; estado inválido, 400.
+
+O payload de cada job é sanitizado: prompts, markdown e strings longas saem,
+ficam IDs e primitivos curtos. `retry` em job falho chama `job.retry()`; em
+job atrasado, `job.promote()`. Não há SSE nem histórico persistido — o
+frontend faz poll.
+
+O Bull Board continua existindo como break-glass em
+`GET /api/v1/admin/queues-board` (basic auth). A rota antiga `/admin/queues`
+passou a ser a API JSON, atrás do `RolesGuard`.
+
 ---
 
 ## 8. API — Rotas e Prefixos
@@ -572,6 +595,12 @@ A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_a
 | `/admin/ai/blog/pending`                     | AI Blog                   | ADMIN                                      |
 | `/admin/ai/blog/pending/:id/approve`         | AI Blog                   | ADMIN                                      |
 | `/admin/ai/blog/cron`                        | AI Blog                   | ADMIN                                      |
+| `GET /admin/queues`                          | Queues                    | ADMIN (contagens + paused)                 |
+| `GET /admin/queues/:name/jobs`               | Queues                    | ADMIN (jobs sanitizados, `?state=&page=`)  |
+| `POST /admin/queues/:name/jobs/:id/retry`    | Queues                    | ADMIN                                      |
+| `DELETE /admin/queues/:name/jobs/:id`        | Queues                    | ADMIN                                      |
+| `POST /admin/queues/:name/pause`             | Queues                    | ADMIN                                      |
+| `POST /admin/queues/:name/resume`            | Queues                    | ADMIN                                      |
 | `/storage/upload`                            | Storage                   | Autenticado                                |
 | `/health`                                    | Health                    | Público                                    |
 | `/health/ready`                              | Health                    | Público                                    |
@@ -679,11 +708,12 @@ Sentry compartilham o mesmo identificador.
   confiáveis. Sem `SENTRY_DSN` o SDK sobe desabilitado.
 - **Falha de job** só é reportada na tentativa final (`isFinalAttempt`), senão
   uma falha com `attempts: 3` viraria três alertas.
-- **Bull Board** fica em `GET /api/v1/admin/queues` — o `setGlobalPrefix` se
-  aplica à rota montada por middleware. É protegido por basic auth
+- **Bull Board** fica em `GET /api/v1/admin/queues-board` — o `setGlobalPrefix`
+  se aplica à rota montada por middleware. É protegido por basic auth
   (`BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`) e não pelo `RolesGuard`, que não
   roda em middleware Express. Em produção o módulo só é montado se as duas
-  credenciais existirem.
+  credenciais existirem. A API JSON do admin (`/admin/queues`) é outro módulo
+  e usa sessão + `RolesGuard`.
 
 ---
 
