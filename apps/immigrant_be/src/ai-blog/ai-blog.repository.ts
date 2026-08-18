@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
+import { BlogPipelineStatus, Prisma } from '../../../../generated/prisma';
 
 @Injectable()
 export class AiBlogRepository {
@@ -49,7 +50,20 @@ export class AiBlogRepository {
   }
 
   async findPostById(id: string) {
-    return this.prisma.blogPost.findUnique({ where: { id } });
+    return this.prisma.blogPost.findUnique({
+      where: { id },
+      // O país entra porque o prompt da capa o cita; sem ele a imagem sai
+      // genérica quando o retry reenfileira a etapa de imagem.
+      include: { featured_country: { select: { name: true } } },
+    });
+  }
+
+  /** Recoloca o post na etapa que vai ser repetida, limpando o erro anterior. */
+  async setPipelineStatus(id: string, status: BlogPipelineStatus) {
+    return this.prisma.blogPost.update({
+      where: { id },
+      data: { pipeline_status: status, pipeline_error: Prisma.DbNull },
+    });
   }
 
   // ─── Cron Jobs ────────────────────────────────────────────────────────────

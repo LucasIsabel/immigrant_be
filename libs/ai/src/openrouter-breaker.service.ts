@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type Redis from 'ioredis';
+import { AI_ALERT_SINK, type AiAlertSink } from './ai-alert.port';
 
 export const AI_BREAKER_REDIS = 'AI_BREAKER_REDIS';
 
@@ -38,6 +39,7 @@ export class OpenRouterBreaker {
 
   constructor(
     @Optional() @Inject(AI_BREAKER_REDIS) private readonly redis?: Redis,
+    @Optional() @Inject(AI_ALERT_SINK) private readonly alerts?: AiAlertSink,
   ) {
     if (!redis) {
       this.logger.warn(
@@ -69,6 +71,18 @@ export class OpenRouterBreaker {
         CREDITS_COOLDOWN_MS / 60_000
       } minutes and using the fallback chain.`,
     );
+
+    // Avisar não pode custar a geração: o 402 já foi tratado e a cadeia segue
+    // para o fallback, com ou sem alarme.
+    await this.alerts
+      ?.creditsExhausted({ blockedUntil: new Date(until) })
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Não foi possível emitir o alerta de crédito esgotado: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      });
   }
 
   async isBlocked(): Promise<boolean> {

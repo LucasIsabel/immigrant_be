@@ -114,6 +114,25 @@ export class AiBlogController {
     return this.aiBlogService.rejectPost(id);
   }
 
+  @Post('pending/:id/pipeline/retry')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Repetir a etapa do pipeline que falhou',
+    description:
+      'Reenfileira apenas a etapa em falha — tradução ou imagem de capa —, sem refazer o que já ficou pronto. Os attempts do BullMQ cobrem a falha transitória; isto é o remédio depois que eles se esgotam.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do post' })
+  @ApiResponse({ status: 202, description: 'Etapa reenfileirada' })
+  @ApiNotFoundResponse({ description: 'Post não encontrado' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'O post não está em falha, então não há etapa a repetir. Também é o que responde a um clique repetido.',
+  })
+  retryPipelineStep(@Param('id') id: string, @Session() session: UserSession) {
+    return this.aiBlogService.retryFailedStep(id, session?.user?.id);
+  }
+
   @Post('refine/:id')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({

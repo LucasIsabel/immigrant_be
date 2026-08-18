@@ -65,15 +65,28 @@ export class AiBlogConsumer extends WorkerHost {
 
     reportJobFailure(AI_BLOG_QUEUE, job, error);
 
-    if (!isFinalAttempt(job) || !job.data.requestedByUserId) return;
+    if (!isFinalAttempt(job)) return;
 
-    await this.eventsService.emit({
-      userId: job.data.requestedByUserId,
+    const aviso = {
       type: EVENT_TYPES.BLOG_POST_FAILED,
       title: 'Falha ao gerar post',
       message:
         'Não foi possível gerar o post após várias tentativas. Tente novamente.',
       payload: { countryId: job.data.country_id, error: error.message },
-    });
+    };
+
+    // Esta é a falha mais silenciosa que existia: quando a escrita falha nenhum
+    // post é criado, então não há linha no banco para marcar — e sem
+    // `requestedByUserId`, que o cron não tem, também não havia evento. O
+    // agendamento simplesmente não produzia nada, sem deixar rastro.
+    if (job.data.requestedByUserId) {
+      await this.eventsService.emit({
+        userId: job.data.requestedByUserId,
+        ...aviso,
+      });
+      return;
+    }
+
+    await this.eventsService.emitToAdmins(aviso);
   }
 }

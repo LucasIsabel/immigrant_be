@@ -131,11 +131,7 @@ export class AiBlogImageConsumer extends WorkerHost {
       );
     }
 
-    const userId =
-      'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
-    if (!userId) return;
-    await this.eventsService.emit({
-      userId,
+    const aviso = {
       type: isRefine
         ? EVENT_TYPES.BLOG_REFINE_FAILED
         : EVENT_TYPES.BLOG_COVER_IMAGE_FAILED,
@@ -144,6 +140,16 @@ export class AiBlogImageConsumer extends WorkerHost {
         ? 'Não foi possível refinar o post após várias tentativas.'
         : 'Não foi possível gerar a imagem de capa após várias tentativas.',
       payload: { postId: job.data.postId, error: error.message },
-    });
+    };
+
+    const userId =
+      'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
+
+    if (userId) {
+      await this.eventsService.emit({ userId, ...aviso });
+      return;
+    }
+
+    await this.eventsService.emitToAdmins(aviso);
   }
 }
