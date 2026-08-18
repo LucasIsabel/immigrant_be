@@ -8,6 +8,7 @@ export {
   DEFAULT_MODEL_CHAINS,
 } from './model-config.service';
 export { OpenRouterService } from './providers/openrouter.service';
+export { AI_ALERT_SINK, type AiAlertSink } from './ai-alert.port';
 export {
   OpenRouterBreaker,
   AI_BREAKER_REDIS,

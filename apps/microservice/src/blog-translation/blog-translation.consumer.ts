@@ -145,10 +145,7 @@ export class BlogTranslationConsumer extends WorkerHost {
       error.message,
     );
 
-    if (!data.requestedByUserId) return;
-
-    await this.eventsService.emit({
-      userId: data.requestedByUserId,
+    const aviso = {
       type: EVENT_TYPES.BLOG_TRANSLATION_FAILED,
       title: 'Falha na tradução',
       message: `Não foi possível traduzir o post para ${data.targetLocale.toUpperCase()} após várias tentativas.`,
@@ -157,6 +154,18 @@ export class BlogTranslationConsumer extends WorkerHost {
         locale: data.targetLocale,
         error: error.message,
       },
-    });
+    };
+
+    // Sem `requestedByUserId` o job veio do cron, e antes daqui a falha não
+    // chegava a ninguém: o post ficava marcado no banco e ninguém era avisado.
+    if (data.requestedByUserId) {
+      await this.eventsService.emit({
+        userId: data.requestedByUserId,
+        ...aviso,
+      });
+      return;
+    }
+
+    await this.eventsService.emitToAdmins(aviso);
   }
 }

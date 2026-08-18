@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -15,10 +16,17 @@ import { BlogService } from '../blog/blog.service';
 import {
   AI_BLOG_QUEUE,
   AI_BLOG_IMAGE_QUEUE,
+  BLOG_TRANSLATION_QUEUE,
+  GENERATE_AI_BLOG_IMAGE,
   GENERATE_AI_BLOG_POST,
   REFINE_AI_BLOG_POST,
+  TRANSLATE_BLOG_POST,
+  TRANSLATION_LOCALES,
 } from '@app/config/constants';
-import { BlogPostStatus } from '../../../../generated/prisma';
+import {
+  BlogPipelineStatus,
+  BlogPostStatus,
+} from '../../../../generated/prisma';
 import { PostComplexity, PoliticalTone } from '@app/ai';
 import { getCorrelationId } from '@app/config/request-context';
 
@@ -31,6 +39,8 @@ export class AiBlogService {
     private readonly blogService: BlogService,
     @InjectQueue(AI_BLOG_QUEUE) private readonly aiBlogQueue: Queue,
     @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
+    @InjectQueue(BLOG_TRANSLATION_QUEUE)
+    private readonly translationQueue: Queue,
   ) {}
 
   // ─── Generate ─────────────────────────────────────────────────────────────
@@ -84,6 +94,80 @@ export class AiBlogService {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
     return this.repository.deletePost(id);
+  }
+
+  // ─── Retry de etapa ────────────────────────────────────────────────────────
+
+  /**
+   * Reenfileira só a etapa que falhou.
+   *
+   * Os `attempts` do BullMQ cobrem a falha transitória; quando eles se esgotam,
+   * o post fica marcado e para. Antes daqui não havia remédio: era gerar tudo de
+   * novo, pagando o texto outra vez para consertar uma capa.
+   *
+   * Recusa post que não está em falha. Reenfileirar uma etapa de um post que já
+   * está `READY`, ou no meio de outra etapa, criaria trabalho duplicado — e é
+   * exatamente o que um clique repetido na tela faria.
+   */
+  async retryFailedStep(id: string, requestedByUserId?: string) {
+    const post = await this.repository.findPostById(id);
+    if (!post) throw new NotFoundException('Post não encontrado');
+
+    const etapa = {
+      [BlogPipelineStatus.FAILED_TRANSLATION]: 'translation',
+      [BlogPipelineStatus.FAILED_IMAGE]: 'cover_image',
+    }[post.pipeline_status as string];
+
+    if (!etapa) {
+      throw new ConflictException(
+        `O post não está em falha (estado atual: ${post.pipeline_status}). Só há o que repetir depois de uma etapa falhar.`,
+      );
+    }
+
+    if (etapa === 'translation') {
+      const existentes =
+        await this.repository.findTranslationLocalesForPost(id);
+      const faltando = TRANSLATION_LOCALES.filter(
+        (locale) => !existentes.includes(locale),
+      );
+
+      await this.repository.setPipelineStatus(
+        id,
+        BlogPipelineStatus.TRANSLATING,
+      );
+
+      // Só os idiomas que faltam: repetir os que já vieram pagaria de novo por
+      // tradução que existe.
+      await this.translationQueue.addBulk(
+        faltando.map((locale) => ({
+          name: TRANSLATE_BLOG_POST,
+          data: {
+            postId: id,
+            targetLocale: locale,
+            requestedByUserId,
+            correlationId: getCorrelationId(),
+          },
+        })),
+      );
+
+      return { step: 'translation', locales: faltando };
+    }
+
+    await this.repository.setPipelineStatus(
+      id,
+      BlogPipelineStatus.GENERATING_IMAGE,
+    );
+
+    await this.aiBlogImageQueue.add(GENERATE_AI_BLOG_IMAGE, {
+      postId: id,
+      slug: post.slug,
+      title: post.title,
+      countryName: post.featured_country?.name ?? '',
+      requestedByUserId,
+      correlationId: getCorrelationId(),
+    });
+
+    return { step: 'cover_image' };
   }
 
   // ─── Refinement ────────────────────────────────────────────────────────────
