@@ -6,6 +6,7 @@ jest.mock('@app/database', () => ({
 import { PrismaService } from '@app/database';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AiRouterService } from './ai-router.service';
+import { OpenRouterBreaker } from './openrouter-breaker.service';
 import { ModelConfigService } from './model-config.service';
 import { GeminiDirectProvider } from './providers/gemini-direct.provider';
 import { OpenRouterService } from './providers/openrouter.service';
@@ -53,6 +54,9 @@ describe('AiRouterService', () => {
         { provide: ModelConfigService, useValue: mockModelConfig },
         { provide: OpenRouterService, useValue: mockOpenRouter },
         { provide: GeminiDirectProvider, useValue: mockGeminiDirect },
+        // Breaker real, sem cliente Redis: os testes abaixo passam a exercitar o
+        // caminho de degradação local, que é o que vale quando o Redis cai.
+        OpenRouterBreaker,
       ],
     }).compile();
 
@@ -134,7 +138,7 @@ describe('AiRouterService', () => {
       );
 
       await service.generateText('blog_writing_opinion', 'prompt');
-      expect(service.openRouterStatus.blocked).toBe(true);
+      expect((await service.getOpenRouterStatus()).blocked).toBe(true);
 
       mockOpenRouter.generateText.mockClear();
       await service.generateText('blog_writing_opinion', 'prompt');
@@ -186,7 +190,7 @@ describe('AiRouterService', () => {
 
       await service.generateText('blog_writing_opinion', 'prompt');
 
-      expect(service.openRouterStatus.blocked).toBe(false);
+      expect((await service.getOpenRouterStatus()).blocked).toBe(false);
     });
 
     it('moves to the next model when the wait does not help', async () => {

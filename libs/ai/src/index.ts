@@ -8,6 +8,11 @@ export {
   DEFAULT_MODEL_CHAINS,
 } from './model-config.service';
 export { OpenRouterService } from './providers/openrouter.service';
+export {
+  OpenRouterBreaker,
+  AI_BREAKER_REDIS,
+  CREDITS_COOLDOWN_MS,
+} from './openrouter-breaker.service';
 export { GeminiDirectProvider } from './providers/gemini-direct.provider';
 export {
   AI_SCENARIOS,

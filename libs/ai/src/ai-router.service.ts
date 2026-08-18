@@ -14,17 +14,8 @@ import {
   RateLimitedError,
   stripGeminiDirectPrefix,
 } from './providers/ai-provider.types';
+import { OpenRouterBreaker } from './openrouter-breaker.service';
 import { parseJsonResponse } from './utils/json-response.util';
-
-/**
- * How long OpenRouter is considered unavailable after a 402.
- *
- * Credits belong to the account, so once one model reports insufficient credit
- * every other OpenRouter model will too. Hammering the API to rediscover that on
- * each job wastes latency on every request; this makes the first 402 skip
- * OpenRouter for the whole cooldown and go straight to the Gemini link.
- */
-const CREDITS_COOLDOWN_MS = 15 * 60_000;
 
 /** Only one wait per model, and never a long one — the chain is the real remedy. */
 const MAX_RATE_LIMIT_WAIT_MS = 5_000;
@@ -45,36 +36,29 @@ export type AiCallContext = {
 @Injectable()
 export class AiRouterService {
   private readonly logger = new Logger(AiRouterService.name);
-  private openRouterBlockedUntil = 0;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly modelConfig: ModelConfigService,
     private readonly openRouter: OpenRouterService,
     private readonly geminiDirect: GeminiDirectProvider,
+    private readonly breaker: OpenRouterBreaker,
   ) {}
 
-  private get isOpenRouterBlocked(): boolean {
-    return Date.now() < this.openRouterBlockedUntil;
-  }
+  /**
+   * Visible to the admin endpoint so the state is inspectable, not folklore.
+   *
+   * Assíncrono porque o cooldown agora é compartilhado entre os processos: quem
+   * pergunta pelo estado precisa da resposta do worker que está gerando, não da
+   * cópia local de quem atende a requisição.
+   */
+  async getOpenRouterStatus(): Promise<{
+    blocked: boolean;
+    blockedUntil: Date | null;
+  }> {
+    const blockedUntil = await this.breaker.blockedUntil();
 
-  private blockOpenRouter(): void {
-    this.openRouterBlockedUntil = Date.now() + CREDITS_COOLDOWN_MS;
-    this.logger.error(
-      `OpenRouter is out of credit — skipping it for ${
-        CREDITS_COOLDOWN_MS / 60_000
-      } minutes and using the fallback chain.`,
-    );
-  }
-
-  /** Visible to the admin endpoint so the state is inspectable, not folklore. */
-  get openRouterStatus(): { blocked: boolean; blockedUntil: Date | null } {
-    return {
-      blocked: this.isOpenRouterBlocked,
-      blockedUntil: this.isOpenRouterBlocked
-        ? new Date(this.openRouterBlockedUntil)
-        : null,
-    };
+    return { blocked: blockedUntil !== null, blockedUntil };
   }
 
   private async recordUsage(
@@ -134,11 +118,16 @@ export class AiRouterService {
     const chain = await this.modelConfig.getChain(scenario);
     const failures: string[] = [];
 
+    // Uma leitura por geração, não uma por elo: o estado compartilhado não muda
+    // no meio da cadeia por conta de outro processo de um jeito que nos ajude, e
+    // um 402 nosso atualiza a variável abaixo na hora.
+    let openRouterBlocked = await this.breaker.isBlocked();
+
     for (const entry of chain) {
       const viaGeminiDirect = isGeminiDirect(entry);
       const model = viaGeminiDirect ? stripGeminiDirectPrefix(entry) : entry;
 
-      if (!viaGeminiDirect && this.isOpenRouterBlocked) {
+      if (!viaGeminiDirect && openRouterBlocked) {
         failures.push(`${entry}: skipped, OpenRouter in cooldown`);
         continue;
       }
@@ -188,7 +177,8 @@ export class AiRouterService {
         );
 
         if (error instanceof InsufficientCreditsError) {
-          this.blockOpenRouter();
+          await this.breaker.block();
+          openRouterBlocked = true;
           continue;
         }
 
