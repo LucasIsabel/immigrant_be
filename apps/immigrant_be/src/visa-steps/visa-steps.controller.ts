@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   HttpStatus,
   Param,
   Post,
@@ -51,6 +52,11 @@ export class VisaStepsController {
     return this.visaStepsService.create(dto);
   }
 
+  // Nenhum recurso é criado aqui, então o 201 padrão do POST no Nest nunca foi
+  // o código certo — e a doc já prometia 200. Sem isto o servidor responde
+  // 201 enquanto o contrato diz 200, e o cliente gerado tipa sobre um código
+  // que nunca chega.
+  @HttpCode(HttpStatus.OK)
   @Post('translate')
   @ApiOperation({
     summary: 'Translate visa steps',
