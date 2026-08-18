@@ -76,6 +76,15 @@ export class AiBlogRefineService {
           'blog_image',
           enrichedPrompt,
           { entityType: 'blog_post', entityId: data.postId },
+          // O upload abaixo sempre declarou `image/jpeg` num arquivo `.jpg`, mas
+          // até aqui os bytes vinham no padrão do provider — PNG. O navegador
+          // farejava o conteúdo e renderizava, então nunca quebrou; ficava só um
+          // Content-Type mentiroso num arquivo maior do que precisava ser.
+          //
+          // A proporção acompanha a capa: sem pedir, o padrão do provider é
+          // quadrado, e uma ilustração quadrada no meio de um artigo destoa das
+          // demais — cada marcador sairia com o formato que o modelo escolhesse.
+          { aspectRatio: '16:9', outputFormat: 'jpeg' },
         ));
       } catch (error) {
         // Marcador que falha é pulado, não derruba o refinamento inteiro — o
