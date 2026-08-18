@@ -11,10 +11,14 @@ import {
   type RssNewsItem,
 } from '@app/ai';
 import {
-  AI_BLOG_IMAGE_QUEUE,
-  GENERATE_AI_BLOG_IMAGE,
+  BLOG_TRANSLATION_QUEUE,
+  TRANSLATE_BLOG_POST,
+  TRANSLATION_LOCALES,
 } from '@app/config/constants';
-import { BlogPostStatus } from '../../../../generated/prisma';
+import {
+  BlogPipelineStatus,
+  BlogPostStatus,
+} from '../../../../generated/prisma';
 import { XMLParser } from 'fast-xml-parser';
 import { CorrelatedJobData } from '@app/config/job-data';
 import { getCorrelationId } from '@app/config/request-context';
@@ -28,6 +32,8 @@ export interface GenerateBlogPostJobData extends CorrelatedJobData {
   complexity?: PostComplexity;
   political_tone?: PoliticalTone;
   custom_instructions?: string;
+  /** Sobre o que escrever. Vira termo de busca no RSS e fica no post. */
+  topic?: string;
   /** User who triggered generation (for SSE notification) */
   requestedByUserId?: string;
 }
@@ -40,7 +46,8 @@ export class AiBlogWorkerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiRouter: AiRouterService,
-    @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
+    @InjectQueue(BLOG_TRANSLATION_QUEUE)
+    private readonly translationQueue: Queue,
   ) {}
 
   async generatePost(data: GenerateBlogPostJobData): Promise<void> {
@@ -54,7 +61,7 @@ export class AiBlogWorkerService {
 
     this.logger.log(`Generating AI blog post for country: ${country.name}`);
 
-    const newsItems = await this.fetchGoogleNewsRss(country.name);
+    const newsItems = await this.fetchGoogleNewsRss(country.name, data.topic);
 
     if (newsItems.length === 0) {
       throw new Error(
@@ -112,6 +119,9 @@ export class AiBlogWorkerService {
         display_author_id: data.display_author_id ?? null,
         category_id: data.category_id,
         featured_country_id: data.country_id,
+        source_topic: data.topic?.trim() || null,
+        // A cadeia continua na tradução, então o post já nasce nesse estado.
+        pipeline_status: BlogPipelineStatus.TRANSLATING,
         tags: tagIds.length
           ? { create: tagIds.map((tag_id) => ({ tag_id })) }
           : undefined,
@@ -120,15 +130,26 @@ export class AiBlogWorkerService {
 
     this.logger.log(`AI blog post created as DRAFT for: ${country.name}`);
 
-    await this.aiBlogImageQueue.add(GENERATE_AI_BLOG_IMAGE, {
-      postId: post.id,
-      slug: post.slug,
-      title: post.title,
-      countryName: country.name,
-      requestedByUserId: data.requestedByUserId,
-      // Keeps the chained image job on the trace of the request that started it.
-      correlationId: getCorrelationId(),
-    });
+    // A cadeia segue para a tradução, e é o último locale traduzido que enfileira
+    // a capa. Antes daqui a capa vinha logo depois do texto e a tradução ficava
+    // de fora: o cron das 03:00 só varre posts publicados, então um DRAFT nunca
+    // era traduzido sozinho — e o refinamento exige as traduções. O admin era
+    // obrigado a enfileirar tradução na mão entre gerar e refinar.
+    //
+    // A imagem fica por último de propósito: o refinamento depende de pt+es, não
+    // da capa, então uma capa que falha não bloqueia o resto.
+    await this.translationQueue.addBulk(
+      TRANSLATION_LOCALES.map((locale) => ({
+        name: TRANSLATE_BLOG_POST,
+        data: {
+          postId: post.id,
+          targetLocale: locale,
+          requestedByUserId: data.requestedByUserId,
+          // Mantém os jobs encadeados no rastro da requisição que os originou.
+          correlationId: getCorrelationId(),
+        },
+      })),
+    );
 
     // Update last_run_at on cron job if triggered by one
     if (data.cron_job_id) {
@@ -145,10 +166,18 @@ export class AiBlogWorkerService {
 
   // ─── RSS ──────────────────────────────────────────────────────────────────
 
+  /**
+   * O `topic` entra na busca em vez de substituí-la: sozinho ele traria notícia
+   * do assunto em qualquer lugar do mundo, e o post é sobre um país.
+   */
   private async fetchGoogleNewsRss(
     countryName: string,
+    topic?: string,
   ): Promise<RssNewsItem[]> {
-    const query = encodeURIComponent(`${countryName} immigration imigração`);
+    const terms = topic?.trim()
+      ? `${countryName} ${topic.trim()}`
+      : `${countryName} immigration imigração`;
+    const query = encodeURIComponent(terms);
     const url = `https://news.google.com/rss/search?q=${query}&hl=en&gl=US&ceid=US:en`;
 
     try {

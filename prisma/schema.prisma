@@ -182,6 +182,23 @@ enum BlogPostStatus {
   ARCHIVED
 }
 
+/// Onde um post gerado por IA está na cadeia texto → tradução → imagem.
+///
+/// Não há `GENERATING` nem `FAILED_GENERATION`: a linha do post só nasce depois
+/// que o texto ficou pronto, e uma geração que falha não chega a criar post
+/// nenhum. Falha de escrita é visível na fila, não aqui — inventar um estado que
+/// nenhuma linha pode ter só criaria código morto.
+///
+/// `READY` é o default para que post escrito por gente, e todos os que já
+/// existiam, nasçam corretos sem backfill.
+enum BlogPipelineStatus {
+  TRANSLATING
+  GENERATING_IMAGE
+  READY
+  FAILED_TRANSLATION
+  FAILED_IMAGE
+}
+
 model BlogPost {
   id               String         @id @default(uuid()) @db.Uuid
   title            String
@@ -213,6 +230,16 @@ model BlogPost {
   is_ai_generated          Boolean @default(false) @map("is_ai_generated")
   refine_needs_manual_fix  Boolean @default(false) @map("refine_needs_manual_fix")
   original_locale          String  @default("en") @map("original_locale")
+  /// Em que etapa da cadeia o post está. Antes disto o único sinal era
+  /// `cover_image_url` nulo, que não distingue "ainda vem" de "falhou".
+  pipeline_status          BlogPipelineStatus @default(READY) @map("pipeline_status")
+  /// O que deu errado na etapa que falhou, para a tela não obrigar quem lê a
+  /// abrir o log. Nulo quando não houve falha.
+  pipeline_error           Json?   @map("pipeline_error")
+  /// Sobre o que o admin pediu que este post fosse. Alimenta a busca nas
+  /// notícias e fica registrado — `custom_instructions` é texto livre para o
+  /// modelo, isto é dado.
+  source_topic             String? @map("source_topic")
   /// Qual modelo escreveu o post e quanto custou. Nulos nos posts anteriores ao
   /// roteador e nos escritos por gente. `generated_by_model` é o modelo que de
   /// fato respondeu — pode ser um elo de fallback, e é isso que o revisor
@@ -223,6 +250,7 @@ model BlogPost {
   likes            BlogPostLike[]
 
   @@index([status, published_at])
+  @@index([pipeline_status])
   @@index([slug])
   @@index([category_id])
   @@index([author_id])

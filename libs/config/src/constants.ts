@@ -12,6 +12,17 @@ export const DEFAULT_JOB_OPTIONS = {
   removeOnFail: 100,
 };
 
+/**
+ * Os idiomas para os quais um post é traduzido.
+ *
+ * Fica aqui porque a API e o worker precisavam concordar e mantinham duas listas
+ * em arquivos diferentes: `['en','es','pt']` de um lado, `['pt','es']` do outro.
+ * Concordavam só porque a API filtrava o `original_locale` antes de comparar —
+ * uma coincidência que a próxima edição desfaria.
+ */
+export const TRANSLATION_LOCALES = ['pt', 'es'] as const;
+export type TranslationLocale = (typeof TRANSLATION_LOCALES)[number];
+
 export const AI_BLOG_QUEUE = 'ai_blog_queue';
 export const GENERATE_AI_BLOG_POST = 'generate_ai_blog_post';
 

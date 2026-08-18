@@ -7,9 +7,15 @@ import {
 } from '@app/ai';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { CorrelatedJobData } from '@app/config/job-data';
+import {
+  TRANSLATION_LOCALES,
+  type TranslationLocale,
+} from '@app/config/constants';
+import { BlogPipelineStatus } from '../../../../generated/prisma';
 
-export const SUPPORTED_LOCALES = ['pt', 'es'] as const;
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+/** Reexportado do lugar único para não voltar a existir uma segunda lista. */
+export const SUPPORTED_LOCALES = TRANSLATION_LOCALES;
+export type SupportedLocale = TranslationLocale;
 
 export interface TranslatePostJobData extends CorrelatedJobData {
   postId: string;
@@ -90,6 +96,88 @@ export class BlogTranslationWorkerService {
     this.logger.log(
       `Translation saved for post ${data.postId} → ${data.targetLocale}`,
     );
+  }
+
+  /**
+   * Avança o pipeline para a imagem quando o post tem todas as traduções.
+   *
+   * Devolve `true` só para quem de fato fez a transição. Os jobs de pt e es
+   * rodam em paralelo e podem terminar juntos: se cada um checasse "já tem tudo?"
+   * e enfileirasse, o post ganharia duas capas — duas imagens pagas e a segunda
+   * sobrescrevendo a primeira.
+   *
+   * O `updateMany` com `pipeline_status` no `where` é um compare-and-set: o
+   * Postgres serializa os dois updates e só um encontra a linha ainda em
+   * TRANSLATING. O outro recebe `count: 0` e não faz nada.
+   */
+  async advanceToImageIfTranslated(postId: string): Promise<boolean> {
+    const locales = await this.prisma.blogPostTranslation.findMany({
+      where: { post_id: postId },
+      select: { locale: true },
+    });
+
+    const done = new Set(locales.map((t) => t.locale));
+    if (!TRANSLATION_LOCALES.every((locale) => done.has(locale))) return false;
+
+    const { count } = await this.prisma.blogPost.updateMany({
+      where: { id: postId, pipeline_status: BlogPipelineStatus.TRANSLATING },
+      data: { pipeline_status: BlogPipelineStatus.GENERATING_IMAGE },
+    });
+
+    return count === 1;
+  }
+
+  /** O que o job da capa precisa saber do post. */
+  async getPostForImage(postId: string): Promise<{
+    id: string;
+    slug: string;
+    title: string;
+    countryName: string;
+  } | null> {
+    const post = await this.prisma.blogPost.findUnique({
+      where: { id: postId },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        featured_country: { select: { name: true } },
+      },
+    });
+
+    if (!post) return null;
+
+    return {
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      // O prompt da capa cita o país; sem ele a imagem sai genérica.
+      countryName: post.featured_country?.name ?? '',
+    };
+  }
+
+  /** Marca a etapa que falhou, com o motivo, quando o BullMQ esgota as tentativas. */
+  async markPipelineFailure(
+    postId: string,
+    status: BlogPipelineStatus,
+    step: string,
+    message: string,
+  ): Promise<void> {
+    await this.prisma.blogPost
+      .update({
+        where: { id: postId },
+        data: {
+          pipeline_status: status,
+          pipeline_error: { step, message, at: new Date().toISOString() },
+        },
+      })
+      .catch((error: unknown) => {
+        // Registrar a falha não pode virar uma segunda falha.
+        this.logger.warn(
+          `Não foi possível marcar a falha de pipeline do post ${postId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      });
   }
 
   async getPendingTranslations(): Promise<PendingTranslation[]> {
