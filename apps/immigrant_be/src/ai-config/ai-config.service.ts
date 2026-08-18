@@ -4,7 +4,6 @@ import {
   AiScenario,
   DEFAULT_MODEL_CHAINS,
   ModelConfigService,
-  OpenRouterService,
 } from '@app/ai';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { AiConfigRepository } from './ai-config.repository';
@@ -20,7 +19,6 @@ export class AiConfigService {
     private readonly aiConfigRepository: AiConfigRepository,
     private readonly modelConfig: ModelConfigService,
     private readonly aiRouter: AiRouterService,
-    private readonly openRouter: OpenRouterService,
   ) {}
 
   /**
@@ -90,10 +88,12 @@ export class AiConfigService {
     };
   }
 
+  /**
+   * Só o cooldown. A presença da chave saiu daqui quando `OPEN_ROUTER` virou
+   * obrigatória no `envSchema`: um campo que nunca pode ser falso não informa
+   * nada, e sugerir que possa ser é pior que não expor.
+   */
   getOpenRouterStatus(): OpenRouterStatusDto {
-    return {
-      ...this.aiRouter.openRouterStatus,
-      configured: this.openRouter.isConfigured,
-    };
+    return this.aiRouter.openRouterStatus;
   }
 }

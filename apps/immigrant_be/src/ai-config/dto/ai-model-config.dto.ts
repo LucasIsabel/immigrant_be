@@ -71,12 +71,4 @@ export class OpenRouterStatusDto {
     nullable: true,
   })
   blockedUntil: Date | null;
-
-  @ApiProperty({
-    description:
-      'false quando nem OPENROUTER_API_KEY nem OPEN_ROUTER estão configuradas',
-    example: true,
-    type: Boolean,
-  })
-  configured: boolean;
 }

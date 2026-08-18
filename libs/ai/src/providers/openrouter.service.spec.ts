@@ -41,16 +41,8 @@ describe('OpenRouterService', () => {
   });
 
   describe('api key', () => {
-    it('accepts OPEN_ROUTER, the name already in .env', async () => {
+    it('lê OPEN_ROUTER, o nome que está no ambiente', async () => {
       const service = await build({ OPEN_ROUTER: 'from-env-var' });
-      expect(service.isConfigured).toBe(true);
-    });
-
-    it('prefers the canonical OPENROUTER_API_KEY when both exist', async () => {
-      const service = await build({
-        OPENROUTER_API_KEY: 'canonical',
-        OPEN_ROUTER: 'legacy',
-      });
       fetchMock.mockResolvedValue(
         jsonResponse({ choices: [{ message: { content: 'hi' } }] }),
       );
@@ -59,15 +51,13 @@ describe('OpenRouterService', () => {
 
       const headers = (fetchMock.mock.calls[0][1] as RequestInit)
         .headers as Record<string, string>;
-      expect(headers.Authorization).toBe('Bearer canonical');
+      expect(headers.Authorization).toBe('Bearer from-env-var');
     });
 
-    it('fails loudly rather than calling the API with no key', async () => {
-      const service = await build({});
-
-      await expect(service.generateText('m', 'p')).rejects.toThrow(
-        AiProviderError,
-      );
+    it('falha ao ser construído quando a chave não existe', async () => {
+      // O envSchema já barra isto no boot; a guarda no construtor existe para o
+      // invariante viver junto de quem depende dele, como no GeminiBaseService.
+      await expect(build({})).rejects.toThrow('OPEN_ROUTER is not configured');
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

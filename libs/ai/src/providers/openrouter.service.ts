@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AiImageProvider,
@@ -27,24 +27,19 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 @Injectable()
 export class OpenRouterService implements AiTextProvider, AiImageProvider {
   readonly name: AiProviderName = 'openrouter';
-  private readonly logger = new Logger(OpenRouterService.name);
-  private readonly apiKey?: string;
+  private readonly apiKey: string;
 
   constructor(private readonly configService: ConfigService) {
-    // Accepts the canonical name and the one already in `.env`. Never logged.
-    this.apiKey =
-      this.configService.get<string>('OPENROUTER_API_KEY') ??
-      this.configService.get<string>('OPEN_ROUTER');
+    const apiKey = this.configService.get<string>('OPEN_ROUTER');
 
-    if (!this.apiKey) {
-      this.logger.warn(
-        'Neither OPENROUTER_API_KEY nor OPEN_ROUTER is set — OpenRouter models will fail and the router will fall back.',
-      );
+    // `envSchema` já barra a ausência no boot; isto é a mesma guarda que o
+    // GeminiBaseService tem, para o invariante viver junto de quem depende dele
+    // e não só num arquivo de config distante. Nunca logar o valor.
+    if (!apiKey) {
+      throw new Error('OPEN_ROUTER is not configured');
     }
-  }
 
-  get isConfigured(): boolean {
-    return Boolean(this.apiKey);
+    this.apiKey = apiKey;
   }
 
   private headers(): Record<string, string> {
@@ -90,16 +85,6 @@ export class OpenRouterService implements AiTextProvider, AiImageProvider {
     );
   }
 
-  private assertConfigured(): void {
-    if (!this.apiKey) {
-      throw new AiProviderError(
-        this.name,
-        undefined,
-        'OpenRouter API key is not configured',
-      );
-    }
-  }
-
   private usageFrom(raw: unknown): AiUsage {
     const usage = (raw ?? {}) as {
       prompt_tokens?: number;
@@ -117,8 +102,6 @@ export class OpenRouterService implements AiTextProvider, AiImageProvider {
   }
 
   async generateText(model: string, prompt: string): Promise<AiTextResult> {
-    this.assertConfigured();
-
     const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: this.headers(),
@@ -162,8 +145,6 @@ export class OpenRouterService implements AiTextProvider, AiImageProvider {
   }
 
   async generateImage(model: string, prompt: string): Promise<AiImageResult> {
-    this.assertConfigured();
-
     const response = await fetch(`${OPENROUTER_BASE_URL}/images`, {
       method: 'POST',
       headers: this.headers(),
