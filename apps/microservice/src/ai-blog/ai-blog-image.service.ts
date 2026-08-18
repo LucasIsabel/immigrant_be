@@ -3,6 +3,7 @@ import { PrismaService } from '@app/database';
 import { AiRouterService, buildBlogCoverImagePrompt } from '@app/ai';
 import { StorageService } from '@app/storage';
 import { CorrelatedJobData } from '@app/config/job-data';
+import { BlogPipelineStatus, Prisma } from '../../../../generated/prisma';
 
 export interface GenerateBlogImageJobData extends CorrelatedJobData {
   postId: string;
@@ -48,13 +49,46 @@ export class AiBlogImageWorkerService {
       'blog',
     );
 
+    // Última etapa da cadeia: com a capa no lugar, o post está pronto para
+    // revisão. Antes disto `cover_image_url` preenchido era o único sinal, e
+    // nulo não distinguia "ainda vem" de "falhou".
     await this.prisma.blogPost.update({
       where: { id: data.postId },
-      data: { cover_image_url: url },
+      data: {
+        cover_image_url: url,
+        pipeline_status: BlogPipelineStatus.READY,
+        // `Prisma.DbNull` e não `null`: em coluna Json o `null` do JS é ambíguo
+        // entre "SQL NULL" e "o valor JSON null", e o cliente recusa.
+        pipeline_error: Prisma.DbNull,
+      },
     });
 
     this.logger.log(
       `Imagem de capa anexada ao post ${data.postId} por ${model}: ${url}`,
     );
+  }
+
+  /** Registra que a capa desistiu, com o motivo, para a tela não exigir o log. */
+  async markCoverFailure(postId: string, message: string): Promise<void> {
+    await this.prisma.blogPost
+      .update({
+        where: { id: postId },
+        data: {
+          pipeline_status: BlogPipelineStatus.FAILED_IMAGE,
+          pipeline_error: {
+            step: 'cover_image',
+            message,
+            at: new Date().toISOString(),
+          },
+        },
+      })
+      .catch((error: unknown) => {
+        // Anotar a falha não pode virar uma segunda falha.
+        this.logger.warn(
+          `Não foi possível marcar a falha de capa do post ${postId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      });
   }
 }

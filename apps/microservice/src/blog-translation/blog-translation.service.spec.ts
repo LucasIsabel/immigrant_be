@@ -3,6 +3,16 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
+jest.mock('../../../../generated/prisma', () => ({
+  BlogPipelineStatus: {
+    TRANSLATING: 'TRANSLATING',
+    GENERATING_IMAGE: 'GENERATING_IMAGE',
+    READY: 'READY',
+    FAILED_TRANSLATION: 'FAILED_TRANSLATION',
+    FAILED_IMAGE: 'FAILED_IMAGE',
+  },
+}));
+
 import { AiRouterService } from '@app/ai';
 import { PrismaService } from '@app/database';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -25,8 +35,8 @@ const translated = {
 };
 
 const mockPrisma = {
-  blogPost: { findUnique: jest.fn() },
-  blogPostTranslation: { upsert: jest.fn() },
+  blogPost: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+  blogPostTranslation: { upsert: jest.fn(), findMany: jest.fn() },
 };
 
 const mockAiRouter = { generateJson: jest.fn() };
@@ -38,6 +48,9 @@ describe('BlogTranslationWorkerService', () => {
     jest.clearAllMocks();
     mockPrisma.blogPost.findUnique.mockResolvedValue(post);
     mockPrisma.blogPostTranslation.upsert.mockResolvedValue({});
+    mockPrisma.blogPostTranslation.findMany.mockResolvedValue([]);
+    mockPrisma.blogPost.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.blogPost.update.mockResolvedValue({});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -124,5 +137,72 @@ describe('BlogTranslationWorkerService', () => {
       service.translatePost({ postId: 'sumiu', targetLocale: 'pt' }),
     ).rejects.toThrow('BlogPost not found: sumiu');
     expect(mockAiRouter.generateJson).not.toHaveBeenCalled();
+  });
+
+  describe('avanço para a imagem', () => {
+    const comLocales = (locales) =>
+      mockPrisma.blogPostTranslation.findMany.mockResolvedValue(
+        locales.map((locale) => ({ locale })),
+      );
+
+    it('não avança enquanto falta um idioma', async () => {
+      comLocales(['pt']);
+
+      expect(await service.advanceToImageIfTranslated(POST_ID)).toBe(false);
+      expect(mockPrisma.blogPost.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('avança quando o último idioma chega', async () => {
+      comLocales(['pt', 'es']);
+
+      expect(await service.advanceToImageIfTranslated(POST_ID)).toBe(true);
+      expect(mockPrisma.blogPost.updateMany).toHaveBeenCalledWith({
+        where: { id: POST_ID, pipeline_status: 'TRANSLATING' },
+        data: { pipeline_status: 'GENERATING_IMAGE' },
+      });
+    });
+
+    it('só um dos jobs paralelos avança — o outro vê a corrida perdida', async () => {
+      // pt e es rodam ao mesmo tempo e podem terminar juntos. Se cada um
+      // enfileirasse a capa, o post ganharia duas imagens pagas, com a segunda
+      // sobrescrevendo a primeira. O `pipeline_status` no `where` é o
+      // compare-and-set que o Postgres serializa: só um encontra a linha ainda
+      // em TRANSLATING.
+      comLocales(['pt', 'es']);
+      mockPrisma.blogPost.updateMany
+        .mockResolvedValueOnce({ count: 1 })
+        .mockResolvedValueOnce({ count: 0 });
+
+      const primeiro = await service.advanceToImageIfTranslated(POST_ID);
+      const segundo = await service.advanceToImageIfTranslated(POST_ID);
+
+      expect([primeiro, segundo]).toEqual([true, false]);
+    });
+
+    it('marca a falha da tradução com a etapa e o motivo', async () => {
+      await service.markPipelineFailure(
+        POST_ID,
+        'FAILED_TRANSLATION',
+        'translation:pt',
+        'Every model failed for "blog_translation"',
+      );
+
+      const [args] = mockPrisma.blogPost.update.mock.calls[0];
+      expect(args.data.pipeline_status).toBe('FAILED_TRANSLATION');
+      expect(args.data.pipeline_error).toMatchObject({
+        step: 'translation:pt',
+        message: 'Every model failed for "blog_translation"',
+      });
+    });
+
+    it('anotar a falha não pode virar uma segunda falha', async () => {
+      // Se o post sumiu entre a falha e a anotação, engolir é o certo: quem
+      // chama está no `onFailed` de um job que já falhou.
+      mockPrisma.blogPost.update.mockRejectedValue(new Error('post sumiu'));
+
+      await expect(
+        service.markPipelineFailure(POST_ID, 'FAILED_TRANSLATION', 'x', 'y'),
+      ).resolves.toBeUndefined();
+    });
   });
 });

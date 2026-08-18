@@ -77,4 +77,16 @@ export class GenerateAiBlogPostDto {
   @IsOptional()
   @MaxLength(1000)
   custom_instructions?: string;
+
+  @ApiProperty({
+    description:
+      'Sobre o que o post deve ser. Entra na busca de notícias junto do nome do país e fica registrado no post. Diferente de `custom_instructions`, que é texto livre para o prompt.',
+    example: 'novas metas de imigração para 2027',
+    required: false,
+    maxLength: 200,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  topic?: string;
 }

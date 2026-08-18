@@ -47,6 +47,7 @@ export class AiBlogService {
       complexity: dto.complexity ?? PostComplexity.SIMPLE,
       political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
       custom_instructions: dto.custom_instructions,
+      topic: dto.topic,
       requestedByUserId: requestedByUserId ?? undefined,
       correlationId: getCorrelationId(),
     });

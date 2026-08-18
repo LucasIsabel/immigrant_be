@@ -116,11 +116,24 @@ export class AiBlogImageConsumer extends WorkerHost {
 
     if (!isFinalAttempt(job)) return;
 
+    const isRefine = job.name === REFINE_AI_BLOG_POST;
+
+    // Só a capa move o pipeline: o refinamento acontece depois de READY e já
+    // tem o seu próprio sinal em `refine_needs_manual_fix`. Marcar aqui jogaria
+    // um post pronto de volta para "falhou".
+    //
+    // O estado é marcado mesmo sem usuário para notificar — o job de cron não
+    // tem `requestedByUserId`, e é nele que a falha silenciosa dói.
+    if (!isRefine) {
+      await this.aiBlogImageWorkerService.markCoverFailure(
+        job.data.postId,
+        error.message,
+      );
+    }
+
     const userId =
       'requestedByUserId' in job.data ? job.data.requestedByUserId : undefined;
     if (!userId) return;
-
-    const isRefine = job.name === REFINE_AI_BLOG_POST;
     await this.eventsService.emit({
       userId,
       type: isRefine

@@ -3,11 +3,30 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
+jest.mock('../../../../generated/prisma', () => ({
+  BlogPostStatus: {
+    DRAFT: 'DRAFT',
+    PUBLISHED: 'PUBLISHED',
+    ARCHIVED: 'ARCHIVED',
+  },
+  BlogPipelineStatus: {
+    TRANSLATING: 'TRANSLATING',
+    GENERATING_IMAGE: 'GENERATING_IMAGE',
+    READY: 'READY',
+    FAILED_TRANSLATION: 'FAILED_TRANSLATION',
+    FAILED_IMAGE: 'FAILED_IMAGE',
+  },
+}));
+
 import { AiRouterService } from '@app/ai';
 import { PrismaService } from '@app/database';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AI_BLOG_IMAGE_QUEUE } from '@app/config/constants';
+import {
+  BLOG_TRANSLATION_QUEUE,
+  TRANSLATE_BLOG_POST,
+  TRANSLATION_LOCALES,
+} from '@app/config/constants';
 import { AiBlogWorkerService } from './ai-blog.service';
 
 const COUNTRY_ID = 'country-1';
@@ -35,7 +54,7 @@ const mockPrisma = {
 };
 
 const mockAiRouter = { generateJson: jest.fn() };
-const mockQueue = { add: jest.fn() };
+const mockQueue = { add: jest.fn(), addBulk: jest.fn() };
 
 describe('AiBlogWorkerService — proveniência da geração', () => {
   let service: AiBlogWorkerService;
@@ -67,7 +86,7 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
         AiBlogWorkerService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AiRouterService, useValue: mockAiRouter },
-        { provide: getQueueToken(AI_BLOG_IMAGE_QUEUE), useValue: mockQueue },
+        { provide: getQueueToken(BLOG_TRANSLATION_QUEUE), useValue: mockQueue },
       ],
     }).compile();
 
@@ -159,5 +178,77 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
       }),
     ).rejects.toThrow(/deepseek\/deepseek-v4-pro/);
     expect(mockPrisma.blogPost.create).not.toHaveBeenCalled();
+  });
+
+  describe('cadeia e tópico', () => {
+    it('enfileira as traduções, não a capa', async () => {
+      // A capa vinha logo depois do texto e a tradução ficava de fora da cadeia:
+      // o cron das 03:00 só varre posts publicados, então um DRAFT nunca era
+      // traduzido sozinho — e o refinamento exige pt+es. O admin tinha de
+      // enfileirar tradução na mão entre gerar e refinar.
+      routerAnswers('moonshotai/kimi-k2.5', 0.01);
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+      });
+
+      expect(mockQueue.addBulk).toHaveBeenCalledTimes(1);
+      const [jobs] = mockQueue.addBulk.mock.calls[0] as [
+        Array<{ name: string; data: { targetLocale: string } }>,
+      ];
+      expect(jobs.map((j) => j.name)).toEqual(
+        TRANSLATION_LOCALES.map(() => TRANSLATE_BLOG_POST),
+      );
+      expect(jobs.map((j) => j.data.targetLocale)).toEqual([
+        ...TRANSLATION_LOCALES,
+      ]);
+    });
+
+    it('o post nasce em TRANSLATING', async () => {
+      // `cover_image_url` nulo não distingue "ainda vem" de "falhou"; o estado
+      // agregado é o que a fila de aprovação passa a ler.
+      routerAnswers('moonshotai/kimi-k2.5', 0.01);
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+      });
+
+      expect(created()).toMatchObject({ pipeline_status: 'TRANSLATING' });
+    });
+
+    it('o tópico entra na busca de notícias junto do país, e não no lugar dele', async () => {
+      // Sozinho, o tópico traria notícia do assunto em qualquer lugar do mundo —
+      // e o post é sobre um país.
+      routerAnswers('moonshotai/kimi-k2.5', 0.01);
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+        topic: 'metas de imigração 2027',
+      });
+
+      const url = String(fetchMock.mock.calls[0]?.[0]);
+      expect(decodeURIComponent(url)).toContain(
+        'Canada metas de imigração 2027',
+      );
+      expect(created()).toMatchObject({
+        source_topic: 'metas de imigração 2027',
+      });
+    });
+
+    it('sem tópico, mantém a busca genérica de imigração', async () => {
+      routerAnswers('moonshotai/kimi-k2.5', 0.01);
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+      });
+
+      const url = String(fetchMock.mock.calls[0]?.[0]);
+      expect(decodeURIComponent(url)).toContain('Canada immigration');
+      expect(created()).toMatchObject({ source_topic: null });
+    });
   });
 });

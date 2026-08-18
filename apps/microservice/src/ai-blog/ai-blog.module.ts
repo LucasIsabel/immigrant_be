@@ -3,7 +3,11 @@ import { BullModule } from '@nestjs/bullmq';
 import { DatabaseModule } from '@app/database';
 import { AiModule } from '@app/ai';
 import { StorageModule } from '@app/storage';
-import { AI_BLOG_QUEUE, AI_BLOG_IMAGE_QUEUE } from '@app/config/constants';
+import {
+  AI_BLOG_QUEUE,
+  AI_BLOG_IMAGE_QUEUE,
+  BLOG_TRANSLATION_QUEUE,
+} from '@app/config/constants';
 import { EventsModule } from '../events/events.module';
 import { AiBlogConsumer } from './ai-blog.consumer';
 import { AiBlogWorkerService } from './ai-blog.service';
@@ -19,6 +23,8 @@ import { AiBlogRefineService } from './ai-blog-refine.service';
     EventsModule,
     BullModule.registerQueue({ name: AI_BLOG_QUEUE }),
     BullModule.registerQueue({ name: AI_BLOG_IMAGE_QUEUE }),
+    // O worker de texto enfileira as traduções: é o primeiro elo da cadeia.
+    BullModule.registerQueue({ name: BLOG_TRANSLATION_QUEUE }),
   ],
   providers: [
     AiBlogConsumer,

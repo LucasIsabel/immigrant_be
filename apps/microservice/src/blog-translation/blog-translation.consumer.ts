@@ -13,10 +13,13 @@ import {
 import { EventsService } from '../events/events.service';
 import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import {
+  AI_BLOG_IMAGE_QUEUE,
   BLOG_TRANSLATION_QUEUE,
+  GENERATE_AI_BLOG_IMAGE,
   TRANSLATE_BLOG_POST,
   TRANSLATE_ALL_PENDING,
 } from '@app/config/constants';
+import { BlogPipelineStatus } from '../../../../generated/prisma';
 import {
   getCorrelationId,
   runWithCorrelationId,
@@ -34,6 +37,7 @@ export class BlogTranslationConsumer extends WorkerHost {
     private readonly translationService: BlogTranslationWorkerService,
     private readonly eventsService: EventsService,
     @InjectQueue(BLOG_TRANSLATION_QUEUE) private readonly queue: Queue,
+    @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly imageQueue: Queue,
   ) {
     super();
   }
@@ -50,6 +54,7 @@ export class BlogTranslationConsumer extends WorkerHost {
           `Translating post ${data.postId} → ${data.targetLocale} (job: ${job.id})`,
         );
         await this.translationService.translatePost(data);
+        await this.continueToImage(data);
 
         if (data.requestedByUserId) {
           await this.eventsService.emit({
@@ -90,6 +95,33 @@ export class BlogTranslationConsumer extends WorkerHost {
     }
   }
 
+  /**
+   * Enfileira a capa quando esta foi a última tradução que faltava.
+   *
+   * O serviço faz a transição com compare-and-set e só devolve `true` para um
+   * dos jobs paralelos, então a capa é enfileirada uma vez só.
+   */
+  private async continueToImage(data: TranslatePostJobData): Promise<void> {
+    const advanced = await this.translationService.advanceToImageIfTranslated(
+      data.postId,
+    );
+    if (!advanced) return;
+
+    const post = await this.translationService.getPostForImage(data.postId);
+    if (!post) return;
+
+    await this.imageQueue.add(GENERATE_AI_BLOG_IMAGE, {
+      postId: post.id,
+      slug: post.slug,
+      title: post.title,
+      countryName: post.countryName,
+      requestedByUserId: data.requestedByUserId,
+      correlationId: getCorrelationId(),
+    });
+
+    this.logger.log(`Traduções completas — capa enfileirada para ${post.id}`);
+  }
+
   @OnWorkerEvent('failed')
   async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(
@@ -102,6 +134,17 @@ export class BlogTranslationConsumer extends WorkerHost {
     if (job.name !== TRANSLATE_BLOG_POST || !isFinalAttempt(job)) return;
 
     const data = job.data as TranslatePostJobData;
+
+    // O estado é marcado independentemente de haver usuário para notificar: um
+    // job de cron não tem `requestedByUserId`, e é justamente nele que a falha
+    // silenciosa dói.
+    await this.translationService.markPipelineFailure(
+      data.postId,
+      BlogPipelineStatus.FAILED_TRANSLATION,
+      `translation:${data.targetLocale}`,
+      error.message,
+    );
+
     if (!data.requestedByUserId) return;
 
     await this.eventsService.emit({

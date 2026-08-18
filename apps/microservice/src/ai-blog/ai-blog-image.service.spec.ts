@@ -8,6 +8,17 @@ jest.mock('@app/storage', () => ({
   StorageModule: jest.fn(),
 }));
 
+jest.mock('../../../../generated/prisma', () => ({
+  BlogPipelineStatus: {
+    TRANSLATING: 'TRANSLATING',
+    GENERATING_IMAGE: 'GENERATING_IMAGE',
+    READY: 'READY',
+    FAILED_TRANSLATION: 'FAILED_TRANSLATION',
+    FAILED_IMAGE: 'FAILED_IMAGE',
+  },
+  Prisma: { DbNull: Symbol('DbNull') },
+}));
+
 import { AiRouterService } from '@app/ai';
 import { PrismaService } from '@app/database';
 import { StorageService } from '@app/storage';
@@ -73,9 +84,15 @@ describe('AiBlogImageWorkerService', () => {
       'image/jpeg',
       'blog',
     );
+    // A capa é o último elo: com ela no lugar o post fica pronto para revisão, e
+    // o erro de uma tentativa anterior deixa de valer.
     expect(mockPrisma.blogPost.update).toHaveBeenCalledWith({
       where: { id: POST_ID },
-      data: { cover_image_url: 'https://cdn.example/capa.jpg' },
+      data: {
+        cover_image_url: 'https://cdn.example/capa.jpg',
+        pipeline_status: 'READY',
+        pipeline_error: expect.anything(),
+      },
     });
   });
 
