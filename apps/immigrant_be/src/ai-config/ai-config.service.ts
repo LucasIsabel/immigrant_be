@@ -93,7 +93,7 @@ export class AiConfigService {
    * obrigatória no `envSchema`: um campo que nunca pode ser falso não informa
    * nada, e sugerir que possa ser é pior que não expor.
    */
-  getOpenRouterStatus(): OpenRouterStatusDto {
-    return this.aiRouter.openRouterStatus;
+  async getOpenRouterStatus(): Promise<OpenRouterStatusDto> {
+    return await this.aiRouter.getOpenRouterStatus();
   }
 }

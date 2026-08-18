@@ -49,8 +49,8 @@ export class AiConfigController {
       'nesse caso as gerações estão saindo pela cadeia de fallback.',
   })
   @ApiOkResponse({ type: OpenRouterStatusDto })
-  getStatus(): OpenRouterStatusDto {
-    return this.aiConfigService.getOpenRouterStatus();
+  async getStatus(): Promise<OpenRouterStatusDto> {
+    return await this.aiConfigService.getOpenRouterStatus();
   }
 
   @Put(':scenario')
