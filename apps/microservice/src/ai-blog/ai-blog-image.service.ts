@@ -30,10 +30,15 @@ export class AiBlogImageWorkerService {
     // é isso que dá à capa a resiliência que antes só o refinamento tinha, com
     // as tentativas indo para modelos diferentes em vez de insistir no mesmo.
     // Se a cadeia inteira cair, o job volta para a fila do BullMQ.
+    // O formato é pedido, não presumido: o upload abaixo sempre declarou
+    // `image/jpeg`, mas até aqui os bytes vinham no padrão do provider — PNG.
+    // O navegador farejava o conteúdo e renderizava, então nunca quebrou; ficava
+    // só um Content-Type mentiroso num arquivo maior do que precisava ser.
     const { image, model } = await this.aiRouter.generateImage(
       'blog_image',
       prompt,
       { entityType: 'blog_post', entityId: data.postId },
+      { aspectRatio: '16:9', outputFormat: 'jpeg' },
     );
 
     const { url } = await this.storage.uploadFile(

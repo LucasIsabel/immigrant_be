@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import {
+  AiImageOptions,
   AiImageProvider,
   AiImageResult,
   AiProviderError,
@@ -65,12 +66,34 @@ export class GeminiDirectProvider implements AiTextProvider, AiImageProvider {
     return { text, model, provider: this.name, usage: {} };
   }
 
-  async generateImage(model: string, prompt: string): Promise<AiImageResult> {
+  /**
+   * `options` is honoured on a best-effort basis, and only for aspect ratio.
+   *
+   * This SDK has no typed surface for image geometry, so the ratio rides in the
+   * same untyped `generationConfig` the response modality already uses — it is
+   * applied if this model version reads it and ignored otherwise. Resolution and
+   * output format have no equivalent at all here.
+   *
+   * That asymmetry is acceptable because of where this provider sits: it is the
+   * last link of the chain, reached only when OpenRouter is unavailable, where
+   * the choice is a possibly mis-framed image or none. Callers that cannot use a
+   * differently shaped image should check the result rather than assume it.
+   */
+  async generateImage(
+    model: string,
+    prompt: string,
+    options: AiImageOptions = {},
+  ): Promise<AiImageResult> {
     const response = await this.client()
       .getGenerativeModel({ model })
       .generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ['IMAGE'] } as never,
+        generationConfig: {
+          responseModalities: ['IMAGE'],
+          ...(options.aspectRatio
+            ? { imageConfig: { aspectRatio: options.aspectRatio } }
+            : {}),
+        } as never,
       });
 
     const part = response.response.candidates?.[0]?.content.parts.find((p) =>

@@ -297,6 +297,40 @@ describe('AiRouterService', () => {
       expect(result.provider).toBe('gemini-direct');
       expect(result.image.toString()).toBe('png');
     });
+
+    it('leva a geometria pedida para o elo que atender, inclusive o de degradação', async () => {
+      // A queda para o fallback não pode virar troca silenciosa de formato: um
+      // card 16:9 preenchido com imagem quadrada continua sendo defeito visível,
+      // mesmo que a geração tenha "funcionado".
+      mockModelConfig.getChain.mockResolvedValue([
+        'bytedance-seed/seedream-5-0-lite',
+        'gemini-direct:gemini-2.5-flash-image',
+      ]);
+      mockOpenRouter.generateImage.mockRejectedValue(
+        new InsufficientCreditsError('openrouter'),
+      );
+      mockGeminiDirect.generateImage.mockResolvedValue({
+        image: Buffer.from('png'),
+        model: 'gemini-2.5-flash-image',
+        provider: 'gemini-direct',
+        usage: {},
+      });
+
+      const options = { aspectRatio: '16:9', resolution: '2K' } as const;
+
+      await service.generateImage('blog_image', 'prompt', {}, options);
+
+      expect(mockOpenRouter.generateImage).toHaveBeenCalledWith(
+        'bytedance-seed/seedream-5-0-lite',
+        'prompt',
+        options,
+      );
+      expect(mockGeminiDirect.generateImage).toHaveBeenCalledWith(
+        'gemini-2.5-flash-image',
+        'prompt',
+        options,
+      );
+    });
   });
 
   describe('usage log resilience', () => {

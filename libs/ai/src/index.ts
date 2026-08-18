@@ -20,6 +20,7 @@ export {
   type AiScenario,
   type AiProviderName,
   type AiTextResult,
+  type AiImageOptions,
   type AiImageResult,
   type AiUsage,
 } from './providers/ai-provider.types';

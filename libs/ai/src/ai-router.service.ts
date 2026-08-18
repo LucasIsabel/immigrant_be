@@ -5,6 +5,7 @@ import { ModelConfigService } from './model-config.service';
 import { GeminiDirectProvider } from './providers/gemini-direct.provider';
 import { OpenRouterService } from './providers/openrouter.service';
 import {
+  AiImageOptions,
   AiImageResult,
   AiScenario,
   AiTextResult,
@@ -266,11 +267,12 @@ export class AiRouterService {
     scenario: AiScenario,
     prompt: string,
     context: AiCallContext = {},
+    options: AiImageOptions = {},
   ): Promise<AiImageResult> {
     return this.runChain(scenario, context, (model, viaGeminiDirect) =>
       viaGeminiDirect
-        ? this.geminiDirect.generateImage(model, prompt)
-        : this.openRouter.generateImage(model, prompt),
+        ? this.geminiDirect.generateImage(model, prompt, options)
+        : this.openRouter.generateImage(model, prompt, options),
     );
   }
 }

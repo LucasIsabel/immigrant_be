@@ -63,6 +63,9 @@ describe('AiBlogImageWorkerService', () => {
       'blog_image',
       expect.any(String),
       expect.objectContaining({ entityType: 'blog_post', entityId: POST_ID }),
+      // O upload logo abaixo declara `image/jpeg`; pedir o formato é o que torna
+      // essa declaração verdadeira em vez de uma aposta no padrão do provider.
+      { aspectRatio: '16:9', outputFormat: 'jpeg' },
     );
     expect(mockStorage.uploadFile).toHaveBeenCalledWith(
       Buffer.from('jpeg'),

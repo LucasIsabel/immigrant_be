@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  AiImageOptions,
   AiImageProvider,
   AiImageResult,
   AiProviderError,
@@ -144,11 +145,30 @@ export class OpenRouterService implements AiTextProvider, AiImageProvider {
     };
   }
 
-  async generateImage(model: string, prompt: string): Promise<AiImageResult> {
+  async generateImage(
+    model: string,
+    prompt: string,
+    options: AiImageOptions = {},
+  ): Promise<AiImageResult> {
     const response = await fetch(`${OPENROUTER_BASE_URL}/images`, {
       method: 'POST',
       headers: this.headers(),
-      body: JSON.stringify({ model, prompt }),
+      // Only the keys the caller set are sent. Passing `undefined` explicitly
+      // would serialise the field away anyway, but building the body this way
+      // keeps the request identical to the old one when no options are given —
+      // so adding this parameter changed no existing call's behaviour.
+      body: JSON.stringify({
+        model,
+        prompt,
+        ...(options.aspectRatio ? { aspect_ratio: options.aspectRatio } : {}),
+        ...(options.resolution ? { resolution: options.resolution } : {}),
+        ...(options.outputFormat
+          ? { output_format: options.outputFormat }
+          : {}),
+        ...(options.outputCompression === undefined
+          ? {}
+          : { output_compression: options.outputCompression }),
+      }),
     });
 
     if (!response.ok) {

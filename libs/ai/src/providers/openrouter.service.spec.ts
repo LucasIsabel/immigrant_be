@@ -236,5 +236,69 @@ describe('OpenRouterService', () => {
         AiProviderError,
       );
     });
+
+    const sentBody = () =>
+      JSON.parse(
+        (fetchMock.mock.calls[0] as [string, { body: string }])[1].body,
+      ) as Record<string, unknown>;
+
+    it('manda a geometria pedida junto do prompt', async () => {
+      // Sem estes campos o provider escolhe a forma, e o padrão dele é quadrado.
+      // Todo consumidor nosso corta em faixa larga, então uma geração quadrada é
+      // perda silenciosa: o assunto sobrevive, o enquadramento não.
+      const service = await build();
+      fetchMock.mockResolvedValue(
+        jsonResponse({
+          data: [{ b64_json: Buffer.from('x').toString('base64') }],
+        }),
+      );
+
+      await service.generateImage('m', 'p', {
+        aspectRatio: '16:9',
+        resolution: '2K',
+        outputFormat: 'jpeg',
+        outputCompression: 88,
+      });
+
+      expect(sentBody()).toEqual({
+        model: 'm',
+        prompt: 'p',
+        aspect_ratio: '16:9',
+        resolution: '2K',
+        output_format: 'jpeg',
+        output_compression: 88,
+      });
+    });
+
+    it('sem opções, manda exatamente o corpo antigo', async () => {
+      // Este parâmetro nasceu opcional para não mudar nenhuma chamada existente.
+      // Se um `undefined` vazasse para o corpo, o provider poderia recusar a
+      // requisição inteira por campo inválido.
+      const service = await build();
+      fetchMock.mockResolvedValue(
+        jsonResponse({
+          data: [{ b64_json: Buffer.from('x').toString('base64') }],
+        }),
+      );
+
+      await service.generateImage('m', 'p');
+
+      expect(sentBody()).toEqual({ model: 'm', prompt: 'p' });
+    });
+
+    it('manda compressão zero, que é um valor e não uma ausência', async () => {
+      // `0` é falsy; tratá-lo como "não informado" descartaria calado o pedido
+      // de compressão máxima.
+      const service = await build();
+      fetchMock.mockResolvedValue(
+        jsonResponse({
+          data: [{ b64_json: Buffer.from('x').toString('base64') }],
+        }),
+      );
+
+      await service.generateImage('m', 'p', { outputCompression: 0 });
+
+      expect(sentBody()).toMatchObject({ output_compression: 0 });
+    });
   });
 });
