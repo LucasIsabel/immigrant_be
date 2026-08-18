@@ -5,13 +5,49 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { env } from '@app/config/env';
 import { CORRELATION_ID_HEADER } from '@app/config/request-context';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { correlationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { buildSwaggerConfig } from './swagger.config';
+import { writeFileSync } from 'node:fs';
+
+/**
+ * Escreve o documento OpenAPI num arquivo e encerra, sem subir servidor.
+ *
+ * Vive aqui, e não num script à parte, por dois motivos. O documento precisa sair
+ * do mesmo pipeline que o servidor usa — o plugin do `@nestjs/swagger` é aplicado
+ * pelo compilador do Nest CLI, então rodar por fora (tsx, esbuild) geraria um
+ * contrato diferente do publicado e o diff não valeria nada. E `preview: true`
+ * monta o grafo sem executar hooks de ciclo de vida, então o `onModuleInit` do
+ * Prisma não abre conexão: dá para gerar o spec sem acesso ao banco.
+ *
+ *   pnpm build && OPENAPI_DUMP=/tmp/spec.json node dist/apps/immigrant_be/main
+ */
+async function dumpOpenApi(out: string): Promise<void> {
+  const app = await NestFactory.create(AppModule, {
+    preview: true,
+    logger: false,
+  });
+
+  const document = SwaggerModule.createDocument(app, buildSwaggerConfig());
+  writeFileSync(out, `${JSON.stringify(document, null, 2)}\n`);
+  await app.close();
+
+  const schemas = Object.keys(document.components?.schemas ?? {}).length;
+  process.stdout.write(
+    `${out}: ${Object.keys(document.paths ?? {}).length} rotas, ${schemas} schemas\n`,
+  );
+}
 
 async function bootstrap() {
+  const dumpTarget = process.env.OPENAPI_DUMP;
+  if (dumpTarget) {
+    await dumpOpenApi(dumpTarget);
+    return;
+  }
+
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
     // Holds startup logs until pino takes over, so they are not lost or plain.
@@ -38,16 +74,7 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Aloravia API')
-    .setDescription(
-      'The Aloravia API documentation. Protected endpoints require authentication via the session cookie **better-auth.session_token**. Use the "Authorize" button to send the cookie when testing.',
-    )
-    .setVersion('1.0')
-    .addCookieAuth('better-auth.session_token')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, buildSwaggerConfig());
 
   SwaggerModule.setup('api/v1/docs', app, document);
 

@@ -5,7 +5,15 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/immigrant_be/tsconfig.app.json"
+    "tsConfigPath": "apps/immigrant_be/tsconfig.app.json",
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "introspectComments": true
+        }
+      }
+    ]
   },
   "monorepo": true,
   "root": "apps/immigrant_be",
@@ -15,28 +23,36 @@
       "root": "libs/config",
       "entryFile": "index",
       "sourceRoot": "libs/config/src",
-      "compilerOptions": { "tsConfigPath": "libs/config/tsconfig.lib.json" }
+      "compilerOptions": {
+        "tsConfigPath": "libs/config/tsconfig.lib.json"
+      }
     },
     "database": {
       "type": "library",
       "root": "libs/database",
       "entryFile": "index",
       "sourceRoot": "libs/database/src",
-      "compilerOptions": { "tsConfigPath": "libs/database/tsconfig.lib.json" }
+      "compilerOptions": {
+        "tsConfigPath": "libs/database/tsconfig.lib.json"
+      }
     },
     "ai": {
       "type": "library",
       "root": "libs/ai",
       "entryFile": "index",
       "sourceRoot": "libs/ai/src",
-      "compilerOptions": { "tsConfigPath": "libs/ai/tsconfig.lib.json" }
+      "compilerOptions": {
+        "tsConfigPath": "libs/ai/tsconfig.lib.json"
+      }
     },
     "storage": {
       "type": "library",
       "root": "libs/storage",
       "entryFile": "index",
       "sourceRoot": "libs/storage/src",
-      "compilerOptions": { "tsConfigPath": "libs/storage/tsconfig.lib.json" }
+      "compilerOptions": {
+        "tsConfigPath": "libs/storage/tsconfig.lib.json"
+      }
     },
     "immigrant_be": {
       "type": "application",
