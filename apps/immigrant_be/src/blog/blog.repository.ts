@@ -8,6 +8,24 @@ import { UpdateBlogAuthorDto } from './dto/update-blog-author.dto';
 
 const POST_INCLUDE = {
   author: { select: { id: true, name: true, image: true } },
+  // `author` é o usuário que criou o registro; `display_author` é a assinatura
+  // editorial. Sem incluir o segundo, a API só sabia contar o primeiro — e como
+  // a criação por IA resolve `author_id` para o primeiro admin do sistema, todo
+  // post gerado aparecia assinado por uma pessoa real que não o escreveu.
+  //
+  // Os carimbos de tempo do autor ficam de fora: uma assinatura é identidade,
+  // não histórico do cadastro.
+  display_author: {
+    select: {
+      id: true,
+      name: true,
+      bio: true,
+      avatar_url: true,
+      website: true,
+      twitter: true,
+      linkedin: true,
+    },
+  },
   category: true,
   tags: { include: { tag: true } },
   _count: { select: { likes: true } },

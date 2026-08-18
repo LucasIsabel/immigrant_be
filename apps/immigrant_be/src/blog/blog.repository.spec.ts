@@ -166,6 +166,53 @@ describe('BlogRepository', () => {
     });
   });
 
+  describe('assinatura editorial nas leituras públicas', () => {
+    // Os testes acima aceitam `include: expect.any(Object)`, e foi por essa
+    // fresta que o `display_author` ficou de fora sem ninguém notar: como a
+    // criação por IA resolve `author_id` para o primeiro admin do sistema, todo
+    // post gerado saía assinado por uma pessoa real que não o escreveu. Aqui a
+    // asserção é sobre o conteúdo do include, não sobre ele existir.
+    const includeDe = (
+      mock: jest.Mock,
+    ): { display_author?: { select?: Record<string, boolean> } } =>
+      (mock.mock.calls[0] as [{ include: Record<string, unknown> }])[0]
+        .include as { display_author?: { select?: Record<string, boolean> } };
+
+    it('inclui display_author ao buscar por slug', async () => {
+      mockPrisma.blogPost.findUnique.mockResolvedValue({ id: 'post-id' });
+
+      await repository.findPostBySlug('meu-post');
+
+      expect(
+        includeDe(mockPrisma.blogPost.findUnique).display_author,
+      ).toBeDefined();
+    });
+
+    it('inclui display_author ao listar posts publicados', async () => {
+      mockPrisma.blogPost.findMany.mockResolvedValue([]);
+      mockPrisma.blogPost.count.mockResolvedValue(0);
+      mockPrisma.$transaction.mockResolvedValue([[], 0]);
+
+      await repository.findPublishedPosts({ skip: 0, take: 10 });
+
+      expect(
+        includeDe(mockPrisma.blogPost.findMany).display_author,
+      ).toBeDefined();
+    });
+
+    it('expõe a bio da assinatura, que é onde a autoria por IA se declara', async () => {
+      // Uma assinatura sem bio some com a única indicação que o leitor teria de
+      // que aquela coluna não foi escrita por uma pessoa.
+      mockPrisma.blogPost.findUnique.mockResolvedValue({ id: 'post-id' });
+
+      await repository.findPostBySlug('meu-post');
+
+      const select = includeDe(mockPrisma.blogPost.findUnique).display_author
+        ?.select;
+      expect(select).toMatchObject({ name: true, bio: true });
+    });
+  });
+
   describe('incrementViews', () => {
     it('deve incrementar views_count atomicamente', async () => {
       mockPrisma.blogPost.update.mockResolvedValue({ views_count: 2 });
