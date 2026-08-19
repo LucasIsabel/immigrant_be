@@ -17,18 +17,6 @@ async function main() {
     await seedAiModelConfigs();
     await seedBlogPersonas();
     console.log('Database seeded successfully');
-
-const prisma = new PrismaClient();
-
-async function main() {
-  try {
-    await seedCountries();
-    // After the countries: the steps resolve their visa type by
-    // (country name, category), so the types have to exist first.
-    await seedVisaSteps();
-    await seedBlogCategories();
-    await seedAiModelConfigs();
-    console.log('Database seeded successfully');
   } catch (error) {
     console.error('Error seeding database:', error);
     process.exit(1);
