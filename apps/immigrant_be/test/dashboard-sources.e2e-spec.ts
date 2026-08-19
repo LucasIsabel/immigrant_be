@@ -101,7 +101,11 @@ const post = {
 describe('Dashboard data sources (e2e)', () => {
   let app: INestApplication;
   const countryRepository = { findAll: jest.fn() };
-  const blogRepository = { findPublishedPosts: jest.fn() };
+  const blogRepository = {
+    findPublishedPosts: jest.fn(),
+    findPublishedSiblingSlugs: jest.fn(),
+    getLikedPostIdsForUser: jest.fn(),
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -134,6 +138,8 @@ describe('Dashboard data sources (e2e)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    blogRepository.findPublishedSiblingSlugs.mockResolvedValue(new Map());
+    blogRepository.getLikedPostIdsForUser.mockResolvedValue(new Set());
   });
 
   describe('GET /countries — curated destinations', () => {
