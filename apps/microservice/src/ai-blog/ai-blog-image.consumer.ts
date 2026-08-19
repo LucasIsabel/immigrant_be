@@ -1,6 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import {
   AiBlogImageWorkerService,
   GenerateBlogImageJobData,
@@ -13,7 +14,10 @@ import {
   GENERATE_AI_BLOG_IMAGE,
   REFINE_AI_BLOG_POST,
 } from '@app/config/constants';
-import { runWithCorrelationId } from '@app/config/request-context';
+import {
+  getCorrelationId,
+  runWithCorrelationId,
+} from '@app/config/request-context';
 import { CorrelatedJobData } from '@app/config/job-data';
 import {
   jobCorrelationId,
@@ -32,6 +36,7 @@ export class AiBlogImageConsumer extends WorkerHost {
     private readonly aiBlogImageWorkerService: AiBlogImageWorkerService,
     private readonly refineService: AiBlogRefineService,
     private readonly eventsService: EventsService,
+    @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly imageQueue: Queue,
   ) {
     super();
   }
@@ -52,6 +57,7 @@ export class AiBlogImageConsumer extends WorkerHost {
         await this.aiBlogImageWorkerService.generateAndAttachImage(
           job.data as GenerateBlogImageJobData,
         );
+        await this.enqueueRefinementIfNeeded(job.data.postId, userId);
         if (userId) {
           await this.eventsService.emit({
             userId,
@@ -151,5 +157,31 @@ export class AiBlogImageConsumer extends WorkerHost {
     }
 
     await this.eventsService.emitToAdmins(aviso);
+  }
+
+  /** Enfileira o refine quando o corpo ainda tem marcadores de descrição. */
+  private async enqueueRefinementIfNeeded(
+    postId: string,
+    requestedByUserId?: string,
+  ): Promise<void> {
+    if (!(await this.refineService.postNeedsRefinement(postId))) return;
+
+    try {
+      await this.imageQueue.add(REFINE_AI_BLOG_POST, {
+        postId,
+        requestedByUserId,
+        correlationId: getCorrelationId(),
+      });
+      this.logger.log(
+        `Refinamento enfileirado automaticamente após capa para ${postId}`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Não foi possível enfileirar refinamento para ${postId}: ${message}`,
+      );
+      await this.refineService.markManualFixNeeded(postId);
+    }
   }
 }

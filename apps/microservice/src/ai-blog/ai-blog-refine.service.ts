@@ -3,12 +3,11 @@ import { PrismaService } from '@app/database';
 import { AiRouterService } from '@app/ai';
 import { StorageService } from '@app/storage';
 import { CorrelatedJobData } from '@app/config/job-data';
+import { contentHasVisualMarkers, VISUAL_MARKER_REGEX } from '@app/ai';
 
 export interface RefineBlogPostJobData extends CorrelatedJobData {
   postId: string;
 }
-
-const VISUAL_MARKER_REGEX = />\s*📊\s*\*\*\[Visual sugerido\]:\*\*\s*(.+)/g;
 
 const IMAGE_REALISM_SUFFIX =
   ' Photorealistic, documentary or editorial style. Natural imperfections — film grain, uneven lighting, real textures. If people are present: candid, unstaged moments with genuine expressions and natural skin tones. Avoid plastic skin, overly clean lighting, symmetrical poses, or any visual cues typical of AI-generated imagery.';
@@ -22,6 +21,22 @@ export class AiBlogRefineService {
     private readonly aiRouter: AiRouterService,
     private readonly storage: StorageService,
   ) {}
+
+  async postNeedsRefinement(postId: string): Promise<boolean> {
+    const post = await this.prisma.blogPost.findUnique({
+      where: { id: postId },
+      select: { content: true },
+    });
+    if (!post?.content) return false;
+    return contentHasVisualMarkers(post.content);
+  }
+
+  async markManualFixNeeded(postId: string): Promise<void> {
+    await this.prisma.blogPost.update({
+      where: { id: postId },
+      data: { refine_needs_manual_fix: true },
+    });
+  }
 
   async refinePost(
     data: RefineBlogPostJobData,

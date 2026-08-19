@@ -166,11 +166,12 @@ export class AiBlogService {
     const etapa = {
       [BlogPipelineStatus.FAILED_TRANSLATION]: 'translation',
       [BlogPipelineStatus.FAILED_IMAGE]: 'cover_image',
+      [BlogPipelineStatus.GENERATING_IMAGE]: 'cover_image',
     }[post.pipeline_status as string];
 
     if (!etapa) {
       throw new ConflictException(
-        `O post não está em falha (estado atual: ${post.pipeline_status}). Só há o que repetir depois de uma etapa falhar.`,
+        `O post não está em falha (estado atual: ${post.pipeline_status}). Só há o que repetir depois de uma etapa falhar ou quando a capa ficou travada.`,
       );
     }
 

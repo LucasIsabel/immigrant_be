@@ -502,10 +502,19 @@ ${CLOUDFLARE_R2_PUBLIC_URL}/${folder}/${uuid}.${ext}
 
 ### AI Blog Cover Images
 
-A capa é o último elo da cadeia atômica (`TRANSLATING → GENERATING_IMAGE → READY`). O worker de
-texto enfileira as traduções; o último locale traduzido enfileira `ai_blog_image_queue`. A imagem
-usa o cenário `blog_image` via `AiRouterService` (não `GeminiBaseService` direto). Falha marca o
-post `FAILED_IMAGE` com `pipeline_error`; o admin reenfileira só essa etapa.
+A capa é o elo antes de `READY` na cadeia (`TRANSLATING → GENERATING_IMAGE → READY`). O worker de
+texto enfileira as traduções; o último locale traduzido faz compare-and-set para
+`GENERATING_IMAGE` e enfileira `ai_blog_image_queue`. Se o enqueue da capa falhar, o post volta
+para `FAILED_IMAGE` com `pipeline_error` — evita ficar travado em `GENERATING_IMAGE` sem job.
+
+Depois da capa, posts com marcadores `[Visual sugerido]` no corpo enfileiram automaticamente
+`refine_ai_blog_post`, que substitui as descrições por imagens inline (`blog_image` via
+`AiRouterService`). Falha ao enfileirar o refine marca `refine_needs_manual_fix` sem desfazer
+`READY`.
+
+A imagem de capa usa o cenário `blog_image` via `AiRouterService` (não `GeminiBaseService`
+direto). Falha na geração marca o post `FAILED_IMAGE`; o admin reenfileira só essa etapa. Posts
+presos em `GENERATING_IMAGE` também podem ser reenfileirados.
 
 ---
 

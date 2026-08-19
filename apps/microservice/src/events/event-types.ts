@@ -8,6 +8,7 @@ export const EVENT_TYPES = {
   BLOG_POST_GENERATED: 'blog_post_generated',
   BLOG_POST_FAILED: 'blog_post_failed',
   BLOG_COVER_IMAGE_COMPLETED: 'blog_cover_image_completed',
+  BLOG_COVER_IMAGE_STARTED: 'blog_cover_image_started',
   BLOG_COVER_IMAGE_FAILED: 'blog_cover_image_failed',
   BLOG_REFINE_COMPLETED: 'blog_refine_completed',
   BLOG_REFINE_PARTIAL: 'blog_refine_partial',
