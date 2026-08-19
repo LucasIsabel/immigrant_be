@@ -23,6 +23,8 @@ const MAX_RATE_LIMIT_WAIT_MS = 5_000;
 export type AiCallContext = {
   entityType?: string;
   entityId?: string;
+  /** Pushed to the front of the scenario chain when the persona names a model. */
+  preferredModel?: string;
 };
 
 /**
@@ -115,7 +117,10 @@ export class AiRouterService {
     context: AiCallContext,
     attempt: (model: string, viaGeminiDirect: boolean) => Promise<T>,
   ): Promise<T> {
-    const chain = await this.modelConfig.getChain(scenario);
+    const chain = this.withPreferredModel(
+      await this.modelConfig.getChain(scenario),
+      context.preferredModel,
+    );
     const failures: string[] = [];
 
     // Uma leitura por geração, não uma por elo: o estado compartilhado não muda
@@ -218,6 +223,14 @@ export class AiRouterService {
     throw new Error(
       `Every model failed for "${scenario}". Attempts: ${failures.join(' | ')}`,
     );
+  }
+
+  private withPreferredModel(chain: string[], preferred?: string): string[] {
+    if (!preferred) {
+      return chain;
+    }
+
+    return [preferred, ...chain.filter((model) => model !== preferred)];
   }
 
   async generateText(

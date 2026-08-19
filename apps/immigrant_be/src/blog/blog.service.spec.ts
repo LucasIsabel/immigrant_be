@@ -22,6 +22,8 @@ const mockRepository = {
   findAllPosts: jest.fn(),
   findPostBySlug: jest.fn(),
   findPostById: jest.fn(),
+  findPublishedSiblingSlugs: jest.fn(),
+  getLikedPostIdsForUser: jest.fn(),
   updatePost: jest.fn(),
   deletePost: jest.fn(),
   incrementViews: jest.fn(),
@@ -48,6 +50,8 @@ describe('BlogService', () => {
 
     service = module.get<BlogService>(BlogService);
     jest.clearAllMocks();
+    mockRepository.findPublishedSiblingSlugs.mockResolvedValue(new Map());
+    mockRepository.getLikedPostIdsForUser.mockResolvedValue(new Set());
   });
 
   // ─── Slugify ──────────────────────────────────────────────────────────────
@@ -151,9 +155,17 @@ describe('BlogService', () => {
         take: 10,
         categorySlug: undefined,
         tagSlug: undefined,
+        search: undefined,
       });
       expect(result).toEqual({
-        data: [{ id: 'post-1', likes_count: 3, is_liked: false }],
+        data: [
+          {
+            id: 'post-1',
+            likes_count: 3,
+            is_liked: false,
+            counterpart_slug: null,
+          },
+        ],
         total: 1,
         page: 1,
         limit: 10,

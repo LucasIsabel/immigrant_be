@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -89,4 +90,23 @@ export class GenerateAiBlogPostDto {
   @IsOptional()
   @MaxLength(200)
   topic?: string;
+
+  @ApiProperty({
+    description:
+      'Persona da equipe de reportagem. Quando presente, o tom político legado é ignorado e a assinatura pública passa a ser o autor vinculado à persona.',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  persona_id?: string;
+
+  @ApiProperty({
+    description:
+      'Enfileira as duas personas ativas do mesmo tema, com o mesmo debate_group_id. Exige persona_id.',
+    required: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  generate_both_sides?: boolean;
 }

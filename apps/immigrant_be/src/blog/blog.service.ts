@@ -89,6 +89,13 @@ export class BlogService {
     const likedIds = userId
       ? await this.blogRepository.getLikedPostIdsForUser(postIds, userId)
       : new Set<string>();
+    const counterparts = await this.blogRepository.findPublishedSiblingSlugs(
+      localized.map((post) => ({
+        id: post.id,
+        debate_group_id:
+          (post as { debate_group_id?: string | null }).debate_group_id ?? null,
+      })),
+    );
 
     const enriched = localized.map((post) => {
       const { _count, ...rest } = post as PostWithLikeCount;
@@ -96,6 +103,7 @@ export class BlogService {
         ...rest,
         likes_count: _count?.likes ?? 0,
         is_liked: likedIds.has(post.id),
+        counterpart_slug: counterparts.get(post.id) ?? null,
       };
     });
 
@@ -128,11 +136,19 @@ export class BlogService {
     const likedIds = userId
       ? await this.blogRepository.getLikedPostIdsForUser([post.id], userId)
       : new Set<string>();
+    const counterparts = await this.blogRepository.findPublishedSiblingSlugs([
+      {
+        id: post.id,
+        debate_group_id:
+          (post as { debate_group_id?: string | null }).debate_group_id ?? null,
+      },
+    ]);
     const { _count, ...rest } = localized as PostWithLikeCount;
     return {
       ...rest,
       likes_count: _count?.likes ?? 0,
       is_liked: likedIds.has(post.id),
+      counterpart_slug: counterparts.get(post.id) ?? null,
     };
   }
 

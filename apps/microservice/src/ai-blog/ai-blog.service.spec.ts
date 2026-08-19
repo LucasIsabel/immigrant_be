@@ -16,6 +16,10 @@ jest.mock('../../../../generated/prisma', () => ({
     FAILED_TRANSLATION: 'FAILED_TRANSLATION',
     FAILED_IMAGE: 'FAILED_IMAGE',
   },
+  BlogPersonaTheme: {
+    IMMIGRATION: 'IMMIGRATION',
+    TOURISM: 'TOURISM',
+  },
 }));
 
 import { AiRouterService } from '@app/ai';
@@ -23,6 +27,7 @@ import { PrismaService } from '@app/database';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  AI_BLOG_QUEUE,
   BLOG_TRANSLATION_QUEUE,
   TRANSLATE_BLOG_POST,
   TRANSLATION_LOCALES,
@@ -45,11 +50,10 @@ const aiPost = {
 
 const mockPrisma = {
   country: { findUnique: jest.fn() },
-  blogPost: { create: jest.fn() },
+  blogPost: { create: jest.fn(), update: jest.fn() },
   blogTag: { upsert: jest.fn() },
+  blogPersona: { findUnique: jest.fn(), findFirst: jest.fn() },
   users: { findUnique: jest.fn(), findFirst: jest.fn() },
-  // `resolveAuthorId` cai em `getSystemUserId`, que procura o admin por role
-  // antes de tentar o primeiro usuário.
   userRoles: { findFirst: jest.fn() },
 };
 
@@ -87,6 +91,7 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AiRouterService, useValue: mockAiRouter },
         { provide: getQueueToken(BLOG_TRANSLATION_QUEUE), useValue: mockQueue },
+        { provide: getQueueToken(AI_BLOG_QUEUE), useValue: mockQueue },
       ],
     }).compile();
 
@@ -249,6 +254,58 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
       const url = String(fetchMock.mock.calls[0]?.[0]);
       expect(decodeURIComponent(url)).toContain('Canada immigration');
       expect(created()).toMatchObject({ source_topic: null });
+    });
+  });
+
+  it('colunas de imigração usam o cenário de opinião e a persona', async () => {
+    mockPrisma.blogPersona.findUnique.mockResolvedValue({
+      id: 'persona-1',
+      name: 'Helena Vargas',
+      theme: 'IMMIGRATION',
+      editorial_stance: 'RESTRICTIONIST',
+      persona_prompt: 'You are Helena.',
+      style_guidelines: 'Short.',
+      preferred_model: 'anthropic/claude-sonnet-5',
+      blog_author_id: 'author-1',
+    });
+    mockAiRouter.generateJson
+      .mockResolvedValueOnce({
+        data: aiPost,
+        result: {
+          model: 'anthropic/claude-sonnet-5',
+          provider: 'openrouter',
+          usage: { costUsd: 0.03 },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          recommendation: 'approve',
+          riskLevel: 'low',
+          flags: [],
+          summary: 'ok',
+        },
+        result: { model: 'moonshotai/kimi-k2.5', usage: {} },
+      });
+
+    await service.generatePost({
+      country_id: COUNTRY_ID,
+      category_id: CATEGORY_ID,
+      persona_id: 'persona-1',
+    });
+
+    expect(mockAiRouter.generateJson).toHaveBeenNthCalledWith(
+      1,
+      'blog_writing_opinion',
+      expect.any(String),
+      expect.anything(),
+      expect.objectContaining({
+        entityType: 'blog_post',
+        preferredModel: 'anthropic/claude-sonnet-5',
+      }),
+    );
+    expect(created()).toMatchObject({
+      persona_id: 'persona-1',
+      display_author_id: 'author-1',
     });
   });
 });

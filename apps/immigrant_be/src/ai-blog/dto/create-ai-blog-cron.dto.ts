@@ -99,4 +99,21 @@ export class CreateAiBlogCronDto {
   @IsOptional()
   @MaxLength(1000)
   custom_instructions?: string;
+
+  @ApiProperty({
+    description: 'Persona usada na geração agendada',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  persona_id?: string;
+
+  @ApiProperty({
+    description: 'Gerar o par de debate a cada execução',
+    required: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  generate_both_sides?: boolean;
 }

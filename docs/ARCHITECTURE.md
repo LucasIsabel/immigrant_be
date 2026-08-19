@@ -50,6 +50,7 @@ immigrant_be/
 │   │   │   ├── system/         # Módulo de IA/Gemini e sugestões
 │   │   │   ├── visa-steps/     # Módulo de etapas de visto
 │   │   │   ├── blog/           # Módulo de blog (posts, categorias, tags)
+│   │   │   ├── blog-personas/  # CRUD admin da equipe de reportagem (BlogPersona)
 │   │   │   ├── ai-blog/        # Módulo de geração de posts com IA (AI Blog Generator)
 │   │   │   ├── ai-config/      # Modelo por cenário de IA (OpenRouter / Gemini)
 │   │   │   ├── ai-image/       # Media Generator (imagens avulsas)
@@ -219,17 +220,28 @@ Users ─────────────── BlogPost (1:N) — como auto
 
 BlogAuthor ─────────── BlogPost (1:N) — display_author (autor exibido no post, opcional)
 Entidade independente: name, bio, avatar_url, website, twitter, linkedin
+BlogAuthor ─────────── BlogPersona (1:1) — byline pública da persona; a bio declara autoria por IA
+
+BlogPersona ────────── BlogPost (1:N) — colunista de IA (opcional)
+  theme: IMMIGRATION | TOURISM
+  editorial_stance: string (RESTRICTIONIST | PROGRESSIVE | DISCOVERY no seed)
+  Guardrails de conteúdo NÃO moram na tabela — vivem em
+  `libs/ai/src/prompts/persona-guardrails.ts`
 
 BlogPost ──────────┬── BlogCategory (N:1)
                    ├── BlogPostTag (1:N) ──── BlogTag (N:M)
                    ├── Country (N:1, opcional) — país em destaque
                    ├── BlogAuthor (N:1, opcional) — display_author
+                   ├── BlogPersona (N:1, opcional)
                    └── BlogPostTranslation (1:N) — traduções por locale
 
 BlogPost status: DRAFT | PUBLISHED | ARCHIVED
 Slug e reading_time_min gerados automaticamente pelo Service
 is_ai_generated: Boolean — marca posts criados pelo AI Blog Generator
-original_locale: String (default "pt") — idioma original do post
+original_locale: String (default "en") — idioma original do post
+persona_id, debate_group_id, moderation_flag — colunas de opinião (nulas nos posts sem persona)
+A API pública devolve `persona {slug,name,theme,editorial_stance}` e `counterpart_slug`
+do outro post publicado com o mesmo `debate_group_id`
 
 BlogPostTranslation — traduções de posts do blog
   Campos: id, post_id, locale ("pt"|"en"|"es"), title, excerpt, content,
@@ -374,10 +386,14 @@ apps/microservice/src/plan/
     └── generateVisaSteps()           # Gera checklist de etapas do visto
 
 apps/microservice/src/ai-blog/
-├── ai-blog.service.ts         # Usa AiRouterService (blog_writing_standard)
+├── ai-blog.service.ts         # Usa AiRouterService
 │   ├── fetchGoogleNewsRss()          # Busca Google News RSS (sem API key)
 │   └── generatePost()                # RSS → roteador → BlogPost DRAFT
-├── ai-blog-image.service.ts   # Capa (blog_image)
+│       # sem persona: blog_writing_standard + PoliticalTone legado
+│       # persona IMMIGRATION: blog_writing_opinion + guardrails + auto-moderação
+│       # persona TOURISM: blog_writing_standard + voz da persona
+│       # generate_both_sides: 2 jobs com o mesmo debate_group_id
+├── ai-blog-image.service.ts   # Capa (blog_image) — último elo da cadeia
 └── ai-blog-refine.service.ts  # Imagens inline (blog_image)
 ```
 
@@ -394,7 +410,12 @@ apps/microservice/src/ai-blog/
 - **402 e 429 são erros diferentes.** 402 = créditos, não vale reesperar. 429 = rate limit, vale
   uma espera curta antes de pular para o próximo modelo.
 - **Todo call gera linha em `ai_usage_logs`**, incluindo as tentativas que falharam. `cost_usd` só
-  é preenchido quando o provider informa — estimativa aqui envenenaria a auditoria.
+  é preenchido quando o provider informa — estimativa aqui envenenaria a auditoria. A agregação
+  para o admin é `GET /admin/ai/usage?period=day|week|month`.
+- **Personas.** O tom mora em `BlogPersona`, não no dropdown de `PoliticalTone` (esse continua só
+  para geração sem persona). Guardrails versionados em código são injetados **depois** do
+  `persona_prompt`. Auto-moderação grava `moderation_flag`; draft flagado não bloqueia — só
+  destaca na fila. Não existe caminho de auto-publish para post de persona.
 - **`@openrouter/sdk` não é usado**: é ESM-only e este repo é CommonJS com ts-jest. Fazê-lo
   importar exigiria `allowJs` no monorepo ou um segundo transformer. `fetch` é nativo no Node 22 e
   a superfície usada são dois endpoints.
@@ -481,7 +502,10 @@ ${CLOUDFLARE_R2_PUBLIC_URL}/${folder}/${uuid}.${ext}
 
 ### AI Blog Cover Images
 
-O `AiBlogWorkerService` injeta `StorageService` e, após gerar o conteúdo do post, chama `GeminiBaseService.generateImage()` para criar a imagem de capa. Se bem-sucedido, faz upload para o folder `blog/` e preenche `cover_image_url` no `BlogPost`. Falhas são logadas como `warn` — o post é criado sem imagem de capa em vez de abortar.
+A capa é o último elo da cadeia atômica (`TRANSLATING → GENERATING_IMAGE → READY`). O worker de
+texto enfileira as traduções; o último locale traduzido enfileira `ai_blog_image_queue`. A imagem
+usa o cenário `blog_image` via `AiRouterService` (não `GeminiBaseService` direto). Falha marca o
+post `FAILED_IMAGE` com `pipeline_error`; o admin reenfileira só essa etapa.
 
 ---
 
@@ -569,6 +593,8 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /admin/ai/models`                       | AiConfig                  | ADMIN (modelo de cada cenário)             |
 | `GET /admin/ai/models/status`                | AiConfig                  | ADMIN (cooldown/chave da OpenRouter)       |
 | `PUT /admin/ai/models/:scenario`             | AiConfig                  | ADMIN (troca modelo sem deploy)            |
+| `GET /admin/ai/usage`                        | AiConfig                  | ADMIN (custos e falhas por cenário/modelo) |
+| `/admin/blog/personas`                       | BlogPersonas              | ADMIN (CRUD da equipe de reportagem)       |
 | `/system/suggestions`                        | System                    | Público                                    |
 | `/system/visa-recommendation`                | System                    | Autenticado                                |
 | `/system/sse`                                | System                    | Autenticado                                |

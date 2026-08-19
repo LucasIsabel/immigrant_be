@@ -12,6 +12,8 @@ import {
   OpenRouterStatusDto,
   UpdateAiModelConfigDto,
 } from './dto/ai-model-config.dto';
+import { AiUsagePeriod, AiUsageQueryDto } from './dto/ai-usage-query.dto';
+import { AiUsageResponseDto } from './dto/ai-usage-response.dto';
 
 @Injectable()
 export class AiConfigService {
@@ -95,5 +97,64 @@ export class AiConfigService {
    */
   async getOpenRouterStatus(): Promise<OpenRouterStatusDto> {
     return await this.aiRouter.getOpenRouterStatus();
+  }
+
+  async getUsage(query: AiUsageQueryDto): Promise<AiUsageResponseDto> {
+    const period = query.period ?? AiUsagePeriod.week;
+    const to = new Date();
+    const from = new Date(to);
+
+    if (period === AiUsagePeriod.day) {
+      from.setUTCDate(from.getUTCDate() - 1);
+    } else if (period === AiUsagePeriod.month) {
+      from.setUTCDate(from.getUTCDate() - 30);
+    } else {
+      from.setUTCDate(from.getUTCDate() - 7);
+    }
+
+    const [
+      totals,
+      totalFailures,
+      byScenario,
+      byModel,
+      byErrorKind,
+      failuresByScenario,
+      failuresByModel,
+    ] = await this.aiConfigRepository.aggregateUsage(from);
+
+    const scenarioFailures = new Map(
+      failuresByScenario.map((row) => [row.scenario, row._count._all]),
+    );
+    const modelFailures = new Map(
+      failuresByModel.map((row) => [row.model, row._count._all]),
+    );
+
+    return {
+      period,
+      from,
+      to,
+      totals: {
+        calls: totals._count._all,
+        costUsd:
+          totals._sum.costUsd === null ? null : Number(totals._sum.costUsd),
+        failures: totalFailures,
+      },
+      byScenario: byScenario.map((row) => ({
+        scenario: row.scenario,
+        calls: row._count._all,
+        costUsd: row._sum.costUsd === null ? null : Number(row._sum.costUsd),
+        failures: scenarioFailures.get(row.scenario) ?? 0,
+      })),
+      byModel: byModel.map((row) => ({
+        model: row.model,
+        calls: row._count._all,
+        costUsd: row._sum.costUsd === null ? null : Number(row._sum.costUsd),
+        failures: modelFailures.get(row.model) ?? 0,
+      })),
+      byErrorKind: byErrorKind.map((row) => ({
+        errorKind: row.errorKind,
+        count: row._count._all,
+      })),
+    };
   }
 }
