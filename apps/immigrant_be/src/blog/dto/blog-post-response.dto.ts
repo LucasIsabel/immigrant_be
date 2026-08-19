@@ -49,6 +49,20 @@ export class BlogDisplayAuthorDto {
   linkedin: string | null;
 }
 
+export class BlogPersonaPublicDto {
+  @ApiProperty({ example: 'helena-vargas' })
+  slug: string;
+
+  @ApiProperty({ example: 'Helena Vargas' })
+  name: string;
+
+  @ApiProperty({ example: 'IMMIGRATION' })
+  theme: string;
+
+  @ApiProperty({ example: 'RESTRICTIONIST' })
+  editorial_stance: string;
+}
+
 /** Uma linha da junção post↔tag, que é o que a query devolve. */
 export class BlogPostTagDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -199,4 +213,20 @@ export class BlogPostResponseDto {
     example: false,
   })
   is_ai_generated: boolean;
+
+  @ApiProperty({
+    description:
+      'Persona editorial, quando o post foi gerado com uma. O banner público deriva deste campo — não de uma prop opcional.',
+    type: BlogPersonaPublicDto,
+    nullable: true,
+  })
+  persona: BlogPersonaPublicDto | null;
+
+  @ApiProperty({
+    description:
+      'Slug do outro lado do debate, quando este post faz parte de um par publicado',
+    example: 'the-case-for-higher-quotas',
+    nullable: true,
+  })
+  counterpart_slug: string | null;
 }

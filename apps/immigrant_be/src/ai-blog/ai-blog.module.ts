@@ -10,11 +10,13 @@ import { AiBlogController } from './ai-blog.controller';
 import { AiBlogService } from './ai-blog.service';
 import { AiBlogRepository } from './ai-blog.repository';
 import { BlogModule } from '../blog/blog.module';
+import { BlogPersonasModule } from '../blog-personas/blog-personas.module';
 
 @Module({
   imports: [
     DatabaseModule,
     BlogModule,
+    BlogPersonasModule,
     BullModule.registerQueue(
       { name: AI_BLOG_QUEUE },
       { name: AI_BLOG_IMAGE_QUEUE },

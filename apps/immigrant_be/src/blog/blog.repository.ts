@@ -26,6 +26,14 @@ const POST_INCLUDE = {
       linkedin: true,
     },
   },
+  persona: {
+    select: {
+      slug: true,
+      name: true,
+      theme: true,
+      editorial_stance: true,
+    },
+  },
   category: true,
   tags: { include: { tag: true } },
   _count: { select: { likes: true } },
@@ -154,6 +162,43 @@ export class BlogRepository {
       where: { slug },
       include: POST_INCLUDE,
     });
+  }
+
+  async findPublishedSiblingSlugs(
+    posts: { id: string; debate_group_id: string | null }[],
+  ): Promise<Map<string, string>> {
+    const groupIds = [
+      ...new Set(
+        posts
+          .map((post) => post.debate_group_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (groupIds.length === 0) {
+      return new Map();
+    }
+
+    const siblings = await this.prisma.blogPost.findMany({
+      where: {
+        debate_group_id: { in: groupIds },
+        status: BlogPostStatus.PUBLISHED,
+      },
+      select: { id: true, slug: true, debate_group_id: true },
+    });
+
+    const result = new Map<string, string>();
+    for (const post of posts) {
+      if (!post.debate_group_id) continue;
+      const other = siblings.find(
+        (sibling) =>
+          sibling.debate_group_id === post.debate_group_id &&
+          sibling.id !== post.id,
+      );
+      if (other) {
+        result.set(post.id, other.slug);
+      }
+    }
+    return result;
   }
 
   async findPostById(id: string) {

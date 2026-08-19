@@ -246,6 +246,13 @@ model BlogPost {
   /// precisa saber antes de aprovar.
   generated_by_model       String?  @map("generated_by_model")
   generation_cost_usd      Decimal? @db.Decimal(10, 6) @map("generation_cost_usd")
+  /// Colunista de IA que escreveu o post, quando a geração passou por persona.
+  persona_id               String?  @db.Uuid @map("persona_id")
+  persona                  BlogPersona? @relation(fields: [persona_id], references: [id], onDelete: SetNull)
+  /// Liga os dois lados de um debate. Nulo nos posts que não fazem parte de um par.
+  debate_group_id          String?  @db.Uuid @map("debate_group_id")
+  /// Resultado da auto-moderação. Draft flagado não é bloqueado — só destacado na fila.
+  moderation_flag          Json?    @map("moderation_flag")
   translations     BlogPostTranslation[]
   likes            BlogPostLike[]
 
@@ -255,6 +262,8 @@ model BlogPost {
   @@index([category_id])
   @@index([author_id])
   @@index([display_author_id])
+  @@index([persona_id])
+  @@index([debate_group_id])
   @@map("blog_posts")
 }
 
@@ -305,8 +314,40 @@ model BlogAuthor {
   updated_at DateTime   @updatedAt @map("updated_at")
   posts            BlogPost[]
   ai_blog_cron_jobs AiBlogCronJob[]
+  persona          BlogPersona?
 
   @@map("blog_authors")
+}
+
+enum BlogPersonaTheme {
+  IMMIGRATION
+  TOURISM
+}
+
+/// Colunista editorial gerado por IA. O tom mora aqui, não no dropdown de
+/// `PoliticalTone` — aquele continua só para geração sem persona.
+///
+/// Os guardrails de conteúdo **não** ficam nesta tabela: vivem em
+/// `libs/ai/src/prompts/persona-guardrails.ts`, para um admin não conseguir
+/// apagá-los editando o prompt.
+model BlogPersona {
+  id               String           @id @default(uuid()) @db.Uuid
+  slug             String           @unique
+  name             String
+  theme            BlogPersonaTheme
+  editorial_stance String           @map("editorial_stance")
+  persona_prompt   String           @map("persona_prompt") @db.Text
+  style_guidelines String           @map("style_guidelines") @db.Text
+  preferred_model  String?          @map("preferred_model")
+  blog_author_id   String           @unique @db.Uuid @map("blog_author_id")
+  blog_author      BlogAuthor       @relation(fields: [blog_author_id], references: [id], onDelete: Restrict)
+  is_active        Boolean          @default(true) @map("is_active")
+  created_at       DateTime         @default(now()) @map("created_at")
+  updated_at       DateTime         @updatedAt @map("updated_at")
+  posts            BlogPost[]
+  ai_blog_cron_jobs AiBlogCronJob[]
+
+  @@map("blog_personas")
 }
 
 model BlogCategory {
@@ -459,6 +500,9 @@ model AiBlogCronJob {
   author_id           String?   @db.Uuid @map("author_id")
   display_author_id   String?   @db.Uuid @map("display_author_id")
   display_author      BlogAuthor? @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
+  persona_id          String?   @db.Uuid @map("persona_id")
+  persona             BlogPersona? @relation(fields: [persona_id], references: [id], onDelete: SetNull)
+  generate_both_sides Boolean   @default(false) @map("generate_both_sides")
   complexity          String    @default("SIMPLE") @map("complexity")
   political_tone      String    @default("NEUTRAL") @map("political_tone")
   custom_instructions String?   @db.Text @map("custom_instructions")

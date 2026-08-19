@@ -20,9 +20,68 @@ export class AiBlogRepository {
         tags: { include: { tag: true } },
         featured_country: { select: { id: true, name: true, flag: true } },
         translations: { select: { locale: true } },
+        display_author: {
+          select: {
+            id: true,
+            name: true,
+            bio: true,
+            avatar_url: true,
+            website: true,
+            twitter: true,
+            linkedin: true,
+          },
+        },
+        persona: {
+          select: {
+            slug: true,
+            name: true,
+            theme: true,
+            editorial_stance: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
+  }
+
+  async findSiblingSlugs(
+    posts: { id: string; debate_group_id: string | null }[],
+  ): Promise<Map<string, string>> {
+    const groupIds = [
+      ...new Set(
+        posts
+          .map((post) => post.debate_group_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (groupIds.length === 0) {
+      return new Map();
+    }
+
+    const siblings = await this.prisma.blogPost.findMany({
+      where: { debate_group_id: { in: groupIds } },
+      select: { id: true, slug: true, debate_group_id: true },
+    });
+
+    const byGroup = new Map<string, { id: string; slug: string }[]>();
+    for (const sibling of siblings) {
+      if (!sibling.debate_group_id) continue;
+      const list = byGroup.get(sibling.debate_group_id) ?? [];
+      list.push({ id: sibling.id, slug: sibling.slug });
+      byGroup.set(sibling.debate_group_id, list);
+    }
+
+    const result = new Map<string, string>();
+    for (const post of posts) {
+      if (!post.debate_group_id) continue;
+      const other = byGroup
+        .get(post.debate_group_id)
+        ?.find((sibling) => sibling.id !== post.id);
+      if (other) {
+        result.set(post.id, other.slug);
+      }
+    }
+    return result;
   }
 
   async findTranslationLocalesForPost(postId: string): Promise<string[]> {
@@ -102,6 +161,8 @@ export class AiBlogRepository {
         complexity: dto.complexity ?? 'SIMPLE',
         political_tone: dto.political_tone ?? 'NEUTRAL',
         custom_instructions: dto.custom_instructions ?? null,
+        persona_id: dto.persona_id ?? null,
+        generate_both_sides: dto.generate_both_sides ?? false,
       },
       include: { country: { select: { id: true, name: true, flag: true } } },
     });
@@ -129,6 +190,10 @@ export class AiBlogRepository {
         }),
         ...(dto.custom_instructions !== undefined && {
           custom_instructions: dto.custom_instructions,
+        }),
+        ...(dto.persona_id !== undefined && { persona_id: dto.persona_id }),
+        ...(dto.generate_both_sides !== undefined && {
+          generate_both_sides: dto.generate_both_sides,
         }),
         ...(bullmqJobId !== undefined && { bullmq_job_id: bullmqJobId }),
       },

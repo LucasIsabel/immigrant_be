@@ -31,6 +31,31 @@ export class PipelineErrorDto {
   at: string;
 }
 
+export class OpinionModerationFlagItemDto {
+  @ApiProperty({ example: 'group_harm' })
+  category: string;
+
+  @ApiProperty({ example: '...' })
+  excerpt: string;
+
+  @ApiProperty({ example: 'Generalizes a group of people' })
+  reason: string;
+}
+
+export class OpinionModerationFlagDto {
+  @ApiProperty({ example: 'medium' })
+  riskLevel: string;
+
+  @ApiProperty({ type: [OpinionModerationFlagItemDto] })
+  flags: OpinionModerationFlagItemDto[];
+
+  @ApiProperty()
+  summary: string;
+
+  @ApiProperty({ example: 'review' })
+  recommendation: string;
+}
+
 /**
  * `is_ai_generated` não é redeclarado aqui de propósito: ele passou a viver em
  * `BlogPostResponseDto`. Estar declarado só neste DTO de admin era justamente o
@@ -90,4 +115,18 @@ export class PendingAiBlogPostResponseDto extends BlogPostResponseDto {
     nullable: true,
   })
   generation_cost_usd: number | null;
+
+  @ApiProperty({
+    description: 'Grupo que liga os dois lados de um debate',
+    nullable: true,
+  })
+  debate_group_id: string | null;
+
+  @ApiProperty({
+    description:
+      'Auto-moderação. Draft flagado não é bloqueado — só destacado na fila.',
+    type: OpinionModerationFlagDto,
+    nullable: true,
+  })
+  moderation_flag: OpinionModerationFlagDto | null;
 }

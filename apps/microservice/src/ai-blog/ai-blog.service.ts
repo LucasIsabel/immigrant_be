@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '@app/database';
 import {
   AiRouterService,
+  buildBlogOpinionModerationPrompt,
+  blogOpinionModerationResultSchema,
   buildBlogPostPrompt,
   blogPostAiSchema,
   PostComplexity,
@@ -11,11 +14,14 @@ import {
   type RssNewsItem,
 } from '@app/ai';
 import {
+  AI_BLOG_QUEUE,
   BLOG_TRANSLATION_QUEUE,
+  GENERATE_AI_BLOG_POST,
   TRANSLATE_BLOG_POST,
   TRANSLATION_LOCALES,
 } from '@app/config/constants';
 import {
+  BlogPersonaTheme,
   BlogPipelineStatus,
   BlogPostStatus,
 } from '../../../../generated/prisma';
@@ -34,6 +40,9 @@ export interface GenerateBlogPostJobData extends CorrelatedJobData {
   custom_instructions?: string;
   /** Sobre o que escrever. Vira termo de busca no RSS e fica no post. */
   topic?: string;
+  persona_id?: string;
+  debate_group_id?: string | null;
+  generate_both_sides?: boolean;
   /** User who triggered generation (for SSE notification) */
   requestedByUserId?: string;
 }
@@ -48,6 +57,8 @@ export class AiBlogWorkerService {
     private readonly aiRouter: AiRouterService,
     @InjectQueue(BLOG_TRANSLATION_QUEUE)
     private readonly translationQueue: Queue,
+    @InjectQueue(AI_BLOG_QUEUE)
+    private readonly aiBlogQueue: Queue,
   ) {}
 
   async generatePost(data: GenerateBlogPostJobData): Promise<void> {
@@ -61,6 +72,20 @@ export class AiBlogWorkerService {
 
     this.logger.log(`Generating AI blog post for country: ${country.name}`);
 
+    const persona = data.persona_id
+      ? await this.prisma.blogPersona.findUnique({
+          where: { id: data.persona_id },
+        })
+      : null;
+
+    if (data.persona_id && !persona) {
+      throw new Error(`Persona not found: ${data.persona_id}`);
+    }
+
+    if (data.generate_both_sides && persona && !data.debate_group_id) {
+      data.debate_group_id = await this.enqueueCounterpart(data, persona);
+    }
+
     const newsItems = await this.fetchGoogleNewsRss(country.name, data.topic);
 
     if (newsItems.length === 0) {
@@ -73,17 +98,34 @@ export class AiBlogWorkerService {
       countryName: country.name,
       newsItems,
       complexity: data.complexity ?? PostComplexity.SIMPLE,
-      politicalTone: data.political_tone ?? PoliticalTone.NEUTRAL,
+      politicalTone: persona
+        ? PoliticalTone.NEUTRAL
+        : (data.political_tone ?? PoliticalTone.NEUTRAL),
       customInstructions: data.custom_instructions,
+      persona: persona
+        ? {
+            name: persona.name,
+            personaPrompt: persona.persona_prompt,
+            styleGuidelines: persona.style_guidelines,
+          }
+        : undefined,
     });
 
-    // Posts de rotina usam o cenário barato. As colunas de opinião, que pagam
-    // por aderência a guardrail, entram na fase das personas.
+    // Posts de rotina usam o cenário barato. Colunas de imigração com persona
+    // pagam o cenário de opinião — turismo permanece no barato.
+    const scenario =
+      persona?.theme === BlogPersonaTheme.IMMIGRATION
+        ? 'blog_writing_opinion'
+        : 'blog_writing_standard';
+
     const { data: parsed, result } = await this.aiRouter.generateJson(
-      'blog_writing_standard',
+      scenario,
       prompt,
       blogPostAiSchema,
-      { entityType: 'blog_post' },
+      {
+        entityType: 'blog_post',
+        preferredModel: persona?.preferred_model ?? undefined,
+      },
     );
 
     if (!parsed) {
@@ -116,7 +158,10 @@ export class AiBlogWorkerService {
         generation_cost_usd: result.usage.costUsd,
         reading_time_min: readingTimeMin,
         author_id: authorId,
-        display_author_id: data.display_author_id ?? null,
+        display_author_id:
+          data.display_author_id ?? persona?.blog_author_id ?? null,
+        persona_id: persona?.id ?? null,
+        debate_group_id: data.debate_group_id ?? null,
         category_id: data.category_id,
         featured_country_id: data.country_id,
         source_topic: data.topic?.trim() || null,
@@ -129,6 +174,18 @@ export class AiBlogWorkerService {
     });
 
     this.logger.log(`AI blog post created as DRAFT for: ${country.name}`);
+
+    if (persona) {
+      await this.moderateOpinion(post.id, {
+        personaName: persona.name,
+        editorialStance: persona.editorial_stance,
+        title: parsed.title,
+        content: parsed.content,
+        newsItems: newsItems
+          .map((item, i) => `${i + 1}. ${item.title}`)
+          .join('\n'),
+      });
+    }
 
     // A cadeia segue para a tradução, e é o último locale traduzido que enfileira
     // a capa. Antes daqui a capa vinha logo depois do texto e a tradução ficava
@@ -161,6 +218,78 @@ export class AiBlogWorkerService {
         .catch((err) =>
           this.logger.warn(`Could not update cron job last_run_at: ${err}`),
         );
+    }
+  }
+
+  /**
+   * Cron jobs are a single repeatable payload. When they ask for both sides we
+   * mint the debate group here and enqueue the counterpart as its own job, so a
+   * retry of one column does not rerun the other.
+   */
+  private async enqueueCounterpart(
+    data: GenerateBlogPostJobData,
+    persona: { id: string; theme: BlogPersonaTheme; editorial_stance: string },
+  ): Promise<string> {
+    const debateGroupId = randomUUID();
+    const counterpart = await this.prisma.blogPersona.findFirst({
+      where: {
+        theme: persona.theme,
+        is_active: true,
+        id: { not: persona.id },
+        NOT: { editorial_stance: persona.editorial_stance },
+      },
+    });
+
+    if (!counterpart) {
+      this.logger.warn(
+        `No counterpart persona for ${persona.id}; generating a single side`,
+      );
+      return debateGroupId;
+    }
+
+    await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
+      ...data,
+      persona_id: counterpart.id,
+      display_author_id: counterpart.blog_author_id,
+      generate_both_sides: false,
+      debate_group_id: debateGroupId,
+    });
+
+    return debateGroupId;
+  }
+
+  private async moderateOpinion(
+    postId: string,
+    input: {
+      personaName: string;
+      editorialStance: string;
+      title: string;
+      content: string;
+      newsItems: string;
+    },
+  ): Promise<void> {
+    try {
+      const { data } = await this.aiRouter.generateJson(
+        'blog_writing_standard',
+        buildBlogOpinionModerationPrompt(input),
+        blogOpinionModerationResultSchema,
+        { entityType: 'blog_post', entityId: postId },
+      );
+
+      if (!data || data.recommendation === 'approve') {
+        return;
+      }
+
+      await this.prisma.blogPost.update({
+        where: { id: postId },
+        data: { moderation_flag: data },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Opinion moderation failed for ${postId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 

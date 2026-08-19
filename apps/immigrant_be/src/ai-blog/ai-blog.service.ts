@@ -13,6 +13,7 @@ import { CreateAiBlogCronDto } from './dto/create-ai-blog-cron.dto';
 import { UpdateAiBlogCronDto } from './dto/update-ai-blog-cron.dto';
 import { UpdateBlogPostDto } from '../blog/dto/update-blog-post.dto';
 import { BlogService } from '../blog/blog.service';
+import { BlogPersonasService } from '../blog-personas/blog-personas.service';
 import {
   AI_BLOG_QUEUE,
   AI_BLOG_IMAGE_QUEUE,
@@ -37,6 +38,7 @@ export class AiBlogService {
   constructor(
     private readonly repository: AiBlogRepository,
     private readonly blogService: BlogService,
+    private readonly blogPersonasService: BlogPersonasService,
     @InjectQueue(AI_BLOG_QUEUE) private readonly aiBlogQueue: Queue,
     @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly aiBlogImageQueue: Queue,
     @InjectQueue(BLOG_TRANSLATION_QUEUE)
@@ -49,21 +51,55 @@ export class AiBlogService {
     dto: GenerateAiBlogPostDto,
     requestedByUserId?: string,
   ) {
-    const job = await this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, {
-      country_id: dto.country_id,
-      category_id: dto.category_id,
-      author_id: dto.author_id,
-      display_author_id: dto.display_author_id,
-      complexity: dto.complexity ?? PostComplexity.SIMPLE,
-      political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
-      custom_instructions: dto.custom_instructions,
-      topic: dto.topic,
-      requestedByUserId: requestedByUserId ?? undefined,
-      correlationId: getCorrelationId(),
+    if (dto.generate_both_sides && !dto.persona_id) {
+      throw new BadRequestException('generate_both_sides exige uma persona_id');
+    }
+
+    const slots = await this.blogPersonasService.resolveGenerationSlots({
+      persona_id: dto.persona_id,
+      generate_both_sides: dto.generate_both_sides,
     });
-    this.logger.log(`Enqueued AI blog post generation job: ${job.id}`);
+
+    const payloads =
+      slots.length > 0
+        ? slots.map((slot) => ({
+            country_id: dto.country_id,
+            category_id: dto.category_id,
+            author_id: dto.author_id,
+            display_author_id: slot.display_author_id,
+            complexity: dto.complexity ?? PostComplexity.SIMPLE,
+            political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
+            custom_instructions: dto.custom_instructions,
+            topic: dto.topic,
+            persona_id: slot.persona_id,
+            debate_group_id: slot.debate_group_id,
+            requestedByUserId: requestedByUserId ?? undefined,
+            correlationId: getCorrelationId(),
+          }))
+        : [
+            {
+              country_id: dto.country_id,
+              category_id: dto.category_id,
+              author_id: dto.author_id,
+              display_author_id: dto.display_author_id,
+              complexity: dto.complexity ?? PostComplexity.SIMPLE,
+              political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
+              custom_instructions: dto.custom_instructions,
+              topic: dto.topic,
+              requestedByUserId: requestedByUserId ?? undefined,
+              correlationId: getCorrelationId(),
+            },
+          ];
+
+    const jobs = await Promise.all(
+      payloads.map((data) => this.aiBlogQueue.add(GENERATE_AI_BLOG_POST, data)),
+    );
+    this.logger.log(
+      `Enqueued AI blog post generation job(s): ${jobs.map((j) => j.id).join(', ')}`,
+    );
     return {
-      job_id: job.id,
+      job_id: jobs[0]?.id,
+      job_ids: jobs.map((j) => j.id),
       message:
         'Post gerado em fila. Verifique a fila de aprovação em instantes.',
     };
@@ -75,6 +111,12 @@ export class AiBlogService {
 
   async findPendingPosts() {
     const posts = await this.repository.findPendingAiPosts();
+    const siblings = await this.repository.findSiblingSlugs(
+      posts.map((post) => ({
+        id: post.id,
+        debate_group_id: post.debate_group_id,
+      })),
+    );
     return posts.map((post) => {
       const existingLocales = post.translations.map((t) => t.locale);
       const missing_translations = AiBlogService.REQUIRED_LOCALES.filter(
@@ -83,9 +125,7 @@ export class AiBlogService {
       return {
         ...post,
         missing_translations,
-        // O `Decimal` do Prisma serializa como string; a tela soma custos e
-        // precisa de número. Converter aqui evita espalhar `Number(...)` por
-        // toda a interface.
+        counterpart_slug: siblings.get(post.id) ?? null,
         generation_cost_usd:
           post.generation_cost_usd === null
             ? null
@@ -244,6 +284,8 @@ export class AiBlogService {
         complexity: dto.complexity,
         political_tone: dto.political_tone,
         custom_instructions: dto.custom_instructions,
+        persona_id: dto.persona_id,
+        generate_both_sides: dto.generate_both_sides,
       });
       await this.repository.updateCronJob(cronJob.id, {}, bullmqJobId);
       cronJob.bullmq_job_id = bullmqJobId;
@@ -281,6 +323,9 @@ export class AiBlogService {
       PoliticalTone.NEUTRAL) as PoliticalTone;
     const newCustomInstructions =
       dto.custom_instructions ?? existing.custom_instructions ?? undefined;
+    const newPersonaId = dto.persona_id ?? existing.persona_id ?? undefined;
+    const newGenerateBothSides =
+      dto.generate_both_sides ?? existing.generate_both_sides ?? false;
 
     if (newIsActive) {
       const bullmqJobId = await this.registerRepeatableJob(id, {
@@ -292,6 +337,8 @@ export class AiBlogService {
         complexity: newComplexity,
         political_tone: newPoliticalTone,
         custom_instructions: newCustomInstructions,
+        persona_id: newPersonaId,
+        generate_both_sides: newGenerateBothSides,
       });
       return this.repository.updateCronJob(id, {}, bullmqJobId);
     }
@@ -326,6 +373,8 @@ export class AiBlogService {
       complexity?: PostComplexity;
       political_tone?: PoliticalTone;
       custom_instructions?: string;
+      persona_id?: string;
+      generate_both_sides?: boolean;
     },
   ): Promise<string> {
     const job = await this.aiBlogQueue.add(
@@ -339,6 +388,8 @@ export class AiBlogService {
         complexity: dto.complexity ?? PostComplexity.SIMPLE,
         political_tone: dto.political_tone ?? PoliticalTone.NEUTRAL,
         custom_instructions: dto.custom_instructions,
+        persona_id: dto.persona_id,
+        generate_both_sides: dto.generate_both_sides ?? false,
         correlationId: getCorrelationId(),
       },
       { repeat: { pattern: dto.cron_expr } },

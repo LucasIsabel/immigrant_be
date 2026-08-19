@@ -54,6 +54,18 @@ export {
   type RssNewsItem,
 } from './prompts/blog-post.prompt';
 export {
+  PERSONA_GUARDRAILS,
+  buildPersonaPromptSection,
+  type PersonaPromptBlock,
+} from './prompts/persona-guardrails';
+export { buildBlogOpinionModerationPrompt } from './prompts/blog-opinion-moderation.prompt';
+export {
+  blogOpinionModerationInputSchema,
+  blogOpinionModerationResultSchema,
+  type BlogOpinionModerationInput,
+  type BlogOpinionModerationResult,
+} from './schemas/blog-opinion-moderation.schema';
+export {
   blogTranslationAiSchema,
   type BlogTranslationAiResponse,
 } from './schemas/blog-translation.schema';

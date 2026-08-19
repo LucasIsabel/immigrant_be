@@ -42,6 +42,15 @@ export class AiBlogCronResponseDto {
   })
   custom_instructions: string | null;
 
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
+  })
+  persona_id: string | null;
+
+  @ApiProperty({ example: false })
+  generate_both_sides: boolean;
+
   @ApiProperty({ example: '2025-01-01T00:00:00.000Z' })
   created_at: Date;
 

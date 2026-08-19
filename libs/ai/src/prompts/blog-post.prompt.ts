@@ -1,5 +1,9 @@
 import { PostComplexity } from '../enums/post-complexity.enum';
 import { PoliticalTone } from '../enums/political-tone.enum';
+import {
+  type PersonaPromptBlock,
+  buildPersonaPromptSection,
+} from './persona-guardrails';
 
 export function buildBlogCoverImagePrompt(
   title: string,
@@ -28,6 +32,8 @@ export interface BlogPostPromptOptions {
   politicalTone?: PoliticalTone;
   customInstructions?: string;
   authorName?: string;
+  /** When set, replaces the legacy PoliticalTone instruction. */
+  persona?: PersonaPromptBlock;
 }
 
 const TONE_INSTRUCTIONS: Record<PoliticalTone, string> = {
@@ -86,6 +92,7 @@ export function buildBlogPostPrompt(
     complexity = PostComplexity.SIMPLE,
     politicalTone = PoliticalTone.NEUTRAL,
     customInstructions,
+    persona,
   } = options;
 
   const newsSummary = newsItems
@@ -95,18 +102,28 @@ export function buildBlogPostPrompt(
     )
     .join('\n\n');
 
-  const toneInstruction = TONE_INSTRUCTIONS[politicalTone];
+  const toneInstruction = persona
+    ? 'Write in the persona voice defined below. Ignore any generic tone instruction.'
+    : TONE_INSTRUCTIONS[politicalTone];
   const complexityRequirements = buildComplexityRequirements(complexity);
 
   const customSection = customInstructions?.trim()
     ? `\n## Additional instructions\n${customInstructions.trim()}`
     : '';
 
+  const personaSection = persona
+    ? `\n${buildPersonaPromptSection(persona)}\n`
+    : '';
+
+  const role = persona
+    ? `You are an opinion columnist writing for an immigration platform targeted at people who want to move abroad. Write a signed opinion column, not a news report.`
+    : `You are an expert immigration journalist writing for an immigration platform targeted at people who want to move abroad.`;
+
   return `
-You are an expert immigration journalist writing for an immigration platform targeted at people who want to move abroad.
+${role}
 
 Based on the recent news headlines about immigration to **${countryName}** listed below, write a comprehensive, informative and engaging blog post in **English**.
-
+${personaSection}
 ## Recent News
 ${newsSummary}
 

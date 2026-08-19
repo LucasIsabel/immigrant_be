@@ -4,10 +4,11 @@ import { Module } from '@nestjs/common';
 import { AiConfigController } from './ai-config.controller';
 import { AiConfigRepository } from './ai-config.repository';
 import { AiConfigService } from './ai-config.service';
+import { AiUsageController } from './ai-usage.controller';
 
 @Module({
   imports: [AiModule, DatabaseModule],
-  controllers: [AiConfigController],
+  controllers: [AiConfigController, AiUsageController],
   providers: [AiConfigService, AiConfigRepository],
 })
 export class AiConfigModule {}

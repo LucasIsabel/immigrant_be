@@ -27,6 +27,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AiBlogRepository } from './ai-blog.repository';
 import { AiBlogService } from './ai-blog.service';
 import { BlogService } from '../blog/blog.service';
+import { BlogPersonasService } from '../blog-personas/blog-personas.service';
 
 const POST_ID = 'post-1';
 
@@ -61,6 +62,7 @@ describe('AiBlogService.retryFailedStep', () => {
         AiBlogService,
         { provide: AiBlogRepository, useValue: mockRepo },
         { provide: BlogService, useValue: {} },
+        { provide: BlogPersonasService, useValue: {} },
         { provide: getQueueToken(AI_BLOG_QUEUE), useValue: blogQueue },
         { provide: getQueueToken(AI_BLOG_IMAGE_QUEUE), useValue: imageQueue },
         {
