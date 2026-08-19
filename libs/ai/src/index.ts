@@ -88,3 +88,7 @@ export {
   type BusinessPageModerationResult,
 } from './schemas/business-page-moderation.schema';
 export { buildBusinessPageModerationPrompt } from './prompts/business-page-moderation.prompt';
+export {
+  VISUAL_MARKER_REGEX,
+  contentHasVisualMarkers,
+} from './utils/blog-visual-markers';

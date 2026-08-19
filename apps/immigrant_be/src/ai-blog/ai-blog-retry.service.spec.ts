@@ -117,10 +117,21 @@ describe('AiBlogService.retryFailedStep', () => {
     );
   });
 
+  it('repete a capa quando ficou travada em GENERATING_IMAGE', async () => {
+    mockRepo.findPostById.mockResolvedValue(post('GENERATING_IMAGE'));
+
+    const result = await service.retryFailedStep(POST_ID, 'user-1');
+
+    expect(result).toEqual({ step: 'cover_image' });
+    expect(imageQueue.add).toHaveBeenCalledWith(
+      GENERATE_AI_BLOG_IMAGE,
+      expect.objectContaining({ postId: POST_ID }),
+    );
+  });
+
   it.each([
     ['READY', 'um post pronto'],
     ['TRANSLATING', 'uma etapa em andamento'],
-    ['GENERATING_IMAGE', 'a imagem já rodando'],
   ])('recusa repetir %s', async (status) => {
     // É o que um clique repetido na tela produz. Reenfileirar criaria trabalho
     // duplicado — e, na imagem, uma segunda geração paga.

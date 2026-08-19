@@ -41,7 +41,7 @@ export class AiBlogConsumer extends WorkerHost {
               type: EVENT_TYPES.BLOG_POST_GENERATED,
               title: 'Post gerado',
               message:
-                'O post foi gerado e está na fila de aprovação. A imagem de capa está sendo processada.',
+                'O post foi gerado e está na fila de aprovação. Tradução e imagem de capa serão processadas em sequência.',
               payload: {},
             });
           }

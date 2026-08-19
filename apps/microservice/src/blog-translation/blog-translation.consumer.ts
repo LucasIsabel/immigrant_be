@@ -110,14 +110,36 @@ export class BlogTranslationConsumer extends WorkerHost {
     const post = await this.translationService.getPostForImage(data.postId);
     if (!post) return;
 
-    await this.imageQueue.add(GENERATE_AI_BLOG_IMAGE, {
-      postId: post.id,
-      slug: post.slug,
-      title: post.title,
-      countryName: post.countryName,
-      requestedByUserId: data.requestedByUserId,
-      correlationId: getCorrelationId(),
-    });
+    try {
+      await this.imageQueue.add(GENERATE_AI_BLOG_IMAGE, {
+        postId: post.id,
+        slug: post.slug,
+        title: post.title,
+        countryName: post.countryName,
+        requestedByUserId: data.requestedByUserId,
+        correlationId: getCorrelationId(),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Falha ao enfileirar capa para ${post.id}: ${message}`);
+      await this.translationService.markPipelineFailure(
+        data.postId,
+        BlogPipelineStatus.FAILED_IMAGE,
+        'cover_image',
+        message,
+      );
+      return;
+    }
+
+    if (data.requestedByUserId) {
+      await this.eventsService.emit({
+        userId: data.requestedByUserId,
+        type: EVENT_TYPES.BLOG_COVER_IMAGE_STARTED,
+        title: 'Imagem de capa enfileirada',
+        message: 'A geração da imagem de capa foi iniciada.',
+        payload: { postId: post.id },
+      });
+    }
 
     this.logger.log(`Traduções completas — capa enfileirada para ${post.id}`);
   }
