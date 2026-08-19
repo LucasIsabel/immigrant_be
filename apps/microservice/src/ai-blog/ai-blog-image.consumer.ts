@@ -176,8 +176,7 @@ export class AiBlogImageConsumer extends WorkerHost {
         `Refinamento enfileirado automaticamente após capa para ${postId}`,
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       this.logger.error(
         `Não foi possível enfileirar refinamento para ${postId}: ${message}`,
       );

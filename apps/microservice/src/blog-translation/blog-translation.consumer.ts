@@ -121,9 +121,7 @@ export class BlogTranslationConsumer extends WorkerHost {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Falha ao enfileirar capa para ${post.id}: ${message}`,
-      );
+      this.logger.error(`Falha ao enfileirar capa para ${post.id}: ${message}`);
       await this.translationService.markPipelineFailure(
         data.postId,
         BlogPipelineStatus.FAILED_IMAGE,

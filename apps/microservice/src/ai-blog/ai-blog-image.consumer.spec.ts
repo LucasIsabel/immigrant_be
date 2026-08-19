@@ -43,7 +43,10 @@ function buildJob(
 
 describe('AiBlogImageConsumer', () => {
   let consumer: AiBlogImageConsumer;
-  let imageWorker: { generateAndAttachImage: jest.Mock; markCoverFailure: jest.Mock };
+  let imageWorker: {
+    generateAndAttachImage: jest.Mock;
+    markCoverFailure: jest.Mock;
+  };
   let refineService: {
     refinePost: jest.Mock;
     postNeedsRefinement: jest.Mock;
@@ -90,7 +93,10 @@ describe('AiBlogImageConsumer', () => {
       expect(imageWorker.generateAndAttachImage).toHaveBeenCalled();
       expect(imageQueue.add).toHaveBeenCalledWith(
         REFINE_AI_BLOG_POST,
-        expect.objectContaining({ postId: POST_ID, requestedByUserId: USER_ID }),
+        expect.objectContaining({
+          postId: POST_ID,
+          requestedByUserId: USER_ID,
+        }),
       );
       expect(refineService.markManualFixNeeded).not.toHaveBeenCalled();
     });
@@ -133,10 +139,15 @@ describe('AiBlogImageConsumer', () => {
       });
 
       await consumer.process(
-        buildJob(REFINE_AI_BLOG_POST, { postId: POST_ID, requestedByUserId: USER_ID }),
+        buildJob(REFINE_AI_BLOG_POST, {
+          postId: POST_ID,
+          requestedByUserId: USER_ID,
+        }),
       );
 
-      expect(refineService.refinePost).toHaveBeenCalledWith({ postId: POST_ID });
+      expect(refineService.refinePost).toHaveBeenCalledWith({
+        postId: POST_ID,
+      });
       expect(eventsService.emit).toHaveBeenCalledWith(
         expect.objectContaining({ type: EVENT_TYPES.BLOG_REFINE_COMPLETED }),
       );
