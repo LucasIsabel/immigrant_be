@@ -55,6 +55,11 @@ const VISUAL_CALLOUT_INSTRUCTION = `Include visual callouts throughout the text 
 - Do NOT request charts, infographics, dashboards, diagrams with axes/labels, screenshots of UI, or any image that needs readable text. Put numbers and comparisons in Markdown tables in the article instead.
 - Descriptions must be concrete and visual (what the scene shows). They will be used to generate images shared across all locales, so they must work without any lettering.`;
 
+const HUMAN_WRITING_INSTRUCTION = `- **Punctuation**: Never use an em dash (—) or en dash (–) as a pause. Use a comma, a period, a colon, or parentheses. Numeric ranges use a hyphen (2019-2024).
+- **Voice**: Write like a working journalist with a deadline, not like a language model. Mix short and long sentences. Prefer concrete nouns and named people, places, and programs from the news. One idea per paragraph is enough.
+- **Avoid AI tells**: no "delve", "tapestry", "landscape of", "it's important to note", "in today's world", "moreover", "furthermore", "in conclusion", "not just X, but Y", "a double-edged sword", or three-item lists that all start the same way. Do not hedge every claim into symmetry. Do not open with a rhetorical question unless the news actually poses one.
+- **Cadence**: Occasional fragments are fine. Contractions are fine. Do not sound encyclopedic.`;
+
 function buildComplexityRequirements(complexity: PostComplexity): string {
   switch (complexity) {
     case PostComplexity.DETAILED:
@@ -134,9 +139,10 @@ ${newsSummary}
 - **Language**: English
 - **Tone**: ${toneInstruction}
 - **Content**: Synthesize the news into a coherent narrative with context. Do NOT just list the news items.
-- **Title**: Concise and expressive — maximum 8 words. Prefer titles that reveal a specific insight, use contrast, or pose a direct question. Avoid listicle-style or generic titles.
+- **Title**: Concise and expressive, maximum 8 words. Prefer titles that reveal a specific insight, use contrast, or pose a direct question. Avoid listicle-style or generic titles.
 - **Format**: Return a valid JSON object matching the schema below. The "content" field must be valid Markdown.
 ${complexityRequirements}
+${HUMAN_WRITING_INSTRUCTION}
 - The "excerpt" must be a single engaging paragraph of 2–3 sentences summarizing the post.
 - "suggested_tags" must be 3–6 lowercase slug strings (e.g. "canada", "work-visa", "immigration-2025").
 ${customSection}

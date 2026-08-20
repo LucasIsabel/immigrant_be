@@ -92,3 +92,4 @@ export {
   VISUAL_MARKER_REGEX,
   contentHasVisualMarkers,
 } from './utils/blog-visual-markers';
+export { stripEmDashes, stripEmDashesFromPost } from './utils/blog-prose';
