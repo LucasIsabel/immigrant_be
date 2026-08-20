@@ -149,29 +149,38 @@ export class AiBlogService {
   // ─── Retry de etapa ────────────────────────────────────────────────────────
 
   /**
-   * Reenfileira só a etapa que falhou.
+   * Reenfileira só a etapa que falhou (ou a capa quando o post chegou em READY
+   * sem `cover_image_url`).
    *
    * Os `attempts` do BullMQ cobrem a falha transitória; quando eles se esgotam,
    * o post fica marcado e para. Antes daqui não havia remédio: era gerar tudo de
    * novo, pagando o texto outra vez para consertar uma capa.
    *
-   * Recusa post que não está em falha. Reenfileirar uma etapa de um post que já
-   * está `READY`, ou no meio de outra etapa, criaria trabalho duplicado — e é
-   * exatamente o que um clique repetido na tela faria.
+   * Recusa post que não está em falha — salvo READY sem capa. Reenfileirar a
+   * capa de um post READY que já tem URL pagaria uma segunda geração.
    */
   async retryFailedStep(id: string, requestedByUserId?: string) {
     const post = await this.repository.findPostById(id);
     if (!post) throw new NotFoundException('Post não encontrado');
 
-    const etapa = {
+    const etapaPorStatus = {
       [BlogPipelineStatus.FAILED_TRANSLATION]: 'translation',
       [BlogPipelineStatus.FAILED_IMAGE]: 'cover_image',
       [BlogPipelineStatus.GENERATING_IMAGE]: 'cover_image',
     }[post.pipeline_status as string];
 
+    // READY sem capa: a cadeia marcou pronto sem anexar a imagem (enqueue
+    // perdido, job sumiu). O admin precisa poder reenfileirar só a capa.
+    const etapa =
+      etapaPorStatus ??
+      (post.pipeline_status === BlogPipelineStatus.READY &&
+      !post.cover_image_url
+        ? 'cover_image'
+        : undefined);
+
     if (!etapa) {
       throw new ConflictException(
-        `O post não está em falha (estado atual: ${post.pipeline_status}). Só há o que repetir depois de uma etapa falhar ou quando a capa ficou travada.`,
+        `O post não está em falha (estado atual: ${post.pipeline_status}). Só há o que repetir depois de uma etapa falhar, quando a capa ficou travada, ou quando o post está pronto sem capa.`,
       );
     }
 
