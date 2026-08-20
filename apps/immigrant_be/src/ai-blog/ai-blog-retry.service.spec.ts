@@ -31,11 +31,15 @@ import { BlogPersonasService } from '../blog-personas/blog-personas.service';
 
 const POST_ID = 'post-1';
 
-const post = (pipeline_status: string) => ({
+const post = (
+  pipeline_status: string,
+  overrides: { cover_image_url?: string | null } = {},
+) => ({
   id: POST_ID,
   slug: 'como-imigrar',
   title: 'Como imigrar',
   pipeline_status,
+  cover_image_url: overrides.cover_image_url ?? null,
   featured_country: { name: 'Canadá' },
 });
 
@@ -129,13 +133,35 @@ describe('AiBlogService.retryFailedStep', () => {
     );
   });
 
-  it.each([
-    ['READY', 'um post pronto'],
-    ['TRANSLATING', 'uma etapa em andamento'],
-  ])('recusa repetir %s', async (status) => {
+  it('repete a capa quando READY sem cover_image_url', async () => {
+    mockRepo.findPostById.mockResolvedValue(
+      post('READY', { cover_image_url: null }),
+    );
+
+    const result = await service.retryFailedStep(POST_ID, 'user-1');
+
+    expect(result).toEqual({ step: 'cover_image' });
+    expect(imageQueue.add).toHaveBeenCalledWith(
+      GENERATE_AI_BLOG_IMAGE,
+      expect.objectContaining({ postId: POST_ID }),
+    );
+  });
+
+  it('recusa READY que já tem capa', async () => {
+    mockRepo.findPostById.mockResolvedValue(
+      post('READY', { cover_image_url: 'https://cdn.example/capa.jpg' }),
+    );
+
+    await expect(service.retryFailedStep(POST_ID)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(imageQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('recusa repetir TRANSLATING', async () => {
     // É o que um clique repetido na tela produz. Reenfileirar criaria trabalho
-    // duplicado — e, na imagem, uma segunda geração paga.
-    mockRepo.findPostById.mockResolvedValue(post(status));
+    // duplicado.
+    mockRepo.findPostById.mockResolvedValue(post('TRANSLATING'));
 
     await expect(service.retryFailedStep(POST_ID)).rejects.toBeInstanceOf(
       ConflictException,
