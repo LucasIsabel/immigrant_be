@@ -89,6 +89,18 @@ describe('AiBlogRefineService', () => {
     );
   });
 
+  it('proíbe texto legível no prompt da imagem (compartilhada nos 3 idiomas)', async () => {
+    // Uma única JPEG é reusada em en/pt/es. Qualquer rótulo na imagem ficaria
+    // em inglês nas traduções — melhor não pedir letra nenhuma.
+    await service.refinePost({ postId: POST_ID });
+
+    const [, prompt] = mockAiRouter.generateImage.mock.calls[0] as [
+      string,
+      string,
+    ];
+    expect(prompt).toMatch(/No readable text/i);
+  });
+
   it('mantém a geometria igual em todos os marcadores do mesmo post', async () => {
     // Ilustrações de proporções diferentes dentro de um artigo denunciam que
     // cada uma saiu de uma decisão do modelo, não do editor.

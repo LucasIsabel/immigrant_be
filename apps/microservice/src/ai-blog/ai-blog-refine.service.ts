@@ -10,7 +10,7 @@ export interface RefineBlogPostJobData extends CorrelatedJobData {
 }
 
 const IMAGE_REALISM_SUFFIX =
-  ' Photorealistic, documentary or editorial style. Natural imperfections — film grain, uneven lighting, real textures. If people are present: candid, unstaged moments with genuine expressions and natural skin tones. Avoid plastic skin, overly clean lighting, symmetrical poses, or any visual cues typical of AI-generated imagery.';
+  ' Photorealistic, documentary or editorial style. Natural imperfections — film grain, uneven lighting, real textures. If people are present: candid, unstaged moments with genuine expressions and natural skin tones. Avoid plastic skin, overly clean lighting, symmetrical poses, or any visual cues typical of AI-generated imagery. No readable text, letters, numbers, captions, watermarks, logos, street signs, or chart labels. If the description asks for a chart or infographic, depict the scene or objects only — never lettering.';
 
 @Injectable()
 export class AiBlogRefineService {
