@@ -118,6 +118,33 @@ describe('BlogTranslationWorkerService', () => {
     expect(args.create.translated_by_model).toBe('gemini-2.5-flash-lite');
   });
 
+  it('tira travessões da tradução antes de gravar', async () => {
+    routerAnswers('google/gemini-3.1-flash-lite');
+    mockAiRouter.generateJson.mockResolvedValue({
+      data: {
+        title: 'Canadá — novas metas',
+        excerpt: 'Uma mudança — e a espera.',
+        content: 'Corpo — ainda aqui.',
+      },
+      result: {
+        model: 'google/gemini-3.1-flash-lite',
+        provider: 'openrouter',
+        usage: {},
+      },
+    });
+
+    await service.translatePost({ postId: POST_ID, targetLocale: 'pt' });
+
+    const [args] = mockPrisma.blogPostTranslation.upsert.mock.calls[0] as [
+      { create: Record<string, unknown> },
+    ];
+    expect(args.create).toMatchObject({
+      title: 'Canadá, novas metas',
+      excerpt: 'Uma mudança, e a espera.',
+      content: 'Corpo, ainda aqui.',
+    });
+  });
+
   it('falha nomeando o modelo quando a resposta não bate com o schema', async () => {
     mockAiRouter.generateJson.mockResolvedValue({
       data: null,

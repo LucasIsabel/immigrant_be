@@ -38,5 +38,7 @@ describe('persona guardrails', () => {
     expect(prompt).not.toContain(
       'Keep an objective, balanced and informative tone.',
     );
+    expect(prompt).toContain('Never use an em dash');
+    expect(prompt).toContain('Avoid AI tells');
   });
 });

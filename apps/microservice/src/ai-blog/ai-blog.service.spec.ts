@@ -170,6 +170,33 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
     expect(created().generation_cost_usd).toBeUndefined();
   });
 
+  it('tira travessões do texto antes de gravar', async () => {
+    mockAiRouter.generateJson.mockResolvedValue({
+      data: {
+        ...aiPost,
+        title: 'Canada — new targets',
+        excerpt: 'A change — and a wait.',
+        content: 'Body — still here. Years 2019–2024.',
+      },
+      result: {
+        model: 'moonshotai/kimi-k2.5',
+        provider: 'openrouter',
+        usage: {},
+      },
+    });
+
+    await service.generatePost({
+      country_id: COUNTRY_ID,
+      category_id: CATEGORY_ID,
+    });
+
+    expect(created()).toMatchObject({
+      title: 'Canada, new targets',
+      excerpt: 'A change, and a wait.',
+      content: 'Body, still here. Years 2019-2024.',
+    });
+  });
+
   it('falha nomeando o modelo quando a resposta não bate com o schema', async () => {
     mockAiRouter.generateJson.mockResolvedValue({
       data: null,

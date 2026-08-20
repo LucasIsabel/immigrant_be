@@ -4,6 +4,7 @@ import {
   AiRouterService,
   buildBlogTranslationPrompt,
   blogTranslationAiSchema,
+  stripEmDashesFromPost,
 } from '@app/ai';
 import { BlogPostStatus } from '../../../../generated/prisma';
 import { CorrelatedJobData } from '@app/config/job-data';
@@ -71,6 +72,8 @@ export class BlogTranslationWorkerService {
       );
     }
 
+    const prose = stripEmDashesFromPost(parsed);
+
     await this.prisma.blogPostTranslation.upsert({
       where: {
         post_id_locale: { post_id: data.postId, locale: data.targetLocale },
@@ -78,16 +81,16 @@ export class BlogTranslationWorkerService {
       create: {
         post_id: data.postId,
         locale: data.targetLocale,
-        title: parsed.title,
-        excerpt: parsed.excerpt,
-        content: parsed.content,
+        title: prose.title,
+        excerpt: prose.excerpt,
+        content: prose.content,
         translated_by: 'AI',
         translated_by_model: result.model,
       },
       update: {
-        title: parsed.title,
-        excerpt: parsed.excerpt,
-        content: parsed.content,
+        title: prose.title,
+        excerpt: prose.excerpt,
+        content: prose.content,
         translated_by: 'AI',
         translated_by_model: result.model,
       },

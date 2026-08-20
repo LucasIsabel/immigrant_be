@@ -11,6 +11,7 @@ import {
   blogPostAiSchema,
   PostComplexity,
   PoliticalTone,
+  stripEmDashesFromPost,
   type RssNewsItem,
 } from '@app/ai';
 import {
@@ -134,21 +135,22 @@ export class AiBlogWorkerService {
       );
     }
 
-    const slug = this.slugify(`${parsed.title}-${Date.now()}`);
-    const readingTimeMin = this.calcReadingTime(parsed.content);
+    const prose = stripEmDashesFromPost(parsed);
+    const slug = this.slugify(`${prose.title}-${Date.now()}`);
+    const readingTimeMin = this.calcReadingTime(prose.content);
 
     // Find or create tags from AI suggestions
-    const tagIds = await this.ensureTags(parsed.suggested_tags);
+    const tagIds = await this.ensureTags(prose.suggested_tags);
 
     // Resolve author: use provided author_id if valid, else fallback to system admin
     const authorId = await this.resolveAuthorId(data.author_id);
 
     const post = await this.prisma.blogPost.create({
       data: {
-        title: parsed.title,
+        title: prose.title,
         slug,
-        excerpt: parsed.excerpt,
-        content: parsed.content,
+        excerpt: prose.excerpt,
+        content: prose.content,
         status: BlogPostStatus.DRAFT,
         is_ai_generated: true,
         original_locale: 'en',
@@ -179,8 +181,8 @@ export class AiBlogWorkerService {
       await this.moderateOpinion(post.id, {
         personaName: persona.name,
         editorialStance: persona.editorial_stance,
-        title: parsed.title,
-        content: parsed.content,
+        title: prose.title,
+        content: prose.content,
         newsItems: newsItems
           .map((item, i) => `${i + 1}. ${item.title}`)
           .join('\n'),
