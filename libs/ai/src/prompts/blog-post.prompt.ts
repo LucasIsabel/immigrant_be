@@ -11,9 +11,11 @@ export function buildBlogCoverImagePrompt(
 ): string {
   return `Generate a professional editorial blog cover image for an article titled "${title}" about immigration to ${countryName}.
 
-Style: Wide landscape format (16:9), photorealistic documentary style, natural cinematic lighting, no text overlays. Suitable for a professional blog header.
+Style: Wide landscape format (16:9), photorealistic documentary style, natural cinematic lighting. Suitable for a professional blog header.
 
 Subject: Show the destination itself — iconic landmarks, architecture, cityscape, or natural landscape of ${countryName}. No human figures. Focus on the place: streets, buildings, flags, skies, public spaces. Capture a real sense of what it feels like to be there.
+
+Text: Absolutely no readable text — no titles, captions, watermarks, logos with words, street signs, storefront lettering, billboards, or flags with written slogans. Empty or abstract signage only if unavoidable.
 
 Quality: Raw, authentic, like travel photography or documentary filmmaking. Slightly imperfect — natural grain, real shadows, uneven lighting. Avoid overly symmetrical compositions, oversaturated colors, or the clean-plastic look of AI-generated imagery.`;
 }
@@ -48,9 +50,10 @@ const TONE_INSTRUCTIONS: Record<PoliticalTone, string> = {
 
 const VISUAL_CALLOUT_INSTRUCTION = `Include visual callouts throughout the text using this format:
   > 📊 **[Visual sugerido]:** [Description]
-- For images with people: describe diverse real humans in candid, authentic moments — documentary or photojournalism style. Include natural poses, realistic skin tones, everyday settings (e.g. airport, office, park, city street). Avoid stiff poses, cartoon style, or AI-looking artificial appearance.
-- For charts/infographics: describe clean, professional data visualizations.
-- Keep descriptions concrete and visual (what the scene or graphic shows), as they will be used to generate images.`;
+- Prefer photographic scenes: places, people, objects, workplaces, airports, city streets — documentary or photojournalism style.
+- For images with people: describe diverse real humans in candid, authentic moments. Include natural poses, realistic skin tones, everyday settings. Avoid stiff poses, cartoon style, or AI-looking artificial appearance.
+- Do NOT request charts, infographics, dashboards, diagrams with axes/labels, screenshots of UI, or any image that needs readable text. Put numbers and comparisons in Markdown tables in the article instead.
+- Descriptions must be concrete and visual (what the scene shows). They will be used to generate images shared across all locales, so they must work without any lettering.`;
 
 function buildComplexityRequirements(complexity: PostComplexity): string {
   switch (complexity) {
