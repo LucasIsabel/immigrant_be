@@ -87,6 +87,7 @@ const mockRepo = {
   findApprovedBySlug: jest.fn(),
   findBySlug: jest.fn(),
   findBusinessByIdAndUserId: jest.fn(),
+  findPublicList: jest.fn(),
   findByBusinessId: jest.fn(),
   findByIdAndUserId: jest.fn(),
   create: jest.fn(),
@@ -181,6 +182,39 @@ describe('BusinessPagesService', () => {
       mockRepo.findApprovedBySlug.mockResolvedValue(page);
       const result = await service.getPublicPage('meu-slug');
       expect(result).toEqual(page);
+    });
+  });
+
+  describe('listPublicPages', () => {
+    it('devolve a página pedida com o total', async () => {
+      mockRepo.findPublicList.mockResolvedValue({
+        data: [
+          {
+            slug: 'padaria-central',
+            businessType: 'restaurante',
+            approvedAt: new Date('2026-08-01'),
+          },
+        ],
+        total: 7,
+      });
+
+      const result = await service.listPublicPages(2, 3);
+
+      // O filtro de status vive no repository (select enxuto + where in
+      // APPROVED/APPROVED_WITH_PENDING); aqui o contrato é a paginação.
+      expect(mockRepo.findPublicList).toHaveBeenCalledWith(3, 3);
+      expect(result).toEqual({
+        data: [
+          {
+            slug: 'padaria-central',
+            businessType: 'restaurante',
+            approvedAt: new Date('2026-08-01'),
+          },
+        ],
+        total: 7,
+        page: 2,
+        limit: 3,
+      });
     });
   });
 
