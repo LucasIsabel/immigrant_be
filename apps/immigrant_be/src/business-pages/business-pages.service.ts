@@ -13,6 +13,7 @@ import {
 import { env } from '@app/config';
 import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
+import { validateTypeData } from '../business/type-data.schemas';
 import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
 import { UpdateBusinessPageContentDto } from './dto/update-business-page-content.dto';
@@ -107,6 +108,17 @@ export class BusinessPagesService {
   ) {
     const page = await this.repository.findByIdAndUserId(id, userId);
     if (!page) throw new ForbiddenException('Acesso negado');
+
+    // Mesmo contrato do POST /business. Sem isto, o typeData entrava cru em
+    // pendingContent e, na aprovação, era copiado para Business.typeData —
+    // este era o único caminho de escrita que pulava a validação por tipo.
+    // O schema é escolhido pelo enum do negócio dono, não pelo businessType
+    // da página (string livre de template).
+    validateTypeData(
+      page.business.businessType,
+      this.extractTypeData(dto.pendingContent),
+    );
+
     return this.repository.updatePendingContent(id, dto.pendingContent);
   }
 

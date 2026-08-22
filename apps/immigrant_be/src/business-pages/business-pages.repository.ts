@@ -34,10 +34,15 @@ export class BusinessPagesRepository {
     return this.prisma.businessPage.findFirst({ where: { businessId } });
   }
 
-  // Busca página pelo id verificando ownership via join com business
+  // Busca página pelo id verificando ownership via join com business.
+  // O businessType do negócio vem junto porque é ele — o enum, não a string
+  // livre da página — que escolhe o schema de validação do typeData.
   findByIdAndUserId(id: string, userId: string) {
     return this.prisma.businessPage.findFirst({
       where: { id, business: { userId } },
+      include: {
+        business: { select: { businessType: true } },
+      },
     });
   }
 

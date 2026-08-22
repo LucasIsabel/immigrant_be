@@ -5,101 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
 import { BusinessType } from '../../../../generated/prisma';
 import { BusinessRepository } from './business.repository';
+import { validateTypeData } from './type-data.schemas';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
-
-const restaurantTypeDataSchema = z.object({
-  cuisine: z.string().optional(),
-  priceRange: z.enum(['$', '$$', '$$$']).optional(),
-  openingHoursWeekdays: z.string().optional(),
-  openingHoursWeekend: z.string().optional(),
-  openingHours: z.string().optional(),
-  acceptsReservations: z.boolean().optional(),
-  menu: z
-    .array(
-      z.object({
-        id: z.string().uuid().optional(),
-        name: z.string(),
-        price: z.number(),
-        category: z.string().max(100).optional(),
-        description: z.string().max(2000).optional(),
-        photo: z.string().url().max(500).optional(),
-        featured: z.boolean().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const legalTypeDataSchema = z.object({
-  specializations: z.array(z.string()).optional(),
-  languages: z.array(z.string()).optional(),
-  offersOnlineConsultation: z.boolean().optional(),
-});
-
-const tourGuideTypeDataSchema = z.object({
-  languages: z.array(z.string()).optional(),
-  tours: z
-    .array(
-      z.object({
-        id: z.string().uuid().optional(),
-        name: z.string(),
-        duration: z.string(),
-        price: z.number(),
-        description: z.string().max(2000).optional(),
-        imageUrl: z.string().url().optional(),
-        badgeLabel: z.string().max(50).optional(),
-        stopCount: z.number().int().positive().optional(),
-        maxParticipants: z.number().int().positive().optional(),
-      }),
-    )
-    .optional(),
-  meetingPoint: z.string().optional(),
-  profileImage: z.string().url().optional(),
-  countryOfOrigin: z.string().optional(),
-  featured: z.boolean().optional(),
-  whatsapp: z.string().max(20).optional(),
-  itinerary: z
-    .array(
-      z.object({
-        id: z.string().uuid().optional(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        country: z.string().optional(),
-        state: z.string().optional(),
-        city: z.string().optional(),
-        lat: z.number().optional(),
-        lng: z.number().optional(),
-        photos: z
-          .array(
-            z.object({
-              id: z.string().uuid().optional(),
-              url: z.string().url(),
-              lat: z.number().optional(),
-              lng: z.number().optional(),
-            }),
-          )
-          .optional(),
-      }),
-    )
-    .optional(),
-});
-
-const generalTypeDataSchema = z.object({
-  serviceCategory: z.string().optional(),
-  servicesOffered: z.array(z.string()).optional(),
-  availability: z.string().optional(),
-});
-
-const typeDataSchemas: Record<BusinessType, z.ZodObject<any>> = {
-  [BusinessType.RESTAURANT]: restaurantTypeDataSchema,
-  [BusinessType.LEGAL]: legalTypeDataSchema,
-  [BusinessType.TOUR_GUIDE]: tourGuideTypeDataSchema,
-  [BusinessType.GENERAL]: generalTypeDataSchema,
-};
 
 @Injectable()
 export class BusinessService {
@@ -260,12 +171,9 @@ export class BusinessService {
   }
 
   private validateTypeData(businessType: BusinessType, typeData?: object) {
-    if (!typeData) return;
-    const schema = typeDataSchemas[businessType];
-    const result = schema.safeParse(typeData);
-    if (!result.success) {
-      throw new BadRequestException(result.error.flatten().fieldErrors);
-    }
+    // Delegação: o contrato mora em type-data.schemas.ts, compartilhado com o
+    // business-pages (PUT /business-pages/:id valida contra o mesmo schema).
+    validateTypeData(businessType, typeData);
   }
 
   private async checkOwnership(id: string, userId: string): Promise<void> {
