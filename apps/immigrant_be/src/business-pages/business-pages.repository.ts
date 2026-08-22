@@ -22,6 +22,31 @@ export class BusinessPagesRepository {
     });
   }
 
+  /**
+   * Listagem anônima para o sitemap. APPROVED_WITH_PENDING entra porque o
+   * conteúdo APROVADO dessas páginas continua no ar (mesma regra do
+   * findApprovedBySlug); o select enxuto garante que pendingContent não tem
+   * como vazar por esta rota.
+   */
+  async findPublicList(skip: number, take: number) {
+    const where = {
+      status: {
+        in: ['APPROVED', 'APPROVED_WITH_PENDING'] as BusinessPageStatus[],
+      },
+    };
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.businessPage.findMany({
+        where,
+        select: { slug: true, businessType: true, approvedAt: true },
+        orderBy: { approvedAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.businessPage.count({ where }),
+    ]);
+    return { data, total };
+  }
+
   // Verifica ownership via negócio (para createPage e getMyPage)
   findBusinessByIdAndUserId(businessId: string, userId: string) {
     return this.prisma.business.findFirst({

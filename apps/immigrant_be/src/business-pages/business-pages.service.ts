@@ -49,6 +49,14 @@ export class BusinessPagesService {
     return page;
   }
 
+  async listPublicPages(page: number, limit: number) {
+    const { data, total } = await this.repository.findPublicList(
+      (page - 1) * limit,
+      limit,
+    );
+    return { data, total, page, limit };
+  }
+
   async createPage(userId: string, dto: CreateBusinessPageDto) {
     const business = await this.repository.findBusinessByIdAndUserId(
       dto.businessId,

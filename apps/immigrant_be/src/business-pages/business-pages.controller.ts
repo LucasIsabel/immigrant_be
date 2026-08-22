@@ -31,6 +31,10 @@ import {
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { BusinessPagesService } from './business-pages.service';
+import {
+  PublicBusinessPageListQueryDto,
+  PublicBusinessPageListResponseDto,
+} from './dto/public-business-page-list.dto';
 import { CheckSlugQueryDto } from './dto/check-slug-query.dto';
 import { CheckSlugResponseDto } from './dto/check-slug-response.dto';
 import { BusinessPagePublicResponseDto } from './dto/business-page-public-response.dto';
@@ -51,6 +55,20 @@ export class BusinessPagesController {
   @ApiOkResponse({ type: CheckSlugResponseDto })
   checkSlug(@Query() query: CheckSlugQueryDto): Promise<CheckSlugResponseDto> {
     return this.service.checkSlugAvailability(query.slug);
+  }
+
+  @Get('public')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Listar páginas públicas aprovadas (consumo do sitemap)',
+    description:
+      'Paginado, somente APPROVED/APPROVED_WITH_PENDING (conteúdo no ar), payload enxuto sem approvedContent/pendingContent.',
+  })
+  @ApiOkResponse({ type: PublicBusinessPageListResponseDto })
+  listPublicPages(
+    @Query() query: PublicBusinessPageListQueryDto,
+  ): Promise<PublicBusinessPageListResponseDto> {
+    return this.service.listPublicPages(query.page ?? 1, query.limit ?? 50);
   }
 
   @Get('public/:slug')
