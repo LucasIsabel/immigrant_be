@@ -92,4 +92,15 @@ export {
   VISUAL_MARKER_REGEX,
   contentHasVisualMarkers,
 } from './utils/blog-visual-markers';
-export { stripEmDashes, stripEmDashesFromPost } from './utils/blog-prose';
+export {
+  stripEmDashes,
+  stripEmDashesDeep,
+  stripEmDashesFromPost,
+} from './utils/blog-prose';
+export {
+  HUMAN_CADENCE_RULE,
+  HUMAN_WRITING_INSTRUCTION,
+  JOURNALIST_VOICE_RULE,
+  NO_AI_TELLS_RULE,
+  NO_DASH_RULE,
+} from './prompts/prose-rules';

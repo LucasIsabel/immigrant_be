@@ -1,3 +1,9 @@
+import {
+  HUMAN_CADENCE_RULE,
+  NO_AI_TELLS_RULE,
+  NO_DASH_RULE,
+} from './prose-rules';
+
 export function buildBestVisaTypePrompt(
   userDetails: {
     profession?: string;
@@ -67,6 +73,11 @@ ${visaTypesText}
 - If multiple visa types are equally suitable, choose the one with simpler requirements or faster processing
 - Your explanation should be specific and reference the user's profession, continent of origin, plan period, and how they relate to the visa type's characteristics
 - Write the explanation in a natural, conversational tone, mentioning only the visa category name when referring to the recommended visa type
+
+### Writing style for the explanations field:
+${NO_DASH_RULE}
+${NO_AI_TELLS_RULE}
+${HUMAN_CADENCE_RULE}
 
 Now generate **ONLY the JSON**.
   `;
