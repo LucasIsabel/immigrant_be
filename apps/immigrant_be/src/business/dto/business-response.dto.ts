@@ -1,5 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BusinessType } from '../../../../../generated/prisma';
+import {
+  BusinessPageStatus,
+  BusinessType,
+} from '../../../../../generated/prisma';
+
+/**
+ * Resumo da página pública embutido na listagem do dono.
+ *
+ * Existe para o dashboard renderizar o badge de status sem uma requisição por
+ * card (`GET /business-pages/my/:id` × N). Só os campos que a listagem usa —
+ * o conteúdo da página continua vindo do endpoint dedicado.
+ */
+export class BusinessPageSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174002' })
+  id: string;
+
+  @ApiProperty({ example: 'restaurante-do-joao' })
+  slug: string;
+
+  @ApiProperty({
+    enum: BusinessPageStatus,
+    example: BusinessPageStatus.APPROVED,
+  })
+  status: BusinessPageStatus;
+}
 
 export class BusinessResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -69,6 +93,16 @@ export class BusinessResponseDto {
 
   @ApiProperty({ example: false })
   isPublic: boolean;
+
+  @ApiProperty({
+    type: BusinessPageSummaryDto,
+    nullable: true,
+    required: false,
+    description:
+      'Resumo da página pública (badge da listagem). Presente em GET /business/me; ' +
+      'null quando o negócio ainda não tem página; ausente nas demais rotas.',
+  })
+  businessPage?: BusinessPageSummaryDto | null;
 
   @ApiProperty({ example: '2024-01-15T10:30:00.000Z' })
   createdAt: Date;

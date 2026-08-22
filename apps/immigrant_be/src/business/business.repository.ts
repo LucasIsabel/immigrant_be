@@ -17,9 +17,17 @@ export class BusinessRepository {
   }
 
   findAllByUserId(userId: string) {
+    // A página pública vem junto (join na relação 1:1) porque a listagem do
+    // dashboard mostra o status dela em cada card. Sem isto o FE fazia uma
+    // requisição por card só para descobrir o badge — N+1 sobre HTTP.
     return this.prisma.business.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        businessPage: {
+          select: { id: true, slug: true, status: true },
+        },
+      },
     });
   }
 
