@@ -844,6 +844,28 @@ Pipeline sequencial: **Lint → Test → Build**
 
 ## 13. Variáveis de Ambiente Requeridas
 
+### Como o ambiente é carregado
+
+`libs/config/src/env-file.ts` aplica o `.env` em `process.env` e `libs/config/src/env.ts`
+valida o resultado — os dois **no import**, antes de o Nest existir.
+
+Isso não é redundância com o `ConfigModule.forRoot({ envFilePath: '.env' })`: aquele só roda o
+dotenv quando o Nest constrói o módulo, e a essa altura `env.ts` já validou `process.env` e
+`app.module.ts` já decidiu o Bull Board a partir de `env.NODE_ENV`. Enquanto o carregamento
+morava só no `ConfigModule`, o `.env` era decorativo em desenvolvimento: sem exportar as 13
+variáveis obrigatórias no shell, o boot local morria com `DATABASE_URL is required`.
+
+Duas regras valem sempre:
+
+- **O ambiente real ganha do arquivo.** Uma variável já presente em `process.env` nunca é
+  sobrescrita, inclusive quando está declarada e vazia. Em produção quem manda é o que o Coolify
+  injeta no container.
+- **O arquivo é procurado subindo a árvore** a partir do `cwd`, então `npx tsx` disparado de
+  dentro de `apps/` encontra o mesmo `.env` da raiz.
+
+Em produção o arquivo nem chega à imagem: o `.dockerignore` exclui `.env` e `.env.*`, e o
+estágio final do `Dockerfile` só copia `dist`, `node_modules`, `generated` e `prisma`.
+
 | Variável                          | Descrição                                             |
 | --------------------------------- | ----------------------------------------------------- |
 | `DATABASE_URL`                    | Connection string PostgreSQL                          |
