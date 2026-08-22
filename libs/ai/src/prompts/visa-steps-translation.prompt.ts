@@ -1,3 +1,5 @@
+import { NO_DASH_RULE } from './prose-rules';
+
 const LOCALE_LABELS: Record<string, string> = {
   pt: 'Brazilian Portuguese (PT-BR)',
   en: 'English',
@@ -28,6 +30,7 @@ Translate the following visa steps JSON from **${sourceLabel}** to **${targetLab
 - Translate ONLY user-facing text: "name", "notes", "description", and any other human-readable string values
 - Do NOT translate: theme/section keys (e.g. "documents", "financial"), field names, or program names (e.g. "Express Entry", "IRCC", "Schengen")
 - Return a valid JSON object with the same structure as the input
+${NO_DASH_RULE}
 
 ## Source Content (JSON)
 ${stepsJson}

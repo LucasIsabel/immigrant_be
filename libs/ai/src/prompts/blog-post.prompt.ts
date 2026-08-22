@@ -4,6 +4,7 @@ import {
   type PersonaPromptBlock,
   buildPersonaPromptSection,
 } from './persona-guardrails';
+import { HUMAN_WRITING_INSTRUCTION } from './prose-rules';
 
 export function buildBlogCoverImagePrompt(
   title: string,
@@ -54,11 +55,6 @@ const VISUAL_CALLOUT_INSTRUCTION = `Include visual callouts throughout the text 
 - For images with people: describe diverse real humans in candid, authentic moments. Include natural poses, realistic skin tones, everyday settings. Avoid stiff poses, cartoon style, or AI-looking artificial appearance.
 - Do NOT request charts, infographics, dashboards, diagrams with axes/labels, screenshots of UI, or any image that needs readable text. Put numbers and comparisons in Markdown tables in the article instead.
 - Descriptions must be concrete and visual (what the scene shows). They will be used to generate images shared across all locales, so they must work without any lettering.`;
-
-const HUMAN_WRITING_INSTRUCTION = `- **Punctuation**: Never use an em dash (—) or en dash (–) as a pause. Use a comma, a period, a colon, or parentheses. Numeric ranges use a hyphen (2019-2024).
-- **Voice**: Write like a working journalist with a deadline, not like a language model. Mix short and long sentences. Prefer concrete nouns and named people, places, and programs from the news. One idea per paragraph is enough.
-- **Avoid AI tells**: no "delve", "tapestry", "landscape of", "it's important to note", "in today's world", "moreover", "furthermore", "in conclusion", "not just X, but Y", "a double-edged sword", or three-item lists that all start the same way. Do not hedge every claim into symmetry. Do not open with a rhetorical question unless the news actually poses one.
-- **Cadence**: Occasional fragments are fine. Contractions are fine. Do not sound encyclopedic.`;
 
 function buildComplexityRequirements(complexity: PostComplexity): string {
   switch (complexity) {

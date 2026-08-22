@@ -11,6 +11,7 @@ import { Prisma } from 'generated/prisma';
 import {
   GeminiBaseService,
   buildVisaStepsTranslationPrompt,
+  stripEmDashesDeep,
   visaStepsTranslationAiSchema,
 } from '@app/ai';
 
@@ -170,6 +171,9 @@ export class VisaStepsService {
       throw new Error('Failed to parse translation response');
     }
 
-    return parsed;
+    // O prompt proíbe o travessão; isto é a rede se o modelo ignorar. A
+    // varredura é profunda porque a estrutura das etapas é JSON arbitrário, e
+    // só valores string são tocados.
+    return stripEmDashesDeep(parsed);
   }
 }

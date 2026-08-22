@@ -9,6 +9,7 @@ import {
   VisaRecommendationType,
   buildCountriesMatchPrompt,
   buildBestVisaTypePrompt,
+  stripEmDashes,
 } from '@app/ai';
 
 @Injectable()
@@ -63,6 +64,15 @@ export class GeminiService extends GeminiBaseService {
       response: { text },
     } = await this.model.generateContent(prompt);
 
-    return this.parseJsonResponse(text(), visaRecommendationSchema);
+    const parsed = this.parseJsonResponse(text(), visaRecommendationSchema);
+    if (!parsed) return parsed;
+
+    // Só a prosa passa pela limpeza. O id é identificador, não texto: mesmo
+    // sendo inofensivo hoje (a regex não toca hífen ASCII), sanitizar
+    // identificador é o tipo de hábito que um dia corrompe um.
+    return {
+      ...parsed,
+      explanations: stripEmDashes(parsed.explanations),
+    };
   }
 }

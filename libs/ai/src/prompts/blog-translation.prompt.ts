@@ -1,3 +1,5 @@
+import { NO_DASH_RULE } from './prose-rules';
+
 const LOCALE_LABELS: Record<string, string> = {
   pt: 'Brazilian Portuguese (PT-BR)',
   en: 'English',
@@ -28,7 +30,7 @@ Translate the following blog post from **${originalLabel}** to **${targetLabel}*
 - Preserve all Markdown formatting (headings, bold, lists, blockquotes, tables, etc.)
 - Do NOT translate proper nouns or program names (e.g. "Express Entry", "IRCC", "Schengen", "USCIS")
 - Do NOT add, remove, or summarize content. Translate faithfully
-- Never introduce em dashes (—) or en dashes (–) as pauses. Use a comma, a period, or parentheses. Numeric ranges keep a hyphen
+${NO_DASH_RULE}
 - Keep a spoken, human cadence. Do not polish the prose into a more formal or encyclopedic register than the source
 - The "content" field contains Markdown; keep all Markdown syntax intact
 - Return a valid JSON object with exactly the three fields below

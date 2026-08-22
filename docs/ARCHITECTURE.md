@@ -433,6 +433,13 @@ apps/microservice/src/ai-blog/
 - Modelo de embeddings: `gemini-embedding-001` (fora do roteador)
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`
+- **Regras de prosa humana** em `libs/ai/src/prompts/prose-rules.ts` — fonte única das regras
+  anti-"cara de IA" (sem travessão, sem clichês de LLM, voz de jornalista, cadência falada).
+  São constantes separadas porque nem toda regra cabe em todo prompt: a blocklist de clichês
+  não entra em prompts de **tradução** (forçaria o tradutor a desviar do original). Todo prompt
+  novo que gera texto lido pelo usuário compõe as regras dali, nunca redige as suas. A rede em
+  código é `stripEmDashes`/`stripEmDashesDeep` (`libs/ai/src/utils/blog-prose.ts`), aplicada em
+  toda saída de prosa antes de gravar ou devolver.
 - `generateImage(prompt)` em `GeminiBaseService` — retorna `Buffer | null` com dados base64 decodificados
 
 ---
