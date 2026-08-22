@@ -40,6 +40,7 @@ import { StorageService } from '@app/storage';
 const mockBusiness = {
   id: 'biz-1',
   userId: 'user-1',
+  businessType: 'RESTAURANT',
   name: 'Padaria Central',
   city: 'Lisboa',
   address: 'Rua das Flores, 1',
@@ -253,6 +254,36 @@ describe('BusinessPagesService', () => {
         null,
       );
       expect(result?.status).toBe('APPROVED');
+    });
+
+    it('rejeita template que não pertence ao tipo do negócio', async () => {
+      // Dois vocabulários que nada relacionava: dava para criar um Business
+      // RESTAURANT com página "academia" e o template errado renderizava o
+      // typeData errado. O 400 vem antes de qualquer escrita.
+      mockRepo.findBusinessByIdAndUserId.mockResolvedValue(mockBusiness);
+
+      await expect(
+        service.createPage('user-1', { ...dto, businessType: 'academia' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('GENERAL aceita os templates do catálogo genérico', async () => {
+      mockRepo.findBusinessByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        businessType: 'GENERAL',
+      });
+      mockRepo.findByBusinessId
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(createdPending);
+      mockRepo.isSlugTaken.mockResolvedValue(false);
+      mockRepo.create.mockResolvedValue(createdDraft);
+      mockQualification.isQualified.mockResolvedValue(false);
+      mockRepo.submitPage.mockResolvedValue(createdPending);
+
+      await expect(
+        service.createPage('user-1', { ...dto, businessType: 'loja' }),
+      ).resolves.toBeTruthy();
     });
 
     it('throws ForbiddenException when business does not belong to user', async () => {

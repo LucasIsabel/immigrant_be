@@ -1,8 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BusinessPageStatus,
   BusinessType,
 } from '../../../../../generated/prisma';
+import { GeneralTypeDataDto } from './type-data/general-type-data.dto';
+import { LegalTypeDataDto } from './type-data/legal-type-data.dto';
+import { RestaurantTypeDataDto } from './type-data/restaurant-type-data.dto';
+import { TourGuideTypeDataDto } from './type-data/tour-guide-type-data.dto';
 
 /**
  * Resumo da página pública embutido na listagem do dono.
@@ -25,6 +29,12 @@ export class BusinessPageSummaryDto {
   status: BusinessPageStatus;
 }
 
+@ApiExtraModels(
+  RestaurantTypeDataDto,
+  TourGuideTypeDataDto,
+  LegalTypeDataDto,
+  GeneralTypeDataDto,
+)
 export class BusinessResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
@@ -79,8 +89,15 @@ export class BusinessResponseDto {
   photos: string[];
 
   @ApiProperty({
-    description: 'Dados específicos do tipo de negócio (JSON livre)',
+    description:
+      'Dados específicos do tipo de negócio; a forma segue o businessType.',
     nullable: true,
+    oneOf: [
+      { $ref: getSchemaPath(RestaurantTypeDataDto) },
+      { $ref: getSchemaPath(TourGuideTypeDataDto) },
+      { $ref: getSchemaPath(LegalTypeDataDto) },
+      { $ref: getSchemaPath(GeneralTypeDataDto) },
+    ],
   })
   typeData: object | null;
 

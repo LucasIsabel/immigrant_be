@@ -1,4 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -13,7 +18,26 @@ import {
   ArrayMaxSize,
 } from 'class-validator';
 import { BusinessType } from '../../../../../generated/prisma';
+import { GeneralTypeDataDto } from './type-data/general-type-data.dto';
+import { LegalTypeDataDto } from './type-data/legal-type-data.dto';
+import { RestaurantTypeDataDto } from './type-data/restaurant-type-data.dto';
+import { TourGuideTypeDataDto } from './type-data/tour-guide-type-data.dto';
 
+/**
+ * `@ApiExtraModels` + `oneOf` existem só para o CONTRATO: sem eles os DTOs de
+ * `type-data/` não eram referenciados por nada e o OpenAPI expunha `typeData`
+ * como `object` genérico — o Kubb do FE gerava `object` e o desencontro de
+ * formas entre FE e BE ficava indetectável (foi assim que o 400 do tour-guide
+ * de abril aconteceu). A validação de RUNTIME continua sendo o Zod de
+ * `business/type-data.schemas.ts`, escolhido pelo `businessType`; anotar
+ * `@ValidateNested` aqui mudaria a semântica sob `forbidNonWhitelisted`.
+ */
+@ApiExtraModels(
+  RestaurantTypeDataDto,
+  TourGuideTypeDataDto,
+  LegalTypeDataDto,
+  GeneralTypeDataDto,
+)
 export class CreateBusinessDto {
   @ApiProperty({ enum: BusinessType, example: BusinessType.RESTAURANT })
   @IsEnum(BusinessType)
@@ -98,7 +122,16 @@ export class CreateBusinessDto {
   photos?: string[];
 
   @ApiPropertyOptional({
-    description: 'Dados específicos do tipo de negócio (JSON livre)',
+    description:
+      'Dados específicos do tipo de negócio. A forma segue o businessType: ' +
+      'RESTAURANT → RestaurantTypeDataDto, TOUR_GUIDE → TourGuideTypeDataDto, ' +
+      'LEGAL → LegalTypeDataDto, GENERAL → GeneralTypeDataDto.',
+    oneOf: [
+      { $ref: getSchemaPath(RestaurantTypeDataDto) },
+      { $ref: getSchemaPath(TourGuideTypeDataDto) },
+      { $ref: getSchemaPath(LegalTypeDataDto) },
+      { $ref: getSchemaPath(GeneralTypeDataDto) },
+    ],
   })
   @IsObject()
   @IsOptional()
