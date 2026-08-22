@@ -60,6 +60,10 @@ const mockPage = {
   approvedContent: null,
   submittedAt: null,
   approvedAt: null,
+  // Espelha o include do findByIdAndUserId: o enum do negócio dono, que é
+  // quem escolhe o schema de validação do typeData (o businessType acima é a
+  // string livre de template da página, outra coisa).
+  business: { businessType: 'RESTAURANT' },
 };
 
 const mockPageWithBusiness = {
@@ -330,6 +334,55 @@ describe('BusinessPagesService', () => {
           pendingContent: { name: 'x', city: 'y' },
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejeita typeData que o tipo do negócio não aceita', async () => {
+      // Era o buraco: este payload seria recusado pelo POST /business (price
+      // precisa ser number), mas entrava cru em pendingContent e, na
+      // aprovação, era copiado para Business.typeData.
+      mockRepo.findByIdAndUserId.mockResolvedValue(mockPage);
+
+      await expect(
+        service.updateContent('page-1', 'user-1', {
+          pendingContent: {
+            name: 'Rest',
+            city: 'Lx',
+            typeData: { menu: [{ name: 'Prato', price: 'dez' }] },
+          },
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.updatePendingContent).not.toHaveBeenCalled();
+    });
+
+    it('valida contra o enum do negócio, não contra o tipo da página', async () => {
+      // A página diz "restaurante" (string de template), mas o negócio dono é
+      // TOUR_GUIDE — e um menu não é campo de guia. Se esta assertiva quebrar,
+      // alguém passou a escolher o schema pelo vocabulário errado.
+      mockRepo.findByIdAndUserId.mockResolvedValue({
+        ...mockPage,
+        business: { businessType: 'TOUR_GUIDE' },
+      });
+
+      await expect(
+        service.updateContent('page-1', 'user-1', {
+          pendingContent: {
+            name: 'Guia',
+            city: 'Lx',
+            typeData: { tours: [{ name: 'City tour' }] },
+          },
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('aceita pendingContent sem typeData', async () => {
+      mockRepo.findByIdAndUserId.mockResolvedValue(mockPage);
+      mockRepo.updatePendingContent.mockResolvedValue(mockPage);
+
+      await expect(
+        service.updateContent('page-1', 'user-1', {
+          pendingContent: { name: 'Só texto', city: 'Porto' },
+        }),
+      ).resolves.toBe(mockPage);
     });
   });
 
