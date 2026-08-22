@@ -13,6 +13,7 @@ import {
 import { env } from '@app/config';
 import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
+import { assertPageTypeMatchesBusiness } from './business-page-type-map';
 import { validateTypeData } from '../business/type-data.schemas';
 import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
@@ -54,6 +55,10 @@ export class BusinessPagesService {
       userId,
     );
     if (!business) throw new ForbiddenException('Acesso negado');
+
+    // O template escolhido precisa pertencer ao tipo do negócio — são dois
+    // vocabulários (enum vs slug de template) que nada relacionava até aqui.
+    assertPageTypeMatchesBusiness(business.businessType, dto.businessType);
 
     const existing = await this.repository.findByBusinessId(dto.businessId);
     if (existing)
