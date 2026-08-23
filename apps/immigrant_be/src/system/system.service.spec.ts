@@ -23,6 +23,7 @@ const mockGeminiService = {
 
 const mockCountryService = {
   findAll: jest.fn(),
+  findAllNames: jest.fn(),
   findOneByName: jest.fn(),
   getCountryById: jest.fn(),
 };
@@ -89,6 +90,60 @@ describe('SystemService - createSuggestions', () => {
     gemini = module.get(GeminiService);
 
     jest.clearAllMocks();
+    // O casamento tolerante varre a lista de nomes; sem isto os testes que
+    // simulam "país não encontrado" quebrariam ao chegar na segunda tentativa.
+    mockCountryService.findAllNames.mockResolvedValue([]);
+  });
+
+  // ── Casamento do nome do país ───────────────────────────────
+
+  describe('getCountryDetails', () => {
+    const germany = { id: 'de', name: 'Germany', flag: '🇩🇪' };
+
+    it('acha pelo nome exato sem varrer a lista', async () => {
+      mockCountryService.findOneByName.mockResolvedValue(germany);
+
+      await expect(service.getCountryDetails('Germany')).resolves.toBe(germany);
+      expect(mockCountryService.findAllNames).not.toHaveBeenCalled();
+    });
+
+    it('acha apesar de caixa e acento diferentes', async () => {
+      // Primeira tentativa (exata) falha; a normalizada encontra.
+      mockCountryService.findOneByName
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(germany);
+      mockCountryService.findAllNames.mockResolvedValue([
+        { name: 'Germany' },
+        { name: 'France' },
+      ]);
+
+      await expect(service.getCountryDetails('  gErmany ')).resolves.toBe(
+        germany,
+      );
+    });
+
+    /**
+     * O caso que o usuário viu: quiz em português devolve "Nova Zelândia", o
+     * cadastro só tem "New Zealand", e antes isso falhava em silêncio — sem
+     * log, o resultado chegava sem foto, sem bandeira e sem country_id, e o
+     * plano criado a partir dele nascia sem tipos de visto.
+     */
+    it('devolve null e registra erro quando o nome vem traduzido', async () => {
+      mockCountryService.findOneByName.mockResolvedValue(null);
+      mockCountryService.findAllNames.mockResolvedValue([
+        { name: 'New Zealand' },
+      ]);
+      const erro = jest
+        .spyOn(service['logger'], 'error')
+        .mockImplementation(() => undefined);
+
+      await expect(
+        service.getCountryDetails('Nova Zelândia'),
+      ).resolves.toBeNull();
+      expect(erro).toHaveBeenCalledWith(
+        expect.stringContaining('Nova Zelândia'),
+      );
+    });
   });
 
   // ── Cache miss: new record ──────────────────────────────────

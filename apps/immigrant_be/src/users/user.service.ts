@@ -65,6 +65,9 @@ export class UserService {
     const translation = pickTranslation(country.translations, language);
     const suggestion: SuggestionItem = {
       country: country.name,
+      // Vem direto do cadastro, então chave e rótulo são o mesmo nome: aqui
+      // não passa IA nenhuma para traduzir o campo.
+      country_label: country.name,
       country_id: country.id,
       country_flag: country.flag,
       country_background: country.background_image,

@@ -3,7 +3,10 @@ import { z } from 'zod';
 export const suggestionsSchema = z.object({
   suggestions: z.array(
     z.object({
+      /** Chave de busca: nome do país em inglês, copiado da lista do prompt. */
       country: z.string(),
+      /** Nome do país no idioma da resposta, para exibir. */
+      country_label: z.string().optional().default(''),
       compatibility: z.number(),
       reasons: z.array(z.string()),
       cities: z.array(z.string()),
