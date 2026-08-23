@@ -1,3 +1,4 @@
+import { normalizeCountryName } from '@app/ai';
 import { pickTranslation } from '../countries/country-translation.util';
 import { GeminiService } from './gemini.service';
 import {
@@ -129,7 +130,12 @@ export class SystemService {
 
         // Build a full SuggestionItem with defaults for missing properties
         const item: any = {
-          country: suggestion.country,
+          // `country` é chave de busca, sempre em inglês; `country_label` é o
+          // que a tela mostra. Enquanto o modelo não devolver o rótulo, cair no
+          // próprio `country` mantém o comportamento anterior.
+          country: country?.name || suggestion.country,
+          country_label:
+            suggestion.country_label || country?.name || suggestion.country,
           compatibility:
             typeof suggestion.compatibility === 'number'
               ? suggestion.compatibility
@@ -187,7 +193,33 @@ export class SystemService {
   };
 
   getCountryDetails = async (country: string) => {
-    return await this.countryService.findOneByName(country);
+    const exact = await this.countryService.findOneByName(country);
+    if (exact) return exact;
+
+    // Segunda tentativa, tolerante a caixa, acento, espaço e pontuação. Sai
+    // barata: são 62 países, carregados uma vez por requisição de sugestão.
+    const wanted = normalizeCountryName(country);
+    const all = await this.countryService.findAllNames();
+    const loose = all.find(
+      (candidate) => normalizeCountryName(candidate.name) === wanted,
+    );
+
+    if (loose) {
+      this.logger.warn(
+        `Country matched only after normalization: "${country}" -> "${loose.name}". ` +
+          'The model is not copying the name verbatim from the list.',
+      );
+      return await this.countryService.findOneByName(loose.name);
+    }
+
+    // Falhava em silêncio: sem log nenhum, o resultado chegava ao usuário sem
+    // foto, sem bandeira e sem country_id, e não havia como saber por quê.
+    this.logger.error(
+      `Country not found for "${country}". The suggestion will be served ` +
+        'without image, flag and country_id, and a plan created from it will ' +
+        'have no visa types.',
+    );
+    return null;
   };
 
   async getSuggestionsWithEmbeddings(

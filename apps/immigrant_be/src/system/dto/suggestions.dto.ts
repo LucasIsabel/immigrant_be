@@ -40,12 +40,24 @@ export class SuggestionsDto {
 
 export class SuggestionItem {
   @ApiProperty({
-    description: 'Name of the recommended country',
-    example: 'Canada',
+    description:
+      'Country name in English, matching the catalogue. This is the lookup ' +
+      'key, not display text — use country_label to show the name to the user.',
+    example: 'New Zealand',
     type: String,
   })
   @IsString()
   country: string;
+
+  @ApiProperty({
+    description:
+      'Country name in the language of the response, for display. Falls back ' +
+      'to the English name when the model does not provide it.',
+    example: 'Nova Zelândia',
+    type: String,
+  })
+  @IsString()
+  country_label: string;
 
   @ApiProperty({
     description: 'Compatibility percentage (0-100)',
