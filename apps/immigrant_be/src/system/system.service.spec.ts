@@ -137,7 +137,9 @@ describe('SystemService - createSuggestions', () => {
         .spyOn(service['logger'], 'error')
         .mockImplementation(() => undefined);
 
-      await expect(service.getCountryDetails('Nova Zelândia')).resolves.toBeNull();
+      await expect(
+        service.getCountryDetails('Nova Zelândia'),
+      ).resolves.toBeNull();
       expect(erro).toHaveBeenCalledWith(
         expect.stringContaining('Nova Zelândia'),
       );

@@ -12,13 +12,15 @@
  * quando o modelo obedece a instrução mas erra a grafia.
  */
 export function normalizeCountryName(name: string): string {
-  return name
-    .normalize('NFD')
-    // Tira os diacríticos: "Perú" e "Peru" viram a mesma chave.
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    // Pontuação e conectores não distinguem país: "Cote d'Ivoire" e
-    // "Cote dIvoire" são o mesmo lugar.
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+  return (
+    name
+      .normalize('NFD')
+      // Tira os diacríticos: "Perú" e "Peru" viram a mesma chave.
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      // Pontuação e conectores não distinguem país: "Cote d'Ivoire" e
+      // "Cote dIvoire" são o mesmo lugar.
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+  );
 }
