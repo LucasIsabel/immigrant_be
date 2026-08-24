@@ -21,6 +21,16 @@ class ImmigrationVisaTypeEmbeddedDto {
 
   @ApiProperty({ description: 'Country ID', type: String })
   country_id: string;
+
+  @ApiProperty({
+    description:
+      'How many tasks this visa type generates in a plan. Zero when the ' +
+      'visa type has no steps configured yet.',
+    example: 22,
+    type: Number,
+    required: false,
+  })
+  steps_count?: number;
 }
 
 export class CountryDetailDto extends CountryDto {
