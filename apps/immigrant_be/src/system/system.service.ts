@@ -9,6 +9,7 @@ import {
 import { StepType } from './dto/types.dto';
 import {
   Steps,
+  SuggestionItem,
   SuggestionsDto,
   SuggestionsResponseDto,
 } from './dto/suggestions.dto';
@@ -320,11 +321,72 @@ export class SystemService {
     suggestionId: string,
     language: string,
   ): Promise<SuggestionsResponseDto | null> => {
-    return await this.systemRepository.getSuggestionAccordingToLanguage(
+    const stored = await this.systemRepository.getSuggestionAccordingToLanguage(
       suggestionId,
       language,
     );
+
+    if (!stored?.suggestions?.length) return stored;
+
+    return {
+      ...stored,
+      suggestions: await this.refreshCountryFields(
+        stored.suggestions,
+        language,
+      ),
+    };
   };
+
+  /**
+   * Reidrata os campos que vieram do cadastro de países.
+   *
+   * `enrichSuggestionsWithCountryDetails` copia foto, bandeira e investimento
+   * para dentro do JSON no momento da geração, e esse JSON é servido como
+   * está. Quando o cadastro muda depois — imagem adicionada, bandeira
+   * corrigida, tradução ajustada — a sugestão fica com o valor da época, para
+   * sempre.
+   *
+   * Foi o que aconteceu em produção: Malta, Portugal, Thailand, Indonesia e
+   * Costa Rica ficaram com `country_background` vazio mesmo tendo
+   * `country_id` e bandeira preenchidos, porque na geração aquele país ainda
+   * não tinha imagem. Hoje nenhum dos 62 países está sem imagem, e a sugestão
+   * continuava vazia.
+   *
+   * Resolver na leitura cura o dado já gravado sem migração. O que a IA
+   * escreveu — motivos, cidades, compatibilidade, `country_label` — não é
+   * tocado: aquilo é do modelo, não do cadastro.
+   */
+  private async refreshCountryFields(
+    suggestions: SuggestionItem[],
+    language: string,
+  ): Promise<SuggestionItem[]> {
+    const ids = [
+      ...new Set(suggestions.map((s) => s.country_id).filter(Boolean)),
+    ];
+    if (ids.length === 0) return suggestions;
+
+    const countries = await Promise.all(
+      ids.map((id) => this.countryService.findOne(id).catch(() => null)),
+    );
+    const byId = new Map(
+      countries.filter((c) => c != null).map((c) => [c.id, c]),
+    );
+
+    return suggestions.map((suggestion) => {
+      const country = byId.get(suggestion.country_id);
+      if (!country) return suggestion;
+
+      return {
+        ...suggestion,
+        country_background:
+          country.background_image || suggestion.country_background,
+        country_flag: country.flag || suggestion.country_flag,
+        investment_required:
+          pickTranslation(country.translations, language)
+            ?.investment_required || suggestion.investment_required,
+      };
+    });
+  }
 
   getSelectedBestVisaType = async (
     userDetails: UserDetailsQueryDto,

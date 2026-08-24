@@ -22,6 +22,7 @@ const mockGeminiService = {
 };
 
 const mockCountryService = {
+  findOne: jest.fn(),
   findAll: jest.fn(),
   findAllNames: jest.fn(),
   findOneByName: jest.fn(),
@@ -93,6 +94,101 @@ describe('SystemService - createSuggestions', () => {
     // O casamento tolerante varre a lista de nomes; sem isto os testes que
     // simulam "país não encontrado" quebrariam ao chegar na segunda tentativa.
     mockCountryService.findAllNames.mockResolvedValue([]);
+  });
+
+  // ── Reidratação do snapshot do país ─────────────────────────
+
+  describe('getSuggestionAccordingToLanguage', () => {
+    const armazenada = (extras = {}) => ({
+      suggestion_id: 's1',
+      suggestions: [
+        {
+          country: 'Malta',
+          country_label: 'Malta',
+          country_id: 'mt',
+          country_flag: '🇲🇹',
+          // Vazio porque na geração o país ainda não tinha imagem.
+          country_background: '',
+          investment_required: 'valor antigo',
+          compatibility: 80,
+          reasons: ['motivo da IA'],
+          cities: ['Valletta'],
+          ...extras,
+        },
+      ],
+    });
+
+    const malta = {
+      id: 'mt',
+      name: 'Malta',
+      flag: '🇲🇹',
+      background_image: 'https://cdn/malta.jpg',
+      translations: [{ language: 'pt', investment_required: 'valor atual' }],
+    };
+
+    /**
+     * O caso de produção: `country_id` e bandeira preenchidos, foto vazia,
+     * porque o cadastro ganhou a imagem depois da geração.
+     */
+    it('preenche a foto que ficou vazia no snapshot', async () => {
+      repository.getSuggestionAccordingToLanguage.mockResolvedValue(
+        armazenada(),
+      );
+      mockCountryService.findOne.mockResolvedValue(malta);
+
+      const r = await service.getSuggestionAccordingToLanguage('s1', 'pt');
+
+      expect(r?.suggestions[0].country_background).toBe(
+        'https://cdn/malta.jpg',
+      );
+      expect(r?.suggestions[0].investment_required).toBe('valor atual');
+    });
+
+    it('não toca no que foi escrito pela IA', async () => {
+      repository.getSuggestionAccordingToLanguage.mockResolvedValue(
+        armazenada(),
+      );
+      mockCountryService.findOne.mockResolvedValue(malta);
+
+      const r = await service.getSuggestionAccordingToLanguage('s1', 'pt');
+
+      // Motivos, cidades, compatibilidade e o rótulo localizado são do modelo,
+      // não do cadastro — reidratar não pode reescrevê-los.
+      expect(r?.suggestions[0].reasons).toEqual(['motivo da IA']);
+      expect(r?.suggestions[0].cities).toEqual(['Valletta']);
+      expect(r?.suggestions[0].compatibility).toBe(80);
+      expect(r?.suggestions[0].country_label).toBe('Malta');
+    });
+
+    it('devolve o snapshot intacto quando o país não é mais encontrado', async () => {
+      repository.getSuggestionAccordingToLanguage.mockResolvedValue(
+        armazenada(),
+      );
+      mockCountryService.findOne.mockResolvedValue(null);
+
+      const r = await service.getSuggestionAccordingToLanguage('s1', 'pt');
+
+      expect(r?.suggestions[0].country_flag).toBe('🇲🇹');
+      expect(r?.suggestions[0].investment_required).toBe('valor antigo');
+    });
+
+    it('não consulta o cadastro quando não há country_id', async () => {
+      repository.getSuggestionAccordingToLanguage.mockResolvedValue(
+        armazenada({ country_id: '' }),
+      );
+
+      await service.getSuggestionAccordingToLanguage('s1', 'pt');
+
+      expect(mockCountryService.findOne).not.toHaveBeenCalled();
+    });
+
+    it('não quebra quando não existe sugestão gravada', async () => {
+      repository.getSuggestionAccordingToLanguage.mockResolvedValue(null);
+
+      await expect(
+        service.getSuggestionAccordingToLanguage('s1', 'pt'),
+      ).resolves.toBeNull();
+    });
   });
 
   // ── Casamento do nome do país ───────────────────────────────
