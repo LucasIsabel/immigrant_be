@@ -44,13 +44,65 @@ export class CountryRepository {
   }
 
   async findOne(id: string) {
-    return await this.prisma.country.findUnique({
+    const country = await this.prisma.country.findUnique({
       where: { id },
       include: {
         translations: true,
         immigration_visa_types: true,
       },
     });
+
+    if (!country) return country;
+
+    const counts = await this.countStepsByVisaType(
+      country.immigration_visa_types.map((v) => v.id),
+    );
+
+    return {
+      ...country,
+      immigration_visa_types: country.immigration_visa_types.map((visa) => ({
+        ...visa,
+        steps_count: counts.get(visa.id) ?? 0,
+      })),
+    };
+  }
+
+  /**
+   * Quantas etapas cada tipo de visto gera.
+   *
+   * Não é `count(visa_steps)`: aquela tabela tem **uma linha por idioma**, e
+   * contá-las devolveria 3, não o número de tarefas. As etapas moram num JSON
+   * agrupado por categoria (`{ core_documents: [...], education: [...] }`), e o
+   * total é a soma dos tamanhos desses arrays.
+   *
+   * Feito em SQL para não trazer o JSON inteiro de três idiomas por visto só
+   * para contar. `DISTINCT ON` pega um idioma qualquer: a contagem é a mesma em
+   * todos, porque são traduções das mesmas etapas.
+   */
+  private async countStepsByVisaType(
+    visaTypeIds: string[],
+  ): Promise<Map<string, number>> {
+    if (visaTypeIds.length === 0) return new Map();
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ visa_type_id: string; steps_count: bigint }>
+    >`
+      SELECT visa_type_id,
+             COALESCE(
+               (SELECT sum(jsonb_array_length(value))
+                  FROM jsonb_each(steps)
+                 WHERE jsonb_typeof(value) = 'array'),
+               0
+             ) AS steps_count
+        FROM (
+          SELECT DISTINCT ON (visa_type_id) visa_type_id, steps
+            FROM visa_steps
+           WHERE visa_type_id = ANY(${visaTypeIds}::uuid[])
+           ORDER BY visa_type_id, language
+        ) AS um_idioma_por_visto
+    `;
+
+    return new Map(rows.map((r) => [r.visa_type_id, Number(r.steps_count)]));
   }
 
   async findOneByName(name: string) {
