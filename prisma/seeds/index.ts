@@ -1,6 +1,7 @@
 import { PrismaClient } from '../../generated/prisma';
 import { seedAiModelConfigs } from './ai-model-config.seed';
 import { seedCountries } from './countries.seed';
+import { seedPlaces } from './places.seed';
 import { seedBlogCategories } from './blog-categories.seed';
 import { seedBlogPersonas } from './blog-personas.seed';
 import { seedVisaSteps } from './visa-steps';
@@ -13,6 +14,8 @@ async function main() {
     // After the countries: the steps resolve their visa type by
     // (country name, category), so the types have to exist first.
     await seedVisaSteps();
+    // Também depois dos países: os lugares resolvem `countryId` pelo nome.
+    await seedPlaces();
     await seedBlogCategories();
     await seedAiModelConfigs();
     await seedBlogPersonas();

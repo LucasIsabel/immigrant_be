@@ -44,6 +44,7 @@ immigrant_be/
 │   │   │   ├── common/         # Guards, filters, decorators compartilhados
 │   │   │   ├── countries/      # Módulo de países
 │   │   │   ├── countriesnow/   # Proxy público CountriesNow (países/estados/cidades/moeda)
+│   │   │   ├── places/        # Lugares turísticos por país/cidade (público)
 │   │   │   ├── immigration-visa-type/  # Módulo de tipos de visto
 │   │   │   ├── users/          # Módulo de usuários
 │   │   │   ├── roles/          # Módulo de RBAC
@@ -207,7 +208,19 @@ Countries ─────┬──── CountryTranslation (1:N) — todo o tex
                ├──── ImmigrationVisaType (1:N)
                ├──── VisaTypeRecommendations (1:N)
                ├──── Plans (1:N)
-               └──── AiBlogCronJob (1:N) — cron jobs de geração automática
+               ├──── AiBlogCronJob (1:N) — cron jobs de geração automática
+               └──── Place (1:N, opcional) — FK anulável; ver abaixo
+
+Place ─────────── PlaceTranslation (1:N) — só description e tip
+  category: LANDMARK | MUSEUM | NATURE | BEACH | VIEWPOINT | FOOD_MARKET | NIGHTLIFE | NEIGHBORHOOD
+  A chave de busca é `countryCode` (ISO2), não o FK: o seletor do frontend
+  trabalha com ISO2 vindo do CountriesNow, e `Country` só tem `name`. O FK liga
+  o lugar ao destino de imigração quando ele existe, e é anulável porque nem
+  todo país com lugar precisa ser destino.
+  `city` é string livre, como em `Business` — não existe model City. O valor tem
+  de ser o do CountriesNow ("Lisbon", não "Lisboa"), senão a cidade escolhida
+  no frontend nunca casa com os lugares. `name` não é traduzido de propósito:
+  é o que está na placa e no mapa.
 
 Plans ─────────┬──── completed_step_keys (String[]) — só a identidade do progresso
                ├──── selected_visa_type_id — de onde o texto dos steps é lido
