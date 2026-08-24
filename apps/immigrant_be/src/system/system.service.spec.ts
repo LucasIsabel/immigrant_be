@@ -96,6 +96,45 @@ describe('SystemService - createSuggestions', () => {
     mockCountryService.findAllNames.mockResolvedValue([]);
   });
 
+  // ── Montagem do prompt a partir dos passos ──────────────────
+
+  describe('getUserAnswerBasedOnStepType', () => {
+    it('traduz cada passo do quiz para uma frase do prompt', () => {
+      const frases = Object.values(StepType).map((type) =>
+        service.getUserAnswerBasedOnStepType({ type, answer: 'X' } as never),
+      );
+
+      // Nenhum passo pode cair no vazio: um tipo sem template sai como string
+      // vazia e some do prompt em silêncio.
+      expect(frases.filter((f) => f === '')).toEqual([]);
+    });
+
+    /**
+     * O passo que motivou esta issue. O prompt de match já manda a IA
+     * considerar "vistos ou oportunidades de residência", o que é impossível
+     * sem saber o passaporte: elegibilidade, acordos e tempo de processamento
+     * são todos função dele.
+     */
+    it('leva a nacionalidade para o prompt pedindo avaliação de elegibilidade', () => {
+      const frase = service.getUserAnswerBasedOnStepType({
+        type: StepType.NATIONALITY,
+        answer: 'Brazilian',
+      } as never);
+
+      expect(frase).toContain('Brazilian');
+      expect(frase).toMatch(/visa eligibility/i);
+    });
+
+    it('devolve string vazia para um tipo fora do enum', () => {
+      const frase = service.getUserAnswerBasedOnStepType({
+        type: 'INVENTADO',
+        answer: 'X',
+      } as never);
+
+      expect(frase).toBe('');
+    });
+  });
+
   // ── Reidratação do snapshot do país ─────────────────────────
 
   describe('getSuggestionAccordingToLanguage', () => {
