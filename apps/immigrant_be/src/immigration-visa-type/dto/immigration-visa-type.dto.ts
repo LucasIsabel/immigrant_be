@@ -44,4 +44,14 @@ export class ImmigrationVisaTypeDto {
     required: false,
   })
   country?: CountryDto;
+
+  @ApiProperty({
+    description:
+      'How many tasks this visa type generates in a plan. Present on ' +
+      'GET /countries/:id; zero when the visa type has no steps configured yet.',
+    example: 22,
+    type: Number,
+    required: false,
+  })
+  steps_count?: number;
 }
