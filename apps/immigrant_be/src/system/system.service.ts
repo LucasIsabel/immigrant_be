@@ -186,6 +186,14 @@ export class SystemService {
     [StepType.FAMILY]: (a) => `Regarding family considerations, ${a}.`,
     [StepType.COUNTRY]: (a) =>
       `I am most interested in immigrating to countries like ${a}.`,
+    /**
+     * Vai antes do critério de vistos no raciocínio do modelo: elegibilidade,
+     * acordos e tempo de processamento dependem do passaporte, e o prompt já
+     * manda considerar "vistos ou oportunidades de residência".
+     */
+    [StepType.NATIONALITY]: (a) =>
+      `I hold a ${a} passport, so assess visa eligibility, bilateral agreements ` +
+      `and processing times from that citizenship.`,
   };
 
   getUserAnswerBasedOnStepType = (step: Steps): string => {
