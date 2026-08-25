@@ -1,3 +1,13 @@
+// O parse do env roda no import de `@app/config/env`, então importar o service
+// já exigiria DATABASE_URL, GEMINI_API_KEY e companhia. Localmente o `.env`
+// esconde isso; no CI, não. Mesmo mock que os specs de business-pages usam.
+jest.mock('@app/config/env', () => ({
+  env: {
+    OVERPASS_BASE_URL: 'https://overpass.test/api/interpreter',
+    INGESTION_USER_AGENT: 'aloravia-test/1.0',
+  },
+}));
+
 import {
   AreaNotResolvedError,
   OverpassService,
