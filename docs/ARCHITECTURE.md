@@ -222,6 +222,32 @@ Place ─────────── PlaceTranslation (1:N) — só descripti
   no frontend nunca casa com os lugares. `name` não é traduzido de propósito:
   é o que está na placa e no mapa.
 
+CityIngestion ─── Place (1:N) — uma tentativa de popular os lugares de uma cidade
+  status: PROCESSING | FAILED | READY_FOR_REVIEW | APPROVED | REJECTED
+  A revisão é por CIDADE, não por lugar: ~186 cidades × ~10 lugares seriam 1.800
+  decisões, e trabalho que ninguém faz vira conteúdo que nunca sai do rascunho.
+  O admin vê os ~10 lugares de uma cidade e decide de uma vez, podendo rejeitar
+  ou editar lugares individuais dentro dela.
+  Não há model "PlaceCandidate": o `Place` em `reviewStatus: DRAFT` já é o
+  candidato, e um segundo model seria código morto.
+  `osmAreaId`/`osmMatchedName` guardam o resultado da resolução de área no OSM,
+  para o retry não repetir a consulta — e porque o nome que o OSM usa ("Lisboa")
+  não é o da nossa lista de cidades ("Lisbon").
+  `stats` guarda os contadores da execução e a lista de conflitos com lugares já
+  curados; essa lista é a métrica de redescoberta do piloto.
+
+Place.reviewStatus: DRAFT | APPROVED | REJECTED
+  Default `APPROVED` de propósito: os 30 lugares que já existiam foram curados à
+  mão e estão no ar — esse é o estado verdadeiro deles, e a migration não
+  precisou de backfill. A ingestão automática sempre grava `DRAFT`.
+  `REJECTED` não é lixo: a linha fica como memória, para a re-ingestão da cidade
+  não recriar um lugar que alguém já recusou.
+  Proveniência (`osmType`/`osmId`/`wikidataId`/`wikipediaMonthlyViews`/
+  `generatedByModel`/`generationCostUsd`) serve à atribuição exigida pela ODbL e
+  a saber de onde veio cada campo quando alguém questionar o dado. O
+  `popularityScore` é derivado de `wikipediaMonthlyViews`, guardado cru para a
+  ordem ser auditável.
+
 Plans ─────────┬──── completed_step_keys (String[]) — só a identidade do progresso
                ├──── selected_visa_type_id — de onde o texto dos steps é lido
                ├──── documents (JSON)
