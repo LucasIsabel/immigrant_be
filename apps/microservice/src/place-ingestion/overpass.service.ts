@@ -78,16 +78,23 @@ const OFFSET_AREA = 3_600_000_000;
 const TENTATIVAS_POR_SLOT = 4;
 
 /**
- * Intervalo mínimo entre duas consultas nossas.
+ * Minimum gap between two of our queries.
  *
- * O servidor público tem **2 slots** e segura cada um por um tempo proporcional
- * ao custo da consulta. Medido: a consulta de área de Lisboa levou 9,9s, e a
- * sonda disparada logo em seguida tomou 429 — não por cota, mas porque a
- * anterior ainda ocupava o slot. O `fetchPois` já pausava entre categorias; o
- * `resolveArea` disparava área, sonda e nome coladas, e era ali que quebrava.
- * Pausar aqui cobre todos os pontos de chamada de uma vez.
+ * The public server has **2 slots** and holds each for a time proportional to
+ * the query's cost. Measured: Lisbon's area query took 9.9s, and the probe
+ * fired right after it took a 429 — not from quota, but because the previous
+ * one still held the slot.
+ *
+ * 15s and not 5s, and that number came from the pilot rather than from taste.
+ * At 5s all three pilot cities failed every attempt at `fetch_pois`: eight
+ * category queries in a row against two slots degrade into 504s. The same eight
+ * queries spaced 15s apart returned 7/8 on the first try, with the single 429
+ * recovered by the slot wait below.
+ *
+ * The cost is about two minutes per city, which the queue's one-city-per-minute
+ * limiter already allowed for.
  */
-const INTERVALO_MINIMO_MS = 5_000;
+const INTERVALO_MINIMO_MS = 15_000;
 const ESPERA_MAXIMA_MS = 60_000;
 const ESPERA_PADRAO_MS = 10_000;
 

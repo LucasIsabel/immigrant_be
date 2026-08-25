@@ -250,17 +250,18 @@ describe('OverpassService', () => {
       ...over,
     });
 
-    it('espaça as consultas, inclusive as de resolução de área', async () => {
-      // Dois slots no servidor público: área e sonda coladas tomam 429.
+    it('spaces the queries out, area resolution included', async () => {
+      // Two slots on the public server: area and probe fired back to back take
+      // a 429. The pilot measured 5s as too tight — all three cities failed
+      // every attempt — and 15s as enough.
       fetchMock
         .mockResolvedValueOnce(areaEncontrada(42))
         .mockResolvedValueOnce(sondaComConteudo());
 
       await service.resolveArea('PT', 'Lisbon');
 
-      expect(esperarSpy).toHaveBeenCalledWith(expect.any(Number));
-      const pausas = esperarSpy.mock.calls.map(([ms]) => ms as number);
-      expect(pausas.some((ms) => ms > 0 && ms <= 5_000)).toBe(true);
+      const pauses = esperarSpy.mock.calls.map(([ms]) => ms as number);
+      expect(pauses.some((ms) => ms > 0 && ms <= 15_000)).toBe(true);
     });
 
     it('consulta uma categoria por vez', async () => {
