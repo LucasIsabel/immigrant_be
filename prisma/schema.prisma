@@ -15,32 +15,32 @@ datasource db {
 }
 
 model Users {
-  id            String    @id @default(uuid()) @db.Uuid
-  name          String
-  email         String
-  emailVerified Boolean   @default(false) @map("email_verified")
-  image                     String?
-  bio                       String?  @db.Text
-  emailNotificationsEnabled Boolean  @default(true) @map("email_notifications_enabled")
-  isActive      Boolean   @default(true) @map("is_active")
-  banned        Boolean   @default(false)
-  banReason     String?   @map("ban_reason")
-  banExpires    DateTime? @map("ban_expires")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
-  sessions        Sessions[]
-  accounts        Accounts[]
-  plans           Plans[]
-  events          Events[]
-  userRoles       UserRoles[]
-  blog_posts         BlogPost[]
-  blog_post_likes    BlogPostLike[]
-  aiGeneratedImages  AiGeneratedImage[]
-  professionalProfile    UserProfessionalProfile?
-  businesses             Business[]
-  approvedBusinessPages  BusinessPage[]       @relation("ApprovedPages")
-  rejectedBusinessPages  BusinessPage[]       @relation("RejectedPages")
-  businessPageReviews    BusinessPageReview[] @relation("ReviewedPages")
+  id                              String                   @id @default(uuid()) @db.Uuid
+  name                            String
+  email                           String
+  emailVerified                   Boolean                  @default(false) @map("email_verified")
+  image                           String?
+  bio                             String?                  @db.Text
+  emailNotificationsEnabled       Boolean                  @default(true) @map("email_notifications_enabled")
+  isActive                        Boolean                  @default(true) @map("is_active")
+  banned                          Boolean                  @default(false)
+  banReason                       String?                  @map("ban_reason")
+  banExpires                      DateTime?                @map("ban_expires")
+  createdAt                       DateTime                 @default(now()) @map("created_at")
+  updatedAt                       DateTime                 @default(now()) @updatedAt @map("updated_at")
+  sessions                        Sessions[]
+  accounts                        Accounts[]
+  plans                           Plans[]
+  events                          Events[]
+  userRoles                       UserRoles[]
+  blog_posts                      BlogPost[]
+  blog_post_likes                 BlogPostLike[]
+  aiGeneratedImages               AiGeneratedImage[]
+  professionalProfile             UserProfessionalProfile?
+  businesses                      Business[]
+  approvedBusinessPages           BusinessPage[]           @relation("ApprovedPages")
+  rejectedBusinessPages           BusinessPage[]           @relation("RejectedPages")
+  businessPageReviews             BusinessPageReview[]     @relation("ReviewedPages")
   publisherQualificationOverrides PublisherQualification[] @relation("PublisherOverrides")
   tourGuideReviews                TourGuideReview[]
 
@@ -61,9 +61,9 @@ model Roles {
 
 model UserRoles {
   id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @db.Uuid @map("user_id")
+  userId     String   @map("user_id") @db.Uuid
   user       Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId     String   @db.Uuid @map("role_id")
+  roleId     String   @map("role_id") @db.Uuid
   role       Roles    @relation(fields: [roleId], references: [id], onDelete: Cascade)
   assignedAt DateTime @default(now()) @map("assigned_at")
 
@@ -81,7 +81,7 @@ model Sessions {
   updatedAt DateTime @updatedAt @map("updated_at")
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
-  userId    String   @db.Uuid @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
   roles     String   @default("[]")
 
@@ -93,7 +93,7 @@ model Accounts {
   id                    String    @id @default(uuid()) @db.Uuid
   accountId             String    @map("account_id")
   providerId            String    @map("provider_id")
-  userId                String    @db.Uuid @map("user_id")
+  userId                String    @map("user_id") @db.Uuid
   user                  Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?   @map("access_token")
   refreshToken          String?   @map("refresh_token")
@@ -133,45 +133,46 @@ model CountryTranslation {
   investment_required  String   @map("investment_required")
   language_requirement String   @map("language_requirement")
   country              Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  country_id           String   @db.Uuid @map("country_id")
+  country_id           String   @map("country_id") @db.Uuid
 
   @@unique([country_id, language])
   @@map("country_translations")
 }
 
 model ImmigrationVisaType {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String      @id @default(uuid()) @db.Uuid
   category    String
   description String
   source      String
-  country     Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  country_id  String   @db.Uuid @map("country_id")
-  plans Plans[]
-  visa_steps VisaSteps[]
+  country     Country     @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  country_id  String      @map("country_id") @db.Uuid
+  plans       Plans[]
+  visa_steps  VisaSteps[]
 
   @@index([country_id])
   @@map("immigration_visa_types")
 }
 
 model Country {
-  id                    String   @id @default(uuid()) @db.Uuid
-  name                  String   @unique
-  flag                  String
-  region                String
-  difficulty            String
-  difficulty_score      Int      @map("difficulty_score")
-  translations          CountryTranslation[]
-  immigration_visa_types ImmigrationVisaType[]
-  visa_options          String[] @map("visa_options")
-  job_market            String   @map("job_market")
-  popular_cities        String[] @map("popular_cities")
-  created_at            DateTime @default(now()) @map("created_at")
-  updated_at            DateTime @updatedAt @map("updated_at")
-  background_image      String   @map("background_image")
-  plans                 Plans[]
+  id                        String                    @id @default(uuid()) @db.Uuid
+  name                      String                    @unique
+  flag                      String
+  region                    String
+  difficulty                String
+  difficulty_score          Int                       @map("difficulty_score")
+  translations              CountryTranslation[]
+  immigration_visa_types    ImmigrationVisaType[]
+  visa_options              String[]                  @map("visa_options")
+  job_market                String                    @map("job_market")
+  popular_cities            String[]                  @map("popular_cities")
+  created_at                DateTime                  @default(now()) @map("created_at")
+  updated_at                DateTime                  @updatedAt @map("updated_at")
+  background_image          String                    @map("background_image")
+  plans                     Plans[]
   visa_type_recommendations VisaTypeRecommendations[]
-  blog_posts            BlogPost[]
-  ai_blog_cron_jobs     AiBlogCronJob[]
+  blog_posts                BlogPost[]
+  ai_blog_cron_jobs         AiBlogCronJob[]
+  places                    Place[]
 
   @@map("countries")
 }
@@ -213,48 +214,48 @@ model BlogPost {
   created_at       DateTime       @default(now()) @map("created_at")
   updated_at       DateTime       @updatedAt @map("updated_at")
 
-  author_id           String       @db.Uuid @map("author_id")
-  author              Users        @relation(fields: [author_id], references: [id])
+  author_id String @map("author_id") @db.Uuid
+  author    Users  @relation(fields: [author_id], references: [id])
 
-  category_id         String       @db.Uuid @map("category_id")
-  category            BlogCategory @relation(fields: [category_id], references: [id])
+  category_id String       @map("category_id") @db.Uuid
+  category    BlogCategory @relation(fields: [category_id], references: [id])
 
-  featured_country_id String?      @db.Uuid @map("featured_country_id")
-  featured_country    Country?     @relation(fields: [featured_country_id], references: [id])
+  featured_country_id String?  @map("featured_country_id") @db.Uuid
+  featured_country    Country? @relation(fields: [featured_country_id], references: [id])
 
-  display_author_id String?      @db.Uuid @map("display_author_id")
-  display_author    BlogAuthor?  @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
+  display_author_id String?     @map("display_author_id") @db.Uuid
+  display_author    BlogAuthor? @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
 
   tags BlogPostTag[]
 
-  is_ai_generated          Boolean @default(false) @map("is_ai_generated")
-  refine_needs_manual_fix  Boolean @default(false) @map("refine_needs_manual_fix")
-  original_locale          String  @default("en") @map("original_locale")
+  is_ai_generated         Boolean               @default(false) @map("is_ai_generated")
+  refine_needs_manual_fix Boolean               @default(false) @map("refine_needs_manual_fix")
+  original_locale         String                @default("en") @map("original_locale")
   /// Em que etapa da cadeia o post está. Antes disto o único sinal era
   /// `cover_image_url` nulo, que não distingue "ainda vem" de "falhou".
-  pipeline_status          BlogPipelineStatus @default(READY) @map("pipeline_status")
+  pipeline_status         BlogPipelineStatus    @default(READY) @map("pipeline_status")
   /// O que deu errado na etapa que falhou, para a tela não obrigar quem lê a
   /// abrir o log. Nulo quando não houve falha.
-  pipeline_error           Json?   @map("pipeline_error")
+  pipeline_error          Json?                 @map("pipeline_error")
   /// Sobre o que o admin pediu que este post fosse. Alimenta a busca nas
   /// notícias e fica registrado — `custom_instructions` é texto livre para o
   /// modelo, isto é dado.
-  source_topic             String? @map("source_topic")
+  source_topic            String?               @map("source_topic")
   /// Qual modelo escreveu o post e quanto custou. Nulos nos posts anteriores ao
   /// roteador e nos escritos por gente. `generated_by_model` é o modelo que de
   /// fato respondeu — pode ser um elo de fallback, e é isso que o revisor
   /// precisa saber antes de aprovar.
-  generated_by_model       String?  @map("generated_by_model")
-  generation_cost_usd      Decimal? @db.Decimal(10, 6) @map("generation_cost_usd")
+  generated_by_model      String?               @map("generated_by_model")
+  generation_cost_usd     Decimal?              @map("generation_cost_usd") @db.Decimal(10, 6)
   /// Colunista de IA que escreveu o post, quando a geração passou por persona.
-  persona_id               String?  @db.Uuid @map("persona_id")
-  persona                  BlogPersona? @relation(fields: [persona_id], references: [id], onDelete: SetNull)
+  persona_id              String?               @map("persona_id") @db.Uuid
+  persona                 BlogPersona?          @relation(fields: [persona_id], references: [id], onDelete: SetNull)
   /// Liga os dois lados de um debate. Nulo nos posts que não fazem parte de um par.
-  debate_group_id          String?  @db.Uuid @map("debate_group_id")
+  debate_group_id         String?               @map("debate_group_id") @db.Uuid
   /// Resultado da auto-moderação. Draft flagado não é bloqueado — só destacado na fila.
-  moderation_flag          Json?    @map("moderation_flag")
-  translations     BlogPostTranslation[]
-  likes            BlogPostLike[]
+  moderation_flag         Json?                 @map("moderation_flag")
+  translations            BlogPostTranslation[]
+  likes                   BlogPostLike[]
 
   @@index([status, published_at])
   @@index([pipeline_status])
@@ -268,19 +269,19 @@ model BlogPost {
 }
 
 model BlogPostTranslation {
-  id            String   @id @default(uuid()) @db.Uuid
-  post_id       String   @db.Uuid
-  post          BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  locale        String
-  title         String
-  excerpt       String
-  content       String   @db.Text
-  translated_by String   @default("AI")
+  id                  String   @id @default(uuid()) @db.Uuid
+  post_id             String   @db.Uuid
+  post                BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  locale              String
+  title               String
+  excerpt             String
+  content             String   @db.Text
+  translated_by       String   @default("AI")
   /// Complementa `translated_by`: aquele diz se foi IA ou gente, este diz qual
   /// modelo. Nulo nas traduções anteriores ao roteador.
-  translated_by_model String? @map("translated_by_model")
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  translated_by_model String?  @map("translated_by_model")
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
   @@unique([post_id, locale])
   @@index([post_id])
@@ -289,8 +290,8 @@ model BlogPostTranslation {
 
 model BlogPostLike {
   id         String   @id @default(uuid()) @db.Uuid
-  post_id    String   @db.Uuid @map("post_id")
-  user_id    String   @db.Uuid @map("user_id")
+  post_id    String   @map("post_id") @db.Uuid
+  user_id    String   @map("user_id") @db.Uuid
   created_at DateTime @default(now()) @map("created_at")
 
   post BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
@@ -303,18 +304,18 @@ model BlogPostLike {
 }
 
 model BlogAuthor {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String
-  bio        String?    @db.Text
-  avatar_url String?    @map("avatar_url")
-  website    String?
-  twitter    String?
-  linkedin   String?
-  created_at DateTime   @default(now()) @map("created_at")
-  updated_at DateTime   @updatedAt @map("updated_at")
-  posts            BlogPost[]
+  id                String          @id @default(uuid()) @db.Uuid
+  name              String
+  bio               String?         @db.Text
+  avatar_url        String?         @map("avatar_url")
+  website           String?
+  twitter           String?
+  linkedin          String?
+  created_at        DateTime        @default(now()) @map("created_at")
+  updated_at        DateTime        @updatedAt @map("updated_at")
+  posts             BlogPost[]
   ai_blog_cron_jobs AiBlogCronJob[]
-  persona          BlogPersona?
+  persona           BlogPersona?
 
   @@map("blog_authors")
 }
@@ -331,20 +332,20 @@ enum BlogPersonaTheme {
 /// `libs/ai/src/prompts/persona-guardrails.ts`, para um admin não conseguir
 /// apagá-los editando o prompt.
 model BlogPersona {
-  id               String           @id @default(uuid()) @db.Uuid
-  slug             String           @unique
-  name             String
-  theme            BlogPersonaTheme
-  editorial_stance String           @map("editorial_stance")
-  persona_prompt   String           @map("persona_prompt") @db.Text
-  style_guidelines String           @map("style_guidelines") @db.Text
-  preferred_model  String?          @map("preferred_model")
-  blog_author_id   String           @unique @db.Uuid @map("blog_author_id")
-  blog_author      BlogAuthor       @relation(fields: [blog_author_id], references: [id], onDelete: Restrict)
-  is_active        Boolean          @default(true) @map("is_active")
-  created_at       DateTime         @default(now()) @map("created_at")
-  updated_at       DateTime         @updatedAt @map("updated_at")
-  posts            BlogPost[]
+  id                String           @id @default(uuid()) @db.Uuid
+  slug              String           @unique
+  name              String
+  theme             BlogPersonaTheme
+  editorial_stance  String           @map("editorial_stance")
+  persona_prompt    String           @map("persona_prompt") @db.Text
+  style_guidelines  String           @map("style_guidelines") @db.Text
+  preferred_model   String?          @map("preferred_model")
+  blog_author_id    String           @unique @map("blog_author_id") @db.Uuid
+  blog_author       BlogAuthor       @relation(fields: [blog_author_id], references: [id], onDelete: Restrict)
+  is_active         Boolean          @default(true) @map("is_active")
+  created_at        DateTime         @default(now()) @map("created_at")
+  updated_at        DateTime         @updatedAt @map("updated_at")
+  posts             BlogPost[]
   ai_blog_cron_jobs AiBlogCronJob[]
 
   @@map("blog_personas")
@@ -373,8 +374,8 @@ model BlogTag {
 }
 
 model BlogPostTag {
-  post_id String   @db.Uuid @map("post_id")
-  tag_id  String   @db.Uuid @map("tag_id")
+  post_id String   @map("post_id") @db.Uuid
+  tag_id  String   @map("tag_id") @db.Uuid
   post    BlogPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
   tag     BlogTag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
 
@@ -383,52 +384,52 @@ model BlogPostTag {
 }
 
 model Suggestions {
-  id String @id @default(uuid()) @db.Uuid
-  embeddings Unsupported("vector")? @map("embeddings")
-  parameters Json @map("parameters")
-  created_at DateTime @default(now()) @map("created_at")
-  updated_at DateTime @updatedAt @map("updated_at")
-  plans Plans[]
+  id                   String                 @id @default(uuid()) @db.Uuid
+  embeddings           Unsupported("vector")? @map("embeddings")
+  parameters           Json                   @map("parameters")
+  created_at           DateTime               @default(now()) @map("created_at")
+  updated_at           DateTime               @updatedAt @map("updated_at")
+  plans                Plans[]
   suggestion_languages Suggestion_languages[]
-  
+
   @@map("suggestions")
 }
 
 model Suggestion_languages {
-  id String @id @default(uuid()) @db.Uuid
-  language String
-  content Json @map("content")
-  suggestion_id String @db.Uuid @map("suggestion_id")
-  suggestion Suggestions @relation(fields: [suggestion_id], references: [id], onDelete: Cascade)
-  
+  id            String      @id @default(uuid()) @db.Uuid
+  language      String
+  content       Json        @map("content")
+  suggestion_id String      @map("suggestion_id") @db.Uuid
+  suggestion    Suggestions @relation(fields: [suggestion_id], references: [id], onDelete: Cascade)
+
   @@unique([suggestion_id, language])
   @@map("suggestion_languages")
 }
 
 model Plans {
-  id String @id @default(uuid()) @db.Uuid
-  user_id String @db.Uuid @map("user_id")
-  user Users @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  suggestion_id String? @db.Uuid @map("suggestion_id")
-  suggestion Suggestions? @relation(fields: [suggestion_id], references: [id], onDelete: SetNull)
-  country_id String? @db.Uuid @map("country_id")
-  country Country? @relation(fields: [country_id], references: [id], onDelete: SetNull)
+  id                    String               @id @default(uuid()) @db.Uuid
+  user_id               String               @map("user_id") @db.Uuid
+  user                  Users                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  suggestion_id         String?              @map("suggestion_id") @db.Uuid
+  suggestion            Suggestions?         @relation(fields: [suggestion_id], references: [id], onDelete: SetNull)
+  country_id            String?              @map("country_id") @db.Uuid
+  country               Country?             @relation(fields: [country_id], references: [id], onDelete: SetNull)
   /// Stable step keys the user has ticked. The step *text* is not copied here:
   /// it lives in `visa_steps`, one row per language, and is resolved on read
   /// from `selected_visa_type_id` + the requested locale. Storing only the
   /// identity is what makes switching language keep the progress.
-  completed_step_keys String[] @default([]) @map("completed_step_keys")
-  documents Json @map("documents") @default("[]")
-  selected_suggestion Json? @map("selected_suggestion")
-  status String @default("draft") @map("status")
-  name String? @map("name")
-  notes String? @map("notes")
-  created_at DateTime @default(now()) @map("created_at")
-  updated_at DateTime @updatedAt @map("updated_at")
-  progress Float @default(0) @map("progress")
-  description String? @map("description")
-  selected_visa_type_id String? @db.Uuid @map("selected_visa_type_id")
-  selected_visa_type ImmigrationVisaType? @relation(fields: [selected_visa_type_id], references: [id], onDelete: SetNull)
+  completed_step_keys   String[]             @default([]) @map("completed_step_keys")
+  documents             Json                 @default("[]") @map("documents")
+  selected_suggestion   Json?                @map("selected_suggestion")
+  status                String               @default("draft") @map("status")
+  name                  String?              @map("name")
+  notes                 String?              @map("notes")
+  created_at            DateTime             @default(now()) @map("created_at")
+  updated_at            DateTime             @updatedAt @map("updated_at")
+  progress              Float                @default(0) @map("progress")
+  description           String?              @map("description")
+  selected_visa_type_id String?              @map("selected_visa_type_id") @db.Uuid
+  selected_visa_type    ImmigrationVisaType? @relation(fields: [selected_visa_type_id], references: [id], onDelete: SetNull)
 
   @@index([user_id])
   @@index([status])
@@ -444,7 +445,7 @@ enum NotificationStatus {
 
 model Events {
   id        String             @id @default(uuid()) @db.Uuid
-  userId    String             @db.Uuid @map("user_id")
+  userId    String             @map("user_id") @db.Uuid
   user      Users              @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String
   title     String?
@@ -461,53 +462,53 @@ model Events {
 }
 
 model VisaTypeRecommendations {
-  id                    String   @id @default(uuid()) @db.Uuid
-  country_id            String   @db.Uuid @map("country_id")
-  country                Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  gemini_response       Json     @map("gemini_response")
-  embeddings            Unsupported("vector")? @map("embeddings")
-  parameters            Json     @map("parameters")
-  created_at            DateTime @default(now()) @map("created_at")
-  updated_at            DateTime @updatedAt @map("updated_at")
-  language              String 
+  id              String                 @id @default(uuid()) @db.Uuid
+  country_id      String                 @map("country_id") @db.Uuid
+  country         Country                @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  gemini_response Json                   @map("gemini_response")
+  embeddings      Unsupported("vector")? @map("embeddings")
+  parameters      Json                   @map("parameters")
+  created_at      DateTime               @default(now()) @map("created_at")
+  updated_at      DateTime               @updatedAt @map("updated_at")
+  language        String
 
   @@index([country_id])
   @@map("visa_type_recommendations")
 }
 
 model VisaSteps {
-  id String @id @default(uuid()) @db.Uuid
-  language String
-  steps Json @default("[]")
-  visa_type_id String @db.Uuid @map("visa_type_id")
-  visa_type ImmigrationVisaType @relation(fields: [visa_type_id], references: [id], onDelete: Cascade)
-  created_at DateTime @default(now()) @map("created_at")
-  updated_at DateTime @updatedAt @map("updated_at")
+  id           String              @id @default(uuid()) @db.Uuid
+  language     String
+  steps        Json                @default("[]")
+  visa_type_id String              @map("visa_type_id") @db.Uuid
+  visa_type    ImmigrationVisaType @relation(fields: [visa_type_id], references: [id], onDelete: Cascade)
+  created_at   DateTime            @default(now()) @map("created_at")
+  updated_at   DateTime            @updatedAt @map("updated_at")
 
   @@unique([visa_type_id, language])
   @@map("visa_steps")
 }
 
 model AiBlogCronJob {
-  id                  String    @id @default(uuid()) @db.Uuid
-  country_id          String    @db.Uuid @map("country_id")
-  country             Country   @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  category_id         String    @db.Uuid @map("category_id")
-  cron_expr           String    @map("cron_expr")
-  is_active           Boolean   @default(true) @map("is_active")
-  last_run_at         DateTime? @map("last_run_at")
-  bullmq_job_id       String?   @map("bullmq_job_id")
-  author_id           String?   @db.Uuid @map("author_id")
-  display_author_id   String?   @db.Uuid @map("display_author_id")
-  display_author      BlogAuthor? @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
-  persona_id          String?   @db.Uuid @map("persona_id")
+  id                  String       @id @default(uuid()) @db.Uuid
+  country_id          String       @map("country_id") @db.Uuid
+  country             Country      @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  category_id         String       @map("category_id") @db.Uuid
+  cron_expr           String       @map("cron_expr")
+  is_active           Boolean      @default(true) @map("is_active")
+  last_run_at         DateTime?    @map("last_run_at")
+  bullmq_job_id       String?      @map("bullmq_job_id")
+  author_id           String?      @map("author_id") @db.Uuid
+  display_author_id   String?      @map("display_author_id") @db.Uuid
+  display_author      BlogAuthor?  @relation(fields: [display_author_id], references: [id], onDelete: SetNull)
+  persona_id          String?      @map("persona_id") @db.Uuid
   persona             BlogPersona? @relation(fields: [persona_id], references: [id], onDelete: SetNull)
-  generate_both_sides Boolean   @default(false) @map("generate_both_sides")
-  complexity          String    @default("SIMPLE") @map("complexity")
-  political_tone      String    @default("NEUTRAL") @map("political_tone")
-  custom_instructions String?   @db.Text @map("custom_instructions")
-  created_at          DateTime  @default(now()) @map("created_at")
-  updated_at          DateTime  @updatedAt @map("updated_at")
+  generate_both_sides Boolean      @default(false) @map("generate_both_sides")
+  complexity          String       @default("SIMPLE") @map("complexity")
+  political_tone      String       @default("NEUTRAL") @map("political_tone")
+  custom_instructions String?      @map("custom_instructions") @db.Text
+  created_at          DateTime     @default(now()) @map("created_at")
+  updated_at          DateTime     @updatedAt @map("updated_at")
 
   @@index([country_id])
   @@map("ai_blog_cron_jobs")
@@ -515,7 +516,7 @@ model AiBlogCronJob {
 
 model UserProfessionalProfile {
   id                String   @id @default(uuid()) @db.Uuid
-  userId            String   @unique @db.Uuid @map("user_id")
+  userId            String   @unique @map("user_id") @db.Uuid
   user              Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobTitle          String?  @map("job_title")
   company           String?
@@ -562,7 +563,7 @@ enum BusinessType {
 
 model Business {
   id           String       @id @default(uuid()) @db.Uuid
-  userId       String       @db.Uuid @map("user_id")
+  userId       String       @map("user_id") @db.Uuid
   user         Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessType BusinessType @map("business_type")
   name         String       @db.VarChar(100)
@@ -602,26 +603,26 @@ enum BusinessPageStatus {
 }
 
 model BusinessPage {
-  id             String             @id @default(uuid()) @db.Uuid
-  businessId     String             @unique @db.Uuid @map("business_id")
-  business       Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  slug           String             @unique @db.VarChar(48)
-  businessType   String             @db.VarChar(50) @map("business_type")
-  approvedContent Json?             @map("approved_content")
-  approvedAt     DateTime?          @map("approved_at")
-  approvedById   String?            @db.Uuid @map("approved_by")
-  approvedBy     Users?             @relation("ApprovedPages", fields: [approvedById], references: [id], onDelete: SetNull)
-  pendingContent Json?              @map("pending_content")
-  submittedAt    DateTime?          @map("submitted_at")
-  status         BusinessPageStatus @default(DRAFT)
-  rejectionReason String?           @db.Text @map("rejection_reason")
-  rejectedAt     DateTime?          @map("rejected_at")
-  rejectedById   String?            @db.Uuid @map("rejected_by")
-  rejectedBy     Users?             @relation("RejectedPages", fields: [rejectedById], references: [id], onDelete: SetNull)
-  slugLockedAt   DateTime?          @map("slug_locked_at")
-  createdAt      DateTime           @default(now()) @map("created_at")
-  updatedAt      DateTime           @updatedAt @map("updated_at")
-  reviews        BusinessPageReview[]
+  id              String               @id @default(uuid()) @db.Uuid
+  businessId      String               @unique @map("business_id") @db.Uuid
+  business        Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  slug            String               @unique @db.VarChar(48)
+  businessType    String               @map("business_type") @db.VarChar(50)
+  approvedContent Json?                @map("approved_content")
+  approvedAt      DateTime?            @map("approved_at")
+  approvedById    String?              @map("approved_by") @db.Uuid
+  approvedBy      Users?               @relation("ApprovedPages", fields: [approvedById], references: [id], onDelete: SetNull)
+  pendingContent  Json?                @map("pending_content")
+  submittedAt     DateTime?            @map("submitted_at")
+  status          BusinessPageStatus   @default(DRAFT)
+  rejectionReason String?              @map("rejection_reason") @db.Text
+  rejectedAt      DateTime?            @map("rejected_at")
+  rejectedById    String?              @map("rejected_by") @db.Uuid
+  rejectedBy      Users?               @relation("RejectedPages", fields: [rejectedById], references: [id], onDelete: SetNull)
+  slugLockedAt    DateTime?            @map("slug_locked_at")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  reviews         BusinessPageReview[]
 
   @@index([slug])
   @@index([status])
@@ -631,9 +632,9 @@ model BusinessPage {
 
 model BusinessPageReview {
   id              String       @id @default(uuid()) @db.Uuid
-  pageId          String       @db.Uuid @map("page_id")
+  pageId          String       @map("page_id") @db.Uuid
   page            BusinessPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  reviewerId      String?      @db.Uuid @map("reviewer_id")
+  reviewerId      String?      @map("reviewer_id") @db.Uuid
   reviewer        Users?       @relation("ReviewedPages", fields: [reviewerId], references: [id], onDelete: SetNull)
   action          String       @db.VarChar(20)
   reason          String?      @db.Text
@@ -645,36 +646,36 @@ model BusinessPageReview {
 }
 
 model PublisherQualification {
-  businessId             String    @id @db.Uuid @map("business_id")
+  businessId             String    @id @map("business_id") @db.Uuid
   business               Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   isQualified            Boolean   @default(false) @map("is_qualified")
   qualifiedAt            DateTime? @map("qualified_at")
   totalApprovals         Int       @default(0) @map("total_approvals")
   lastRejectionAt        DateTime? @map("last_rejection_at")
   disqualifiedAt         DateTime? @map("disqualified_at")
-  disqualificationReason String?   @db.Text @map("disqualification_reason")
+  disqualificationReason String?   @map("disqualification_reason") @db.Text
 
   // Manual override by admin
-  overrideActive  Boolean   @default(false) @map("override_active")
-  overrideValue   Boolean?  @map("override_value")
-  overrideById    String?   @db.Uuid @map("override_by")
-  overrideBy      Users?    @relation("PublisherOverrides", fields: [overrideById], references: [id], onDelete: SetNull)
-  overrideReason  String?   @db.Text @map("override_reason")
-  overrideAt      DateTime? @map("override_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  overrideActive Boolean   @default(false) @map("override_active")
+  overrideValue  Boolean?  @map("override_value")
+  overrideById   String?   @map("override_by") @db.Uuid
+  overrideBy     Users?    @relation("PublisherOverrides", fields: [overrideById], references: [id], onDelete: SetNull)
+  overrideReason String?   @map("override_reason") @db.Text
+  overrideAt     DateTime? @map("override_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@map("publisher_qualifications")
 }
 
 model TourGuideReview {
   id         String   @id @default(uuid()) @db.Uuid
-  businessId String   @db.Uuid @map("business_id")
+  businessId String   @map("business_id") @db.Uuid
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  userId     String   @db.Uuid @map("user_id")
+  userId     String   @map("user_id") @db.Uuid
   user       Users    @relation(fields: [userId], references: [id])
   rating     Int
   comment    String?  @db.Text
-  authorName String   @db.VarChar(100) @map("author_name")
+  authorName String   @map("author_name") @db.VarChar(100)
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@unique([businessId, userId])
@@ -712,11 +713,11 @@ model AiUsageLog {
   provider     String
   inputTokens  Int?     @map("input_tokens")
   outputTokens Int?     @map("output_tokens")
-  costUsd      Decimal? @db.Decimal(10, 6) @map("cost_usd")
+  costUsd      Decimal? @map("cost_usd") @db.Decimal(10, 6)
   /// What the call was for, e.g. "blog_post" + the post id. Nullable because a
   /// retry may run before the entity exists.
   entityType   String?  @map("entity_type")
-  entityId     String?  @db.Uuid @map("entity_id")
+  entityId     String?  @map("entity_id") @db.Uuid
   /// Set when the call failed, so the log shows attempts and not just successes.
   errorKind    String?  @map("error_kind")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -724,4 +725,71 @@ model AiUsageLog {
   @@index([scenario, createdAt])
   @@index([createdAt])
   @@map("ai_usage_logs")
+}
+
+/// Categoria turística de um lugar. Cada uma é uma "coisa que se faz num dia de
+/// turismo" e precisa ser distinguível como pin no mapa — daí serem oito, e não
+/// uma taxonomia exaustiva.
+enum PlaceCategory {
+  LANDMARK
+  MUSEUM
+  NATURE
+  BEACH
+  VIEWPOINT
+  FOOD_MARKET
+  NIGHTLIFE
+  NEIGHBORHOOD
+}
+
+/// Ponto turístico de uma cidade.
+///
+/// `countryCode` (ISO2) é a chave de busca, não `countryId`: o seletor do
+/// frontend trabalha com ISO2 vindo do CountriesNow, e `Country` não tem esse
+/// campo — só `name`. O FK existe para ligar o lugar ao destino de imigração
+/// quando o país estiver cadastrado, e é opcional justamente porque nem todo
+/// país com lugar precisa ser um destino.
+///
+/// `city` é string livre pelo mesmo motivo que em `Business`: não existe model
+/// City. O valor precisa ser exatamente o que o CountriesNow devolve ("Lisbon",
+/// não "Lisboa"), senão a cidade selecionada nunca casa com os lugares.
+model Place {
+  id              String             @id @default(uuid()) @db.Uuid
+  name            String             @db.VarChar(120)
+  slug            String             @db.VarChar(140)
+  category        PlaceCategory
+  countryCode     String             @map("country_code") @db.VarChar(2)
+  countryId       String?            @map("country_id") @db.Uuid
+  country         Country?           @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city            String             @db.VarChar(100)
+  lat             Float
+  lng             Float
+  imageUrl        String?            @map("image_url") @db.VarChar(300)
+  popularityScore Int                @default(0) @map("popularity_score")
+  isFree          Boolean            @default(false) @map("is_free")
+  address         String?            @db.VarChar(200)
+  website         String?            @db.VarChar(200)
+  sourceUrl       String?            @map("source_url") @db.VarChar(300)
+  isActive        Boolean            @default(true) @map("is_active")
+  translations    PlaceTranslation[]
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  @@unique([countryCode, city, slug])
+  @@index([countryCode, city, isActive])
+  @@map("places")
+}
+
+/// Só `description` e `tip` são traduzidos. `name` fica no idioma local de
+/// propósito: "Torre de Belém" é o que está na placa e no mapa — traduzir
+/// atrapalharia quem procura o lugar na rua.
+model PlaceTranslation {
+  id          String  @id @default(uuid()) @db.Uuid
+  language    String
+  description String
+  tip         String?
+  place       Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  placeId     String  @map("place_id") @db.Uuid
+
+  @@unique([placeId, language])
+  @@map("place_translations")
 }
