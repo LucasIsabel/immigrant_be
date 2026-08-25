@@ -7,7 +7,7 @@ import {
   type IngestionDispatcher,
   PermanentIngestionError,
   RetryableIngestionError,
-} from './ingestion-dispatcher.port';
+} from '@app/ingestion';
 import {
   AreaNotResolvedError,
   OverpassService,

@@ -20,7 +20,7 @@ jest.mock('../../../../generated/prisma', () => ({
 }));
 
 import { AiRouterService } from '@app/ai';
-import type { IngestionDispatcher } from './ingestion-dispatcher.port';
+import type { IngestionDispatcher } from '@app/ingestion';
 import type { OverpassPoi, OverpassService } from './overpass.service';
 import { PlaceIngestionRepository } from './place-ingestion.repository';
 import { PlaceIngestionService } from './place-ingestion.service';

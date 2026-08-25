@@ -1,12 +1,8 @@
-import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { AiModule } from '@app/ai';
-import { BullMQConfigModule } from '@app/config/bull.module';
-import { PLACE_INGESTION_QUEUE } from '@app/config/constants';
 import { DatabaseModule } from '@app/database';
+import { IngestionModule } from '@app/ingestion';
 import { EventsModule } from '../events/events.module';
-import { BullmqIngestionDispatcher } from './bullmq-ingestion.dispatcher';
-import { INGESTION_DISPATCHER } from './ingestion-dispatcher.port';
 import { OverpassService } from './overpass.service';
 import { PlaceIngestionConsumer } from './place-ingestion.consumer';
 import { PlaceIngestionRepository } from './place-ingestion.repository';
@@ -14,27 +10,19 @@ import { PlaceIngestionService } from './place-ingestion.service';
 import { WikimediaService } from './wikimedia.service';
 
 /**
- * The one place where the pipeline meets a broker.
+ * O worker: consumidor, pipeline e os clientes das fontes externas.
  *
- * `INGESTION_DISPATCHER` binds to the BullMQ adapter here and nowhere else, so
- * moving to Kafka or RabbitMQ is a different provider on this line plus a new
- * entry point — the service, the repository and the clients stay untouched.
+ * Quem sabe qual broker existe é o `IngestionModule`, na lib — este módulo
+ * apenas o importa para receber o `INGESTION_DISPATCHER`.
  */
 @Module({
-  imports: [
-    DatabaseModule,
-    AiModule,
-    BullMQConfigModule,
-    EventsModule,
-    BullModule.registerQueue({ name: PLACE_INGESTION_QUEUE }),
-  ],
+  imports: [DatabaseModule, AiModule, EventsModule, IngestionModule],
   providers: [
     PlaceIngestionConsumer,
     PlaceIngestionService,
     PlaceIngestionRepository,
     OverpassService,
     WikimediaService,
-    { provide: INGESTION_DISPATCHER, useClass: BullmqIngestionDispatcher },
   ],
 })
 export class PlaceIngestionWorkerModule {}

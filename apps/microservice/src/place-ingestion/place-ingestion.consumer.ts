@@ -13,7 +13,7 @@ import {
 } from '../common/report-job-failure';
 import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import { EventsService } from '../events/events.service';
-import { PermanentIngestionError } from './ingestion-dispatcher.port';
+import { PermanentIngestionError } from '@app/ingestion';
 import { PlaceIngestionService } from './place-ingestion.service';
 
 interface IngestCityJob {
