@@ -74,6 +74,23 @@ const SELETORES: Record<PlaceCategory, string[]> = {
  */
 const OFFSET_AREA = 3_600_000_000;
 
+/** Quantas vezes esperar por um slot antes de devolver o job ao BullMQ. */
+const TENTATIVAS_POR_SLOT = 4;
+
+/**
+ * Intervalo mínimo entre duas consultas nossas.
+ *
+ * O servidor público tem **2 slots** e segura cada um por um tempo proporcional
+ * ao custo da consulta. Medido: a consulta de área de Lisboa levou 9,9s, e a
+ * sonda disparada logo em seguida tomou 429 — não por cota, mas porque a
+ * anterior ainda ocupava o slot. O `fetchPois` já pausava entre categorias; o
+ * `resolveArea` disparava área, sonda e nome coladas, e era ali que quebrava.
+ * Pausar aqui cobre todos os pontos de chamada de uma vez.
+ */
+const INTERVALO_MINIMO_MS = 5_000;
+const ESPERA_MAXIMA_MS = 60_000;
+const ESPERA_PADRAO_MS = 10_000;
+
 interface ElementoOverpass {
   type: string;
   id: number;
@@ -86,6 +103,17 @@ interface ElementoOverpass {
 @Injectable()
 export class OverpassService {
   private readonly logger = new Logger(OverpassService.name);
+
+  /** Quando a última consulta partiu, para respeitar o intervalo mínimo. */
+  private ultimaConsulta = 0;
+
+  private async aguardarVez(): Promise<void> {
+    const desdeAUltima = Date.now() - this.ultimaConsulta;
+    if (this.ultimaConsulta && desdeAUltima < INTERVALO_MINIMO_MS) {
+      await this.esperar(INTERVALO_MINIMO_MS - desdeAUltima);
+    }
+    this.ultimaConsulta = Date.now();
+  }
 
   /**
    * Encontra a área da cidade no OSM.
@@ -114,9 +142,18 @@ export class OverpassService {
         rotulo: 'name',
         filtro: `area["name"="${escapado}"]["place"~"city|town"]`,
       },
+      // As duas últimas existem para a cidade que não é `place=city|town` — foi
+      // o caso do Rio de Janeiro. A variante por `name` não é redundante: a
+      // área de Sintra é `admin_level=7` e **não tem `name:en`**, então filtrar
+      // o fallback por `name:en` o tornava inútil justamente para quem ele
+      // deveria resgatar. Medido em 2026-08-25.
       {
-        rotulo: 'admin_level',
+        rotulo: 'admin_level:name:en',
         filtro: `area["name:en"="${escapado}"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
+      },
+      {
+        rotulo: 'admin_level:name',
+        filtro: `area["name"="${escapado}"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
       },
     ];
 
@@ -186,8 +223,6 @@ out center tags;`;
         const poi = this.paraPoi(el, categoria);
         if (poi) encontrados.push(poi);
       }
-
-      await this.esperar(5_000);
     }
 
     // Um mesmo elemento pode casar em duas categorias (um castelo que também é
@@ -245,22 +280,80 @@ out center tags;`;
     return total > 0;
   }
 
+  /**
+   * Executa uma consulta, esperando por slot quando o servidor recusa.
+   *
+   * O 429 do Overpass **não é cota diária**: o `/api/status` do servidor
+   * público responde "Rate limit: 2 / 1 slots available now / Slot available
+   * after: …, in 11 seconds". É concorrência, e a espera certa está escrita
+   * ali. Medido rodando Lisboa: uma espera fixa de 10s, uma vez só, devolvia o
+   * job para o backoff de 30 minutos do BullMQ enquanto o slot liberava em 11
+   * segundos.
+   *
+   * Por isso a espera é perguntada, não chutada, e repetida algumas vezes —
+   * oito consultas por cidade contra dois slots batem em 429 com frequência
+   * normal, e desistir na primeira transforma rotina em falha.
+   */
   private async executar(
     consulta: string,
   ): Promise<{ elements: ElementoOverpass[] }> {
-    const resposta = await this.pedir(consulta);
+    for (let tentativa = 1; tentativa <= TENTATIVAS_POR_SLOT; tentativa++) {
+      await this.aguardarVez();
+      const resposta = await this.pedir(consulta);
+      if (resposta.status !== 429) return this.ler(resposta);
 
-    // 429 costuma vir com Retry-After curto: esperar e repetir uma vez sai mais
-    // barato do que devolver o job para o backoff de 30s do BullMQ.
-    if (resposta.status === 429) {
-      const espera = this.retryAfterMs(resposta.headers.get('retry-after'));
-      this.logger.warn(`Overpass 429; aguardando ${espera}ms e repetindo`);
+      const espera = await this.esperaPorSlot(
+        resposta.headers.get('retry-after'),
+      );
+      this.logger.warn(
+        `Overpass 429 (${tentativa}/${TENTATIVAS_POR_SLOT}); aguardando ${espera}ms por um slot`,
+      );
       await this.esperar(espera);
-      const segunda = await this.pedir(consulta);
-      return this.ler(segunda);
     }
 
-    return this.ler(resposta);
+    throw new OverpassUnavailableError(
+      429,
+      `Overpass recusou a consulta em ${TENTATIVAS_POR_SLOT} tentativas por falta de slot`,
+    );
+  }
+
+  /**
+   * Quanto esperar antes de repetir: o `Retry-After` quando vem, o
+   * `/api/status` quando não vem, e 10s quando nem isso responde.
+   */
+  private async esperaPorSlot(cabecalho: string | null): Promise<number> {
+    const doCabecalho = Number(cabecalho);
+    if (Number.isFinite(doCabecalho) && doCabecalho > 0) {
+      return Math.min(doCabecalho * 1000, ESPERA_MAXIMA_MS);
+    }
+
+    const anunciado = await this.segundosAteProximoSlot();
+    if (anunciado !== null) {
+      // Um segundo a mais: pedir no instante exato do anúncio ainda pega 429.
+      return Math.min((anunciado + 1) * 1000, ESPERA_MAXIMA_MS);
+    }
+
+    return ESPERA_PADRAO_MS;
+  }
+
+  private async segundosAteProximoSlot(): Promise<number | null> {
+    try {
+      const resposta = await fetch(
+        env.OVERPASS_BASE_URL.replace(/\/interpreter$/, '/status'),
+        { headers: { 'User-Agent': env.INGESTION_USER_AGENT } },
+      );
+      if (!resposta.ok) return null;
+
+      const texto = await resposta.text();
+      if (/\b[1-9]\d* slots? available now/.test(texto)) return 0;
+
+      const [, segundos] = /in (\d+) seconds/.exec(texto) ?? [];
+      return segundos ? Number(segundos) : null;
+    } catch {
+      // O status é uma cortesia. Se ele também está fora, a espera padrão
+      // resolve — não é motivo para derrubar a ingestão.
+      return null;
+    }
   }
 
   private async ler(
@@ -269,10 +362,29 @@ out center tags;`;
     if (!resposta.ok) {
       throw new OverpassUnavailableError(
         resposta.status,
-        `Overpass respondeu ${resposta.status}`,
+        `Overpass respondeu ${resposta.status}${await this.motivo(resposta)}`,
       );
     }
     return (await resposta.json()) as { elements: ElementoOverpass[] };
+  }
+
+  /**
+   * O que o Overpass diz junto do código de erro.
+   *
+   * O corpo vem em HTML, mas carrega uma frase útil — "runtime error: … The
+   * server is probably too busy to handle your request." diz ao admin que é só
+   * tentar de novo, enquanto "Overpass respondeu 504" não diz nada. Vale o
+   * `replace` porque essa mensagem termina no `errorMessage` da ingestão, que é
+   * o que aparece na tela de revisão.
+   */
+  private async motivo(resposta: Response): Promise<string> {
+    try {
+      const corpo = await resposta.text();
+      const [, erro] = /Error: ([^<]+)/.exec(corpo) ?? [];
+      return erro ? ` — ${erro.trim().replace(/\s+/g, ' ')}` : '';
+    } catch {
+      return '';
+    }
   }
 
   private pedir(consulta: string): Promise<Response> {
@@ -284,14 +396,6 @@ out center tags;`;
       },
       body: new URLSearchParams({ data: consulta }).toString(),
     });
-  }
-
-  private retryAfterMs(cabecalho: string | null): number {
-    const segundos = Number(cabecalho);
-    if (Number.isFinite(segundos) && segundos > 0) {
-      return Math.min(segundos * 1000, 60_000);
-    }
-    return 10_000;
   }
 
   private esperar(ms: number): Promise<void> {

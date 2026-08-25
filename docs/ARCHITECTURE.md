@@ -597,6 +597,7 @@ App Principal (API)                    Microservice
 | `ai_blog_image_queue`    | `AI_BLOG_IMAGE_QUEUE`    | `generate_ai_blog_image`                       | Geração assíncrona de imagem de capa do post |
 | `ai_image_queue`         | `AI_IMAGE_QUEUE`         | `generate_ai_image`                            | Geração de imagens via Gemini (Media Generator) |
 | `blog_translation_queue` | `BLOG_TRANSLATION_QUEUE` | `translate_blog_post`, `translate_all_pending` | Tradução automática via Gemini (EN + ES)     |
+| `place_ingestion_queue`  | `PLACE_INGESTION_QUEUE`  | `ingest_city`, `write_place_texts`             | Ingestão de lugares turísticos (OSM + Wikimedia + IA) |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
 
@@ -606,11 +607,62 @@ A fila `ai_image_queue` é usada pelo módulo **AI Image** (Media Generator): o 
 
 A fila `blog_translation_queue` suporta **repeatable job diário** (`translate_all_pending` às 03:00 UTC) registrado por `BlogTranslationCronService` via `OnModuleInit`. O job `translate_all_pending` busca todos os posts PUBLISHED sem tradução para EN e ES, e enfileira jobs individuais `translate_blog_post`. O endpoint `POST /admin/blog/posts/:id/translations/enqueue` permite acionar traduções sob demanda.
 
+### Ingestão de lugares — desacoplada do broker
+
+A fila `place_ingestion_queue` segue um desenho diferente das outras, a pedido
+do produto: **o pipeline não conhece o BullMQ**. Um dia a fila pode virar Kafka
+ou RabbitMQ, e a troca deve custar um adapter, não uma reescrita.
+
+```
+PlaceIngestionService          ← regra: resolve área, busca POIs, ranqueia,
+  │                              persiste DRAFT, escreve texto, converge
+  │ depende de
+  ▼
+IngestionDispatcher (port)     ← "quero que isto rode depois"
+  ▲
+  │ implementa
+BullmqIngestionDispatcher      ← único arquivo que sabe o nome da fila
+PlaceIngestionConsumer         ← traduz `Job` em chamada de método
+```
+
+- `ingestion-dispatcher.port.ts` declara a interface, o token `INGESTION_DISPATCHER`
+  e os dois erros de intenção: `RetryableIngestionError` e `PermanentIngestionError`.
+- O binding do token acontece **só** em `place-ingestion.module.ts`.
+- `PlaceIngestionService` e `PlaceIngestionRepository` não importam `bullmq` nem
+  `@nestjs/bullmq` — é essa ausência que mantém o desacoplamento honesto.
+
+**Retry não é portável.** O BullMQ dá 3 tentativas com backoff exponencial; o
+Kafka não tem nada disso e o RabbitMQ escreve com DLQ e TTL. Por isso o port
+expressa *intenção* e cada adapter decide como honrá-la. `PermanentIngestionError`
+chama `job.discard()` antes de propagar: cidade que não existe no OSM não merece
+três tentativas e meia hora de backoff.
+
+O worker roda com `concurrency: 1` e `limiter: { max: 1, duration: 60_000 }` —
+não é cautela, é o orçamento do Overpass público, que devolveu 429 depois de
+poucas consultas seguidas e cada cidade custa oito delas.
+
+**Convergência.** Cada job de texto, ao terminar, chama `markReadyIfDone`, um
+`updateMany` com `status: PROCESSING` no `where` — compare-and-set, um só job
+vence e o aviso ao admin sai uma vez. Texto que falhou em definitivo é gravado
+em `stats.textFailures` (via `jsonb ||`, atômico) e sai da contagem de
+pendentes: uma descrição que nunca veio não pode prender os outros nove lugares
+em `PROCESSING`.
+
+**O curado é intocável.** O upsert por `[countryCode, city, slug]` torna a
+ingestão idempotente, mas seria também o caminho para uma descrição gerada
+substituir uma escrita à mão. Lugar já existente com `reviewStatus != DRAFT`
+não é tocado e vira `stats.conflicts[]` — que é justamente a métrica de
+redescoberta do piloto de Lisboa.
+
 ### API admin das filas
 
 `GET/POST/DELETE /admin/queues` (módulo `queues/`) é a API JSON que o painel
 admin consulta. Cobre só as filas em `ADMIN_VISIBLE_QUEUES`
-(`libs/config/src/constants.ts`): as quatro da tabela acima. Fila ou job
+(`libs/config/src/constants.ts`): as cinco da tabela acima. Acrescentar uma
+constante ali **não basta** — `QueuesService` injeta cada fila pelo token e
+monta o mapa à mão, então a fila nova também entra no construtor. O spec
+`queues.service.spec.ts` compara a lista com `ADMIN_VISIBLE_QUEUES` e falha
+quando os dois lados divergem. Fila ou job
 desconhecido responde 404; estado inválido, 400.
 
 O payload de cada job é sanitizado: prompts, markdown e strings longas saem,

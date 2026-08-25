@@ -37,6 +37,11 @@ export const TRANSLATE_ALL_PENDING = 'translate_all_pending';
 export const AI_IMAGE_QUEUE = 'ai_image_queue';
 export const GENERATE_AI_IMAGE = 'generate_ai_image';
 
+export const PLACE_INGESTION_QUEUE = 'place_ingestion_queue';
+/** Gathers the facts for one city, then fans out one text job per place. */
+export const INGEST_CITY = 'ingest_city';
+export const WRITE_PLACE_TEXTS = 'write_place_texts';
+
 /**
  * Filas que o admin pode inspecionar e controlar.
  *
@@ -50,6 +55,7 @@ export const ADMIN_VISIBLE_QUEUES = [
   AI_BLOG_IMAGE_QUEUE,
   BLOG_TRANSLATION_QUEUE,
   AI_IMAGE_QUEUE,
+  PLACE_INGESTION_QUEUE,
 ] as const;
 
 export type AdminVisibleQueue = (typeof ADMIN_VISIBLE_QUEUES)[number];

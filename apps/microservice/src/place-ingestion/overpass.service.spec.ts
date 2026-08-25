@@ -36,16 +36,29 @@ const sondaComConteudo = (total = 42) =>
 
 const vazio = () => resposta({ elements: [] });
 
+/** O `/api/status`, que responde texto puro e não JSON. */
+const statusSemSlot = (segundos: number) =>
+  ({
+    ok: true,
+    status: 200,
+    headers: new Headers(),
+    text: () =>
+      Promise.resolve(
+        `Rate limit: 2\n0 slots available now.\nSlot available after: 2026-08-25T12:18:02Z, in ${segundos} seconds.`,
+      ),
+  }) as unknown as Response;
+
 describe('OverpassService', () => {
   let service: OverpassService;
   let fetchMock: jest.Mock;
+  let esperarSpy: jest.SpyInstance;
 
   beforeEach(() => {
     service = new OverpassService();
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
     // As pausas entre consultas são reais em produção e irrelevantes no teste.
-    jest
+    esperarSpy = jest
       .spyOn(
         service as unknown as { esperar: (ms: number) => Promise<void> },
         'esperar',
@@ -85,6 +98,27 @@ describe('OverpassService', () => {
       );
     });
 
+    it('tenta admin_level por name quando a área não tem name:en', async () => {
+      // A área de Sintra é admin_level=7 e **não tem** name:en. Filtrar o
+      // fallback por name:en o tornava inútil exatamente para o caso que ele
+      // existe para resolver.
+      fetchMock
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(areaEncontrada(3605400893, 'Sintra'))
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      await expect(service.resolveArea('PT', 'Sintra')).resolves.toBe(
+        3605400893,
+      );
+      expect(consultaDaChamada(3)).toContain(
+        encodeURIComponent(
+          'area["name"="Sintra"]["boundary"="administrative"]',
+        ),
+      );
+    });
+
     it('cai para admin_level quando a cidade não é place=city', async () => {
       // Foi o caso do Rio de Janeiro na medição.
       fetchMock
@@ -121,7 +155,12 @@ describe('OverpassService', () => {
       ).rejects.toMatchObject({
         name: 'AreaNotResolvedError',
         city: 'Cidade Inexistente',
-        attempts: ['name:en', 'name', 'admin_level'],
+        attempts: [
+          'name:en',
+          'name',
+          'admin_level:name:en',
+          'admin_level:name',
+        ],
       });
     });
 
@@ -157,7 +196,41 @@ describe('OverpassService', () => {
       );
     });
 
-    it('desiste depois do segundo 429', async () => {
+    it('carrega o motivo que o Overpass deu, não só o código', async () => {
+      // "Overpass respondeu 504" não diz ao admin o que fazer; a frase do
+      // próprio servidor diz que é congestionamento e que vale tentar de novo.
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 504,
+        headers: new Headers(),
+        text: () =>
+          Promise.resolve(
+            '<p>Error: runtime error: Dispatcher_Client::request_read_and_idx::timeout. The server is probably too busy to handle your request.</p>',
+          ),
+      } as unknown as Response);
+
+      await expect(service.resolveArea('PT', 'Lisbon')).rejects.toThrow(
+        /server is probably too busy/,
+      );
+    });
+
+    it('pergunta ao /api/status quanto esperar quando não há Retry-After', async () => {
+      // O 429 do Overpass é falta de slot, não cota: o próprio servidor diz
+      // quando o próximo libera. Chutar 10s devolvia o job para o backoff de
+      // 30 minutos do BullMQ enquanto o slot liberava em 11 segundos.
+      fetchMock
+        .mockResolvedValueOnce(resposta({}, { status: 429 }))
+        .mockResolvedValueOnce(statusSemSlot(11))
+        .mockResolvedValueOnce(areaEncontrada(42))
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      await expect(service.resolveArea('PT', 'Lisbon')).resolves.toBe(42);
+      // Um segundo a mais que o anunciado: pedir no instante exato ainda pega 429.
+      expect(esperarSpy).toHaveBeenCalledWith(12_000);
+      expect(String(fetchMock.mock.calls[1][0])).toContain('/api/status');
+    });
+
+    it('desiste depois de esperar por slot algumas vezes', async () => {
       fetchMock.mockResolvedValue(resposta({}, { status: 429 }));
 
       await expect(service.resolveArea('PT', 'Lisbon')).rejects.toMatchObject({
@@ -175,6 +248,19 @@ describe('OverpassService', () => {
       lon: -9.21,
       tags: { name: 'Torre de Belém', wikidata: 'Q215003' },
       ...over,
+    });
+
+    it('espaça as consultas, inclusive as de resolução de área', async () => {
+      // Dois slots no servidor público: área e sonda coladas tomam 429.
+      fetchMock
+        .mockResolvedValueOnce(areaEncontrada(42))
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      await service.resolveArea('PT', 'Lisbon');
+
+      expect(esperarSpy).toHaveBeenCalledWith(expect.any(Number));
+      const pausas = esperarSpy.mock.calls.map(([ms]) => ms as number);
+      expect(pausas.some((ms) => ms > 0 && ms <= 5_000)).toBe(true);
     });
 
     it('consulta uma categoria por vez', async () => {

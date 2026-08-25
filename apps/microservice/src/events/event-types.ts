@@ -19,6 +19,8 @@ export const EVENT_TYPES = {
   AI_IMAGE_FAILED: 'ai_image_failed',
   /** Crédito do OpenRouter esgotou: a geração segue pelo fallback, calada. */
   AI_CREDITS_EXHAUSTED: 'ai_credits_exhausted',
+  CITY_INGESTION_READY: 'city_ingestion_ready',
+  CITY_INGESTION_FAILED: 'city_ingestion_failed',
 } as const;
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];

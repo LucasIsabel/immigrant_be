@@ -63,7 +63,7 @@ admin, e o que chega ao usuário já está no nosso banco.
 
 | Fonte | O que fornece | Cadência e limites | Em falha |
 |---|---|---|---|
-| **Overpass / OpenStreetMap** (`OVERPASS_BASE_URL`) | Existência do lugar, nome, coordenada, categoria, endereço, site | Disparo manual por cidade, com limitador de 1 cidade/min na fila. A instância pública documenta ~10k req/dia e desencoraja uso em lote | 429 honra o `Retry-After` e repete uma vez; 429 persistente ou 504 viram erro retentável, e o `attempts: 3` do BullMQ re-roda o job |
+| **Overpass / OpenStreetMap** (`OVERPASS_BASE_URL`) | Existência do lugar, nome, coordenada, categoria, endereço, site | Disparo manual por cidade, limitador de 1 cidade/min na fila e **intervalo mínimo de 5s entre consultas**. A instância pública documenta ~10k req/dia e desencoraja uso em lote | 429 espera pelo slot (ver abaixo) e repete até 4 vezes; 504 e 429 persistente viram erro retentável, e o `attempts: 3` do BullMQ re-roda o job |
 | **Wikidata** (`wbgetentities`) | QID → artigo em inglês | Lotes de 50 ids | Sem artigo em inglês, o lugar é **descartado** — é o filtro que separa ponto turístico de estátua de rua |
 | **Wikimedia Pageviews e Summary** | Popularidade (média mensal de 12 meses) e o parágrafo que ancora o texto da IA | Uma chamada por lugar sobrevivente | Devolve `null` em vez de lançar: o lugar sai do ranking, a ingestão da cidade continua |
 
@@ -81,6 +81,27 @@ contínuo).
 guarda a URL canônica do elemento em `sourceUrl`. O `INGESTION_USER_AGENT`
 identifica a aplicação, como a política de uso exige — User-Agent genérico de
 biblioteca é motivo declarado de bloqueio.
+
+**O 429 do Overpass é falta de slot, não cota.** O `/api/status` da instância
+pública responde `Rate limit: 2` — duas consultas simultâneas — e anuncia
+quando a próxima libera: *"Slot available after: …, in 11 seconds"*. Cada slot
+fica preso por um tempo proporcional ao custo da consulta, e a de área de
+Lisboa levou **9,9s**: disparar a sonda logo em seguida tomava 429 sem nenhuma
+cota ter sido excedida. Por isso o cliente (a) espera 5s entre quaisquer duas
+consultas, não só entre categorias, e (b) quando leva 429 sem `Retry-After`,
+pergunta ao `/api/status` quanto falta em vez de chutar.
+
+**O 504 é congestionamento do servidor, e ele diz isso.** O corpo do erro traz
+`Error: runtime error: … The server is probably too busy to handle your
+request.` — o cliente extrai essa frase para o `errorMessage` da ingestão,
+porque "Overpass respondeu 504" não diz ao admin que basta tentar de novo.
+Medido em 2026-08-25: a mesma consulta alternou 200, 429 e 504 em minutos, e o
+`curl` manual falhou junto com o worker — é a instância, não o cliente. Se isso
+persistir no piloto, `OVERPASS_BASE_URL` aponta para um mirror ou instância
+própria (os mirrors testados na data — `overpass.kumi.systems`,
+`overpass.private.coffee`, `overpass.osm.jp` — devolveram 500 ou não
+responderam, então "usar um mirror" não é plano B pronto: instância própria é a
+saída real).
 
 **A armadilha do nome da cidade**: a nossa lista vem do CountriesNow em inglês
 ("Lisbon"), e o OSM usa o nome local ("Lisboa"). A resolução tenta `name:en`,
