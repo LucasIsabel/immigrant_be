@@ -638,6 +638,13 @@ direto, trocar de broker seria mexer nos dois — e a API, que só quer dizer
   e os dois erros de intenção: `RetryableIngestionError` e `PermanentIngestionError`.
 - O binding do token acontece **só** em `IngestionModule` (`libs/ingestion/`).
   Trocar de broker é trocar o `useClass` dessa linha.
+- **O barrel `@app/ingestion` exporta só o port, nunca o `IngestionModule`.**
+  O módulo importa a config do BullMQ, que faz `envSchema.parse` no import — se
+  ele estivesse no barrel, importar o `INGESTION_DISPATCHER` (o token cuja razão
+  de existir é esconder o broker) carregaria a configuração do broker e todas as
+  variáveis de ambiente dela. Quem faz wiring de DI importa
+  `@app/ingestion/ingestion.module` explicitamente. Isso quebrou o CI uma vez,
+  onde `OPEN_ROUTER` não existe.
 - Nem `PlaceIngestionService`/`PlaceIngestionRepository` (worker) nem
   `PlacesAdminService` (API) importam `bullmq` ou `@nestjs/bullmq` — é essa
   ausência que mantém o desacoplamento honesto.

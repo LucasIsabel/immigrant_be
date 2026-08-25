@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiModule } from '@app/ai';
 import { DatabaseModule } from '@app/database';
-import { IngestionModule } from '@app/ingestion';
+import { IngestionModule } from '@app/ingestion/ingestion.module';
 import { EventsModule } from '../events/events.module';
 import { OverpassService } from './overpass.service';
 import { PlaceIngestionConsumer } from './place-ingestion.consumer';

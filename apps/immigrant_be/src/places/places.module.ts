@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@app/database';
-import { IngestionModule } from '@app/ingestion';
+import { IngestionModule } from '@app/ingestion/ingestion.module';
 import { PlacesAdminController } from './places-admin.controller';
 import { PlacesAdminRepository } from './places-admin.repository';
 import { PlacesAdminService } from './places-admin.service';
