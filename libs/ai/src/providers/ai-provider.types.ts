@@ -31,6 +31,18 @@ export const AI_SCENARIOS = [
    * supply facts of its own. A cheap model is the right call.
    */
   'place_writing',
+  /**
+   * Country suggestions from the quiz answers — the path that broke in
+   * production when Gemini's prepaid credit ran out, with no second option.
+   * Latency-sensitive: a person is staring at a spinner.
+   */
+  'quiz_suggestions',
+  /** Best visa type for a profile. Same shape and stakes as the quiz. */
+  'visa_recommendation',
+  /** Translation of a visa's step-by-step checklist. */
+  'visa_steps_translation',
+  /** Content moderation of business pages. Classification, not prose. */
+  'business_moderation',
 ] as const;
 
 export type AiScenario = (typeof AI_SCENARIOS)[number];

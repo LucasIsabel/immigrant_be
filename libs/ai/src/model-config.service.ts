@@ -46,6 +46,29 @@ export const DEFAULT_MODEL_CHAINS: Record<
       'gemini-direct:gemini-2.5-flash-lite',
     ],
   },
+  /**
+   * The four API-app scenarios share one chain shape, and the primary is the
+   * exact model these paths called directly before they went through the
+   * router — so with Gemini healthy this is a fix, not a hidden model swap.
+   * The `:free` tail is the zero-cost safety net for the day BOTH paid
+   * providers are out, which is the incident that created these scenarios.
+   */
+  quiz_suggestions: {
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  visa_recommendation: {
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  visa_steps_translation: {
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  business_moderation: {
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
   blog_image: {
     primaryModel: 'bytedance-seed/seedream-5-0-lite',
     fallbackModels: [

@@ -96,12 +96,21 @@ describe('ModelConfigService', () => {
     }
   });
 
-  it('ends every default chain on gemini-direct', () => {
-    // OpenRouter credits are per account: a chain of only OpenRouter models has
-    // nowhere to go when they run out.
+  it('gives every default chain a link that survives OpenRouter credit exhaustion', () => {
+    // OpenRouter credits are per account: a chain of only paid OpenRouter
+    // models has nowhere to go when they run out. Two shapes satisfy this —
+    // a gemini-direct link (different provider, different billing) or a
+    // `:free` model (rides through the credit cooldown by design). The API
+    // scenarios put gemini-direct FIRST and end on `:free`, so the old
+    // "ends on gemini-direct" phrasing stopped describing the invariant.
     for (const scenario of AI_SCENARIOS) {
-      const chain = DEFAULT_MODEL_CHAINS[scenario].fallbackModels;
-      expect(chain[chain.length - 1]).toMatch(/^gemini-direct:/);
+      const { primaryModel, fallbackModels } = DEFAULT_MODEL_CHAINS[scenario];
+      const chain = [primaryModel, ...fallbackModels];
+      const survivesCreditExhaustion = chain.some(
+        (model) =>
+          model.startsWith('gemini-direct:') || model.endsWith(':free'),
+      );
+      expect(survivesCreditExhaustion).toBe(true);
     }
   });
 });

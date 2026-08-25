@@ -9,7 +9,7 @@ import { UpdateVisaStepsDto } from './dto/update-visa-steps.dto';
 import { TranslateVisaStepsDto } from './dto/translate-visa-steps.dto';
 import { Prisma } from 'generated/prisma';
 import {
-  GeminiBaseService,
+  AiRouterService,
   buildVisaStepsTranslationPrompt,
   stripEmDashesDeep,
   visaStepsTranslationAiSchema,
@@ -19,7 +19,7 @@ import {
 export class VisaStepsService {
   constructor(
     private readonly visaStepsRepository: VisaStepsRepository,
-    private readonly gemini: GeminiBaseService,
+    private readonly aiRouter: AiRouterService,
   ) {}
 
   create(dto: CreateVisaStepsDto) {
@@ -160,11 +160,11 @@ export class VisaStepsService {
       targetLanguage: dto.targetLanguage,
     });
 
-    const response = await this.gemini.generateContent(prompt);
-    const rawText = response.response.text();
-    const parsed = this.gemini.parseJsonResponse(
-      rawText,
+    const { data: parsed } = await this.aiRouter.generateJson(
+      'visa_steps_translation',
+      prompt,
       visaStepsTranslationAiSchema,
+      { entityType: 'visa_steps' },
     );
 
     if (!parsed) {

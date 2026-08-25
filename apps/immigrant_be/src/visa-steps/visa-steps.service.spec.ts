@@ -5,7 +5,7 @@ jest.mock('@app/database', () => ({
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { GeminiBaseService } from '@app/ai';
+import { AiRouterService } from '@app/ai';
 import { VisaStepsService } from './visa-steps.service';
 import { VisaStepsRepository } from './visa-steps.repository';
 
@@ -43,9 +43,8 @@ const mockRepository = {
   remove: jest.fn(),
 };
 
-const mockGemini = {
-  generateContent: jest.fn(),
-  parseJsonResponse: jest.fn(),
+const mockAiRouter = {
+  generateJson: jest.fn(),
 };
 
 describe('VisaStepsService — key parity on update', () => {
@@ -58,7 +57,7 @@ describe('VisaStepsService — key parity on update', () => {
       providers: [
         VisaStepsService,
         { provide: VisaStepsRepository, useValue: mockRepository },
-        { provide: GeminiBaseService, useValue: mockGemini },
+        { provide: AiRouterService, useValue: mockAiRouter },
       ],
     }).compile();
 
@@ -149,5 +148,42 @@ describe('VisaStepsService — key parity on update', () => {
     await expect(service.update('ghost', { steps: {} } as any)).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  describe('translate', () => {
+    it('goes through the router under the visa_steps_translation scenario', async () => {
+      // The scenario name is the contract with the model-config table and the
+      // admin screen; a typo here would silently fall back to nothing.
+      mockAiRouter.generateJson.mockResolvedValue({
+        data: { '1': { title: 'Passo' } },
+        result: { model: 'gemini-2.5-flash-lite' },
+      });
+
+      const result = await service.translate({
+        steps: { '1': { title: 'Step' } },
+        sourceLanguage: 'en',
+        targetLanguage: 'pt',
+      } as any);
+
+      expect(mockAiRouter.generateJson).toHaveBeenCalledWith(
+        'visa_steps_translation',
+        expect.any(String),
+        expect.anything(),
+        { entityType: 'visa_steps' },
+      );
+      expect(result).toEqual({ '1': { title: 'Passo' } });
+    });
+
+    it('throws when the chain returns nothing usable', async () => {
+      mockAiRouter.generateJson.mockResolvedValue({ data: null, result: {} });
+
+      await expect(
+        service.translate({
+          steps: {},
+          sourceLanguage: 'en',
+          targetLanguage: 'pt',
+        } as any),
+      ).rejects.toThrow('Failed to parse translation response');
+    });
   });
 });
