@@ -140,7 +140,12 @@ export class OverpassService {
     const iso = countryCode.toUpperCase();
     const escapado = city.replace(/"/g, '\\"');
 
-    const tentativas: { rotulo: string; filtro: string }[] = [
+    const tentativas: {
+      rotulo: string;
+      filtro: string;
+      /** O filtro é frouxo de propósito; o nome é conferido aqui. */
+      confirmarNome?: boolean;
+    }[] = [
       {
         rotulo: 'name:en',
         filtro: `area["name:en"="${escapado}"]["place"~"city|town"]`,
@@ -162,16 +167,34 @@ export class OverpassService {
         rotulo: 'admin_level:name',
         filtro: `area["name"="${escapado}"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
       },
+      // As duas últimas cobrem o acento: o CountriesNow diz "Sao Paulo", o OSM
+      // guarda "São Paulo", e nenhuma das exatas casa. Ver `padraoSemAcento`.
+      {
+        rotulo: 'sem-acento:place',
+        filtro: `area["name"~"^${padraoSemAcento(escapado)}$"]["place"~"city|town"]`,
+        confirmarNome: true,
+      },
+      {
+        rotulo: 'sem-acento:admin_level',
+        filtro: `area["name"~"^${padraoSemAcento(escapado)}$"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
+        confirmarNome: true,
+      },
     ];
 
-    for (const { rotulo, filtro } of tentativas) {
+    for (const { rotulo, filtro, confirmarNome } of tentativas) {
       const consulta = `[out:json][timeout:60];
 area["ISO3166-1"="${iso}"][admin_level=2]->.pais;
 ${filtro}(area.pais);
 out ids tags;`;
       const { elements } = await this.executar(consulta);
 
-      for (const candidata of elements) {
+      const candidatas = confirmarNome
+        ? elements.filter(
+            (el) => semAcento(el.tags?.name ?? '') === semAcento(city),
+          )
+        : elements;
+
+      for (const candidata of candidatas) {
         const areaId = candidata.id;
         if (await this.temConteudo(areaId)) {
           this.logger.log(
@@ -408,4 +431,39 @@ out center tags;`;
   private esperar(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+}
+
+/** "São Paulo" e "Sao Paulo" viram a mesma coisa. */
+function semAcento(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '')
+    .toLowerCase();
+}
+
+/**
+ * Padrão que casa o nome independentemente de acento.
+ *
+ * O Overpass não tem comparação insensível a acento, e **classe de caracteres
+ * não resolve**: `[aàáâã]` devolveu zero para "São Paulo" porque o regex dele
+ * trabalha byte a byte e o `ã` ocupa dois. O `.` casa o caractere inteiro, e
+ * essa foi a saída — cada vogal (mais `c` e `n`, que carregam cedilha e til)
+ * vira `.`.
+ *
+ * O padrão fica **frouxo de propósito**: `^S.. P..l.$` casou 28 áreas no
+ * Brasil, entre elas 21 "San Pablo" e duas "St. Pauls". Quem separa é a
+ * conferência do nome no nosso lado, com `semAcento` — sobrou exatamente uma,
+ * `3600298285`, São Paulo cidade. Frouxo na consulta, exato na verificação:
+ * pedir precisão ao Overpass aqui não é possível, e aceitar o primeiro
+ * resultado dele seria loteria.
+ */
+function padraoSemAcento(cidade: string): string {
+  return cidade
+    .split('')
+    .map((caractere) =>
+      /[aeiouAEIOUcCnN]/.test(caractere)
+        ? '.'
+        : caractere.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    )
+    .join('');
 }

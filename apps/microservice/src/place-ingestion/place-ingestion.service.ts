@@ -22,13 +22,25 @@ import { WikimediaService } from './wikimedia.service';
 /**
  * How many places a city keeps.
  *
- * Ten because that is what a person browsing a city actually reads, and because
- * the hand-curated fixture uses ten — the pilot compares like with like.
+ * Forty, not the ten the pilot ran with. Porto offered **174** candidates that
+ * carried both a Wikidata id and a name, so ten was leaving a city
+ * under-described. Taking all 174 was the other option and was turned down:
+ * the tail is dolmens and hamlets, the AI cost multiplies by the same factor,
+ * and a review screen with 174 cards in three languages stops being reviewable.
  */
-const PLACES_PER_CITY = 10;
+const PLACES_PER_CITY = 40;
 
-/** The scale the seed already uses: 100 for the first, then down by ten. */
-const topScore = (rank: number) => 100 - 10 * rank;
+/**
+ * Popularity on a 100..1 scale, whatever the cut is.
+ *
+ * The old formula was `100 - 10 * rank`, which was welded to a cut of exactly
+ * ten: at forty places the eleventh would score 0 and the fortieth **-290**,
+ * ordering backwards and failing the admin PATCH validation, which accepts
+ * 0..100. Deriving from the total keeps the first at 100 and the last at 1 for
+ * any cut — and reproduces the old numbers exactly when `total` is 10.
+ */
+const scoreFor = (index: number, total: number) =>
+  Math.max(1, Math.round((100 * (total - index)) / total));
 
 @Injectable()
 export class PlaceIngestionService {
@@ -272,12 +284,12 @@ export class PlaceIngestionService {
 
     const signals = await this.wikimedia.popularity(
       pois.map((poi) => poi.wikidataId),
-      // The summary is fetched later, for the 10 that survive the cut.
+      // The summary is fetched later, for the ones that survive the cut.
       { withExtract: false },
     );
     const byWikidata = new Map(signals.map((s) => [s.wikidataId, s]));
 
-    const scored = pois
+    const scored = dedupeByWikidata(pois)
       .map((poi) => ({ poi, signal: byWikidata.get(poi.wikidataId) }))
       .filter(
         (row): row is { poi: OverpassPoi; signal: (typeof signals)[number] } =>
@@ -285,25 +297,26 @@ export class PlaceIngestionService {
       )
       .sort((a, b) => b.signal.monthlyViews - a.signal.monthlyViews);
 
-    const places = scored
-      .slice(0, PLACES_PER_CITY)
-      .map(({ poi, signal }, index) => ({
-        name: poi.name,
-        slug: slugify(poi.name),
-        category: poi.category,
-        lat: poi.lat,
-        lng: poi.lng,
-        address: poi.address,
-        website: poi.website,
-        isFree: poi.isFree,
-        osmType: poi.osmType,
-        osmId: poi.osmId,
-        wikidataId: poi.wikidataId,
-        wikipediaMonthlyViews: signal.monthlyViews,
-        popularityScore: topScore(index),
-        // Per-record attribution, which the ODbL licence requires.
-        sourceUrl: `https://www.openstreetmap.org/${poi.osmType}/${poi.osmId}`,
-      }));
+    const kept = scored.slice(0, PLACES_PER_CITY);
+    const slugs = uniqueSlugs(kept.map(({ poi }) => poi));
+
+    const places = kept.map(({ poi, signal }, index) => ({
+      name: poi.name,
+      slug: slugs.get(poi.wikidataId) as string,
+      category: poi.category,
+      lat: poi.lat,
+      lng: poi.lng,
+      address: poi.address,
+      website: poi.website,
+      isFree: poi.isFree,
+      osmType: poi.osmType,
+      osmId: poi.osmId,
+      wikidataId: poi.wikidataId,
+      wikipediaMonthlyViews: signal.monthlyViews,
+      popularityScore: scoreFor(index, kept.length),
+      // Per-record attribution, which the ODbL licence requires.
+      sourceUrl: `https://www.openstreetmap.org/${poi.osmType}/${poi.osmId}`,
+    }));
 
     return { places, withEnwiki: scored.length };
   }
@@ -332,6 +345,64 @@ const COUNTRY_NAMES: Record<string, string> = {
   BR: 'Brazil',
   US: 'United States',
 };
+
+/**
+ * The same real place, mapped more than once in OpenStreetMap.
+ *
+ * Measured in Porto: three Wikidata ids appeared on two OSM elements each —
+ * "Ribeira" exists as a node *and* as a relation. The Wikidata id is the
+ * identity; the OSM element is just one way of drawing it.
+ *
+ * When both exist, the relation wins, then the way: their `center` is a real
+ * centroid, while a node placed by hand can sit anywhere inside the thing it
+ * labels. Preferring by type also makes the choice deterministic, where "first
+ * one Overpass returned" would not be.
+ */
+function dedupeByWikidata(pois: OverpassPoi[]): OverpassPoi[] {
+  const rank = { relation: 0, way: 1, node: 2 } as const;
+  const best = new Map<string, OverpassPoi>();
+
+  for (const poi of pois) {
+    const current = best.get(poi.wikidataId);
+    if (!current || rank[poi.osmType] < rank[current.osmType]) {
+      best.set(poi.wikidataId, poi);
+    }
+  }
+
+  return [...best.values()];
+}
+
+/**
+ * A slug per place, where two different places can share a name.
+ *
+ * `[countryCode, city, slug]` is the unique key, so two distinct places
+ * colliding on it means the second upsert silently overwrites the first — one
+ * place lost, and the run still reporting both as created. At ten places this
+ * was theoretical; measured across Porto's full set it is not: **Forte de São
+ * João Baptista** is two different forts (Q10283826 and Q10284015), and **São
+ * Nicolau** two different things.
+ *
+ * The loser of a collision is suffixed with its Wikidata id rather than a
+ * counter, because the id is stable: a counter would depend on ordering, and a
+ * re-run that reordered would mint a new slug and a duplicate row — the exact
+ * outcome this function exists to prevent. The most-visited one keeps the clean
+ * slug, so the URL that matters stays readable.
+ */
+function uniqueSlugs(pois: OverpassPoi[]): Map<string, string> {
+  const taken = new Set<string>();
+  const assigned = new Map<string, string>();
+
+  for (const poi of pois) {
+    const base = slugify(poi.name);
+    const slug = taken.has(base)
+      ? `${base}-${poi.wikidataId.toLowerCase()}`
+      : base;
+    taken.add(slug);
+    assigned.set(poi.wikidataId, slug);
+  }
+
+  return assigned;
+}
 
 function slugify(name: string): string {
   return name
