@@ -44,7 +44,7 @@ immigrant_be/
 │   │   │   ├── common/         # Guards, filters, decorators compartilhados
 │   │   │   ├── countries/      # Módulo de países
 │   │   │   ├── countriesnow/   # Proxy público CountriesNow (países/estados/cidades/moeda)
-│   │   │   ├── places/        # Lugares turísticos por país/cidade (público)
+│   │   │   ├── places/        # Lugares turísticos (público) + API admin de ingestões
 │   │   │   ├── immigration-visa-type/  # Módulo de tipos de visto
 │   │   │   ├── users/          # Módulo de usuários
 │   │   │   ├── roles/          # Módulo de RBAC
@@ -79,6 +79,7 @@ immigrant_be/
 │   ├── config/                 # Configuração da app + setup do better-auth
 │   ├── database/               # PrismaService (módulo global)
 │   ├── ai/                     # AiRouterService (multi-provider) + GeminiBaseService
+│   ├── ingestion/              # Port de despacho da ingestão de lugares + adapter BullMQ
 │   └── email/                  # Envio de emails via Resend
 │   └── storage/                # StorageService (Cloudflare R2 via S3)
 │
@@ -103,6 +104,7 @@ immigrant_be/
 | `@app/ai/*`       | `libs/ai/src/*`       |
 | `@app/config/*`   | `libs/config/src/*`   |
 | `@app/database/*` | `libs/database/src/*` |
+| `@app/ingestion`  | `libs/ingestion/src`  |
 | `@app/email/*`    | `libs/email/src/*`    |
 | `@app/storage/*`  | `libs/storage/src/*`  |
 
@@ -614,22 +616,38 @@ do produto: **o pipeline não conhece o BullMQ**. Um dia a fila pode virar Kafka
 ou RabbitMQ, e a troca deve custar um adapter, não uma reescrita.
 
 ```
-PlaceIngestionService          ← regra: resolve área, busca POIs, ranqueia,
+PlacesAdminService (API)       ← "processe esta cidade"
+PlaceIngestionService (worker) ← regra: resolve área, busca POIs, ranqueia,
   │                              persiste DRAFT, escreve texto, converge
-  │ depende de
+  │ ambos dependem de
   ▼
-IngestionDispatcher (port)     ← "quero que isto rode depois"
+IngestionDispatcher (port)     ← @app/ingestion
   ▲
   │ implementa
 BullmqIngestionDispatcher      ← único arquivo que sabe o nome da fila
 PlaceIngestionConsumer         ← traduz `Job` em chamada de método
 ```
 
+O port vive em **`libs/ingestion/`** e não dentro do worker porque os **dois
+apps despacham**: a API enfileira a ingestão quando o admin pede, e o worker
+enfileira um job de texto por lugar encontrado. Se cada um injetasse a `Queue`
+direto, trocar de broker seria mexer nos dois — e a API, que só quer dizer
+"processe esta cidade", passaria a conhecer o broker sem precisar.
+
 - `ingestion-dispatcher.port.ts` declara a interface, o token `INGESTION_DISPATCHER`
   e os dois erros de intenção: `RetryableIngestionError` e `PermanentIngestionError`.
-- O binding do token acontece **só** em `place-ingestion.module.ts`.
-- `PlaceIngestionService` e `PlaceIngestionRepository` não importam `bullmq` nem
-  `@nestjs/bullmq` — é essa ausência que mantém o desacoplamento honesto.
+- O binding do token acontece **só** em `IngestionModule` (`libs/ingestion/`).
+  Trocar de broker é trocar o `useClass` dessa linha.
+- **O barrel `@app/ingestion` exporta só o port, nunca o `IngestionModule`.**
+  O módulo importa a config do BullMQ, que faz `envSchema.parse` no import — se
+  ele estivesse no barrel, importar o `INGESTION_DISPATCHER` (o token cuja razão
+  de existir é esconder o broker) carregaria a configuração do broker e todas as
+  variáveis de ambiente dela. Quem faz wiring de DI importa
+  `@app/ingestion/ingestion.module` explicitamente. Isso quebrou o CI uma vez,
+  onde `OPEN_ROUTER` não existe.
+- Nem `PlaceIngestionService`/`PlaceIngestionRepository` (worker) nem
+  `PlacesAdminService` (API) importam `bullmq` ou `@nestjs/bullmq` — é essa
+  ausência que mantém o desacoplamento honesto.
 
 **Retry não é portável.** O BullMQ dá 3 tentativas com backoff exponencial; o
 Kafka não tem nada disso e o RabbitMQ escreve com DLQ e TTL. Por isso o port
@@ -653,6 +671,45 @@ ingestão idempotente, mas seria também o caminho para uma descrição gerada
 substituir uma escrita à mão. Lugar já existente com `reviewStatus != DRAFT`
 não é tocado e vira `stats.conflicts[]` — que é justamente a métrica de
 redescoberta do piloto de Lisboa.
+
+### API admin das ingestões de lugares
+
+`apps/immigrant_be/src/places/places-admin.controller.ts`, sob
+`admin/places/ingestions`, com `@Roles(ADMIN)`. **Toda resposta é declarada como
+classe nomeada em `@ApiResponse({ type })`** — é essa declaração que vira tipo no
+frontend; schema inline não gera nada utilizável e um `$ref` dentro dele exigiria
+`@ApiExtraModels` (lição do #132/#133).
+
+| Rota | Resposta | Regra |
+| --- | --- | --- |
+| `POST /admin/places/ingestions` | `CityIngestionResponseDto` (202) | 409 se já houver ingestão `PROCESSING` ou `READY_FOR_REVIEW` da cidade |
+| `GET  /admin/places/ingestions` | `PaginatedCityIngestionsResponseDto` | filtro por `status`, paginação server-side |
+| `GET  /admin/places/ingestions/:id` | `CityIngestionDetailResponseDto` | lugares + traduções + proveniência + conflitos |
+| `PATCH …/:id/places/:placeId` | `AdminPlaceResponseDto` | 409 se o lugar não estiver em `DRAFT` |
+| `POST …/:id/places/:placeId/reject` | `AdminPlaceResponseDto` | o motivo vai para `stats.placeRejections[]` |
+| `POST …/:id/places/:placeId/retry-texts` | 202 | re-enfileira só aquele lugar |
+| `POST …/:id/approve` | `CityIngestionResponseDto` | **422** listando os lugares sem as 3 traduções |
+| `POST …/:id/reject` | `CityIngestionResponseDto` | motivo obrigatório |
+| `POST …/:id/retry` | `CityIngestionResponseDto` (202) | só de `FAILED`; **preserva o `osmAreaId`** |
+
+Três decisões que não são óbvias no código:
+
+- **Uma ingestão ativa por cidade é guarda de serviço, não constraint.** A mesma
+  cidade pode ter várias ingestões ao longo do tempo — aprovada, recusada, uma
+  nova depois de melhorar o pipeline. O que não pode é duas ao mesmo tempo,
+  disputando os mesmos slugs.
+- **O 422 no approve lista quem está incompleto.** Aprovar em silêncio publicaria
+  um lugar sem descrição em espanhol, e ninguém descobriria até um usuário
+  espanhol abrir o card vazio.
+- **`osmAreaId` é `BigInt` no banco e vai como string no JSON.** `JSON.stringify`
+  lança em `BigInt`: sem a conversão a rota devolveria 500 na primeira cidade que
+  resolvesse a área.
+
+O motivo de uma recusa individual vai para `stats.placeRejections[]` (mesmo
+`jsonb ||` atômico do `textFailures`) em vez de uma coluna nova em `Place`: é
+registro daquela corrida, não atributo do lugar, e uma coluna custaria uma
+migration coordenada com produção para guardar uma frase. Aceitar o motivo e
+descartá-lo seria pior que não pedir.
 
 ### API admin das filas
 
@@ -739,6 +796,15 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `DELETE /admin/queues/:name/jobs/:id`        | Queues                    | ADMIN                                      |
 | `POST /admin/queues/:name/pause`             | Queues                    | ADMIN                                      |
 | `POST /admin/queues/:name/resume`            | Queues                    | ADMIN                                      |
+| `POST /admin/places/ingestions`              | Places (admin)            | ADMIN — dispara a ingestão de uma cidade   |
+| `GET /admin/places/ingestions`               | Places (admin)            | ADMIN — lista com `?status=&page=&limit=`  |
+| `GET /admin/places/ingestions/:id`           | Places (admin)            | ADMIN — folha de revisão da cidade         |
+| `PATCH /admin/places/ingestions/:id/places/:placeId` | Places (admin)     | ADMIN — edita rascunho                     |
+| `POST /admin/places/ingestions/:id/places/:placeId/reject` | Places (admin) | ADMIN — recusa um lugar, motivo em `stats` |
+| `POST /admin/places/ingestions/:id/places/:placeId/retry-texts` | Places (admin) | ADMIN — re-enfileira o texto do lugar |
+| `POST /admin/places/ingestions/:id/approve`  | Places (admin)            | ADMIN — publica a cidade (422 se faltar tradução) |
+| `POST /admin/places/ingestions/:id/reject`   | Places (admin)            | ADMIN — recusa a cidade, motivo obrigatório |
+| `POST /admin/places/ingestions/:id/retry`    | Places (admin)            | ADMIN — reprocessa ingestão em `FAILED`    |
 | `/storage/upload`                            | Storage                   | Autenticado                                |
 | `/health`                                    | Health                    | Público                                    |
 | `/health/ready`                              | Health                    | Público                                    |

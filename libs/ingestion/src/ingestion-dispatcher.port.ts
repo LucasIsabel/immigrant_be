@@ -48,10 +48,11 @@ export class RetryableIngestionError extends Error {
     message: string,
     readonly cause?: unknown,
   ) {
-    // A causa entra na mensagem, não só na propriedade: o logger e o campo
-    // `errorMessage` da ingestão mostram `message`, e "Could not resolve area
-    // for Lisbon" sem o motivo não diz se foi 429, timeout ou cidade
-    // inexistente — que é justamente o que o admin precisa saber.
+    // The cause goes into the message, not only the property: the logger and
+    // the ingestion's `errorMessage` field both show `message`, and "Could not
+    // resolve area for Lisbon" without the reason does not say whether it was a
+    // 429, a timeout or a city that does not exist — which is exactly what the
+    // admin needs to know.
     super(cause instanceof Error ? `${message}: ${cause.message}` : message);
     this.name = 'RetryableIngestionError';
   }
