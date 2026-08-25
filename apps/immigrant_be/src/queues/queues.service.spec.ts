@@ -11,6 +11,7 @@ import {
   AI_BLOG_QUEUE,
   AI_IMAGE_QUEUE,
   BLOG_TRANSLATION_QUEUE,
+  PLACE_INGESTION_QUEUE,
 } from '@app/config/constants';
 import { QueueJobState } from './dto/list-queue-jobs-query.dto';
 import { buildTarget, QueuesService, sanitizeJobData } from './queues.service';
@@ -61,6 +62,7 @@ describe('QueuesService', () => {
   const blogImage = queueMock();
   const translation = queueMock();
   const image = queueMock();
+  const placeIngestion = queueMock();
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -74,6 +76,10 @@ describe('QueuesService', () => {
           useValue: translation,
         },
         { provide: getQueueToken(AI_IMAGE_QUEUE), useValue: image },
+        {
+          provide: getQueueToken(PLACE_INGESTION_QUEUE),
+          useValue: placeIngestion,
+        },
       ],
     }).compile();
 

@@ -12,6 +12,7 @@ import {
   AI_BLOG_QUEUE,
   AI_IMAGE_QUEUE,
   BLOG_TRANSLATION_QUEUE,
+  PLACE_INGESTION_QUEUE,
 } from '@app/config/constants';
 import { QueueJobState } from './dto/list-queue-jobs-query.dto';
 import { PaginatedQueueJobsDto, QueueJobDto } from './dto/queue-job.dto';
@@ -39,12 +40,14 @@ export class QueuesService {
     @InjectQueue(AI_BLOG_IMAGE_QUEUE) blogImage: Queue,
     @InjectQueue(BLOG_TRANSLATION_QUEUE) translation: Queue,
     @InjectQueue(AI_IMAGE_QUEUE) image: Queue,
+    @InjectQueue(PLACE_INGESTION_QUEUE) placeIngestion: Queue,
   ) {
     this.queues = new Map<string, Queue>([
       [AI_BLOG_QUEUE, blog],
       [AI_BLOG_IMAGE_QUEUE, blogImage],
       [BLOG_TRANSLATION_QUEUE, translation],
       [AI_IMAGE_QUEUE, image],
+      [PLACE_INGESTION_QUEUE, placeIngestion],
     ]);
   }
 

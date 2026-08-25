@@ -36,7 +36,17 @@ export class WikimediaService {
    * tem ~13.000 visitas por mês, a estátua do Fernando Pessoa tem 219, e o
    * Museu Geológico não tem artigo. O corte cai exatamente onde deveria.
    */
-  async popularity(wikidataIds: string[]): Promise<SinalDePopularidade[]> {
+  async popularity(
+    wikidataIds: string[],
+    /**
+     * O resumo só interessa a quem vai escrever o texto — os 10 escolhidos.
+     * Buscá-lo no ranqueamento custaria uma requisição por candidato
+     * descartado: numa cidade com ~100 candidatos, 90 chamadas jogadas fora,
+     * contra uma API de cortesia. Quem ranqueia passa `false`.
+     */
+    opcoes: { withExtract?: boolean } = {},
+  ): Promise<SinalDePopularidade[]> {
+    const { withExtract = true } = opcoes;
     const titulos = await this.titulosEmIngles(wikidataIds);
     const sinais: SinalDePopularidade[] = [];
 
@@ -47,7 +57,7 @@ export class WikimediaService {
         wikidataId,
         title,
         monthlyViews,
-        extract: await this.resumo(title),
+        extract: withExtract ? await this.resumo(title) : null,
       });
     }
 

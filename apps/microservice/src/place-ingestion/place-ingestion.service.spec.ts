@@ -1,0 +1,282 @@
+jest.mock('@app/config/env', () => ({
+  env: {
+    OVERPASS_BASE_URL: 'https://overpass.test/api/interpreter',
+    INGESTION_USER_AGENT: 'aloravia-test/1.0',
+  },
+}));
+
+jest.mock('@app/database', () => ({
+  PrismaService: jest.fn(),
+  DatabaseModule: jest.fn(),
+}));
+
+jest.mock('../../../../generated/prisma', () => ({
+  PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM' },
+  CityIngestionStatus: {
+    PROCESSING: 'PROCESSING',
+    READY_FOR_REVIEW: 'READY_FOR_REVIEW',
+    FAILED: 'FAILED',
+  },
+}));
+
+import { AiRouterService } from '@app/ai';
+import type { IngestionDispatcher } from './ingestion-dispatcher.port';
+import type { OverpassPoi, OverpassService } from './overpass.service';
+import { PlaceIngestionRepository } from './place-ingestion.repository';
+import { PlaceIngestionService } from './place-ingestion.service';
+import type { WikimediaService } from './wikimedia.service';
+
+const INGESTION_ID = 'ingestion-1';
+
+const poi = (name: string, qid: string): OverpassPoi => ({
+  osmType: 'way',
+  osmId: 10,
+  name,
+  wikidataId: qid,
+  lat: 38.6,
+  lng: -9.2,
+  category: 'LANDMARK' as OverpassPoi['category'],
+  isFree: false,
+});
+
+/**
+ * A repository that behaves like the database rather than like a mock.
+ *
+ * The convergence test is about a race, so a `jest.fn()` returning a canned
+ * value would prove nothing: what matters is that the second caller sees the
+ * state the first one left. This fake keeps the status and applies the same
+ * compare-and-set the SQL does.
+ */
+class FakeRepository {
+  status = 'PROCESSING';
+  placesWithoutTexts = new Set<string>();
+  failures: string[] = [];
+  savedStats: unknown;
+
+  findIngestion = jest.fn().mockResolvedValue({
+    id: INGESTION_ID,
+    countryCode: 'PT',
+    city: 'Lisbon',
+    osmAreaId: BigInt(3600058691),
+  });
+
+  findPlace = jest.fn().mockImplementation((id: string) =>
+    Promise.resolve({
+      id,
+      name: 'Torre de Belém',
+      category: 'LANDMARK',
+      city: 'Lisbon',
+      countryCode: 'PT',
+      isFree: false,
+      wikidataId: 'Q1',
+      wikipediaMonthlyViews: 13000,
+    }),
+  );
+
+  markStep = jest.fn().mockResolvedValue(undefined);
+  markFailed = jest.fn().mockResolvedValue(undefined);
+  saveResolvedArea = jest.fn().mockResolvedValue(undefined);
+  findCountryIdByName = jest.fn().mockResolvedValue({ id: 'country-1' });
+
+  saveStats = jest.fn().mockImplementation((_id: string, stats: unknown) => {
+    this.savedStats = stats;
+    return Promise.resolve();
+  });
+
+  persistDrafts = jest.fn().mockImplementation(() => {
+    for (const id of ['place-1', 'place-2', 'place-3']) {
+      this.placesWithoutTexts.add(id);
+    }
+    return Promise.resolve({
+      createdIds: ['place-1', 'place-2', 'place-3'],
+      conflicts: [],
+    });
+  });
+
+  saveTexts = jest.fn().mockImplementation((placeId: string) => {
+    this.placesWithoutTexts.delete(placeId);
+    return Promise.resolve();
+  });
+
+  recordTextFailure = jest.fn().mockImplementation((_id: string, placeId) => {
+    this.failures.push(placeId as string);
+    this.placesWithoutTexts.delete(placeId as string);
+    return Promise.resolve();
+  });
+
+  countPendingTexts = jest
+    .fn()
+    .mockImplementation(() => Promise.resolve(this.placesWithoutTexts.size));
+
+  markReadyIfDone = jest.fn().mockImplementation(() => {
+    if (this.status !== 'PROCESSING') return Promise.resolve(false);
+    this.status = 'READY_FOR_REVIEW';
+    return Promise.resolve(true);
+  });
+}
+
+describe('PlaceIngestionService', () => {
+  let repository: FakeRepository;
+  let dispatcher: { dispatchCity: jest.Mock; dispatchPlaceTexts: jest.Mock };
+  let overpass: {
+    resolveArea: jest.Mock;
+    areaName: jest.Mock;
+    fetchPois: jest.Mock;
+  };
+  let wikimedia: { popularity: jest.Mock };
+  let aiRouter: { generateJson: jest.Mock };
+  let service: PlaceIngestionService;
+
+  beforeEach(() => {
+    repository = new FakeRepository();
+    dispatcher = {
+      dispatchCity: jest.fn().mockResolvedValue(undefined),
+      dispatchPlaceTexts: jest.fn().mockResolvedValue(undefined),
+    };
+    overpass = {
+      resolveArea: jest.fn(),
+      areaName: jest.fn(),
+      fetchPois: jest
+        .fn()
+        .mockResolvedValue([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')]),
+    };
+    wikimedia = {
+      popularity: jest.fn().mockResolvedValue([
+        {
+          wikidataId: 'Q1',
+          title: 'Belém Tower',
+          monthlyViews: 13000,
+          extract: 'A tower.',
+        },
+        {
+          wikidataId: 'Q2',
+          title: 'Lisbon Cathedral',
+          monthlyViews: 4000,
+          extract: null,
+        },
+      ]),
+    };
+    aiRouter = {
+      generateJson: jest.fn().mockResolvedValue({
+        data: {
+          pt: { description: 'a'.repeat(100), tip: null },
+          en: { description: 'b'.repeat(100), tip: 'Go early.' },
+          es: { description: 'c'.repeat(100), tip: null },
+        },
+        result: { model: 'gemini-flash', usage: { costUsd: 0.0002 } },
+      }),
+    };
+
+    service = new PlaceIngestionService(
+      repository as unknown as PlaceIngestionRepository,
+      overpass as unknown as OverpassService,
+      wikimedia as unknown as WikimediaService,
+      aiRouter as unknown as AiRouterService,
+      dispatcher as IngestionDispatcher,
+    );
+  });
+
+  describe('ingestCity', () => {
+    it('fans out one text job per place it created', async () => {
+      await service.ingestCity(INGESTION_ID);
+
+      expect(dispatcher.dispatchPlaceTexts).toHaveBeenCalledTimes(1);
+      expect(dispatcher.dispatchPlaceTexts).toHaveBeenCalledWith([
+        { placeId: 'place-1', ingestionId: INGESTION_ID },
+        { placeId: 'place-2', ingestionId: INGESTION_ID },
+        { placeId: 'place-3', ingestionId: INGESTION_ID },
+      ]);
+    });
+
+    it('guarda a área resolvida mesmo quando o nome dela falha', async () => {
+      // Resolver custa até quatro consultas e uma sonda; perder isso porque um
+      // rótulo de tela deu 504 obrigava o retry a refazer tudo.
+      repository.findIngestion.mockResolvedValue({
+        id: INGESTION_ID,
+        countryCode: 'PT',
+        city: 'Sintra',
+        osmAreaId: null,
+      });
+      overpass.resolveArea.mockResolvedValue(3605400893);
+      overpass.areaName.mockRejectedValue(new Error('Overpass respondeu 504'));
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(repository.saveResolvedArea).toHaveBeenCalledWith(
+        INGESTION_ID,
+        3605400893,
+        null,
+      );
+    });
+
+    it('reuses the cached area instead of asking OpenStreetMap again', async () => {
+      await service.ingestCity(INGESTION_ID);
+
+      expect(overpass.resolveArea).not.toHaveBeenCalled();
+      expect(overpass.fetchPois).toHaveBeenCalledWith(3600058691);
+    });
+
+    it('finishes the ingestion when every place was already curated', async () => {
+      repository.persistDrafts.mockResolvedValue({
+        createdIds: [],
+        conflicts: [
+          {
+            slug: 'torre-de-belem',
+            wikidataId: 'Q1',
+            rank: 1,
+            monthlyViews: 13000,
+          },
+        ],
+      });
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(dispatcher.dispatchPlaceTexts).not.toHaveBeenCalled();
+      expect(repository.status).toBe('READY_FOR_REVIEW');
+    });
+  });
+
+  describe('convergence', () => {
+    it('lets exactly one finishing job declare the city ready', async () => {
+      await service.ingestCity(INGESTION_ID);
+
+      const outcomes: boolean[] = [];
+      for (const placeId of ['place-1', 'place-2', 'place-3']) {
+        outcomes.push(
+          (await service.writePlaceTexts(placeId, INGESTION_ID))
+            .ingestionBecameReady,
+        );
+      }
+
+      expect(outcomes).toEqual([false, false, true]);
+      expect(repository.status).toBe('READY_FOR_REVIEW');
+    });
+
+    it('does not declare the city ready twice when a job is replayed', async () => {
+      await service.ingestCity(INGESTION_ID);
+      for (const placeId of ['place-1', 'place-2', 'place-3']) {
+        await service.writePlaceTexts(placeId, INGESTION_ID);
+      }
+
+      const replay = await service.writePlaceTexts('place-3', INGESTION_ID);
+
+      expect(replay.ingestionBecameReady).toBe(false);
+    });
+
+    it('a text that failed for good still lets the city finish', async () => {
+      await service.ingestCity(INGESTION_ID);
+      await service.writePlaceTexts('place-1', INGESTION_ID);
+      await service.writePlaceTexts('place-2', INGESTION_ID);
+
+      // place-3 never got its description. The other two must not be trapped
+      // behind it.
+      const becameReady = await service.abandonPlaceTexts(
+        INGESTION_ID,
+        'place-3',
+      );
+
+      expect(becameReady).toBe(true);
+      expect(repository.failures).toEqual(['place-3']);
+    });
+  });
+});
