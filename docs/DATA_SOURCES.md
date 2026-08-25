@@ -55,6 +55,38 @@ formulários de negócio. Está listado aqui porque é a única fonte de dados
 verdadeiramente externa do backend, e porque o comportamento de cache e falha
 dele é a referência para integrações futuras.
 
+### Ingestão de lugares turísticos
+
+Três fontes, cada uma respondendo ao que sabe. Nenhuma delas é consultada em
+tempo de requisição: entram pelo pipeline de ingestão, disparado à mão por um
+admin, e o que chega ao usuário já está no nosso banco.
+
+| Fonte | O que fornece | Cadência e limites | Em falha |
+|---|---|---|---|
+| **Overpass / OpenStreetMap** (`OVERPASS_BASE_URL`) | Existência do lugar, nome, coordenada, categoria, endereço, site | Disparo manual por cidade, com limitador de 1 cidade/min na fila. A instância pública documenta ~10k req/dia e desencoraja uso em lote | 429 honra o `Retry-After` e repete uma vez; 429 persistente ou 504 viram erro retentável, e o `attempts: 3` do BullMQ re-roda o job |
+| **Wikidata** (`wbgetentities`) | QID → artigo em inglês | Lotes de 50 ids | Sem artigo em inglês, o lugar é **descartado** — é o filtro que separa ponto turístico de estátua de rua |
+| **Wikimedia Pageviews e Summary** | Popularidade (média mensal de 12 meses) e o parágrafo que ancora o texto da IA | Uma chamada por lugar sobrevivente | Devolve `null` em vez de lançar: o lugar sai do ranking, a ingestão da cidade continua |
+
+**Por que não Google Places**: os termos proíbem armazenar o conteúdo — só o
+`place_id` indefinidamente, e coordenadas por até 30 dias. Nome, endereço, foto
+e avaliação não têm exceção. O nosso model `Place` guarda tudo isso, então a
+fonte é incompatível com o desenho, independentemente de preço.
+
+**Por que não Nominatim**: o Overpass resolve a área da cidade sozinho, o que
+elimina a fonte com o limite mais apertado (1 req/s, 4 req/min para script
+contínuo).
+
+**Licença**: dado do OSM é **ODbL**. Armazenar é permitido; a atribuição
+"© OpenStreetMap contributors" é obrigatória onde o dado aparece, e cada lugar
+guarda a URL canônica do elemento em `sourceUrl`. O `INGESTION_USER_AGENT`
+identifica a aplicação, como a política de uso exige — User-Agent genérico de
+biblioteca é motivo declarado de bloqueio.
+
+**A armadilha do nome da cidade**: a nossa lista vem do CountriesNow em inglês
+("Lisbon"), e o OSM usa o nome local ("Lisboa"). A resolução tenta `name:en`,
+depois `name`, depois `boundary=administrative` com `admin_level` 6 a 8 — e
+falha reportando as tentativas, nunca em silêncio.
+
 ## Onde o contrato com o frontend é verificado
 
 - **Gerado**: `/countries`, `/blog/posts` e `/users/plan` são consumidos por
