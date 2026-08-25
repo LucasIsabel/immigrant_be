@@ -33,6 +33,30 @@ export const envSchema = zod.object({
   REDIS_USER: zod.string().optional(),
   REDIS_PASSWORD: zod.string().optional(),
   CORS_ORIGINS: zod.string().default('http://localhost:3001'),
+
+  /**
+   * Instância do Overpass usada pela ingestão de lugares.
+   *
+   * Configurável porque a pública desencoraja uso em lote — se ela não
+   * sustentar o ritmo, o remédio é apontar para um mirror ou para uma instância
+   * própria, sem tocar em código.
+   */
+  OVERPASS_BASE_URL: zod
+    .string()
+    .url()
+    .default('https://overpass-api.de/api/interpreter'),
+
+  /**
+   * User-Agent das chamadas ao OSM e à Wikimedia.
+   *
+   * Não é cosmético: a política de uso do OSM exige identificar a aplicação, e
+   * User-Agent genérico de biblioteca é motivo declarado de bloqueio. Tem
+   * default para o boot não quebrar em quem não setou — o parse roda no import.
+   */
+  INGESTION_USER_AGENT: zod
+    .string()
+    .min(1)
+    .default('aloravia/1.0 (https://aloravia.com; contato@aloravia.com)'),
   COOKIE_DOMAIN: zod.string().optional(),
   RESEND_API_KEY: zod.string().min(1, 'RESEND_API_KEY is required'),
   FRONTEND_URL: zod.string().default('http://localhost:3001'),
