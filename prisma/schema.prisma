@@ -753,29 +753,55 @@ enum PlaceCategory {
 /// City. O valor precisa ser exatamente o que o CountriesNow devolve ("Lisbon",
 /// não "Lisboa"), senão a cidade selecionada nunca casa com os lugares.
 model Place {
-  id              String             @id @default(uuid()) @db.Uuid
-  name            String             @db.VarChar(120)
-  slug            String             @db.VarChar(140)
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String        @db.VarChar(120)
+  slug            String        @db.VarChar(140)
   category        PlaceCategory
-  countryCode     String             @map("country_code") @db.VarChar(2)
-  countryId       String?            @map("country_id") @db.Uuid
-  country         Country?           @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  city            String             @db.VarChar(100)
+  countryCode     String        @map("country_code") @db.VarChar(2)
+  countryId       String?       @map("country_id") @db.Uuid
+  country         Country?      @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  city            String        @db.VarChar(100)
   lat             Float
   lng             Float
-  imageUrl        String?            @map("image_url") @db.VarChar(300)
-  popularityScore Int                @default(0) @map("popularity_score")
-  isFree          Boolean            @default(false) @map("is_free")
-  address         String?            @db.VarChar(200)
-  website         String?            @db.VarChar(200)
-  sourceUrl       String?            @map("source_url") @db.VarChar(300)
-  isActive        Boolean            @default(true) @map("is_active")
-  translations    PlaceTranslation[]
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
+  imageUrl        String?       @map("image_url") @db.VarChar(300)
+  popularityScore Int           @default(0) @map("popularity_score")
+  isFree          Boolean       @default(false) @map("is_free")
+  address         String?       @db.VarChar(200)
+  website         String?       @db.VarChar(200)
+  sourceUrl       String?       @map("source_url") @db.VarChar(300)
+  isActive        Boolean       @default(true) @map("is_active")
+
+  /// Onde o lugar está no ciclo de revisão.
+  ///
+  /// O default é APPROVED porque os 30 lugares que já existem foram curados à
+  /// mão e estão no ar — esse é o estado verdadeiro deles, e assim a migration
+  /// não precisa de backfill. A ingestão automática sempre grava DRAFT
+  /// explicitamente.
+  ///
+  /// REJECTED não é lixo: a linha fica como memória, para a re-ingestão da
+  /// cidade não recriar um lugar que alguém já recusou.
+  reviewStatus PlaceReviewStatus @default(APPROVED) @map("review_status")
+  ingestionId  String?           @map("ingestion_id") @db.Uuid
+  ingestion    CityIngestion?    @relation(fields: [ingestionId], references: [id], onDelete: SetNull)
+
+  /// Proveniência. Serve à atribuição exigida pela ODbL, e a saber de onde veio
+  /// cada campo quando alguém questionar o dado.
+  osmType               String?  @map("osm_type") @db.VarChar(10)
+  osmId                 BigInt?  @map("osm_id")
+  wikidataId            String?  @map("wikidata_id") @db.VarChar(20)
+  /// Média mensal de visitas ao artigo em inglês, de 12 meses. É de onde o
+  /// `popularityScore` é derivado — guardado cru para a ordem ser auditável.
+  wikipediaMonthlyViews Int?     @map("wikipedia_monthly_views")
+  generatedByModel      String?  @map("generated_by_model")
+  generationCostUsd     Decimal? @map("generation_cost_usd") @db.Decimal(10, 6)
+
+  translations PlaceTranslation[]
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
 
   @@unique([countryCode, city, slug])
   @@index([countryCode, city, isActive])
+  @@index([ingestionId, reviewStatus])
   @@map("places")
 }
 
@@ -792,4 +818,65 @@ model PlaceTranslation {
 
   @@unique([placeId, language])
   @@map("place_translations")
+}
+
+enum PlaceReviewStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum CityIngestionStatus {
+  PROCESSING
+  FAILED
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+}
+
+/// Uma tentativa de popular os lugares de uma cidade.
+///
+/// A revisão é por CIDADE, não por lugar: com ~186 cidades e ~10 lugares cada,
+/// aprovar um por um seriam 1.800 decisões, e trabalho que ninguém faz vira
+/// conteúdo que nunca sai do rascunho. O admin olha os ~10 lugares de uma
+/// cidade numa tela e decide de uma vez — podendo rejeitar ou editar lugares
+/// individuais dentro dela.
+///
+/// Não existe um model "PlaceCandidate" separado de propósito: o `Place` em
+/// DRAFT já é o candidato, e um segundo model seria código morto.
+model CityIngestion {
+  id           String              @id @default(uuid()) @db.Uuid
+  countryCode  String              @map("country_code") @db.VarChar(2)
+  city         String              @db.VarChar(100)
+  status       CityIngestionStatus @default(PROCESSING)
+  /// Em que etapa está, ou em qual falhou: resolve_area | fetch_pois | rank |
+  /// write_texts. Sem isto, uma ingestão FAILED não diz o que tentar de novo.
+  step         String?             @db.VarChar(30)
+  errorMessage String?             @map("error_message")
+
+  /// Resultado da resolução de área no OSM, guardado para o retry não repetir a
+  /// consulta — e porque o nome que o OSM usa ("Lisboa") não é o que a nossa
+  /// lista de cidades usa ("Lisbon").
+  osmAreaId      BigInt? @map("osm_area_id")
+  osmMatchedName String? @map("osm_matched_name") @db.VarChar(120)
+
+  /// Contadores da execução: quantos elementos vieram, quantos tinham wikidata,
+  /// quantos tinham artigo em inglês, quantos ficaram, e a lista de conflitos
+  /// com lugares já curados. Essa lista é a métrica de redescoberta do piloto.
+  stats Json?
+
+  requestedById   String?   @map("requested_by_id") @db.Uuid
+  approvedAt      DateTime? @map("approved_at")
+  approvedById    String?   @map("approved_by_id") @db.Uuid
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectedById    String?   @map("rejected_by_id") @db.Uuid
+  rejectionReason String?   @map("rejection_reason")
+
+  places    Place[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([countryCode, city])
+  @@index([status, createdAt])
+  @@map("city_ingestions")
 }
