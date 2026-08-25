@@ -103,6 +103,15 @@ própria (os mirrors testados na data — `overpass.kumi.systems`,
 responderam, então "usar um mirror" não é plano B pronto: instância própria é a
 saída real).
 
+**Medido no piloto (2026-08-25, `docs/PILOTO_INGESTAO_LUGARES.md`):** o
+intervalo de 5s entre consultas era curto demais — as três cidades do piloto
+falharam todas as tentativas no `fetch_pois`. As mesmas 8 consultas espaçadas
+**15s** devolveram 7/8 na primeira tentativa. E, depois de algumas centenas de
+consultas numa tarde, a instância pública passou de 504 a **recusar conexão**,
+com Wikipedia e Wikidata respondendo normalmente da mesma máquina. Rodar as 186
+cidades contra ela não é viável: instância própria é pré-requisito, não
+contingência.
+
 **A armadilha do nome da cidade**: a nossa lista vem do CountriesNow em inglês
 ("Lisbon"), e o OSM usa o nome local ("Lisboa"). A resolução tenta `name:en`,
 depois `name`, depois `boundary=administrative` com `admin_level` 6 a 8 — e
