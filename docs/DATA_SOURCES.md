@@ -117,6 +117,20 @@ contingência.
 depois `name`, depois `boundary=administrative` com `admin_level` 6 a 8 — e
 falha reportando as tentativas, nunca em silêncio.
 
+**E a armadilha do acento**, que é outra: o CountriesNow escreve "Sao Paulo" e o
+OSM guarda "São Paulo", então nenhuma das quatro tentativas exatas casa. O
+Overpass não compara ignorando acento, e **classe de caracteres não resolve** —
+`[aàáâã]` devolveu zero, porque o regex dele trabalha byte a byte e o `ã` ocupa
+dois. O `.` casa o caractere inteiro, então as duas últimas tentativas trocam
+cada vogal (mais `c` e `n`, que carregam cedilha e til) por `.`.
+
+O padrão fica frouxo de propósito: `^S.. P..l.$` casou **28 áreas** no Brasil,
+entre elas 21 "San Pablo" e duas "St. Pauls". Quem separa é a conferência do
+nome do nosso lado, comparando sem acento — sobrou exatamente uma,
+`3600298285`, São Paulo cidade. Frouxo na consulta, exato na verificação: pedir
+precisão ao Overpass aqui não dá, e aceitar o primeiro resultado dele seria
+loteria.
+
 ## Onde o contrato com o frontend é verificado
 
 - **Gerado**: `/countries`, `/blog/posts` e `/users/plan` são consumidos por

@@ -666,6 +666,35 @@ em `stats.textFailures` (via `jsonb ||`, atômico) e sai da contagem de
 pendentes: uma descrição que nunca veio não pode prender os outros nove lugares
 em `PROCESSING`.
 
+**Quantos lugares por cidade.** `PLACES_PER_CITY = 40`. O piloto rodou com 10 e
+mostrou que era pouco: o Porto oferece **174 candidatos** com wikidata e nome.
+Pegar todos foi considerado e recusado — a cauda é dólmen e aldeia, o custo de
+IA multiplica pelo mesmo fator, e uma tela de revisão com 174 cards em três
+idiomas deixa de ser revisável. O `popularityScore` **não depende mais do teto**:
+`scoreFor(index, total)` distribui de 100 a 1 para qualquer corte, e reproduz a
+escala antiga exatamente quando o total é 10. A fórmula anterior
+(`100 - 10 * rank`) estava soldada ao 10 — com 40 lugares o quadragésimo
+pontuaria **−290**, ordenando ao contrário e sendo recusado pela validação do
+PATCH admin.
+
+**Nunca o mesmo lugar duas vezes**, e são dois problemas distintos, ambos
+medidos no conjunto completo do Porto:
+
+- **O mesmo lugar mapeado duas vezes no OSM** — três `wikidataId` apareciam em
+  dois elementos cada ("Ribeira" é *node* e *relation*). A identidade é o
+  Wikidata; `dedupeByWikidata` mantém um, preferindo `relation` > `way` >
+  `node`, porque o `center` de uma relação é centroide real enquanto um node
+  posto à mão pode estar em qualquer canto — e porque preferir por tipo é
+  determinístico, ao contrário de "o primeiro que o Overpass devolveu".
+- **Lugares diferentes com o mesmo nome** — `Forte de São João Baptista` são
+  dois fortes (Q10283826 e Q10284015). Como `[countryCode, city, slug]` é a
+  chave única, colidir significa o segundo upsert sobrescrever o primeiro em
+  silêncio. `uniqueSlugs` sufixa o perdedor com o **Wikidata id**, não um
+  contador: o id é estável, enquanto um contador dependeria da ordenação e um
+  reprocessamento que reordenasse criaria slug novo e linha duplicada — o
+  oposto do que a função existe para evitar. O mais visitado fica com o slug
+  limpo.
+
 **O curado é intocável.** O upsert por `[countryCode, city, slug]` torna a
 ingestão idempotente, mas seria também o caminho para uma descrição gerada
 substituir uma escrita à mão. Lugar já existente com `reviewStatus != DRAFT`

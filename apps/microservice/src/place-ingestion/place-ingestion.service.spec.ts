@@ -28,7 +28,11 @@ import type { WikimediaService } from './wikimedia.service';
 
 const INGESTION_ID = 'ingestion-1';
 
-const poi = (name: string, qid: string): OverpassPoi => ({
+const poi = (
+  name: string,
+  qid: string,
+  over: Partial<OverpassPoi> = {},
+): OverpassPoi => ({
   osmType: 'way',
   osmId: 10,
   name,
@@ -37,6 +41,15 @@ const poi = (name: string, qid: string): OverpassPoi => ({
   lng: -9.2,
   category: 'LANDMARK' as OverpassPoi['category'],
   isFree: false,
+  ...over,
+});
+
+/** Popularity signal for a QID, so ranking order is controllable in a test. */
+const signal = (qid: string, monthlyViews: number) => ({
+  wikidataId: qid,
+  title: qid,
+  monthlyViews,
+  extract: null,
 });
 
 /**
@@ -233,6 +246,92 @@ describe('PlaceIngestionService', () => {
 
       expect(dispatcher.dispatchPlaceTexts).not.toHaveBeenCalled();
       expect(repository.status).toBe('READY_FOR_REVIEW');
+    });
+  });
+
+  describe('ranking', () => {
+    /** Persisted places, whatever the fake repository was told to create. */
+    const persisted = () =>
+      repository.persistDrafts.mock.calls[0][4] as {
+        slug: string;
+        wikidataId: string;
+        popularityScore: number;
+        osmType: string;
+      }[];
+
+    it('keeps one place per Wikidata id, preferring the relation over the node', async () => {
+      // Measured in Porto: "Ribeira" exists as a node and as a relation. Same
+      // place, drawn twice — and a relation's centre beats a hand-placed node.
+      overpass.fetchPois.mockResolvedValue([
+        poi('Ribeira', 'Q1', { osmType: 'node', osmId: 1 }),
+        poi('Ribeira', 'Q1', { osmType: 'relation', osmId: 2 }),
+      ]);
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 5000)]);
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(persisted()).toHaveLength(1);
+      expect(persisted()[0].osmType).toBe('relation');
+    });
+
+    it('gives two different places sharing a name distinct slugs', async () => {
+      // "Forte de São João Baptista" is two different forts in Porto. Colliding
+      // on [countryCode, city, slug] would make the second upsert overwrite the
+      // first, losing a place while still reporting both as created.
+      overpass.fetchPois.mockResolvedValue([
+        poi('Forte de São João Baptista', 'Q10283826'),
+        poi('Forte de São João Baptista', 'Q10284015', { osmId: 11 }),
+      ]);
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q10283826', 900),
+        signal('Q10284015', 500),
+      ]);
+
+      await service.ingestCity(INGESTION_ID);
+
+      const slugs = persisted().map((place) => place.slug);
+      expect(new Set(slugs).size).toBe(2);
+      // The most visited keeps the readable slug.
+      expect(slugs[0]).toBe('forte-de-sao-joao-baptista');
+      expect(slugs[1]).toBe('forte-de-sao-joao-baptista-q10284015');
+    });
+
+    it('scores from 100 down to 1 whatever the number kept', async () => {
+      // The old formula was welded to a cut of ten: at forty places the
+      // fortieth would have scored -290, ordering backwards and failing the
+      // admin PATCH validation.
+      const many = Array.from({ length: 40 }, (_, i) =>
+        poi(`Place ${i}`, `Q${i}`, { osmId: i }),
+      );
+      overpass.fetchPois.mockResolvedValue(many);
+      wikimedia.popularity.mockResolvedValue(
+        many.map((place, i) => signal(place.wikidataId, 10_000 - i)),
+      );
+
+      await service.ingestCity(INGESTION_ID);
+
+      const scores = persisted().map((place) => place.popularityScore);
+      expect(scores).toHaveLength(40);
+      expect(scores[0]).toBe(100);
+      expect(scores.at(-1)).toBe(3);
+      expect(Math.min(...scores)).toBeGreaterThan(0);
+      expect([...scores].sort((a, b) => b - a)).toEqual(scores);
+    });
+
+    it('reproduces the original scale when ten places are kept', async () => {
+      const ten = Array.from({ length: 10 }, (_, i) =>
+        poi(`Place ${i}`, `Q${i}`, { osmId: i }),
+      );
+      overpass.fetchPois.mockResolvedValue(ten);
+      wikimedia.popularity.mockResolvedValue(
+        ten.map((place, i) => signal(place.wikidataId, 10_000 - i)),
+      );
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(persisted().map((place) => place.popularityScore)).toEqual([
+        100, 90, 80, 70, 60, 50, 40, 30, 20, 10,
+      ]);
     });
   });
 

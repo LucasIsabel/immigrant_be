@@ -135,6 +135,55 @@ describe('OverpassService', () => {
       );
     });
 
+    it('resolve a cidade acentuada que a nossa lista escreve sem acento', async () => {
+      // O CountriesNow diz "Sao Paulo", o OSM guarda "São Paulo": as quatro
+      // tentativas exatas devolvem zero. O padrão frouxo casa, e a conferência
+      // do nome no nosso lado é quem descarta "San Pablo" e "St. Pauls" —
+      // medido: 28 candidatos no Brasil, um só sobrevive.
+      fetchMock
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(
+          resposta({
+            elements: [
+              { type: 'relation', id: 3601309985, tags: { name: 'San Pablo' } },
+              { type: 'relation', id: 3600298285, tags: { name: 'São Paulo' } },
+            ],
+          }),
+        )
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      await expect(service.resolveArea('BR', 'Sao Paulo')).resolves.toBe(
+        3600298285,
+      );
+      // O corpo é `application/x-www-form-urlencoded`, onde espaço vira `+`.
+      expect(
+        decodeURIComponent(consultaDaChamada(4).replace(/\+/g, ' ')),
+      ).toContain('^S.. P..l.$');
+    });
+
+    it('não aceita candidata cujo nome só bate por acaso no padrão frouxo', async () => {
+      // Sem a conferência, "San Pablo" seria aceito como "Sao Paulo".
+      fetchMock
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValue(
+          resposta({
+            elements: [
+              { type: 'relation', id: 3601309985, tags: { name: 'San Pablo' } },
+            ],
+          }),
+        );
+
+      await expect(service.resolveArea('BR', 'Sao Paulo')).rejects.toThrow(
+        AreaNotResolvedError,
+      );
+    });
+
     it('recusa área que existe mas está vazia', async () => {
       // Aceitar apontaria o resto do pipeline para o nada.
       fetchMock
@@ -160,6 +209,8 @@ describe('OverpassService', () => {
           'name',
           'admin_level:name:en',
           'admin_level:name',
+          'sem-acento:place',
+          'sem-acento:admin_level',
         ],
       });
     });
