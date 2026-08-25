@@ -666,11 +666,14 @@ em `stats.textFailures` (via `jsonb ||`, atômico) e sai da contagem de
 pendentes: uma descrição que nunca veio não pode prender os outros nove lugares
 em `PROCESSING`.
 
-**Quantos lugares por cidade.** `PLACES_PER_CITY = 40`. O piloto rodou com 10 e
+**Quantos lugares por cidade.** `PLACES_PER_CITY = 30`. O piloto rodou com 10 e
 mostrou que era pouco: o Porto oferece **174 candidatos** com wikidata e nome.
 Pegar todos foi considerado e recusado — a cauda é dólmen e aldeia, o custo de
 IA multiplica pelo mesmo fator, e uma tela de revisão com 174 cards em três
-idiomas deixa de ser revisável. O `popularityScore` **não depende mais do teto**:
+idiomas deixa de ser revisável. Trinta e não quarenta é decisão de produto
+(plano "My City — locais e eventos", 2026-08-25): os clássicos ingeridos são a
+isca de tráfego, o negócio local e o evento são o produto — o catálogo não
+precisa de uma profundidade que existe para entregar atenção a outra coisa. O `popularityScore` **não depende mais do teto**:
 `scoreFor(index, total)` distribui de 100 a 1 para qualquer corte, e reproduz a
 escala antiga exatamente quando o total é 10. A fórmula anterior
 (`100 - 10 * rank`) estava soldada ao 10 — com 40 lugares o quadragésimo

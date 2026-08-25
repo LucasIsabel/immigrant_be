@@ -22,13 +22,14 @@ import { WikimediaService } from './wikimedia.service';
 /**
  * How many places a city keeps.
  *
- * Forty, not the ten the pilot ran with. Porto offered **174** candidates that
- * carried both a Wikidata id and a name, so ten was leaving a city
- * under-described. Taking all 174 was the other option and was turned down:
- * the tail is dolmens and hamlets, the AI cost multiplies by the same factor,
- * and a review screen with 174 cards in three languages stops being reviewable.
+ * Thirty. The pilot ran with ten and Porto offered **174** candidates, so ten
+ * left a city under-described; taking everything was turned down because the
+ * tail is dolmens and hamlets and 174 cards in three languages stop being
+ * reviewable. Thirty rather than forty is a product decision: the ingested
+ * classics are the traffic bait, local businesses and events are the product —
+ * the catalogue does not need depth it exists to hand attention away from.
  */
-const PLACES_PER_CITY = 40;
+const PLACES_PER_CITY = 30;
 
 /**
  * Popularity on a 100..1 scale, whatever the cut is.
