@@ -1,6 +1,6 @@
-// O `@Session()` arrasta o better-auth (ESM) para dentro do Jest. O mock usa o
-// `createParamDecorator` de verdade do Nest para não mentir sobre o metadata —
-// é justamente o metadata que o Swagger lê.
+// `@Session()` drags better-auth (ESM) into Jest. The mock uses Nest's real
+// `createParamDecorator` so it does not lie about the metadata — the metadata
+// is precisely what Swagger reads.
 jest.mock('@thallesp/nestjs-better-auth', () => {
   const { createParamDecorator } =
     jest.requireActual<typeof import('@nestjs/common')>('@nestjs/common');
@@ -37,16 +37,17 @@ import { PlacesAdminController } from './places-admin.controller';
 import { PlacesAdminService } from './places-admin.service';
 
 /**
- * O contrato com o frontend, verificado — não confiado.
+ * The contract with the frontend, verified rather than trusted.
  *
- * O FE gera hooks e tipos a partir deste OpenAPI. Uma resposta declarada como
- * schema inline em vez de classe nomeada compila, sobe e responde certo: só
- * não vira tipo do outro lado, e a falha só aparece no `pnpm generate:api`
- * dias depois. Foi assim que #132 e #133 viraram retrabalho.
+ * The frontend generates hooks and types from this OpenAPI. A response declared
+ * as an inline schema instead of a named class compiles, boots and answers
+ * correctly: it just produces no type on the other side, and the failure only
+ * shows up at `pnpm generate:api` days later. That is how #132 and #133 became
+ * rework.
  *
- * Este spec falha na hora em que alguém acrescenta uma rota sem `type`.
+ * This spec fails the moment somebody adds a route without a `type`.
  */
-describe('Contrato OpenAPI — Places Admin', () => {
+describe('OpenAPI contract — Places Admin', () => {
   let app: INestApplication;
   let document: OpenAPIObject;
 
@@ -69,20 +70,20 @@ describe('Contrato OpenAPI — Places Admin', () => {
     await app.close();
   });
 
-  const respostasComCorpo = () =>
-    Object.entries(document.paths).flatMap(([rota, item]) =>
+  const responsesWithBody = () =>
+    Object.entries(document.paths).flatMap(([route, item]) =>
       Object.entries(item as Record<string, unknown>).flatMap(
-        ([metodo, operacao]) => {
-          const respostas =
-            (operacao as { responses?: Record<string, unknown> }).responses ??
+        ([method, operation]) => {
+          const responses =
+            (operation as { responses?: Record<string, unknown> }).responses ??
             {};
-          return Object.entries(respostas)
-            .filter(([codigo]) => codigo.startsWith('2'))
-            .map(([codigo, resposta]) => ({
-              rota: `${metodo.toUpperCase()} ${rota}`,
-              codigo,
+          return Object.entries(responses)
+            .filter(([code]) => code.startsWith('2'))
+            .map(([code, response]) => ({
+              route: `${method.toUpperCase()} ${route}`,
+              code,
               schema: (
-                resposta as {
+                response as {
                   content?: {
                     'application/json'?: { schema?: Record<string, unknown> };
                   };
@@ -93,16 +94,16 @@ describe('Contrato OpenAPI — Places Admin', () => {
       ),
     );
 
-  it('registra as nove operações do fluxo de ingestão', () => {
-    const operacoes = Object.entries(document.paths)
-      .flatMap(([rota, item]) =>
+  it('registers the nine operations of the ingestion flow', () => {
+    const operations = Object.entries(document.paths)
+      .flatMap(([route, item]) =>
         Object.keys(item as Record<string, unknown>).map(
-          (metodo) => `${metodo.toUpperCase()} ${rota}`,
+          (method) => `${method.toUpperCase()} ${route}`,
         ),
       )
       .sort();
 
-    expect(operacoes).toEqual([
+    expect(operations).toEqual([
       'GET /admin/places/ingestions',
       'GET /admin/places/ingestions/{id}',
       'PATCH /admin/places/ingestions/{id}/places/{placeId}',
@@ -115,15 +116,15 @@ describe('Contrato OpenAPI — Places Admin', () => {
     ]);
   });
 
-  it('toda resposta de sucesso com corpo aponta para um schema nomeado', () => {
-    const inline = respostasComCorpo()
+  it('points every success response with a body at a named schema', () => {
+    const inline = responsesWithBody()
       .filter((r) => r.schema && !('$ref' in r.schema))
-      .map((r) => `${r.rota} (${r.codigo})`);
+      .map((r) => `${r.route} (${r.code})`);
 
     expect(inline).toEqual([]);
   });
 
-  it('expõe os DTOs que o frontend precisa gerar', () => {
+  it('exposes the DTOs the frontend needs to generate', () => {
     const schemas = Object.keys(document.components?.schemas ?? {});
 
     expect(schemas).toEqual(
@@ -139,18 +140,18 @@ describe('Contrato OpenAPI — Places Admin', () => {
     );
   });
 
-  it('não deixa os tipos aninhados como schema inline', () => {
-    // `$ref` dentro de schema inline exigiria `@ApiExtraModels` e sairia como
-    // `any` no frontend — foi exatamente o buraco do #133.
+  it('does not leave the nested types as inline schemas', () => {
+    // A `$ref` inside an inline schema would need `@ApiExtraModels` and would
+    // land as `any` on the frontend — exactly the hole in #133.
     const stats = document.components?.schemas?.[
       'CityIngestionResponseDto'
     ] as { properties?: Record<string, { allOf?: unknown[]; $ref?: string }> };
 
-    const propriedade = stats.properties?.stats;
-    const referencia =
-      propriedade?.$ref ??
-      (propriedade?.allOf?.[0] as { $ref?: string } | undefined)?.$ref;
+    const property = stats.properties?.stats;
+    const reference =
+      property?.$ref ??
+      (property?.allOf?.[0] as { $ref?: string } | undefined)?.$ref;
 
-    expect(referencia).toBe('#/components/schemas/IngestionStatsDto');
+    expect(reference).toBe('#/components/schemas/IngestionStatsDto');
   });
 });

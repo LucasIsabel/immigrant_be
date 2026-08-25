@@ -10,10 +10,10 @@ import { PlaceIngestionService } from './place-ingestion.service';
 import { WikimediaService } from './wikimedia.service';
 
 /**
- * O worker: consumidor, pipeline e os clientes das fontes externas.
+ * The worker: consumer, pipeline, and the clients for the external sources.
  *
- * Quem sabe qual broker existe é o `IngestionModule`, na lib — este módulo
- * apenas o importa para receber o `INGESTION_DISPATCHER`.
+ * What knows which broker exists is `IngestionModule`, in the lib — this
+ * module only imports it to receive `INGESTION_DISPATCHER`.
  */
 @Module({
   imports: [DatabaseModule, AiModule, EventsModule, IngestionModule],

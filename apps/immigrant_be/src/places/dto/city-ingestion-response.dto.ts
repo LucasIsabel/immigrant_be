@@ -7,10 +7,11 @@ import {
 import { PlaceTranslationDto } from './place-translation.dto';
 
 /**
- * Um lugar que a ingestão encontrou mas não tocou, porque já existia curado.
+ * A place the ingestion found but did not touch, because a curated one already
+ * held that slug.
  *
- * Não é erro: é a métrica de redescoberta. Quantos dos lugares escolhidos à mão
- * o pipeline reencontra sozinho é o que diz se ele funciona.
+ * Not an error: it is the rediscovery metric. How many hand-picked places the
+ * pipeline finds on its own is what says whether it works.
  */
 export class IngestionConflictDto {
   @ApiProperty({ example: 'torre-de-belem' })
@@ -19,14 +20,14 @@ export class IngestionConflictDto {
   @ApiProperty({ example: 'Q215003' })
   wikidataId: string;
 
-  @ApiProperty({ description: 'Posição no ranking gerado', example: 1 })
+  @ApiProperty({ description: 'Position in the generated ranking', example: 1 })
   rank: number;
 
   @ApiProperty({ example: 12997 })
   monthlyViews: number;
 }
 
-/** Por que um lugar foi recusado na revisão. */
+/** Why a place was turned down during review. */
 export class PlaceRejectionDto {
   @ApiProperty()
   placeId: string;
@@ -37,35 +38,35 @@ export class PlaceRejectionDto {
   reason: string;
 }
 
-/** O que uma corrida encontrou, guardou e recusou. */
+/** What one run found, kept and refused. */
 export class IngestionStatsDto {
-  @ApiPropertyOptional({ description: 'Elementos crus vindos do Overpass' })
+  @ApiPropertyOptional({ description: 'Raw elements returned by Overpass' })
   rawElements?: number;
 
   @ApiPropertyOptional({
-    description: 'Quantos tinham artigo na Wikipédia em inglês',
+    description: 'How many had an article on the English Wikipedia',
   })
   withEnwiki?: number;
 
   @ApiPropertyOptional({
-    description: 'Quantos sobreviveram ao corte do top 10',
+    description: 'How many survived the top-10 cut',
   })
   kept?: number;
 
-  @ApiPropertyOptional({ description: 'Quantos viraram rascunho de fato' })
+  @ApiPropertyOptional({ description: 'How many actually became drafts' })
   created?: number;
 
   @ApiPropertyOptional({ type: [IngestionConflictDto] })
   conflicts?: IngestionConflictDto[];
 
   @ApiPropertyOptional({
-    description: 'IDs de lugares cujo texto falhou em definitivo',
+    description: 'Ids of places whose text failed for good',
     type: [String],
   })
   textFailures?: string[];
 
   @ApiPropertyOptional({
-    description: 'Motivos das recusas individuais de lugares',
+    description: 'Reasons given for individual place rejections',
     type: [PlaceRejectionDto],
   })
   placeRejections?: PlaceRejectionDto[];
@@ -85,7 +86,7 @@ export class CityIngestionResponseDto {
   status: CityIngestionStatus;
 
   @ApiPropertyOptional({
-    description: 'Em que etapa a ingestão está, ou parou',
+    description: 'Which step the ingestion is on, or stopped at',
     example: 'fetch_pois',
     nullable: true,
   })
@@ -96,7 +97,7 @@ export class CityIngestionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'Área do OSM já resolvida — o retry não precisa procurar de novo',
+      'The already resolved OSM area — a retry does not have to look it up again',
     nullable: true,
     type: String,
   })
@@ -104,7 +105,7 @@ export class CityIngestionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'Como o OSM chama a área — "Lisboa" onde a nossa lista diz "Lisbon"',
+      'What OSM calls the area — "Lisboa" where our list says "Lisbon"',
     nullable: true,
   })
   osmMatchedName?: string | null;
@@ -133,7 +134,7 @@ export class PaginatedCityIngestionsResponseDto {
   limit: number;
 }
 
-/** Um lugar como o admin o revisa: com proveniência, que o público não vê. */
+/** A place as the admin reviews it: with provenance the public never sees. */
 export class AdminPlaceResponseDto {
   @ApiProperty()
   id: string;
@@ -173,7 +174,7 @@ export class AdminPlaceResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'A URL canônica do elemento no OSM — atribuição por registro, que a ODbL exige',
+      'Canonical URL of the OSM element — per-record attribution, which the ODbL requires',
     nullable: true,
   })
   sourceUrl?: string | null;
@@ -183,7 +184,7 @@ export class AdminPlaceResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'Média mensal de visitas ao artigo. É o número cru por trás do popularityScore.',
+      'Mean monthly article views. The raw number behind popularityScore.',
     nullable: true,
   })
   wikipediaMonthlyViews?: number | null;

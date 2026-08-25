@@ -233,12 +233,12 @@ export class PlaceIngestionService {
   }
 
   /**
-   * O nome que o OSM usa para a área — "Lisboa" onde a nossa lista diz "Lisbon".
+   * What OSM calls the area — "Lisboa" where our list says "Lisbon".
    *
-   * Falha aqui não derruba nada. Resolver a área custa até quatro consultas
-   * mais uma sonda, e visto acontecer: a resolução de Sintra passou e o pedido
-   * seguinte, do nome, tomou 504 — o que descartava a área recém-resolvida e
-   * obrigava o retry a refazer tudo, por um rótulo de tela.
+   * Failing here brings nothing down. Resolving the area costs up to four
+   * queries plus a probe, and this was seen happening: Sintra resolved and the
+   * very next request, for the name, took a 504 — which threw away the area
+   * just resolved and made the retry redo everything, over a screen label.
    */
   private async matchedName(areaId: number): Promise<string | null> {
     try {
@@ -272,7 +272,7 @@ export class PlaceIngestionService {
 
     const signals = await this.wikimedia.popularity(
       pois.map((poi) => poi.wikidataId),
-      // O resumo é buscado depois, para os 10 que sobreviverem ao corte.
+      // The summary is fetched later, for the 10 that survive the cut.
       { withExtract: false },
     );
     const byWikidata = new Map(signals.map((s) => [s.wikidataId, s]));

@@ -31,13 +31,13 @@ export class UpdatePlaceTranslationDto {
 }
 
 export class UpdateIngestedPlaceDto {
-  @ApiPropertyOptional({ description: 'Nome exibido do lugar' })
+  @ApiPropertyOptional({ description: 'Display name of the place' })
   @IsOptional()
   @IsString()
   @Length(1, 200)
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Entrada gratuita' })
+  @ApiPropertyOptional({ description: 'Entry is free' })
   @IsOptional()
   @IsBoolean()
   isFree?: boolean;

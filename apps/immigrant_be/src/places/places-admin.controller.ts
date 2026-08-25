@@ -42,29 +42,31 @@ import { UpdateIngestedPlaceDto } from './dto/update-ingested-place.dto';
 import { PlacesAdminService } from './places-admin.service';
 
 /**
- * Toda resposta é declarada como classe nomeada em `@ApiResponse({ type })`.
+ * Every response is declared as a named class in `@ApiResponse({ type })`.
  *
- * É essa declaração que vira tipo no frontend: um schema inline não gera nada
- * utilizável, e um `$ref` dentro dele exigiria `@ApiExtraModels`. Foi o que
- * custou dois PRs de retrabalho no #132/#133.
+ * That declaration is what becomes a type on the frontend: an inline schema
+ * generates nothing usable, and a `$ref` inside one would need
+ * `@ApiExtraModels`. It cost two PRs of rework in #132/#133.
  */
 @ApiTags('Admin — Places Ingestion')
 @Controller('admin/places/ingestions')
 @Roles(UserRole.ADMIN)
 @ApiCookieAuth('better-auth.session_token')
-@ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
-@ApiForbiddenResponse({ description: 'Acesso insuficiente' })
+@ApiUnauthorizedResponse({ description: 'Authentication required' })
+@ApiForbiddenResponse({ description: 'Insufficient access' })
 export class PlacesAdminController {
   constructor(private readonly service: PlacesAdminService) {}
 
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOperation({ summary: 'Disparar a ingestão de lugares de uma cidade' })
+  @ApiOperation({ summary: 'Trigger the place ingestion for a city' })
   @ApiAcceptedResponse({
-    description: 'Ingestão criada e enfileirada',
+    description: 'Ingestion created and queued',
     type: CityIngestionResponseDto,
   })
-  @ApiConflictResponse({ description: 'Já existe ingestão ativa desta cidade' })
+  @ApiConflictResponse({
+    description: 'An active ingestion for this city already exists',
+  })
   create(
     @Body() dto: CreateCityIngestionDto,
     @Session() session: UserSession,
@@ -73,7 +75,7 @@ export class PlacesAdminController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar ingestões, com filtro por status' })
+  @ApiOperation({ summary: 'List ingestions, filtered by status' })
   @ApiOkResponse({ type: PaginatedCityIngestionsResponseDto })
   list(
     @Query() query: ListCityIngestionsQueryDto,
@@ -84,11 +86,11 @@ export class PlacesAdminController {
   @Get(':id')
   @ApiOperation({
     summary:
-      'Detalhe da ingestão — lugares, traduções, proveniência e conflitos',
+      'Ingestion detail — places, translations, provenance and conflicts',
   })
   @ApiOkResponse({ type: CityIngestionDetailResponseDto })
-  @ApiNotFoundResponse({ description: 'Ingestão não encontrada' })
-  @ApiParam({ name: 'id', description: 'UUID da ingestão' })
+  @ApiNotFoundResponse({ description: 'Ingestion not found' })
+  @ApiParam({ name: 'id', description: 'Ingestion UUID' })
   detail(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<CityIngestionDetailResponseDto> {
@@ -96,10 +98,10 @@ export class PlacesAdminController {
   }
 
   @Patch(':id/places/:placeId')
-  @ApiOperation({ summary: 'Editar um lugar em rascunho' })
+  @ApiOperation({ summary: 'Edit a place while it is a draft' })
   @ApiOkResponse({ type: AdminPlaceResponseDto })
-  @ApiNotFoundResponse({ description: 'Lugar não encontrado nesta ingestão' })
-  @ApiConflictResponse({ description: 'O lugar não está em rascunho' })
+  @ApiNotFoundResponse({ description: 'Place not found in this ingestion' })
+  @ApiConflictResponse({ description: 'The place is no longer a draft' })
   updatePlace(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('placeId', ParseUUIDPipe) placeId: string,
@@ -110,9 +112,11 @@ export class PlacesAdminController {
 
   @Post(':id/places/:placeId/reject')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Recusar um lugar — ele não renasce no reprocesso' })
+  @ApiOperation({
+    summary: 'Reject a place — it does not come back on reprocessing',
+  })
   @ApiOkResponse({ type: AdminPlaceResponseDto })
-  @ApiNotFoundResponse({ description: 'Lugar não encontrado nesta ingestão' })
+  @ApiNotFoundResponse({ description: 'Place not found in this ingestion' })
   rejectPlace(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('placeId', ParseUUIDPipe) placeId: string,
@@ -123,9 +127,9 @@ export class PlacesAdminController {
 
   @Post(':id/places/:placeId/retry-texts')
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOperation({ summary: 'Re-enfileirar a escrita do texto de um lugar' })
-  @ApiAcceptedResponse({ description: 'Job enfileirado' })
-  @ApiNotFoundResponse({ description: 'Lugar não encontrado nesta ingestão' })
+  @ApiOperation({ summary: 'Re-queue the text writing for one place' })
+  @ApiAcceptedResponse({ description: 'Job queued' })
+  @ApiNotFoundResponse({ description: 'Place not found in this ingestion' })
   retryTexts(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('placeId', ParseUUIDPipe) placeId: string,
@@ -136,13 +140,14 @@ export class PlacesAdminController {
   @Post(':id/approve')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Aprovar a cidade — publica todos os rascunhos de uma vez',
+    summary: 'Approve the city — publishes every draft at once',
   })
   @ApiOkResponse({ type: CityIngestionResponseDto })
-  @ApiNotFoundResponse({ description: 'Ingestão não encontrada' })
-  @ApiConflictResponse({ description: 'A cidade não está pronta para revisão' })
+  @ApiNotFoundResponse({ description: 'Ingestion not found' })
+  @ApiConflictResponse({ description: 'The city is not ready for review' })
   @ApiUnprocessableEntityResponse({
-    description: 'Há lugares sem as três traduções — a resposta lista quais',
+    description:
+      'Some places lack all three translations — the response lists them',
   })
   approve(
     @Param('id', ParseUUIDPipe) id: string,
@@ -153,10 +158,10 @@ export class PlacesAdminController {
 
   @Post(':id/reject')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Recusar a cidade inteira' })
+  @ApiOperation({ summary: 'Reject the whole city' })
   @ApiOkResponse({ type: CityIngestionResponseDto })
-  @ApiNotFoundResponse({ description: 'Ingestão não encontrada' })
-  @ApiConflictResponse({ description: 'A cidade não está pronta para revisão' })
+  @ApiNotFoundResponse({ description: 'Ingestion not found' })
+  @ApiConflictResponse({ description: 'The city is not ready for review' })
   reject(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RejectCityIngestionDto,
@@ -167,10 +172,10 @@ export class PlacesAdminController {
 
   @Post(':id/retry')
   @HttpCode(HttpStatus.ACCEPTED)
-  @ApiOperation({ summary: 'Reprocessar uma ingestão que falhou' })
+  @ApiOperation({ summary: 'Reprocess an ingestion that failed' })
   @ApiAcceptedResponse({ type: CityIngestionResponseDto })
-  @ApiNotFoundResponse({ description: 'Ingestão não encontrada' })
-  @ApiConflictResponse({ description: 'A ingestão não está em FAILED' })
+  @ApiNotFoundResponse({ description: 'Ingestion not found' })
+  @ApiConflictResponse({ description: 'The ingestion is not in FAILED' })
   retry(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<CityIngestionResponseDto> {

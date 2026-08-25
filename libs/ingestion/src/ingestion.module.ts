@@ -6,15 +6,15 @@ import { BullmqIngestionDispatcher } from './bullmq-ingestion.dispatcher';
 import { INGESTION_DISPATCHER } from './ingestion-dispatcher.port';
 
 /**
- * O único lugar do monorepo onde a ingestão encosta num broker.
+ * The one place in the monorepo where ingestion touches a broker.
  *
- * Vive numa lib porque os dois apps precisam despachar: a API dispara a
- * ingestão de uma cidade quando o admin pede, e o worker dispara um job de
- * texto por lugar encontrado. Se cada um injetasse a `Queue` direto, trocar o
- * BullMQ por Kafka ou RabbitMQ seria mexer nos dois — e a API, que só quer
- * dizer "processe esta cidade", passaria a conhecer o broker sem precisar.
+ * It lives in a lib because both apps dispatch: the API queues a city's
+ * ingestion when an admin asks, and the worker queues one text job per place
+ * found. If each injected the `Queue` directly, swapping BullMQ for Kafka or
+ * RabbitMQ would mean changing both — and the API, which only wants to say
+ * "process this city", would know about the broker without needing to.
  *
- * Trocar de broker é trocar o `useClass` desta linha.
+ * Changing broker is changing the `useClass` on this line.
  */
 @Module({
   imports: [

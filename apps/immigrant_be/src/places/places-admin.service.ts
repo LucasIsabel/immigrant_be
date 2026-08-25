@@ -20,8 +20,8 @@ import { ListCityIngestionsQueryDto } from './dto/list-city-ingestions-query.dto
 import { UpdateIngestedPlaceDto } from './dto/update-ingested-place.dto';
 import { PlacesAdminRepository } from './places-admin.repository';
 
-/** Um lugar só é publicado com descrição nos três idiomas do produto. */
-const IDIOMAS_OBRIGATORIOS = ['pt', 'en', 'es'];
+/** A place is only published with a description in all three product languages. */
+const REQUIRED_LANGUAGES = ['pt', 'en', 'es'];
 
 @Injectable()
 export class PlacesAdminService {
@@ -35,13 +35,13 @@ export class PlacesAdminService {
     dto: CreateCityIngestionDto,
     adminId: string,
   ): Promise<CityIngestionResponseDto> {
-    const ativa = await this.repository.findActiveForCity(
+    const active = await this.repository.findActiveForCity(
       dto.countryCode,
       dto.city,
     );
-    if (ativa) {
+    if (active) {
       throw new ConflictException(
-        `Já existe uma ingestão ${ativa.status} para ${dto.city} (${dto.countryCode})`,
+        `Já existe uma ingestão ${active.status} para ${dto.city} (${dto.countryCode})`,
       );
     }
 
@@ -79,23 +79,23 @@ export class PlacesAdminService {
     placeId: string,
     dto: UpdateIngestedPlaceDto,
   ): Promise<AdminPlaceResponseDto> {
-    const lugar = await this.findDraft(ingestionId, placeId);
+    const place = await this.findInIngestion(ingestionId, placeId);
 
-    // Editar um lugar já publicado por esta tela seria editar produção sem
-    // trilha: o fluxo dele é outro.
-    if (lugar.reviewStatus !== PlaceReviewStatus.DRAFT) {
+    // Editing an already published place from this screen would be editing
+    // production with no trail: its flow is a different one.
+    if (place.reviewStatus !== PlaceReviewStatus.DRAFT) {
       throw new ConflictException(
-        `Só rascunhos podem ser editados aqui; este lugar está ${lugar.reviewStatus}`,
+        `Só rascunhos podem ser editados aqui; este lugar está ${place.reviewStatus}`,
       );
     }
 
-    const { translations = [], ...campos } = dto;
-    const atualizado = await this.repository.updatePlace(
+    const { translations = [], ...fields } = dto;
+    const updated = await this.repository.updatePlace(
       placeId,
-      campos,
+      fields,
       translations,
     );
-    return toPlaceResponse(atualizado);
+    return toPlaceResponse(updated);
   }
 
   async rejectPlace(
@@ -103,7 +103,7 @@ export class PlacesAdminService {
     placeId: string,
     reason?: string,
   ): Promise<AdminPlaceResponseDto> {
-    await this.findDraft(ingestionId, placeId);
+    await this.findInIngestion(ingestionId, placeId);
     if (reason) {
       await this.repository.recordPlaceRejection(ingestionId, placeId, reason);
     }
@@ -111,48 +111,49 @@ export class PlacesAdminService {
   }
 
   async retryPlaceTexts(ingestionId: string, placeId: string): Promise<void> {
-    await this.findDraft(ingestionId, placeId);
+    await this.findInIngestion(ingestionId, placeId);
     await this.dispatcher.dispatchPlaceTexts([{ placeId, ingestionId }]);
   }
 
   /**
-   * Aprovar publica todos os rascunhos da cidade de uma vez.
+   * Approving publishes every draft of the city at once.
    *
-   * O 422 com a lista de lugares incompletos existe porque a alternativa é pior:
-   * aprovar em silêncio publicaria um lugar sem descrição em espanhol, e ninguém
-   * descobriria até um usuário espanhol abrir o card vazio.
+   * The 422 carrying the incomplete places exists because the alternative is
+   * worse: approving silently would publish a place with no Spanish
+   * description, and nobody would find out until a Spanish reader opened the
+   * empty card.
    */
   async approve(id: string, adminId: string) {
-    const ingestion = await this.exigirRevisavel(id);
+    const ingestion = await this.requireReviewable(id);
 
-    const incompletos = await this.repository.findDraftsMissingTexts(
+    const incomplete = await this.repository.findDraftsMissingTexts(
       ingestion.id,
-      IDIOMAS_OBRIGATORIOS,
+      REQUIRED_LANGUAGES,
     );
-    if (incompletos.length) {
+    if (incomplete.length) {
       throw new UnprocessableEntityException({
-        message: `${incompletos.length} lugar(es) sem tradução completa`,
-        places: incompletos,
+        message: `${incomplete.length} lugar(es) sem tradução completa`,
+        places: incomplete,
       });
     }
 
-    const { ingestion: aprovada, published } = await this.repository.approve(
+    const { ingestion: approved, published } = await this.repository.approve(
       id,
       adminId,
     );
-    return { ...toResponse(aprovada), published };
+    return { ...toResponse(approved), published };
   }
 
   async reject(id: string, adminId: string, reason: string) {
-    await this.exigirRevisavel(id);
+    await this.requireReviewable(id);
     return toResponse(await this.repository.reject(id, adminId, reason));
   }
 
   /**
-   * Re-enfileira uma ingestão que falhou.
+   * Re-queue an ingestion that failed.
    *
-   * A `osmAreaId` já resolvida fica onde está: reprocessar não devia pagar de
-   * novo por até quatro consultas ao Overpass mais uma sonda.
+   * The already resolved `osmAreaId` stays where it is: reprocessing should not
+   * pay again for up to four Overpass queries plus a probe.
    */
   async retry(id: string): Promise<CityIngestionResponseDto> {
     const ingestion = await this.repository.findById(id);
@@ -163,23 +164,23 @@ export class PlacesAdminService {
       );
     }
 
-    const reaberta = await this.repository.reopen(id);
+    const reopened = await this.repository.reopen(id);
     await this.dispatcher.dispatchCity(id);
-    return toResponse(reaberta);
+    return toResponse(reopened);
   }
 
-  private async findDraft(ingestionId: string, placeId: string) {
-    const lugar = await this.repository.findPlaceInIngestion(
+  private async findInIngestion(ingestionId: string, placeId: string) {
+    const place = await this.repository.findPlaceInIngestion(
       ingestionId,
       placeId,
     );
-    if (!lugar) {
+    if (!place) {
       throw new NotFoundException('Lugar não encontrado nesta ingestão');
     }
-    return lugar;
+    return place;
   }
 
-  private async exigirRevisavel(id: string): Promise<CityIngestion> {
+  private async requireReviewable(id: string): Promise<CityIngestion> {
     const ingestion = await this.repository.findById(id);
     if (!ingestion) throw new NotFoundException('Ingestão não encontrada');
     if (ingestion.status !== CityIngestionStatus.READY_FOR_REVIEW) {
@@ -192,10 +193,10 @@ export class PlacesAdminService {
 }
 
 /**
- * `osmAreaId` é `BigInt` no banco e vira string no JSON.
+ * `osmAreaId` is a `BigInt` in the database and a string in JSON.
  *
- * Não é preciosismo: `JSON.stringify` lança em BigInt, então sem esta conversão
- * a rota devolveria 500 assim que a primeira cidade resolvesse a área.
+ * Not fussiness: `JSON.stringify` throws on BigInt, so without this conversion
+ * the route would answer 500 as soon as the first city resolved its area.
  */
 function toResponse(ingestion: CityIngestion): CityIngestionResponseDto {
   return {
@@ -213,14 +214,14 @@ function toResponse(ingestion: CityIngestion): CityIngestionResponseDto {
   };
 }
 
-type LugarDoBanco = Omit<AdminPlaceResponseDto, 'generationCostUsd'> & {
+type PlaceFromDatabase = Omit<AdminPlaceResponseDto, 'generationCostUsd'> & {
   generationCostUsd: { toNumber(): number } | null;
 };
 
-function toPlaceResponse(place: LugarDoBanco): AdminPlaceResponseDto {
+function toPlaceResponse(place: PlaceFromDatabase): AdminPlaceResponseDto {
   return {
     ...place,
-    // `Decimal` do Prisma serializa como objeto; o FE espera número.
+    // Prisma's `Decimal` serialises as an object; the frontend expects a number.
     generationCostUsd: place.generationCostUsd?.toNumber() ?? null,
   };
 }

@@ -6,13 +6,13 @@ import {
   Prisma,
 } from '../../../../generated/prisma';
 
-/** Estados em que a cidade ainda está em jogo — nem aprovada, nem descartada. */
-const EM_ANDAMENTO: CityIngestionStatus[] = [
+/** States where the city is still in play — neither approved nor discarded. */
+const IN_FLIGHT: CityIngestionStatus[] = [
   CityIngestionStatus.PROCESSING,
   CityIngestionStatus.READY_FOR_REVIEW,
 ];
 
-const LUGAR_ADMIN = {
+const ADMIN_PLACE = {
   id: true,
   name: true,
   slug: true,
@@ -40,16 +40,16 @@ export class PlacesAdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Uma ingestão ativa por cidade.
+   * One active ingestion per city.
    *
-   * É guarda de serviço e não constraint de banco de propósito: a mesma cidade
-   * pode ter várias ingestões ao longo do tempo — aprovadas, recusadas, uma nova
-   * depois de melhorar o pipeline. O que não pode é **duas ao mesmo tempo**, que
-   * disputariam os mesmos slugs.
+   * Deliberately a service guard and not a database constraint: the same city
+   * can be ingested many times over its life — approved, rejected, run again
+   * once the pipeline improves. What it cannot have is **two at once**, which
+   * would compete for the same slugs.
    */
   findActiveForCity(countryCode: string, city: string) {
     return this.prisma.cityIngestion.findFirst({
-      where: { countryCode, city, status: { in: EM_ANDAMENTO } },
+      where: { countryCode, city, status: { in: IN_FLIGHT } },
       select: { id: true, status: true },
     });
   }
@@ -97,7 +97,7 @@ export class PlacesAdminRepository {
       where: { id },
       include: {
         places: {
-          select: LUGAR_ADMIN,
+          select: ADMIN_PLACE,
           orderBy: { popularityScore: 'desc' },
         },
       },
@@ -107,7 +107,7 @@ export class PlacesAdminRepository {
   findPlaceInIngestion(ingestionId: string, placeId: string) {
     return this.prisma.place.findFirst({
       where: { id: placeId, ingestionId },
-      select: LUGAR_ADMIN,
+      select: ADMIN_PLACE,
     });
   }
 
@@ -133,7 +133,7 @@ export class PlacesAdminRepository {
     return this.prisma.place.update({
       where: { id: placeId },
       data,
-      select: LUGAR_ADMIN,
+      select: ADMIN_PLACE,
     });
   }
 
@@ -141,21 +141,21 @@ export class PlacesAdminRepository {
     return this.prisma.place.update({
       where: { id: placeId },
       data: { reviewStatus: PlaceReviewStatus.REJECTED, isActive: false },
-      select: LUGAR_ADMIN,
+      select: ADMIN_PLACE,
     });
   }
 
   /**
-   * Guarda o porquê de um lugar ter sido recusado.
+   * Keep why a place was turned down.
    *
-   * Vai no `stats` da ingestão e não numa coluna de `Place` porque é registro
-   * desta corrida, não atributo do lugar — e porque uma coluna nova custaria
-   * uma migration coordenada com produção para guardar uma frase. O `jsonb ||`
-   * faz o append dentro do próprio UPDATE, então duas recusas simultâneas não
-   * se perdem.
+   * Stored in the ingestion's stats rather than a `Place` column because it
+   * records this run, not an attribute of the place — and a new column would
+   * cost a production-coordinated migration to hold one sentence. The
+   * `jsonb ||` appends inside the UPDATE, so two rejections at the same moment
+   * cannot lose one another.
    *
-   * A alternativa era aceitar o motivo e descartá-lo, o que é pior que não
-   * pedir: o admin escreve uma justificativa que some sem aviso.
+   * The alternative was accepting the reason and discarding it, which is worse
+   * than not asking: the admin writes a justification that vanishes unnoticed.
    */
   recordPlaceRejection(ingestionId: string, placeId: string, reason: string) {
     return this.prisma.$executeRaw`
@@ -171,15 +171,15 @@ export class PlacesAdminRepository {
   }
 
   /**
-   * Rascunhos que ainda não têm as três traduções.
+   * Drafts that do not yet carry all three translations.
    *
-   * São eles que impedem a cidade de ser aprovada: publicar um lugar sem
-   * descrição em espanhol o deixaria mudo para quem navega em espanhol, e o
-   * card já está na tela. Uma consulta só, filtrada aqui — a alternativa em SQL
-   * seria um `having count(*)` que ninguém lê depois.
+   * They are what blocks the city from being approved: publishing a place with
+   * no Spanish description would leave it mute for anyone browsing in Spanish,
+   * and the card is already on screen. One query, filtered here — the SQL
+   * alternative is a `having count(*)` nobody reads later.
    */
   async findDraftsMissingTexts(ingestionId: string, languages: string[]) {
-    const rascunhos = await this.prisma.place.findMany({
+    const drafts = await this.prisma.place.findMany({
       where: { ingestionId, reviewStatus: PlaceReviewStatus.DRAFT },
       select: {
         id: true,
@@ -189,20 +189,20 @@ export class PlacesAdminRepository {
       },
     });
 
-    return rascunhos
-      .filter((lugar) => {
-        const tem = new Set(lugar.translations.map((t) => t.language));
-        return !languages.every((language) => tem.has(language));
+    return drafts
+      .filter((place) => {
+        const present = new Set(place.translations.map((t) => t.language));
+        return !languages.every((language) => present.has(language));
       })
       .map(({ id, name, slug }) => ({ id, name, slug }));
   }
 
   /**
-   * Aprovar a cidade publica os rascunhos numa transação.
+   * Approving the city publishes its drafts in one transaction.
    *
-   * Os dois updates andam juntos porque um lugar `APPROVED` mas `isActive:
-   * false` seria invisível sem ninguém saber por quê, e uma cidade `APPROVED`
-   * com rascunhos soltos não teria como ser reaprovada.
+   * The two updates travel together because a place left `APPROVED` but
+   * `isActive: false` would be invisible with nobody knowing why, and a city
+   * marked `APPROVED` with drafts still loose could never be approved again.
    */
   approve(ingestionId: string, adminId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -243,7 +243,7 @@ export class PlacesAdminRepository {
     });
   }
 
-  /** Devolve a ingestão a PROCESSING para uma nova tentativa. */
+  /** Hand the ingestion back to PROCESSING for another attempt. */
   reopen(id: string) {
     return this.prisma.cityIngestion.update({
       where: { id },

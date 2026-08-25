@@ -78,6 +78,30 @@
   `gh api -X PATCH repos/LucasIsabel/immigrant_be/pulls/N -F body=@arquivo.md`.
 - Colunas do board: `Backlog` → `Ready` → `In progress` → `In review` → `Done`.
 
+## Language: English is the default, and it is not optional
+
+**Every code artifact is written in English.** No exceptions, no "just this one
+comment", no falling in line with the Portuguese already around it.
+
+That means: identifiers (variables, functions, classes, types, constants),
+comments and docblocks, `describe`/`it` names, commit messages, PR and issue
+bodies.
+
+**Three things stay as they are:**
+
+1. **Text an end user reads.** Values in `messages/*.json`, screen copy, content
+   seeds, e-mail bodies, and the messages the API throws that surface as a toast
+   (`throw new NotFoundException('Ingestão não encontrada')`). These are product
+   translations: turning them English would break the experience of anyone using
+   the app in Portuguese or Spanish.
+2. **Markdown files in the repo** — `docs/`, `CLAUDE.md`, `tasks/lessons.md`,
+   `plans/`. They are Portuguese and stay Portuguese.
+3. **The conversation in chat**, which carries on in Portuguese.
+
+**Write it in English on the first draft.** Rewriting afterwards costs more than
+getting it right, and the surrounding Portuguese is the previous convention — an
+exception to convert when touched, never a pattern to copy.
+
 ## Core Principles
 
 •⁠ ⁠*Simplicity First*: Make every change as simple as possible. Impact minimal code.

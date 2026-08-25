@@ -9,14 +9,14 @@ import {
 } from 'class-validator';
 
 export class CreateCityIngestionDto {
-  @ApiProperty({ description: 'ISO2 do país, maiúsculo', example: 'PT' })
+  @ApiProperty({ description: 'ISO2 country code, uppercase', example: 'PT' })
   @IsString()
   @Length(2, 2)
   @Matches(/^[A-Z]{2}$/, { message: 'countryCode deve ser ISO2 maiúsculo' })
   countryCode: string;
 
   @ApiProperty({
-    description: 'Cidade no formato do CountriesNow, em inglês',
+    description: 'City as CountriesNow spells it, in English',
     example: 'Lisbon',
   })
   @IsString()
@@ -25,7 +25,7 @@ export class CreateCityIngestionDto {
 
   @ApiPropertyOptional({
     description:
-      'Destrave manual: o id da área no OSM, quando a resolução automática falhou. Pular a resolução é o que tira do limbo a cidade que o OSM não acha por nome.',
+      'Manual unblock: the OSM area id, for when automatic resolution failed. Skipping resolution is what rescues a city OpenStreetMap cannot find by name.',
     example: 3605400893,
   })
   @IsOptional()

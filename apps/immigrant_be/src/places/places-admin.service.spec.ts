@@ -70,8 +70,8 @@ const place = (over: Record<string, unknown> = {}) => ({
 });
 
 describe('PlacesAdminService', () => {
-  // Tipo estrutural, e não `jest.Mocked<PlacesAdminRepository>`: o ESLint
-  // enxerga método de classe dentro de um `expect` como referência unbound.
+  // A structural type rather than `jest.Mocked<PlacesAdminRepository>`: ESLint
+  // reads a class method inside an `expect` as an unbound reference.
   let repository: Record<string, jest.Mock>;
   let dispatcher: { dispatchCity: jest.Mock; dispatchPlaceTexts: jest.Mock };
   let service: PlacesAdminService;
@@ -110,7 +110,7 @@ describe('PlacesAdminService', () => {
   });
 
   describe('createIngestion', () => {
-    it('cria e enfileira a cidade', async () => {
+    it('creates the ingestion and queues the city', async () => {
       await service.createIngestion(
         { countryCode: 'PT', city: 'Lisbon' },
         ADMIN_ID,
@@ -119,8 +119,8 @@ describe('PlacesAdminService', () => {
       expect(dispatcher.dispatchCity).toHaveBeenCalledWith(INGESTION_ID);
     });
 
-    it('recusa uma segunda ingestão da mesma cidade em andamento', async () => {
-      // Duas ao mesmo tempo disputariam os mesmos slugs.
+    it('refuses a second in-flight ingestion of the same city', async () => {
+      // Two at once would compete for the same slugs.
       repository.findActiveForCity.mockResolvedValue({
         id: 'outra',
         status: 'PROCESSING',
@@ -135,8 +135,8 @@ describe('PlacesAdminService', () => {
       expect(dispatcher.dispatchCity).not.toHaveBeenCalled();
     });
 
-    it('devolve osmAreaId como string, porque BigInt não serializa', async () => {
-      // Sem a conversão a rota devolveria 500 na primeira cidade resolvida.
+    it('returns osmAreaId as a string, because BigInt does not serialise', async () => {
+      // Without the conversion the route would 500 on the first resolved city.
       repository.create.mockResolvedValue(
         ingestion({ osmAreaId: BigInt(3605400890) }) as never,
       );
@@ -152,15 +152,15 @@ describe('PlacesAdminService', () => {
   });
 
   describe('approve', () => {
-    it('publica os rascunhos quando todos têm as três traduções', async () => {
+    it('publishes the drafts once every one has all three translations', async () => {
       const result = await service.approve(INGESTION_ID, ADMIN_ID);
 
       expect(repository.approve).toHaveBeenCalledWith(INGESTION_ID, ADMIN_ID);
       expect(result.status).toBe('APPROVED');
     });
 
-    it('recusa com 422 e lista quem está sem tradução', async () => {
-      // Aprovar em silêncio publicaria um card mudo em espanhol.
+    it('refuses with 422 and lists whoever lacks a translation', async () => {
+      // Approving silently would publish a card that is mute in Spanish.
       repository.findDraftsMissingTexts.mockResolvedValue([
         { id: PLACE_ID, name: 'Torre de Belém', slug: 'torre-de-belem' },
       ]);
@@ -171,7 +171,7 @@ describe('PlacesAdminService', () => {
       expect(repository.approve).not.toHaveBeenCalled();
     });
 
-    it('só decide cidade que está pronta para revisão', async () => {
+    it('only decides a city that is ready for review', async () => {
       repository.findById.mockResolvedValue(
         ingestion({ status: 'PROCESSING' }) as never,
       );
@@ -183,8 +183,8 @@ describe('PlacesAdminService', () => {
   });
 
   describe('updatePlace', () => {
-    it('não edita lugar que já saiu do rascunho', async () => {
-      // Editar um lugar publicado por esta tela seria mexer em produção sem trilha.
+    it('does not edit a place that has left draft', async () => {
+      // Editing a published place here would touch production with no trail.
       repository.findPlaceInIngestion.mockResolvedValue(
         place({ reviewStatus: 'APPROVED' }) as never,
       );
@@ -194,7 +194,7 @@ describe('PlacesAdminService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('404 quando o lugar não é desta ingestão', async () => {
+    it('404s when the place does not belong to this ingestion', async () => {
       repository.findPlaceInIngestion.mockResolvedValue(null as never);
 
       await expect(
@@ -202,7 +202,7 @@ describe('PlacesAdminService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('converte o Decimal do custo em número', async () => {
+    it('converts the cost Decimal into a number', async () => {
       const result = await service.updatePlace(INGESTION_ID, PLACE_ID, {});
 
       expect(result.generationCostUsd).toBe(0.0002);
@@ -210,17 +210,21 @@ describe('PlacesAdminService', () => {
   });
 
   describe('rejectPlace', () => {
-    it('guarda o motivo em vez de descartá-lo', async () => {
-      await service.rejectPlace(INGESTION_ID, PLACE_ID, 'É bairro residencial');
+    it('keeps the reason instead of discarding it', async () => {
+      await service.rejectPlace(
+        INGESTION_ID,
+        PLACE_ID,
+        'It is a residential neighbourhood',
+      );
 
       expect(repository.recordPlaceRejection).toHaveBeenCalledWith(
         INGESTION_ID,
         PLACE_ID,
-        'É bairro residencial',
+        'It is a residential neighbourhood',
       );
     });
 
-    it('aceita recusa sem motivo', async () => {
+    it('accepts a rejection with no reason', async () => {
       await service.rejectPlace(INGESTION_ID, PLACE_ID);
 
       expect(repository.recordPlaceRejection).not.toHaveBeenCalled();
@@ -229,8 +233,8 @@ describe('PlacesAdminService', () => {
   });
 
   describe('retry', () => {
-    it('reenfileira sem descartar a área já resolvida', async () => {
-      // Resolver custa até quatro consultas ao Overpass mais uma sonda.
+    it('re-queues without discarding the area already resolved', async () => {
+      // Resolving costs up to four Overpass queries plus a probe.
       repository.findById.mockResolvedValue(
         ingestion({ status: 'FAILED', osmAreaId: BigInt(3605400893) }) as never,
       );
@@ -241,7 +245,7 @@ describe('PlacesAdminService', () => {
       expect(dispatcher.dispatchCity).toHaveBeenCalledWith(INGESTION_ID);
     });
 
-    it('só reprocessa ingestão em FAILED', async () => {
+    it('only reprocesses an ingestion in FAILED', async () => {
       await expect(service.retry(INGESTION_ID)).rejects.toThrow(
         ConflictException,
       );

@@ -9,8 +9,8 @@ import { PlacesRepository } from './places.repository';
 import { PlacesService } from './places.service';
 
 @Module({
-  // `IngestionModule` traz o `INGESTION_DISPATCHER`: a API pede que a cidade
-  // seja processada sem saber qual broker leva o pedido.
+  // `IngestionModule` provides `INGESTION_DISPATCHER`: the API asks for the
+  // city to be processed without knowing which broker carries the request.
   imports: [DatabaseModule, IngestionModule],
   controllers: [PlacesPublicController, PlacesAdminController],
   providers: [

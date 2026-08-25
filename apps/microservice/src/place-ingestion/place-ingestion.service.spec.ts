@@ -188,9 +188,9 @@ describe('PlaceIngestionService', () => {
       ]);
     });
 
-    it('guarda a área resolvida mesmo quando o nome dela falha', async () => {
-      // Resolver custa até quatro consultas e uma sonda; perder isso porque um
-      // rótulo de tela deu 504 obrigava o retry a refazer tudo.
+    it('keeps the resolved area even when its name lookup fails', async () => {
+      // Resolving costs up to four queries plus a probe; losing that because a
+      // screen label took a 504 made the retry redo everything.
       repository.findIngestion.mockResolvedValue({
         id: INGESTION_ID,
         countryCode: 'PT',
