@@ -23,6 +23,14 @@ export const AI_SCENARIOS = [
   'blog_translation',
   /** Cover and inline illustrations. */
   'blog_image',
+  /**
+   * Description and tip of a tourist place, in three languages at once.
+   *
+   * Mechanical and heavily constrained: the model is handed facts from
+   * OpenStreetMap and Wikipedia and asked to write prose about them, never to
+   * supply facts of its own. A cheap model is the right call.
+   */
+  'place_writing',
 ] as const;
 
 export type AiScenario = (typeof AI_SCENARIOS)[number];

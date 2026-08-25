@@ -36,6 +36,16 @@ const CHAINS = [
     ],
   },
   {
+    // Mesma classe da tradução: tarefa mecânica e muito restrita, onde o
+    // modelo escreve sobre fatos que já recebeu em vez de descobrir nada.
+    scenario: 'place_writing',
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: [
+      'deepseek/deepseek-v4-flash',
+      'gemini-direct:gemini-2.5-flash-lite',
+    ],
+  },
+  {
     scenario: 'blog_image',
     primaryModel: 'bytedance-seed/seedream-5-0-lite',
     fallbackModels: [
