@@ -39,6 +39,13 @@ export const DEFAULT_MODEL_CHAINS: Record<
       'gemini-direct:gemini-2.5-flash-lite',
     ],
   },
+  place_writing: {
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: [
+      'deepseek/deepseek-v4-flash',
+      'gemini-direct:gemini-2.5-flash-lite',
+    ],
+  },
   blog_image: {
     primaryModel: 'bytedance-seed/seedream-5-0-lite',
     fallbackModels: [

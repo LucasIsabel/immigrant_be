@@ -414,8 +414,13 @@ apps/microservice/src/ai-blog/
 
 - **Chamada nova usa `AiRouterService`**, nunca um provider direto. O caller nomeia um
   **cenário** (`blog_writing_standard` | `blog_writing_opinion` | `blog_translation` |
-  `blog_image`), não um modelo — o mapeamento vive na tabela `ai_model_configs`, então trocar de
+  `blog_image` | `place_writing`), não um modelo — o mapeamento vive na tabela `ai_model_configs`, então trocar de
   modelo é um `PUT /admin/ai/models/:scenario`, não um deploy.
+- **`place_writing` é o cenário mais restrito.** O modelo recebe fatos já colhidos do
+  OpenStreetMap e da Wikipédia e escreve descrição e dica nos três idiomas — nunca supre um
+  fato. O prompt proíbe horário, preço e data de fundação explicitamente: são os campos que
+  um modelo preenche com plausibilidade quando não sabe, e um horário errado manda alguém
+  para uma porta fechada. Dica sem fato que a sustente volta `null`, e o schema aceita isso.
 - **A cadeia de fallback termina sempre em `gemini-direct:`.** Créditos da OpenRouter são da
   conta inteira: quando acabam (HTTP 402), nenhum modelo dela responde, e uma cadeia só de
   OpenRouter não teria para onde cair. Um 402 coloca a OpenRouter em cooldown de 15 min para não
