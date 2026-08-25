@@ -25,6 +25,7 @@ import { StorageModule } from './storage/storage.module';
 import { ProfessionalProfileModule } from './professional-profile/professional-profile.module';
 import { BusinessModule } from './business/business.module';
 import { PlacesModule } from './places/places.module';
+import { EventInterestModule } from './event-interest/event-interest.module';
 import { BusinessPagesModule } from './business-pages/business-pages.module';
 import { TourGuideReviewsModule } from './tour-guide-reviews/tour-guide-reviews.module';
 import { CountriesNowModule } from './countriesnow/countriesnow.module';
@@ -64,6 +65,7 @@ const bullBoardEnabled =
     ProfessionalProfileModule,
     BusinessModule,
     PlacesModule,
+    EventInterestModule,
     BusinessPagesModule,
     TourGuideReviewsModule,
     CountriesNowModule,
