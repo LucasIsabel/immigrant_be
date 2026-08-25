@@ -296,10 +296,10 @@ describe('PlaceIngestionService', () => {
       expect(slugs[1]).toBe('forte-de-sao-joao-baptista-q10284015');
     });
 
-    it('scores from 100 down to 1 whatever the number kept', async () => {
-      // The old formula was welded to a cut of ten: at forty places the
-      // fortieth would have scored -290, ordering backwards and failing the
-      // admin PATCH validation.
+    it('scores from 100 down whatever the number kept, and cuts at the cap', async () => {
+      // The old formula was welded to a cut of ten: past it, scores went
+      // negative, ordering backwards and failing the admin PATCH validation.
+      // Offering more candidates than the cap also proves the cut itself.
       const many = Array.from({ length: 40 }, (_, i) =>
         poi(`Place ${i}`, `Q${i}`, { osmId: i }),
       );
@@ -311,7 +311,7 @@ describe('PlaceIngestionService', () => {
       await service.ingestCity(INGESTION_ID);
 
       const scores = persisted().map((place) => place.popularityScore);
-      expect(scores).toHaveLength(40);
+      expect(scores).toHaveLength(30);
       expect(scores[0]).toBe(100);
       expect(scores.at(-1)).toBe(3);
       expect(Math.min(...scores)).toBeGreaterThan(0);
