@@ -61,6 +61,7 @@ immigrant_be/
 │   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
 │   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
 │   │   │   ├── business-pages/ # Módulo de páginas públicas de negócios (My City)
+│   │   │   ├── event-interest/ # Fase 0 de eventos: captura pública de interesse de organizadores
 │   │   │   ├── publisher-qualification/ # Módulo de qualificação automática de publishers
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
@@ -835,6 +836,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `POST /admin/places/ingestions/:id/reject`   | Places (admin)            | ADMIN — recusa a cidade, motivo obrigatório |
 | `POST /admin/places/ingestions/:id/retry`    | Places (admin)            | ADMIN — reprocessa ingestão em `FAILED`    |
 | `/storage/upload`                            | Storage                   | Autenticado                                |
+| `POST /event-interest`                       | EventInterest             | Público — captura de interesse (fase 0 de eventos) |
 | `/health`                                    | Health                    | Público                                    |
 | `/health/ready`                              | Health                    | Público                                    |
 | `GET /professional-profile/me`               | ProfessionalProfile       | Autenticado                                |

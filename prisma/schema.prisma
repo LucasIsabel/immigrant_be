@@ -880,3 +880,23 @@ model CityIngestion {
   @@index([status, createdAt])
   @@map("city_ingestions")
 }
+
+/// Fase 0 da feature de eventos: mede a demanda de organizadores ANTES de
+/// existir qualquer feature. Cada linha é alguém que clicou em "divulgue seu
+/// evento" e deixou contato. A contagem por cidade em 4–6 semanas é o número
+/// que decide se o epic de eventos (immigrant_fe#196) sai do Backlog. Sem
+/// relações de propósito — se a fase 1 não vier, a tabela morre sozinha.
+model EventInterest {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @db.VarChar(120)
+  contact     String  @db.VarChar(200)
+  eventType   String  @map("event_type") @db.VarChar(80)
+  countryCode String  @map("country_code") @db.VarChar(2)
+  city        String  @db.VarChar(100)
+  message     String? @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([countryCode, city])
+  @@map("event_interests")
+}
