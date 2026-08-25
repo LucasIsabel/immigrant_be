@@ -45,6 +45,29 @@ const CHAINS = [
       'gemini-direct:gemini-2.5-flash-lite',
     ],
   },
+  // The four API-app scenarios (#151). Primary is the exact model these paths
+  // called directly before the router, so seeding changes no behaviour; the
+  // `:free` tail is the zero-cost net for the day both paid providers are out.
+  {
+    scenario: 'quiz_suggestions',
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  {
+    scenario: 'visa_recommendation',
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  {
+    scenario: 'visa_steps_translation',
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
+  {
+    scenario: 'business_moderation',
+    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+  },
   {
     scenario: 'blog_image',
     primaryModel: 'bytedance-seed/seedream-5-0-lite',

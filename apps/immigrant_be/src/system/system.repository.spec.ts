@@ -120,4 +120,37 @@ describe('SystemRepository - normalizeParametersToJson', () => {
       expect(item).toEqual([]);
     });
   });
+
+  describe('createSuggestions without embeddings', () => {
+    it('stores the suggestion with a null vector instead of refusing it', async () => {
+      // Embeddings degrade to null when Gemini is unreachable. This method
+      // used to throw on null — which, during the credits incident, would have
+      // refused a suggestion the fallback chain had successfully generated.
+      // Measured while proving #151: the chain answered via deepseek and the
+      // old throw still 500'd the quiz.
+      mockPrismaService.$queryRawUnsafe.mockResolvedValue([{ id: 'sug-1' }]);
+      mockPrismaService.suggestion_languages.create.mockResolvedValue({
+        id: 'lang-1',
+        suggestion_id: 'sug-1',
+      });
+      mockPrismaService.suggestions.update.mockResolvedValue({
+        id: 'sug-1',
+        suggestion_languages: [
+          { id: 'lang-1', language: 'en', content: [{ country: 'Portugal' }] },
+        ],
+      });
+
+      const result = await repository.createSuggestions(
+        [{ country: 'Portugal' }],
+        null,
+        makePlainDto(),
+        'en',
+      );
+
+      expect(result.suggestion_id).toBe('sug-1');
+      const [, embeddingsParam] =
+        mockPrismaService.$queryRawUnsafe.mock.calls.at(-1) as unknown[];
+      expect(embeddingsParam).toBeNull();
+    });
+  });
 });

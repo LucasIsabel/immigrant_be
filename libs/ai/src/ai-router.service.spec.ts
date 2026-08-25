@@ -147,6 +147,35 @@ describe('AiRouterService', () => {
       expect(mockOpenRouter.generateText).not.toHaveBeenCalled();
     });
 
+    it('still tries a :free model while OpenRouter is in cooldown', async () => {
+      // The cooldown exists because paid calls fail on depleted credit; a
+      // free model costs nothing and keeps answering. This is the incident
+      // scenario: Gemini dead AND OpenRouter credit-blocked — the free tail
+      // is what stands between that and an outage.
+      mockModelConfig.getChain.mockResolvedValue([
+        'gemini-direct:gemini-2.5-flash-lite',
+        'deepseek/deepseek-v4-flash',
+        'z-ai/glm-5.2:free',
+      ]);
+      mockGeminiDirect.generateText.mockRejectedValue(
+        new Error('API key not valid'),
+      );
+      mockOpenRouter.generateText
+        .mockRejectedValueOnce(new InsufficientCreditsError('openrouter'))
+        .mockResolvedValueOnce(textResult('z-ai/glm-5.2:free', 'openrouter'));
+
+      const result = await service.generateText('quiz_suggestions', 'prompt');
+
+      expect(result.model).toBe('z-ai/glm-5.2:free');
+      // The paid model opened the cooldown; the free one was tried anyway.
+      expect((await service.getOpenRouterStatus()).blocked).toBe(true);
+      expect(mockOpenRouter.generateText).toHaveBeenCalledTimes(2);
+      expect(mockOpenRouter.generateText).toHaveBeenLastCalledWith(
+        'z-ai/glm-5.2:free',
+        'prompt',
+      );
+    });
+
     it('logs the failed attempt, not only the success', async () => {
       mockOpenRouter.generateText.mockRejectedValue(
         new InsufficientCreditsError('openrouter'),

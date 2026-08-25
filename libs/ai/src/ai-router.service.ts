@@ -132,7 +132,13 @@ export class AiRouterService {
       const viaGeminiDirect = isGeminiDirect(entry);
       const model = viaGeminiDirect ? stripGeminiDirectPrefix(entry) : entry;
 
-      if (!viaGeminiDirect && openRouterBlocked) {
+      // A `:free` model rides through the credit cooldown: the breaker exists
+      // because paid calls fail on depleted credit, but free models cost
+      // nothing and keep answering. Skipping them too is what would turn
+      // "both paid providers are out" into an outage — which is the incident
+      // that put the free tail on the API scenarios' chains.
+      const isFreeModel = entry.endsWith(':free');
+      if (!viaGeminiDirect && openRouterBlocked && !isFreeModel) {
         failures.push(`${entry}: skipped, OpenRouter in cooldown`);
         continue;
       }

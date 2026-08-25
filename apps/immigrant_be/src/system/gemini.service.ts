@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CountryService } from '../countries/country.service';
 import {
+  AiRouterService,
   GeminiBaseService,
   suggestionsSchema,
   SuggestionsType,
@@ -12,11 +13,21 @@ import {
   stripEmDashes,
 } from '@app/ai';
 
+/**
+ * Still extends `GeminiBaseService`, but only for embeddings now.
+ *
+ * The two text generations go through `AiRouterService`: when Gemini's prepaid
+ * credit ran out, these were the calls that died with no second option while
+ * the whole worker kept answering through its fallback chains. Embeddings stay
+ * direct because OpenRouter has no embeddings endpoint — and they already
+ * degrade to null instead of throwing, so they were never the outage.
+ */
 @Injectable()
 export class GeminiService extends GeminiBaseService {
   constructor(
     configService: ConfigService,
     private readonly countryService: CountryService,
+    private readonly aiRouter: AiRouterService,
   ) {
     super(configService);
   }
@@ -33,11 +44,14 @@ export class GeminiService extends GeminiBaseService {
       language,
     );
 
-    const {
-      response: { text },
-    } = await this.model.generateContent(prompt);
+    const { data } = await this.aiRouter.generateJson(
+      'quiz_suggestions',
+      prompt,
+      suggestionsSchema,
+      { entityType: 'quiz' },
+    );
 
-    return this.parseJsonResponse(text(), suggestionsSchema);
+    return data;
   }
 
   async generateVisaSuggestion(
@@ -60,11 +74,12 @@ export class GeminiService extends GeminiBaseService {
       language,
     );
 
-    const {
-      response: { text },
-    } = await this.model.generateContent(prompt);
-
-    const parsed = this.parseJsonResponse(text(), visaRecommendationSchema);
+    const { data: parsed } = await this.aiRouter.generateJson(
+      'visa_recommendation',
+      prompt,
+      visaRecommendationSchema,
+      { entityType: 'quiz' },
+    );
     if (!parsed) return parsed;
 
     // Só a prosa passa pela limpeza. O id é identificador, não texto: mesmo

@@ -21,6 +21,19 @@ export class SystemRepository {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Stores the generated suggestion, with or without embeddings.
+   *
+   * Embeddings degrade to null when Gemini is unreachable — and this method
+   * used to throw on null, which turned a degradation into an outage: during
+   * the credits incident, even a suggestion successfully generated through the
+   * fallback chain would have been refused at the door. Measured while proving
+   * #151: the chain answered via deepseek and this throw still 500'd the quiz.
+   *
+   * The embeddings column is nullable; a row without a vector merely never
+   * matches a similarity lookup. Losing one cache candidate beats losing the
+   * user's answer.
+   */
   async createSuggestions(
     suggestions: Prisma.InputJsonValue,
     embeddings: number[] | null,
@@ -28,49 +41,32 @@ export class SystemRepository {
     language: string,
   ): Promise<{ suggestion_id: string }> {
     try {
-      if (embeddings && embeddings.length > 0) {
-        const embeddingsString = `[${embeddings.join(',')}]`;
-        const parametersJson = this.normalizeParametersToJson(parameters);
+      const parametersJson = this.normalizeParametersToJson(parameters);
+      const hasEmbeddings = !!embeddings && embeddings.length > 0;
 
-        const result = await this.prisma.$queryRawUnsafe<
-          Array<{
-            id: string;
-            embeddings: string;
-            parameters: unknown;
-            created_at: Date;
-            updated_at: Date;
-          }>
-        >(
-          `INSERT INTO suggestions (id, embeddings, created_at, updated_at, parameters)
-           VALUES (
-             gen_random_uuid(),
-             $1::vector,
-             NOW(),
-             NOW(),
-             $2::jsonb
-           )
-           RETURNING
-             id,
-             embeddings::text as embeddings,
-             created_at,
-             updated_at,
-             parameters`,
-          embeddingsString,
-          parametersJson,
-        );
+      const result = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
+        `INSERT INTO suggestions (id, embeddings, created_at, updated_at, parameters)
+         VALUES (
+           gen_random_uuid(),
+           $1::vector,
+           NOW(),
+           NOW(),
+           $2::jsonb
+         )
+         RETURNING id`,
+        hasEmbeddings ? `[${embeddings.join(',')}]` : null,
+        parametersJson,
+      );
 
-        const suggestionsForLanguage = await this.createSuggestionLanguages(
-          result[0].id,
-          language,
-          JSON.stringify(suggestions),
-        );
+      const suggestionsForLanguage = await this.createSuggestionLanguages(
+        result[0].id,
+        language,
+        JSON.stringify(suggestions),
+      );
 
-        return {
-          suggestion_id: suggestionsForLanguage?.suggestion_id || '',
-        };
-      }
-
-      throw new Error('No embeddings provided');
+      return {
+        suggestion_id: suggestionsForLanguage?.suggestion_id || '',
+      };
     } catch (error) {
       this.logger.error(
         'Error creating suggestions',

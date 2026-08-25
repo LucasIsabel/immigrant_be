@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  GeminiBaseService,
+  AiRouterService,
   businessPageModerationResultSchema,
   type BusinessPageModerationResult,
   type BusinessPageModerationInput,
@@ -11,7 +11,7 @@ import {
 export class BusinessPageModerationService {
   private readonly logger = new Logger(BusinessPageModerationService.name);
 
-  constructor(private readonly gemini: GeminiBaseService) {}
+  constructor(private readonly aiRouter: AiRouterService) {}
 
   async moderateContent(
     pendingContent: Record<string, unknown>,
@@ -64,11 +64,11 @@ export class BusinessPageModerationService {
     const prompt = buildBusinessPageModerationPrompt(input);
 
     try {
-      const result = await this.gemini.generateContent(prompt);
-      const text = result.response.text();
-      const parsed = this.gemini.parseJsonResponse(
-        text,
+      const { data: parsed } = await this.aiRouter.generateJson(
+        'business_moderation',
+        prompt,
         businessPageModerationResultSchema,
+        { entityType: 'business_page' },
       );
 
       if (!parsed) {

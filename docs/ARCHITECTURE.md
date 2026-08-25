@@ -414,7 +414,7 @@ libs/ai/                              # Biblioteca compartilhada de IA
     └── business-page-moderation.prompt.ts # Moderação de conteúdo de páginas públicas (admin)
 
 apps/immigrant_be/src/business-pages/
-└── business-page-moderation.service.ts  # Moderação IA (admin): GeminiBaseService + validação Zod
+└── business-page-moderation.service.ts  # Moderação IA (admin): AiRouterService (cenário business_moderation)
 
 apps/immigrant_be/src/system/
 ├── gemini.service.ts          # Extends GeminiBaseService
@@ -443,17 +443,24 @@ apps/microservice/src/ai-blog/
 
 - **Chamada nova usa `AiRouterService`**, nunca um provider direto. O caller nomeia um
   **cenário** (`blog_writing_standard` | `blog_writing_opinion` | `blog_translation` |
-  `blog_image` | `place_writing`), não um modelo — o mapeamento vive na tabela `ai_model_configs`, então trocar de
-  modelo é um `PUT /admin/ai/models/:scenario`, não um deploy.
+  `blog_image` | `place_writing` | `quiz_suggestions` | `visa_recommendation` |
+  `visa_steps_translation` | `business_moderation`), não um modelo — o mapeamento vive na
+  tabela `ai_model_configs`, então trocar de modelo é um `PUT /admin/ai/models/:scenario`,
+  não um deploy.
 - **`place_writing` é o cenário mais restrito.** O modelo recebe fatos já colhidos do
   OpenStreetMap e da Wikipédia e escreve descrição e dica nos três idiomas — nunca supre um
   fato. O prompt proíbe horário, preço e data de fundação explicitamente: são os campos que
   um modelo preenche com plausibilidade quando não sabe, e um horário errado manda alguém
   para uma porta fechada. Dica sem fato que a sustente volta `null`, e o schema aceita isso.
-- **A cadeia de fallback termina sempre em `gemini-direct:`.** Créditos da OpenRouter são da
-  conta inteira: quando acabam (HTTP 402), nenhum modelo dela responde, e uma cadeia só de
-  OpenRouter não teria para onde cair. Um 402 coloca a OpenRouter em cooldown de 15 min para não
-  martelar a API a cada job.
+- **Toda cadeia tem um elo que sobrevive ao 402 da OpenRouter.** Créditos da OpenRouter são
+  da conta inteira: quando acabam, nenhum modelo **pago** dela responde, e uma cadeia só de
+  pagos não teria para onde cair. Dois elos satisfazem isso: `gemini-direct:` (outro provider,
+  outra cobrança) ou um modelo **`:free`** — que atravessa o cooldown de 15 min de propósito,
+  porque o cooldown existe para chamadas pagas e o free segue respondendo a custo zero. Os
+  cenários do app da API invertem a forma clássica: `gemini-direct:` como **primário** (é o
+  modelo que essas rotas sempre usaram) e `:free` no fim.
+- **Um 402 coloca a OpenRouter em cooldown de 15 min** para não martelar a API a cada job —
+  exceto para modelos `:free`, que continuam sendo tentados (ver acima).
 - **402 e 429 são erros diferentes.** 402 = créditos, não vale reesperar. 429 = rate limit, vale
   uma espera curta antes de pular para o próximo modelo.
 - **Todo call gera linha em `ai_usage_logs`**, incluindo as tentativas que falharam. `cost_usd` só
@@ -475,8 +482,19 @@ apps/microservice/src/ai-blog/
   mesmo modelo; com a cadeia isso viraria até nove imagens pagas por marcador. Tentar modelos
   diferentes também cobre mais tipos de falha do que insistir no mesmo. A capa, que não tinha
   retry nenhum, ganhou o mesmo comportamento de graça.
-- **Legado**: `system`, `plan` e `business-pages` continuam em `GeminiBaseService`, com modelo
-  fixo e sem log de custo. Migrá-los é issue própria.
+- **As rotas de IA do app da API passam pelo router desde #151.** Quiz
+  (`quiz_suggestions`), recomendação de visto (`visa_recommendation`), tradução de steps
+  (`visa_steps_translation`) e moderação (`business_moderation`) chamavam o Gemini cru e
+  ficaram sem segunda opção quando o crédito pré-pago esgotou — enquanto o worker inteiro
+  seguia respondendo pelas cadeias. O primário de cada uma é o modelo que sempre usaram,
+  então a migração não trocou modelo nenhum: com Gemini saudável, comportamento idêntico.
+- **Sugestão sem embedding é gravada mesmo assim.** `generateEmbeddings` degrada para `null`
+  quando o Gemini está fora — e o `createSuggestions` do repositório recusava o null,
+  transformando degradação em outage: a sugestão que a cadeia tinha acabado de gerar era
+  barrada na porta. A coluna é nullable; linha sem vetor só não participa do lookup de
+  similaridade. Medido ao provar o aceite da #151.
+- **`GeminiService` (system) ainda estende `GeminiBaseService`, mas só pelos embeddings** —
+  a OpenRouter não tem endpoint de embeddings. `plan` segue no legado.
 - Modelo de embeddings: `gemini-embedding-001` (fora do roteador)
 - **Validação obrigatória** das respostas via **Zod schemas** centralizados em `@app/ai`
 - **Prompts centralizados** em `libs/ai/src/prompts/` — importados via `@app/ai`

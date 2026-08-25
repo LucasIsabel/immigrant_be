@@ -16,11 +16,7 @@ export async function seedCountries() {
         'Non-lucrative Residence Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Madrid',
-        'Barcelona',
-        'Valencia',
-      ],
+      popular_cities: ['Madrid', 'Barcelona', 'Valencia'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -121,11 +117,7 @@ export async function seedCountries() {
         'Global Talent Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'London',
-        'Manchester',
-        'Edinburgh',
-      ],
+      popular_cities: ['London', 'Manchester', 'Edinburgh'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -235,11 +227,7 @@ export async function seedCountries() {
         'Study Permit',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Toronto',
-        'Vancouver',
-        'Montreal',
-      ],
+      popular_cities: ['Toronto', 'Vancouver', 'Montreal'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -269,7 +257,7 @@ export async function seedCountries() {
         {
           language: 'en',
           description:
-            'Canada\'s Express Entry system processes 80% of permanent residency applications in 6 months, with an additional 3–4 months for passport return when applying abroad.',
+            "Canada's Express Entry system processes 80% of permanent residency applications in 6 months, with an additional 3–4 months for passport return when applying abroad.",
           benefits: [
             'Publicly funded healthcare',
             'High-quality education system',
@@ -359,11 +347,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Sydney',
-        'Melbourne',
-        'Brisbane',
-      ],
+      popular_cities: ['Sydney', 'Melbourne', 'Brisbane'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -393,7 +377,7 @@ export async function seedCountries() {
         {
           language: 'en',
           description:
-            'Australia\'s permanent skilled visas take around 10 months, while the temporary 482 visa has a median processing time of 98 days, according to Home Affairs.',
+            "Australia's permanent skilled visas take around 10 months, while the temporary 482 visa has a median processing time of 98 days, according to Home Affairs.",
           benefits: [
             'High quality of life',
             'Medicare public healthcare',
@@ -475,11 +459,7 @@ export async function seedCountries() {
         'Business Manager Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Tokyo',
-        'Osaka',
-        'Fukuoka',
-      ],
+      popular_cities: ['Tokyo', 'Osaka', 'Fukuoka'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -588,17 +568,9 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Moderate',
       difficulty_score: 3,
-      visa_options: [
-        'EU Blue Card',
-        'Skilled Workers Visa',
-        'Job Seeker Visa',
-      ],
+      visa_options: ['EU Blue Card', 'Skilled Workers Visa', 'Job Seeker Visa'],
       job_market: 'Strong',
-      popular_cities: [
-        'Berlin',
-        'Munich',
-        'Frankfurt',
-      ],
+      popular_cities: ['Berlin', 'Munich', 'Frankfurt'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -708,11 +680,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Auckland',
-        'Wellington',
-        'Christchurch',
-      ],
+      popular_cities: ['Auckland', 'Wellington', 'Christchurch'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -818,11 +786,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Dublin',
-        'Cork',
-        'Galway',
-      ],
+      popular_cities: ['Dublin', 'Cork', 'Galway'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -934,11 +898,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Paris',
-        'Lyon',
-        'Marseille',
-      ],
+      popular_cities: ['Paris', 'Lyon', 'Marseille'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -1032,17 +992,9 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Moderate',
       difficulty_score: 3,
-      visa_options: [
-        'Work Permit (Skilled)',
-        'EU Blue Card',
-        'Student Visa',
-      ],
+      visa_options: ['Work Permit (Skilled)', 'EU Blue Card', 'Student Visa'],
       job_market: 'Moderate',
-      popular_cities: [
-        'Stockholm',
-        'Gothenburg',
-        'Malmö',
-      ],
+      popular_cities: ['Stockholm', 'Gothenburg', 'Malmö'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -1143,17 +1095,9 @@ export async function seedCountries() {
       region: 'Europe',
       difficulty: 'Hard',
       difficulty_score: 4,
-      visa_options: [
-        'L Permit (Work)',
-        'Swiss ICT Permit',
-        'Student Visa',
-      ],
+      visa_options: ['L Permit (Work)', 'Swiss ICT Permit', 'Student Visa'],
       job_market: 'Strong',
-      popular_cities: [
-        'Zurich',
-        'Geneva',
-        'Basel',
-      ],
+      popular_cities: ['Zurich', 'Geneva', 'Basel'],
       created_at: '2025-07-05T00:00:00Z',
       updated_at: '2025-07-05T00:00:00Z',
       background_image:
@@ -1258,11 +1202,7 @@ export async function seedCountries() {
         'E-2 Treaty Investor Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'New York',
-        'San Francisco',
-        'Los Angeles',
-      ],
+      popular_cities: ['New York', 'San Francisco', 'Los Angeles'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
@@ -1403,9 +1343,7 @@ export async function seedCountries() {
         'Global Investor Programme',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Singapore',
-      ],
+      popular_cities: ['Singapore'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
@@ -1506,11 +1444,7 @@ export async function seedCountries() {
         'Investor Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Dubai',
-        'Abu Dhabi',
-        'Sharjah',
-      ],
+      popular_cities: ['Dubai', 'Abu Dhabi', 'Sharjah'],
       created_at: '2025-07-06T00:00:00Z',
       updated_at: '2025-07-06T00:00:00Z',
       background_image:
@@ -1612,11 +1546,7 @@ export async function seedCountries() {
         'F‑2 Residency by Investment',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Seoul',
-        'Busan',
-        'Incheon',
-      ],
+      popular_cities: ['Seoul', 'Busan', 'Incheon'],
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
@@ -1719,11 +1649,7 @@ export async function seedCountries() {
         'Startup Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Amsterdam',
-        'Rotterdam',
-        'The Hague',
-      ],
+      popular_cities: ['Amsterdam', 'Rotterdam', 'The Hague'],
       created_at: '2025-07-06T12:00:00Z',
       updated_at: '2025-07-06T12:00:00Z',
       background_image:
@@ -1838,11 +1764,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Rome',
-        'Milan',
-        'Florence',
-      ],
+      popular_cities: ['Rome', 'Milan', 'Florence'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -1943,11 +1865,7 @@ export async function seedCountries() {
         'Permanent Residence',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Buenos Aires',
-        'Córdoba',
-        'Rosario',
-      ],
+      popular_cities: ['Buenos Aires', 'Córdoba', 'Rosario'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -2053,11 +1971,7 @@ export async function seedCountries() {
         'Investment Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Santiago',
-        'Valparaíso',
-        'Concepción',
-      ],
+      popular_cities: ['Santiago', 'Valparaíso', 'Concepción'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -2158,11 +2072,7 @@ export async function seedCountries() {
         'Student Residence Permit',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Vienna',
-        'Salzburg',
-        'Graz',
-      ],
+      popular_cities: ['Vienna', 'Salzburg', 'Graz'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -2267,11 +2177,7 @@ export async function seedCountries() {
         'Work Permit',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Warsaw',
-        'Krakow',
-        'Wroclaw',
-      ],
+      popular_cities: ['Warsaw', 'Krakow', 'Wroclaw'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -2386,11 +2292,7 @@ export async function seedCountries() {
         'Student Residence Permit',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Helsinki',
-        'Tampere',
-        'Turku',
-      ],
+      popular_cities: ['Helsinki', 'Tampere', 'Turku'],
       created_at: '2025-07-05T23:06:42.460912Z',
       updated_at: '2025-07-05T23:06:42.460912Z',
       background_image:
@@ -2495,12 +2397,7 @@ export async function seedCountries() {
         'Student Visa (D4)',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Lisboa',
-        'Porto',
-        'Braga',
-        'Faro',
-      ],
+      popular_cities: ['Lisboa', 'Porto', 'Braga', 'Faro'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -2715,12 +2612,7 @@ export async function seedCountries() {
         'Family Immigration',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Oslo',
-        'Bergen',
-        'Trondheim',
-        'Stavanger',
-      ],
+      popular_cities: ['Oslo', 'Bergen', 'Trondheim', 'Stavanger'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -2828,12 +2720,7 @@ export async function seedCountries() {
         'Family Reunification',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Copenhagen',
-        'Aarhus',
-        'Odense',
-        'Aalborg',
-      ],
+      popular_cities: ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -2942,12 +2829,7 @@ export async function seedCountries() {
         'Family Reunification',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Brussels',
-        'Antwerp',
-        'Ghent',
-        'Leuven',
-      ],
+      popular_cities: ['Brussels', 'Antwerp', 'Ghent', 'Leuven'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3057,12 +2939,7 @@ export async function seedCountries() {
         'Student Long-Term Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Prague',
-        'Brno',
-        'Ostrava',
-        'Plzeň',
-      ],
+      popular_cities: ['Prague', 'Brno', 'Ostrava', 'Plzeň'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3170,12 +3047,7 @@ export async function seedCountries() {
         'Work Visa',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Athens',
-        'Thessaloniki',
-        'Patras',
-        'Heraklion',
-      ],
+      popular_cities: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3283,12 +3155,7 @@ export async function seedCountries() {
         'Thailand Privilege (Elite) Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Bangkok',
-        'Chiang Mai',
-        'Phuket',
-        'Pattaya',
-      ],
+      popular_cities: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3627,12 +3494,7 @@ export async function seedCountries() {
         'Short Stay Remote Worker Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Panama City',
-        'Boquete',
-        'Coronado',
-        'David',
-      ],
+      popular_cities: ['Panama City', 'Boquete', 'Coronado', 'David'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3740,12 +3602,7 @@ export async function seedCountries() {
         'Inversionista Visa',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'San José',
-        'Escazú',
-        'Tamarindo',
-        'Atenas',
-      ],
+      popular_cities: ['San José', 'Escazú', 'Tamarindo', 'Atenas'],
       created_at: '2026-08-04T00:00:00Z',
       updated_at: '2026-08-04T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3853,12 +3710,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Valletta',
-        'Sliema',
-        'St. Julian\'s',
-        'Gozo',
-      ],
+      popular_cities: ['Valletta', 'Sliema', "St. Julian's", 'Gozo'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -3969,12 +3821,7 @@ export async function seedCountries() {
         'Family Reunification',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Zagreb',
-        'Split',
-        'Dubrovnik',
-        'Rijeka',
-      ],
+      popular_cities: ['Zagreb', 'Split', 'Dubrovnik', 'Rijeka'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4083,12 +3930,7 @@ export async function seedCountries() {
         'Student Residence Permit',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Tallinn',
-        'Tartu',
-        'Pärnu',
-        'Narva',
-      ],
+      popular_cities: ['Tallinn', 'Tartu', 'Pärnu', 'Narva'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4195,12 +4037,7 @@ export async function seedCountries() {
         'Guest Investor Residence',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Budapest',
-        'Debrecen',
-        'Szeged',
-        'Pécs',
-      ],
+      popular_cities: ['Budapest', 'Debrecen', 'Szeged', 'Pécs'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4307,12 +4144,7 @@ export async function seedCountries() {
         'Digital Nomad Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Istanbul',
-        'Ankara',
-        'Izmir',
-        'Antalya',
-      ],
+      popular_cities: ['Istanbul', 'Ankara', 'Izmir', 'Antalya'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4420,12 +4252,7 @@ export async function seedCountries() {
         'Work Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Bogotá',
-        'Medellín',
-        'Cartagena',
-        'Cali',
-      ],
+      popular_cities: ['Bogotá', 'Medellín', 'Cartagena', 'Cali'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4753,12 +4580,7 @@ export async function seedCountries() {
         'A/5 Temporary Residence',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Tel Aviv',
-        'Jerusalem',
-        'Haifa',
-        'Be\'er Sheva',
-      ],
+      popular_cities: ['Tel Aviv', 'Jerusalem', 'Haifa', "Be'er Sheva"],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4870,12 +4692,7 @@ export async function seedCountries() {
         'Investor Residence',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Doha',
-        'Al Rayyan',
-        'Lusail',
-        'Al Wakrah',
-      ],
+      popular_cities: ['Doha', 'Al Rayyan', 'Lusail', 'Al Wakrah'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -4983,12 +4800,7 @@ export async function seedCountries() {
         'Golden Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Jakarta',
-        'Denpasar',
-        'Ubud',
-        'Bandung',
-      ],
+      popular_cities: ['Jakarta', 'Denpasar', 'Ubud', 'Bandung'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5096,12 +4908,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Bucharest',
-        'Cluj-Napoca',
-        'Timișoara',
-        'Brașov',
-      ],
+      popular_cities: ['Bucharest', 'Cluj-Napoca', 'Timișoara', 'Brașov'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5323,12 +5130,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Nicosia',
-        'Limassol',
-        'Larnaca',
-        'Paphos',
-      ],
+      popular_cities: ['Nicosia', 'Limassol', 'Larnaca', 'Paphos'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5438,12 +5240,7 @@ export async function seedCountries() {
         'Family Reunification',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Reykjavík',
-        'Akureyri',
-        'Hafnarfjörður',
-        'Kópavogur',
-      ],
+      popular_cities: ['Reykjavík', 'Akureyri', 'Hafnarfjörður', 'Kópavogur'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5550,12 +5347,7 @@ export async function seedCountries() {
         'Mercosur Residence',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Lima',
-        'Arequipa',
-        'Cusco',
-        'Trujillo',
-      ],
+      popular_cities: ['Lima', 'Arequipa', 'Cusco', 'Trujillo'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5776,12 +5568,7 @@ export async function seedCountries() {
         'Mercosur Residence',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Quito',
-        'Guayaquil',
-        'Cuenca',
-        'Loja',
-      ],
+      popular_cities: ['Quito', 'Guayaquil', 'Cuenca', 'Loja'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -5889,12 +5676,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Ho Chi Minh City',
-        'Hanoi',
-        'Da Nang',
-        'Nha Trang',
-      ],
+      popular_cities: ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Nha Trang'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6005,12 +5787,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Manila',
-        'Cebu',
-        'Davao',
-        'Baguio',
-      ],
+      popular_cities: ['Manila', 'Cebu', 'Davao', 'Baguio'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6119,12 +5896,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Taipei',
-        'Kaohsiung',
-        'Taichung',
-        'Tainan',
-      ],
+      popular_cities: ['Taipei', 'Kaohsiung', 'Taichung', 'Tainan'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6350,12 +6122,7 @@ export async function seedCountries() {
         'Permanent Residence',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Shanghai',
-        'Beijing',
-        'Shenzhen',
-        'Guangzhou',
-      ],
+      popular_cities: ['Shanghai', 'Beijing', 'Shenzhen', 'Guangzhou'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6466,12 +6233,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Bengaluru',
-        'Mumbai',
-        'Delhi',
-        'Hyderabad',
-      ],
+      popular_cities: ['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6582,12 +6344,7 @@ export async function seedCountries() {
         'Student Visa',
       ],
       job_market: 'Strong',
-      popular_cities: [
-        'Riyadh',
-        'Jeddah',
-        'Dammam',
-        'Al Khobar',
-      ],
+      popular_cities: ['Riyadh', 'Jeddah', 'Dammam', 'Al Khobar'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6697,12 +6454,7 @@ export async function seedCountries() {
         'Permanent Residence',
       ],
       job_market: 'Moderate',
-      popular_cities: [
-        'Cape Town',
-        'Johannesburg',
-        'Durban',
-        'Pretoria',
-      ],
+      popular_cities: ['Cape Town', 'Johannesburg', 'Durban', 'Pretoria'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6813,12 +6565,7 @@ export async function seedCountries() {
         'Student Residence',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Casablanca',
-        'Marrakesh',
-        'Rabat',
-        'Tangier',
-      ],
+      popular_cities: ['Casablanca', 'Marrakesh', 'Rabat', 'Tangier'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
@@ -6929,12 +6676,7 @@ export async function seedCountries() {
         'Student Residence',
       ],
       job_market: 'Weak',
-      popular_cities: [
-        'Cairo',
-        'Alexandria',
-        'Giza',
-        'Hurghada',
-      ],
+      popular_cities: ['Cairo', 'Alexandria', 'Giza', 'Hurghada'],
       created_at: '2026-08-05T00:00:00Z',
       updated_at: '2026-08-05T00:00:00Z',
       // Intentionally blank: artwork will be uploaded to R2 manually.
