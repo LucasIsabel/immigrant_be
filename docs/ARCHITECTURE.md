@@ -245,9 +245,10 @@ Place.reviewStatus: DRAFT | APPROVED | REJECTED
   precisou de backfill. A ingestão automática sempre grava `DRAFT`.
   `REJECTED` não é lixo: a linha fica como memória, para a re-ingestão da cidade
   não recriar um lugar que alguém já recusou.
-  Proveniência (`osmType`/`osmId`/`wikidataId`/`wikipediaMonthlyViews`/
-  `generatedByModel`/`generationCostUsd`) serve à atribuição exigida pela ODbL e
-  a saber de onde veio cada campo quando alguém questionar o dado. O
+  Proveniência (`wikidataId`/`sourceUrl`/`wikipediaMonthlyViews`/
+  `generatedByModel`/`generationCostUsd`; `osmType`/`osmId` só nos registros
+  anteriores à descoberta no Wikidata) serve a saber de onde veio cada campo
+  quando alguém questionar o dado. O
   `popularityScore` é derivado de `wikipediaMonthlyViews`, guardado cru para a
   ordem ser auditável.
 
@@ -618,7 +619,7 @@ App Principal (API)                    Microservice
 | `ai_blog_image_queue`    | `AI_BLOG_IMAGE_QUEUE`    | `generate_ai_blog_image`                       | Geração assíncrona de imagem de capa do post |
 | `ai_image_queue`         | `AI_IMAGE_QUEUE`         | `generate_ai_image`                            | Geração de imagens via Gemini (Media Generator) |
 | `blog_translation_queue` | `BLOG_TRANSLATION_QUEUE` | `translate_blog_post`, `translate_all_pending` | Tradução automática via Gemini (EN + ES)     |
-| `place_ingestion_queue`  | `PLACE_INGESTION_QUEUE`  | `ingest_city`, `write_place_texts`             | Ingestão de lugares turísticos (OSM + Wikimedia + IA) |
+| `place_ingestion_queue`  | `PLACE_INGESTION_QUEUE`  | `ingest_city`, `write_place_texts`, `write_place_image` | Ingestão de lugares turísticos (Wikidata + Wikimedia + IA) |
 
 A fila `ai_blog_queue` suporta **repeatable jobs** com expressão cron, configurada dinamicamente pelo módulo `ai-blog` quando um `AiBlogCronJob` é criado/ativado.
 
@@ -636,8 +637,8 @@ ou RabbitMQ, e a troca deve custar um adapter, não uma reescrita.
 
 ```
 PlacesAdminService (API)       ← "processe esta cidade"
-PlaceIngestionService (worker) ← regra: resolve área, busca POIs, ranqueia,
-  │                              persiste DRAFT, escreve texto, converge
+PlaceIngestionService (worker) ← regra: resolve a cidade, descobre no Wikidata,
+  │                              ranqueia, persiste DRAFT, escreve texto, converge
   │ ambos dependem de
   ▼
 IngestionDispatcher (port)     ← @app/ingestion
@@ -671,12 +672,21 @@ direto, trocar de broker seria mexer nos dois — e a API, que só quer dizer
 **Retry não é portável.** O BullMQ dá 3 tentativas com backoff exponencial; o
 Kafka não tem nada disso e o RabbitMQ escreve com DLQ e TTL. Por isso o port
 expressa *intenção* e cada adapter decide como honrá-la. `PermanentIngestionError`
-chama `job.discard()` antes de propagar: cidade que não existe no OSM não merece
-três tentativas e meia hora de backoff.
+chama `job.discard()` antes de propagar: cidade que não existe no Wikidata não
+merece três tentativas e meia hora de backoff.
 
-O worker roda com `concurrency: 1` e `limiter: { max: 1, duration: 60_000 }` —
-não é cautela, é o orçamento do Overpass público, que devolveu 429 depois de
-poucas consultas seguidas e cada cidade custa oito delas.
+O worker roda com `concurrency: 1` e **sem limiter de fila**. O limiter de
+1 job/min existia para o Overpass; com a descoberta no Wikidata não há fonte
+com muro de taxa, e o limiter estava, medido, freando texto e imagem (18 jobs
+de imagem levaram 18 min) por uma fonte que eles nem tocavam.
+
+**Descoberta no Wikidata (#163).** `WikidataDiscoveryService` resolve o QID da
+cidade (país + rótulo exato + coordenada, desempate por sitelinks) e roda uma
+consulta SPARQL barata — `P131` com saltos limitados, **sem** filtro de classe,
+porque `P31/P279*` dentro do SPARQL estourava o timeout em Lisboa. A
+classificação é do nosso lado, por tabela explícita classe → categoria com um
+salto de `P279` e uma lista de exclusão medida; o descarte vai para
+`stats.droppedAsUnmapped`. Detalhes e métricas em `docs/DATA_SOURCES.md`.
 
 **Convergência.** Cada job de texto, ao terminar, chama `markReadyIfDone`, um
 `updateMany` com `status: PROCESSING` no `where` — compare-and-set, um só job
@@ -702,12 +712,9 @@ PATCH admin.
 **Nunca o mesmo lugar duas vezes**, e são dois problemas distintos, ambos
 medidos no conjunto completo do Porto:
 
-- **O mesmo lugar mapeado duas vezes no OSM** — três `wikidataId` apareciam em
-  dois elementos cada ("Ribeira" é *node* e *relation*). A identidade é o
-  Wikidata; `dedupeByWikidata` mantém um, preferindo `relation` > `way` >
-  `node`, porque o `center` de uma relação é centroide real enquanto um node
-  posto à mão pode estar em qualquer canto — e porque preferir por tipo é
-  determinístico, ao contrário de "o primeiro que o Overpass devolveu".
+- **A mesma entidade duas vezes** — um item com duas coordenadas volta como
+  duas linhas do SPARQL ("Liberty City", em Miami). A identidade é o QID; a
+  descoberta colapsa por ele antes de qualquer outra coisa.
 - **Lugares diferentes com o mesmo nome** — `Forte de São João Baptista` são
   dois fortes (Q10283826 e Q10284015). Como `[countryCode, city, slug]` é a
   chave única, colidir significa o segundo upsert sobrescrever o primeiro em

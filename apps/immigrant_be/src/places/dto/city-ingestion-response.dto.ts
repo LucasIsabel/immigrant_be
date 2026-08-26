@@ -40,8 +40,16 @@ export class PlaceRejectionDto {
 
 /** What one run found, kept and refused. */
 export class IngestionStatsDto {
-  @ApiPropertyOptional({ description: 'Raw elements returned by Overpass' })
+  @ApiPropertyOptional({
+    description: 'Candidates Wikidata returned for the city',
+  })
   rawElements?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Candidates whose Wikidata class maps to none of our categories — the honesty line: how much the class table left out',
+  })
+  droppedAsUnmapped?: number;
 
   @ApiPropertyOptional({
     description: 'How many had an article on the English Wikipedia',
@@ -97,7 +105,7 @@ export class CityIngestionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'The already resolved OSM area — a retry does not have to look it up again',
+      'Legacy: the OSM area resolved by the Overpass-era pipeline. Null for ingestions discovered on Wikidata.',
     nullable: true,
     type: String,
   })
@@ -105,7 +113,7 @@ export class CityIngestionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'What OSM calls the area — "Lisboa" where our list says "Lisbon"',
+      'Legacy: what OSM called the area. Null for ingestions discovered on Wikidata.',
     nullable: true,
   })
   osmMatchedName?: string | null;
@@ -196,7 +204,7 @@ export class AdminPlaceResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'Canonical URL of the OSM element — per-record attribution, which the ODbL requires',
+      'Where the record came from: the Wikidata entity (CC0) for discovered places, the OSM element for legacy ones',
     nullable: true,
   })
   sourceUrl?: string | null;

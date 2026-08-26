@@ -10,10 +10,10 @@ import {
   RetryableIngestionError,
 } from '@app/ingestion';
 import {
-  AreaNotResolvedError,
-  OverpassService,
-  type OverpassPoi,
-} from './overpass.service';
+  CityNotResolvedError,
+  type DiscoveredPlace,
+  WikidataDiscoveryService,
+} from './wikidata-discovery.service';
 import {
   PlaceIngestionRepository,
   type PlaceToPersist,
@@ -50,7 +50,7 @@ export class PlaceIngestionService {
 
   constructor(
     private readonly repository: PlaceIngestionRepository,
-    private readonly overpass: OverpassService,
+    private readonly discovery: WikidataDiscoveryService,
     private readonly wikimedia: WikimediaService,
     private readonly aiRouter: AiRouterService,
     private readonly storage: StorageService,
@@ -76,18 +76,14 @@ export class PlaceIngestionService {
 
     const { countryCode, city } = ingestion;
 
-    const areaId = await this.resolveArea(
-      ingestionId,
-      countryCode,
-      city,
-      ingestion.osmAreaId,
-    );
+    await this.repository.markStep(ingestionId, 'resolve_city');
+    const cityRef = await this.resolveCity(countryCode, city);
 
-    await this.repository.markStep(ingestionId, 'fetch_pois');
-    const pois = await this.fetchPois(areaId);
+    await this.repository.markStep(ingestionId, 'discover');
+    const discovered = await this.discover(cityRef.wikidataId);
 
     await this.repository.markStep(ingestionId, 'rank');
-    const ranked = await this.rank(pois);
+    const ranked = await this.rank(discovered.places);
 
     const countryId = await this.resolveCountryId(countryCode);
     const { created, conflicts } = await this.repository.persistDrafts(
@@ -99,7 +95,8 @@ export class PlaceIngestionService {
     );
 
     await this.repository.saveStats(ingestionId, {
-      rawElements: pois.length,
+      rawElements: discovered.rawCount,
+      droppedAsUnmapped: discovered.droppedAsUnmapped,
       withEnwiki: ranked.withEnwiki,
       kept: ranked.places.length,
       created: created.length,
@@ -281,70 +278,35 @@ export class PlaceIngestionService {
     await this.repository.markFailed(ingestionId, step, message);
   }
 
-  private async resolveArea(
-    ingestionId: string,
-    countryCode: string,
-    city: string,
-    cached: bigint | null,
-  ): Promise<number> {
-    if (cached) return Number(cached);
-
-    await this.repository.markStep(ingestionId, 'resolve_area');
+  private async resolveCity(countryCode: string, city: string) {
     try {
-      const areaId = await this.overpass.resolveArea(countryCode, city);
-      await this.repository.saveResolvedArea(
-        ingestionId,
-        areaId,
-        await this.matchedName(areaId),
+      const resolved = await this.discovery.resolveCity(countryCode, city);
+      this.logger.log(
+        `${city} (${countryCode}) is ${resolved.wikidataId} "${resolved.label}"`,
       );
-      return areaId;
+      return resolved;
     } catch (error) {
-      if (error instanceof AreaNotResolvedError) {
-        // Trying again will not help: the city is not in OpenStreetMap under
-        // any name we know. It has to surface to a human, who can unblock it by
-        // supplying the area id.
-        throw new PermanentIngestionError(error.message, 'resolve_area');
+      if (error instanceof CityNotResolvedError) {
+        // Trying again will not help: the city is not on Wikidata under that
+        // name in that country. It surfaces to a human.
+        throw new PermanentIngestionError(error.message, 'resolve_city');
       }
       throw new RetryableIngestionError(
-        `Could not resolve area for ${city}`,
+        `Could not resolve ${city} on Wikidata`,
         error,
       );
     }
   }
 
-  /**
-   * What OSM calls the area — "Lisboa" where our list says "Lisbon".
-   *
-   * Failing here brings nothing down. Resolving the area costs up to four
-   * queries plus a probe, and this was seen happening: Sintra resolved and the
-   * very next request, for the name, took a 504 — which threw away the area
-   * just resolved and made the retry redo everything, over a screen label.
-   */
-  private async matchedName(areaId: number): Promise<string | null> {
+  private async discover(cityQid: string) {
     try {
-      return await this.overpass.areaName(areaId);
-    } catch {
-      return null;
-    }
-  }
-
-  private async fetchPois(areaId: number): Promise<OverpassPoi[]> {
-    try {
-      return await this.overpass.fetchPois(areaId);
+      return await this.discovery.discover(cityQid);
     } catch (error) {
-      throw new RetryableIngestionError('Overpass refused the query', error);
+      throw new RetryableIngestionError('Wikidata discovery failed', error);
     }
   }
 
-  /**
-   * Turn raw points of interest into a ranked shortlist.
-   *
-   * This is the step that separates a guide from an inventory. OpenStreetMap
-   * has no notion of importance — in Miami, 88 of 99 results were neighbourhood
-   * parks. Having an English Wikipedia article, and how many people read it, is
-   * the closest free signal to "people actually visit this".
-   */
-  private async rank(pois: OverpassPoi[]): Promise<{
+  private async rank(pois: DiscoveredPlace[]): Promise<{
     places: PlaceToPersist[];
     withEnwiki: number;
     /** slug → Commons file for the kept places that have a P18 image. */
@@ -360,10 +322,12 @@ export class PlaceIngestionService {
     );
     const byWikidata = new Map(signals.map((s) => [s.wikidataId, s]));
 
-    const scored = dedupeByWikidata(pois)
+    const scored = pois
       .map((poi) => ({ poi, signal: byWikidata.get(poi.wikidataId) }))
       .filter(
-        (row): row is { poi: OverpassPoi; signal: (typeof signals)[number] } =>
+        (
+          row,
+        ): row is { poi: DiscoveredPlace; signal: (typeof signals)[number] } =>
           row.signal !== undefined,
       )
       .sort((a, b) => b.signal.monthlyViews - a.signal.monthlyViews);
@@ -389,14 +353,15 @@ export class PlaceIngestionService {
       lng: poi.lng,
       address: poi.address,
       website: poi.website,
-      isFree: poi.isFree,
-      osmType: poi.osmType,
-      osmId: poi.osmId,
+      // Wikidata rarely records admission fees; "unknown" renders as paid,
+      // which the writing prompt already treats as "say nothing about price".
+      isFree: false,
       wikidataId: poi.wikidataId,
       wikipediaMonthlyViews: signal.monthlyViews,
       popularityScore: scoreFor(index, kept.length),
-      // Per-record attribution, which the ODbL licence requires.
-      sourceUrl: `https://www.openstreetmap.org/${poi.osmType}/${poi.osmId}`,
+      // Provenance per record. CC0, so no attribution obligation — but the
+      // link is how a reviewer audits where a place came from.
+      sourceUrl: `https://www.wikidata.org/wiki/${poi.wikidataId}`,
     }));
 
     return { places, withEnwiki: scored.length, imagesBySlug };
@@ -428,32 +393,6 @@ const COUNTRY_NAMES: Record<string, string> = {
 };
 
 /**
- * The same real place, mapped more than once in OpenStreetMap.
- *
- * Measured in Porto: three Wikidata ids appeared on two OSM elements each —
- * "Ribeira" exists as a node *and* as a relation. The Wikidata id is the
- * identity; the OSM element is just one way of drawing it.
- *
- * When both exist, the relation wins, then the way: their `center` is a real
- * centroid, while a node placed by hand can sit anywhere inside the thing it
- * labels. Preferring by type also makes the choice deterministic, where "first
- * one Overpass returned" would not be.
- */
-function dedupeByWikidata(pois: OverpassPoi[]): OverpassPoi[] {
-  const rank = { relation: 0, way: 1, node: 2 } as const;
-  const best = new Map<string, OverpassPoi>();
-
-  for (const poi of pois) {
-    const current = best.get(poi.wikidataId);
-    if (!current || rank[poi.osmType] < rank[current.osmType]) {
-      best.set(poi.wikidataId, poi);
-    }
-  }
-
-  return [...best.values()];
-}
-
-/**
  * A slug per place, where two different places can share a name.
  *
  * `[countryCode, city, slug]` is the unique key, so two distinct places
@@ -469,7 +408,7 @@ function dedupeByWikidata(pois: OverpassPoi[]): OverpassPoi[] {
  * outcome this function exists to prevent. The most-visited one keeps the clean
  * slug, so the URL that matters stays readable.
  */
-function uniqueSlugs(pois: OverpassPoi[]): Map<string, string> {
+function uniqueSlugs(pois: DiscoveredPlace[]): Map<string, string> {
   const taken = new Set<string>();
   const assigned = new Map<string, string>();
 

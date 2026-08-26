@@ -24,12 +24,10 @@ const poi = (slug: string, name: string): PlaceToPersist => ({
   lat: 38.6,
   lng: -9.2,
   isFree: false,
-  osmType: 'way',
-  osmId: 1,
   wikidataId: 'Q1',
   wikipediaMonthlyViews: 1000,
   popularityScore: 100,
-  sourceUrl: 'https://www.openstreetmap.org/way/1',
+  sourceUrl: 'https://www.wikidata.org/wiki/Q1',
 });
 
 describe('PlaceIngestionRepository', () => {

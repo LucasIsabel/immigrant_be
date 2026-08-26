@@ -4,7 +4,7 @@ import { DatabaseModule } from '@app/database';
 import { IngestionModule } from '@app/ingestion/ingestion.module';
 import { StorageModule } from '@app/storage';
 import { EventsModule } from '../events/events.module';
-import { OverpassService } from './overpass.service';
+import { WikidataDiscoveryService } from './wikidata-discovery.service';
 import { PlaceIngestionConsumer } from './place-ingestion.consumer';
 import { PlaceIngestionRepository } from './place-ingestion.repository';
 import { PlaceIngestionService } from './place-ingestion.service';
@@ -28,7 +28,7 @@ import { WikimediaService } from './wikimedia.service';
     PlaceIngestionConsumer,
     PlaceIngestionService,
     PlaceIngestionRepository,
-    OverpassService,
+    WikidataDiscoveryService,
     WikimediaService,
   ],
 })
