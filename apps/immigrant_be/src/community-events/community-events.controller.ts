@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -40,6 +41,7 @@ import { CommunityEventsService } from './community-events.service';
 import { CreateCommunityEventDto } from './dto/create-community-event.dto';
 import { UpdateCommunityEventDto } from './dto/update-community-event.dto';
 import { ReportCommunityEventDto } from './dto/report-community-event.dto';
+import { RemoveEventImageDto } from './dto/remove-event-image.dto';
 import { ListCommunityEventsQueryDto } from './dto/list-community-events-query.dto';
 import { ListPublicCommunityEventsQueryDto } from './dto/list-public-community-events-query.dto';
 import {
@@ -50,7 +52,10 @@ import {
   PaginatedPublicCommunityEventsResponseDto,
   PublicCommunityEventDto,
 } from './dto/public-community-event.dto';
-import { UploadEventImageResponseDto } from './dto/upload-event-image-response.dto';
+import {
+  UploadEventGalleryImageResponseDto,
+  UploadEventImageResponseDto,
+} from './dto/upload-event-image-response.dto';
 import { ReportCommunityEventResponseDto } from './dto/report-community-event-response.dto';
 
 /**
@@ -208,6 +213,61 @@ export class CommunityEventsController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<UploadEventImageResponseDto> {
     return this.service.uploadImage(id, session.user.id, file);
+  }
+
+  @Post(':id/images')
+  @Roles(UserRole.USER)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Adicionar uma foto à galeria do evento',
+    description:
+      'JPEG/PNG/WebP até 5 MB, no máximo 8 fotos além da capa. Numa galeria alterada de evento APPROVED, o evento volta a análise.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID do evento' })
+  @ApiOkResponse({ type: UploadEventGalleryImageResponseDto })
+  @ApiConflictResponse({ description: 'Galeria cheia ou evento cancelado' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  uploadGalleryImage(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UploadEventGalleryImageResponseDto> {
+    return this.service.uploadGalleryImage(id, session.user.id, file);
+  }
+
+  @Delete(':id/images')
+  @Roles(UserRole.USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Remover uma foto da galeria do evento',
+    description:
+      'A foto é identificada pela URL. Numa galeria alterada de evento APPROVED, o evento volta a análise.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID do evento' })
+  @ApiOkResponse({ type: CommunityEventResponseDto })
+  @ApiNotFoundResponse({ description: 'Foto não encontrada' })
+  @ApiConflictResponse({ description: 'Evento cancelado' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  removeGalleryImage(
+    @Param('id') id: string,
+    @Body() dto: RemoveEventImageDto,
+    @Session() session: UserSession,
+  ): Promise<CommunityEventResponseDto> {
+    return this.service.removeGalleryImage(id, session.user.id, dto);
   }
 
   @Post(':id/submit')

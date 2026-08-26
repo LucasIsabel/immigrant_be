@@ -36,6 +36,14 @@ export class CommunityEventResponseDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   imageUrl?: string | null;
 
+  @ApiProperty({
+    description:
+      'Gallery photos, in the order the organizer arranged them. The cover is `imageUrl` and is not repeated here.',
+    type: [String],
+    example: [],
+  })
+  images: string[];
+
   @ApiProperty({ enum: CommunityEventCategory })
   category: CommunityEventCategory;
 

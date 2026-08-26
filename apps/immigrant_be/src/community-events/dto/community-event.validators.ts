@@ -32,6 +32,34 @@ export function IsIanaTimeZone(options?: ValidationOptions) {
   };
 }
 
+/**
+ * Anything that opens or closes a tag. Deliberately crude: the field is
+ * Markdown, so there is no legitimate `<div>` to preserve, and the frontend
+ * renders it with raw HTML disabled anyway. This is the belt to that suspender
+ * — a payload that never stores a tag cannot leak one through a future
+ * renderer that forgets the flag.
+ */
+const HTML_TAG = /<\s*\/?[a-z][^>]*>/i;
+
+/** Markdown, not markup: text that carries no HTML tag. */
+export function IsHtmlFree(options?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isHtmlFree',
+      target: object.constructor,
+      propertyName,
+      options,
+      validator: {
+        validate(value: unknown): boolean {
+          return typeof value !== 'string' || !HTML_TAG.test(value);
+        },
+        defaultMessage: (args: ValidationArguments) =>
+          `${args.property} não pode conter HTML`,
+      },
+    });
+  };
+}
+
 /** An instant that has not happened yet. */
 export function IsFutureDate(options?: ValidationOptions) {
   return function (object: object, propertyName: string) {

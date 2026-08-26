@@ -342,8 +342,9 @@ CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
   Enum CommunityEventStatus: DRAFT | PENDING_REVIEW | APPROVED | REJECTED | CANCELLED
   Enum CommunityEventCategory: CONCERT | FAIR | MEETUP | WORKSHOP | EXHIBITION | SPORTS | FOOD | OTHER
   `Events` já é a tabela de notificações do utilizador — daí `CommunityEvent`, e não `Event`.
-  Armazena: organizerId (FK), slug (único), title, description, imageUrl (obrigatório só para
-            submeter), category, startsAt/endsAt (instantes UTC), timezone (IANA),
+  Armazena: organizerId (FK), slug (único), title, description (Markdown, 20–8000, sem HTML),
+            imageUrl (capa; obrigatório só para submeter), images (galeria ordenada, até 8 URLs),
+            category, startsAt/endsAt (instantes UTC), timezone (IANA),
             countryCode + city (string livre, como em Business/Place), venueName, venueAddress,
             lat/lng (obrigatórios — geolocalização exata), businessId (FK opcional),
             contactEmail/contactPhone (ao menos um), isFree, priceNote, externalUrl, minAge,
@@ -354,6 +355,13 @@ CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
     permite exibir "sábado, 21h" e responder "hoje" no dia **da cidade**. Os filtros
     `when=today|weekend` correm em SQL (`(starts_at AT TIME ZONE 'UTC') AT TIME ZONE timezone`)
     porque duas linhas da mesma lista podem estar em fusos diferentes.
+  **Capa e galeria.** `imageUrl` é a capa (og:image) e continua a ser o que o `submit` exige;
+    `images` é a galeria, um `String[] @default([])` no molde de `Business.photos`. A ordem do
+    array é a ordem da página — `PATCH /events/:id` aceita `images` apenas como permutação ou
+    subconjunto do que já está gravado, porque acrescentar é o que a rota de upload faz.
+  **Descrição em Markdown.** O campo é Markdown renderizado no frontend com HTML cru desligado;
+    o backend recusa qualquer tag (400 "Descrição não pode conter HTML"), para que nem uma
+    futura mudança de renderizador possa servir markup que alguém gravou.
   **Termo versionado.** A criação exige `acceptTerms: true` e `termsVersion` igual à constante
     `COMMUNITY_EVENT_TERMS_VERSION` do módulo; versão antiga é 400. O texto do termo é conteúdo
     de utilizador e vive no frontend.
@@ -617,6 +625,11 @@ imagem substitua o ficheiro em vez de acumular órfãos no bucket.
 
 - `business-pages/{businessId}/logo.{ext}` e `business-pages/{businessId}/cover.{ext}`
 - `community-events/{eventId}/cover.{ext}` — capa do evento (`POST /events/:id/image`)
+
+A galeria do evento é a exceção deliberada: cada foto é acrescentada, não substituída, e por isso
+leva UUID próprio — `community-events/{eventId}/gallery/{uuid}.{ext}` (`POST /events/:id/images`).
+`DELETE /events/:id/images` remove a URL do array e apaga o objeto em best-effort, derivando a
+chave do *path* da URL e só quando ela cai sob o prefixo da galeria daquele evento.
 
 ### AI Blog Cover Images
 
@@ -988,8 +1001,10 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `POST /events`                                             | CommunityEvents                | Autenticado (role USER) — cria em DRAFT; throttle 10/min; 400 se `termsVersion` desatualizada; 409 no teto de 5 em análise |
 | `GET /events/mine`                                         | CommunityEvents                | Autenticado (role USER) — os meus eventos em qualquer status, paginado |
 | `GET /events/:id`                                          | CommunityEvents                | Autenticado (role USER) — detalhe do próprio evento; 403 se não for dele |
-| `PATCH /events/:id`                                        | CommunityEvents                | Autenticado (role USER) — edita DRAFT/REJECTED; em APPROVED edita **e devolve a PENDING_REVIEW**; 409 em PENDING_REVIEW/CANCELLED |
+| `PATCH /events/:id`                                        | CommunityEvents                | Autenticado (role USER) — edita DRAFT/REJECTED; em APPROVED edita **e devolve a PENDING_REVIEW**; 409 em PENDING_REVIEW/CANCELLED; campos opcionais aceitam `null` para limpar (`undefined` não mexe); `images` só como permutação/subconjunto do array gravado, senão 400 "Galeria inválida" |
 | `POST /events/:id/image`                                   | CommunityEvents                | Autenticado (role USER) — capa do evento; multipart, campo `file`; JPEG/PNG/WebP, máx 5 MB; chave R2 `community-events/{eventId}/cover.{ext}`; em APPROVED volta a análise |
+| `POST /events/:id/images`                                  | CommunityEvents                | Autenticado (role USER) — acrescenta uma foto à galeria; multipart, campo `file`; JPEG/PNG/WebP, máx 5 MB; 409 "Limite de 8 fotos"; chave R2 `community-events/{eventId}/gallery/{uuid}.{ext}`; devolve `{ url, images }`; em APPROVED volta a análise |
+| `DELETE /events/:id/images`                                | CommunityEvents                | Autenticado (role USER) — remove a foto indicada por `{ url }`; 404 se não estiver na galeria; apaga o objeto em best-effort; em APPROVED volta a análise |
 | `POST /events/:id/submit`                                  | CommunityEvents                | Autenticado (role USER) — DRAFT/REJECTED → PENDING_REVIEW; 422 sem imagem; 409 se já em análise |
 | `POST /events/:id/cancel`                                  | CommunityEvents                | Autenticado (role USER) — cancela e some do público; 409 se já cancelado |
 | `GET /admin/events`                                        | CommunityEvents (admin)        | ADMIN — fila de moderação: PENDING_REVIEW primeiro por `submittedAt asc`; `?status=&page=&limit=`; cada item traz `reportCount` |

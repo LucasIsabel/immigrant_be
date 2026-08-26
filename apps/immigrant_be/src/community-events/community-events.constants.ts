@@ -17,7 +17,7 @@ export const COMMUNITY_EVENT_TERMS_VERSION = '2026-08-26';
  */
 export const MAX_PENDING_EVENTS_PER_ORGANIZER = 5;
 
-/** Cover images are the only upload this module accepts. */
+/** Images — the cover and the gallery — are the only uploads this module accepts. */
 export const ALLOWED_IMAGE_MIMES = new Set([
   'image/jpeg',
   'image/png',
@@ -25,3 +25,11 @@ export const ALLOWED_IMAGE_MIMES = new Set([
 ]);
 
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+/**
+ * How many photos the gallery holds, on top of the cover.
+ *
+ * The cap is a product decision before it is a storage one: a page nobody
+ * scrolls to the end of sells the event worse than eight good photos do.
+ */
+export const MAX_EVENT_GALLERY_IMAGES = 8;

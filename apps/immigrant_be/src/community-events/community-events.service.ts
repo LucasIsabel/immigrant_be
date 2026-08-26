@@ -3,14 +3,17 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { StorageService } from '@app/storage';
 import { CommunityEventStatus } from '../../../../generated/prisma';
 import {
   ALLOWED_IMAGE_MIMES,
   COMMUNITY_EVENT_TERMS_VERSION,
+  MAX_EVENT_GALLERY_IMAGES,
   MAX_IMAGE_SIZE,
   MAX_PENDING_EVENTS_PER_ORGANIZER,
 } from './community-events.constants';
@@ -25,6 +28,7 @@ import { CreateCommunityEventDto } from './dto/create-community-event.dto';
 import { UpdateCommunityEventDto } from './dto/update-community-event.dto';
 import { RejectCommunityEventDto } from './dto/reject-community-event.dto';
 import { ReportCommunityEventDto } from './dto/report-community-event.dto';
+import { RemoveEventImageDto } from './dto/remove-event-image.dto';
 import { ListCommunityEventsQueryDto } from './dto/list-community-events-query.dto';
 import {
   CommunityEventWhen,
@@ -38,7 +42,10 @@ import {
   PaginatedPublicCommunityEventsResponseDto,
   PublicCommunityEventDto,
 } from './dto/public-community-event.dto';
-import { UploadEventImageResponseDto } from './dto/upload-event-image-response.dto';
+import {
+  UploadEventGalleryImageResponseDto,
+  UploadEventImageResponseDto,
+} from './dto/upload-event-image-response.dto';
 import { ReportCommunityEventResponseDto } from './dto/report-community-event-response.dto';
 
 /** Business page statuses whose approved content is live on the site. */
@@ -46,6 +53,8 @@ const LIVE_PAGE_STATUSES = new Set(['APPROVED', 'APPROVED_WITH_PENDING']);
 
 @Injectable()
 export class CommunityEventsService {
+  private readonly logger = new Logger(CommunityEventsService.name);
+
   constructor(
     private readonly repository: CommunityEventsRepository,
     private readonly storageService: StorageService,
@@ -158,15 +167,14 @@ export class CommunityEventsService {
     const title = dto.title ?? event.title;
     const timezone = dto.timezone ?? event.timezone;
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : event.startsAt;
-    // `endsAt` is the one field a client can deliberately clear, so `null` has
-    // to survive the DTO's `string | undefined` shape.
-    const endsAtInput = dto.endsAt as string | null | undefined;
+    // Three answers, not two: `undefined` leaves the field alone and `null`
+    // clears it. Every optional field on the update DTO reads this way.
     const endsAt =
-      endsAtInput === undefined
+      dto.endsAt === undefined
         ? event.endsAt
-        : endsAtInput === null
+        : dto.endsAt === null
           ? null
-          : new Date(endsAtInput);
+          : new Date(dto.endsAt);
     const contactEmail =
       dto.contactEmail === undefined ? event.contactEmail : dto.contactEmail;
     const contactPhone =
@@ -177,6 +185,11 @@ export class CommunityEventsService {
     const isFree = dto.isFree ?? event.isFree;
     const priceNote =
       dto.priceNote === undefined ? event.priceNote : dto.priceNote;
+
+    const images =
+      dto.images === undefined
+        ? event.images
+        : this.assertGalleryRearrangement(dto.images, event.images);
 
     // Only a *new* start date has to be in the future: forbidding an edit to an
     // event that already began would make a typo in its address unfixable.
@@ -197,12 +210,11 @@ export class CommunityEventsService {
         ? await this.buildUniqueSlug(title, startsAt, timezone, event.id)
         : event.slug;
 
-    const backToReview = event.status === 'APPROVED';
-
     const updated = await this.repository.update(id, {
       slug,
       title,
       description: dto.description ?? event.description,
+      images,
       category: dto.category ?? event.category,
       startsAt,
       endsAt,
@@ -223,14 +235,7 @@ export class CommunityEventsService {
           ? event.externalUrl
           : (dto.externalUrl ?? null),
       minAge: dto.minAge === undefined ? event.minAge : (dto.minAge ?? null),
-      ...(backToReview
-        ? {
-            status: 'PENDING_REVIEW' as CommunityEventStatus,
-            submittedAt: new Date(),
-            approvedAt: null,
-            approvedById: null,
-          }
-        : {}),
+      ...this.backToReviewPatch(event.status),
     });
 
     return this.toOwnerResponse(updated);
@@ -241,19 +246,7 @@ export class CommunityEventsService {
     organizerId: string,
     file: Express.Multer.File,
   ): Promise<UploadEventImageResponseDto> {
-    if (!file) {
-      throw new BadRequestException('Nenhum ficheiro enviado.');
-    }
-    if (!ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
-      throw new BadRequestException(
-        'Tipo de ficheiro não permitido. Use JPEG, PNG ou WebP.',
-      );
-    }
-    if (file.size > MAX_IMAGE_SIZE) {
-      throw new BadRequestException(
-        'Ficheiro excede o tamanho máximo de 5 MB.',
-      );
-    }
+    this.assertUploadableImage(file);
 
     const event = await this.requireOwned(id, organizerId);
     if (event.status === 'CANCELLED') {
@@ -269,20 +262,77 @@ export class CommunityEventsService {
 
     // Same rule as an edit: a new cover on an approved event is new content,
     // and new content is reviewed before it is public.
-    const backToReview = event.status === 'APPROVED';
     await this.repository.update(id, {
       imageUrl: url,
-      ...(backToReview
-        ? {
-            status: 'PENDING_REVIEW' as CommunityEventStatus,
-            submittedAt: new Date(),
-            approvedAt: null,
-            approvedById: null,
-          }
-        : {}),
+      ...this.backToReviewPatch(event.status),
     });
 
     return { url };
+  }
+
+  /**
+   * A gallery photo, appended to the end. Unlike the cover it gets its own
+   * UUID: the cover is replaced, a photo is added, and a deterministic key
+   * would make the second upload overwrite the first.
+   */
+  async uploadGalleryImage(
+    id: string,
+    organizerId: string,
+    file: Express.Multer.File,
+  ): Promise<UploadEventGalleryImageResponseDto> {
+    this.assertUploadableImage(file);
+
+    const event = await this.requireOwned(id, organizerId);
+    if (event.status === 'CANCELLED') {
+      throw new ConflictException('Evento cancelado não pode ser editado');
+    }
+    if (event.images.length >= MAX_EVENT_GALLERY_IMAGES) {
+      throw new ConflictException(
+        `Limite de ${MAX_EVENT_GALLERY_IMAGES} fotos`,
+      );
+    }
+
+    const key = `community-events/${event.id}/gallery/${randomUUID()}${this.mimeToExt(file.mimetype)}`;
+    const { url } = await this.storageService.uploadFileAtKey(
+      file.buffer,
+      key,
+      file.mimetype,
+    );
+
+    const images = [...event.images, url];
+    await this.repository.update(id, {
+      images,
+      ...this.backToReviewPatch(event.status),
+    });
+
+    return { url, images };
+  }
+
+  async removeGalleryImage(
+    id: string,
+    organizerId: string,
+    dto: RemoveEventImageDto,
+  ): Promise<CommunityEventResponseDto> {
+    const event = await this.requireOwned(id, organizerId);
+    if (event.status === 'CANCELLED') {
+      throw new ConflictException('Evento cancelado não pode ser editado');
+    }
+    if (!event.images.includes(dto.url)) {
+      throw new NotFoundException('Foto não encontrada');
+    }
+
+    const images = event.images.filter((image) => image !== dto.url);
+    const updated = await this.repository.update(id, {
+      images,
+      ...this.backToReviewPatch(event.status),
+    });
+
+    // Best-effort: the row is the source of truth for what the page shows, and
+    // a bucket that keeps an unreferenced object is a cheaper failure than an
+    // event whose photo cannot be removed because R2 is having a bad minute.
+    await this.deleteGalleryObject(event.id, dto.url);
+
+    return this.toOwnerResponse(updated);
   }
 
   async submit(
@@ -487,6 +537,83 @@ export class CommunityEventsService {
     return event;
   }
 
+  private assertUploadableImage(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('Nenhum ficheiro enviado.');
+    }
+    if (!ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
+      throw new BadRequestException(
+        'Tipo de ficheiro não permitido. Use JPEG, PNG ou WebP.',
+      );
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      throw new BadRequestException(
+        'Ficheiro excede o tamanho máximo de 5 MB.',
+      );
+    }
+  }
+
+  /**
+   * New content on a published event is content nobody checked, whether it
+   * arrived as an edit, a new cover or a new photo. One patch, one rule.
+   */
+  private backToReviewPatch(
+    status: CommunityEventStatus,
+  ): Record<string, unknown> {
+    if (status !== 'APPROVED') return {};
+
+    return {
+      status: 'PENDING_REVIEW' as CommunityEventStatus,
+      submittedAt: new Date(),
+      approvedAt: null,
+      approvedById: null,
+    };
+  }
+
+  /**
+   * `PATCH` may reorder the gallery or drop photos from it, never invent them:
+   * every URL has to be one this event already stores, and no URL twice. Adding
+   * is what `POST /events/:id/images` is for, and a URL the server never wrote
+   * would put an arbitrary origin on the page.
+   */
+  private assertGalleryRearrangement(
+    next: string[],
+    stored: string[],
+  ): string[] {
+    const known = new Set(stored);
+    const seen = new Set<string>();
+
+    for (const url of next) {
+      if (!known.has(url) || seen.has(url)) {
+        throw new BadRequestException('Galeria inválida');
+      }
+      seen.add(url);
+    }
+
+    return next;
+  }
+
+  /**
+   * The key is the URL's path. The prefix check is what keeps a doctored row
+   * from turning a photo removal into a delete of any object in the bucket.
+   */
+  private async deleteGalleryObject(
+    eventId: string,
+    url: string,
+  ): Promise<void> {
+    const prefix = `community-events/${eventId}/gallery/`;
+
+    try {
+      const key = new URL(url).pathname.replace(/^\/+/, '');
+      if (!key.startsWith(prefix)) return;
+      await this.storageService.deleteFile(key);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to delete gallery object for event ${eventId}: ${String(error)}`,
+      );
+    }
+  }
+
   private assertSchedule(
     startsAt: Date,
     endsAt: Date | null,
@@ -577,6 +704,7 @@ export class CommunityEventsService {
       title: event.title,
       description: event.description,
       imageUrl: event.imageUrl,
+      images: event.images,
       category: event.category,
       startsAt: event.startsAt,
       endsAt: event.endsAt,

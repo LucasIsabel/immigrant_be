@@ -99,7 +99,7 @@ describe('OpenAPI contract — Community Events', () => {
       ),
     );
 
-  it('registers the fourteen operations of the community events flow', () => {
+  it('registers the sixteen operations of the community events flow', () => {
     const operations = Object.entries(document.paths)
       .flatMap(([route, item]) =>
         Object.keys(item as Record<string, unknown>).map(
@@ -109,6 +109,7 @@ describe('OpenAPI contract — Community Events', () => {
       .sort();
 
     expect(operations).toEqual([
+      'DELETE /events/{id}/images',
       'GET /admin/events',
       'GET /admin/events/{id}',
       'GET /events/mine',
@@ -122,6 +123,7 @@ describe('OpenAPI contract — Community Events', () => {
       'POST /events/public/{slug}/report',
       'POST /events/{id}/cancel',
       'POST /events/{id}/image',
+      'POST /events/{id}/images',
       'POST /events/{id}/submit',
     ]);
   });
@@ -150,6 +152,8 @@ describe('OpenAPI contract — Community Events', () => {
         'CommunityEventVenueDto',
         'PaginatedPublicCommunityEventsResponseDto',
         'UploadEventImageResponseDto',
+        'UploadEventGalleryImageResponseDto',
+        'RemoveEventImageDto',
         'ReportCommunityEventResponseDto',
         // Query DTOs flatten into parameters and never become components —
         // only bodies and responses are asserted here.
@@ -184,6 +188,7 @@ describe('OpenAPI contract — Community Events', () => {
     );
 
     expect(secured.sort()).toEqual([
+      'DELETE /events/{id}/images',
       'GET /admin/events',
       'GET /admin/events/{id}',
       'GET /events/mine',
@@ -194,7 +199,48 @@ describe('OpenAPI contract — Community Events', () => {
       'POST /events',
       'POST /events/{id}/cancel',
       'POST /events/{id}/image',
+      'POST /events/{id}/images',
       'POST /events/{id}/submit',
     ]);
+  });
+
+  it('types the gallery as a list of strings on both event payloads', () => {
+    const galleryOf = (schema: string) =>
+      (
+        document.components?.schemas?.[schema] as {
+          properties?: Record<string, { type?: string; items?: unknown }>;
+        }
+      ).properties?.images;
+
+    for (const schema of [
+      'CommunityEventResponseDto',
+      'PublicCommunityEventDto',
+      'UpdateCommunityEventDto',
+    ]) {
+      expect(galleryOf(schema)).toMatchObject({
+        type: 'array',
+        items: { type: 'string' },
+      });
+    }
+  });
+
+  it('declares the clearable fields of an edit as nullable', () => {
+    const update = document.components?.schemas?.[
+      'UpdateCommunityEventDto'
+    ] as {
+      properties?: Record<string, { nullable?: boolean }>;
+    };
+
+    for (const field of [
+      'endsAt',
+      'businessId',
+      'contactEmail',
+      'contactPhone',
+      'priceNote',
+      'externalUrl',
+      'minAge',
+    ]) {
+      expect(update.properties?.[field]?.nullable).toBe(true);
+    }
   });
 });

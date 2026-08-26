@@ -25,6 +25,9 @@ import type { CreateCommunityEventDto } from './dto/create-community-event.dto';
 
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000);
 
+const photo = (n: number) =>
+  `https://cdn.test/community-events/event-1/gallery/${n}.jpg`;
+
 const baseEvent = {
   id: 'event-1',
   organizerId: 'user-1',
@@ -32,6 +35,7 @@ const baseEvent = {
   title: 'Feira de artesanato',
   description: 'Uma tarde de artesanato feito por imigrantes da cidade.',
   imageUrl: 'https://cdn.test/community-events/event-1/cover.jpg',
+  images: [],
   category: 'FAIR',
   startsAt: inDays(7),
   endsAt: null,
@@ -120,11 +124,14 @@ const buildRepository = () => ({
 describe('CommunityEventsService', () => {
   let service: CommunityEventsService;
   let repository: ReturnType<typeof buildRepository>;
-  let storage: { uploadFileAtKey: jest.Mock };
+  let storage: { uploadFileAtKey: jest.Mock; deleteFile: jest.Mock };
 
   beforeEach(async () => {
     repository = buildRepository();
-    storage = { uploadFileAtKey: jest.fn() };
+    storage = {
+      uploadFileAtKey: jest.fn(),
+      deleteFile: jest.fn().mockResolvedValue(undefined),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -321,6 +328,168 @@ describe('CommunityEventsService', () => {
           contactPhone: '',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('clears a field the edit sent as null, and leaves the ones it omitted', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ externalUrl: 'https://exemplo.pt', minAge: 18 }),
+      );
+
+      await service.update('event-1', 'user-1', { externalUrl: null });
+
+      expect(repository.update.mock.calls[0][1]).toMatchObject({
+        externalUrl: null,
+        minAge: 18,
+      });
+    });
+
+    it('refuses an edit that clears both contacts at once', async () => {
+      await expect(
+        service.update('event-1', 'user-1', {
+          contactEmail: null,
+          contactPhone: null,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('reorders the gallery', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+
+      await service.update('event-1', 'user-1', {
+        images: [photo(2), photo(1)],
+      });
+
+      expect(repository.update.mock.calls[0][1].images).toEqual([
+        photo(2),
+        photo(1),
+      ]);
+    });
+
+    it('refuses a gallery carrying a URL the event never stored', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1)] }),
+      );
+
+      await expect(
+        service.update('event-1', 'user-1', {
+          images: [photo(1), 'https://outro.example/foto.jpg'],
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('refuses a gallery that repeats a photo', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+
+      await expect(
+        service.update('event-1', 'user-1', {
+          images: [photo(1), photo(1)],
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('gallery', () => {
+    const upload = () =>
+      service.uploadGalleryImage('event-1', 'user-1', {
+        mimetype: 'image/jpeg',
+        size: 1024,
+        buffer: Buffer.from('x'),
+      } as Express.Multer.File);
+
+    it('appends the photo under a key of its own', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1)] }),
+      );
+      storage.uploadFileAtKey.mockResolvedValue({ url: photo(2) });
+
+      const answer = await upload();
+
+      expect(storage.uploadFileAtKey.mock.calls[0][1]).toMatch(
+        /^community-events\/event-1\/gallery\/[0-9a-f-]{36}\.jpg$/,
+      );
+      expect(answer.images).toEqual([photo(1), photo(2)]);
+    });
+
+    it('refuses the ninth photo', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({
+          images: Array.from({ length: 8 }, (_, index) => photo(index)),
+        }),
+      );
+
+      await expect(upload()).rejects.toThrow(ConflictException);
+      expect(storage.uploadFileAtKey).not.toHaveBeenCalled();
+    });
+
+    it('sends an approved event back to review when the gallery grows', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ status: 'APPROVED', approvedById: 'admin-1' }),
+      );
+      storage.uploadFileAtKey.mockResolvedValue({ url: photo(1) });
+
+      await upload();
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'event-1',
+        expect.objectContaining({
+          status: 'PENDING_REVIEW',
+          approvedAt: null,
+          approvedById: null,
+        }),
+      );
+    });
+
+    it('drops the photo from the row and from the bucket', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+
+      await service.removeGalleryImage('event-1', 'user-1', { url: photo(1) });
+
+      expect(repository.update.mock.calls[0][1].images).toEqual([photo(2)]);
+      expect(storage.deleteFile).toHaveBeenCalledWith(
+        'community-events/event-1/gallery/1.jpg',
+      );
+    });
+
+    it('answers 404 for a photo the event does not have', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1)] }),
+      );
+
+      await expect(
+        service.removeGalleryImage('event-1', 'user-1', {
+          url: 'https://outro.example/foto.jpg',
+        }),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('keeps the removal when the bucket refuses the delete', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1)] }),
+      );
+      storage.deleteFile.mockRejectedValue(new Error('R2 down'));
+
+      await expect(
+        service.removeGalleryImage('event-1', 'user-1', { url: photo(1) }),
+      ).resolves.toBeDefined();
+      expect(repository.update.mock.calls[0][1].images).toEqual([]);
+    });
+
+    it('never deletes an object outside the gallery of this event', async () => {
+      const foreign = 'https://cdn.test/business-pages/other/logo.jpg';
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [foreign] }),
+      );
+
+      await service.removeGalleryImage('event-1', 'user-1', { url: foreign });
+
+      expect(storage.deleteFile).not.toHaveBeenCalled();
     });
   });
 
