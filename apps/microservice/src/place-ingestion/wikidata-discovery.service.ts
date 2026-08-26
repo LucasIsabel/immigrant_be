@@ -287,7 +287,10 @@ export class WikidataDiscoveryService {
     if (!ids.length) throw new CityNotResolvedError(countryCode, city);
 
     const entities = await this.entities(ids, 'claims|labels|sitelinks');
-    const wanted = city.toLowerCase();
+    // Accent-folded on both sides: CountriesNow spells it "Sao Paulo", the
+    // English label on Wikidata is "São Paulo". Exact-by-bytes marked the
+    // largest city in the hemisphere as nonexistent.
+    const wanted = foldAccents(city);
 
     const candidates = ids
       .map((id) => {
@@ -295,7 +298,7 @@ export class WikidataDiscoveryService {
         const inCountry = claimIds(entity, 'P17').includes(countryQid);
         const hasCoordinate = (entity.claims?.P625 ?? []).length > 0;
         const label = entity.labels?.en?.value ?? '';
-        const exactLabel = label.toLowerCase() === wanted;
+        const exactLabel = foldAccents(label) === wanted;
         return {
           id,
           label,
@@ -507,4 +510,12 @@ function categoryOf(
     }
   }
   return null;
+}
+
+/** "São Paulo" and "Sao Paulo" are the same name. */
+function foldAccents(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '')
+    .toLowerCase();
 }
