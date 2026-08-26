@@ -55,6 +55,7 @@ describe('WikimediaService', () => {
         title: 'Belém Tower',
         monthlyViews: 13000,
         extract: 'A 16th-century tower.',
+        commonsFile: null,
       },
     ]);
   });
@@ -142,5 +143,81 @@ describe('WikimediaService', () => {
     expect(inicio).toMatch(/^\d{8}00$/);
     expect(fim).toMatch(/^\d{8}00$/);
     expect(Number(fim.slice(0, 4)) - Number(inicio.slice(0, 4))).toBe(1);
+  });
+
+  describe('imageInfo', () => {
+    it('resolves URL, licence and author through the API, never by string-building', async () => {
+      // Hand-assembled Commons URLs produced ten straight HTTP 400s earlier
+      // in this project; the API is the only source of the real URL.
+      fetchMock.mockResolvedValueOnce(
+        resposta({
+          query: {
+            pages: {
+              '123': {
+                imageinfo: [
+                  {
+                    thumburl: 'https://upload.wikimedia.org/thumb/Torre.jpg',
+                    thumbmime: 'image/jpeg',
+                    extmetadata: {
+                      LicenseShortName: { value: 'CC BY-SA 3.0' },
+                      Artist: {
+                        value:
+                          '<a href="//commons.wikimedia.org/wiki/User:Alvesgaspar">Alvesgaspar</a>',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }),
+      );
+
+      await expect(service.imageInfo('Torre de Belém.jpg')).resolves.toEqual({
+        url: 'https://upload.wikimedia.org/thumb/Torre.jpg',
+        mime: 'image/jpeg',
+        license: 'CC BY-SA 3.0',
+        author: 'Alvesgaspar',
+      });
+    });
+
+    it('returns null for a file Commons cannot render', async () => {
+      fetchMock.mockResolvedValueOnce(
+        resposta({ query: { pages: { '-1': {} } } }),
+      );
+
+      await expect(service.imageInfo('Gone.jpg')).resolves.toBeNull();
+    });
+  });
+
+  it('carries the P18 filename on the same wbgetentities call as the sitelink', async () => {
+    // One request serves ranking AND images; a separate claims fetch would
+    // cost one call per place.
+    fetchMock
+      .mockResolvedValueOnce(
+        resposta({
+          entities: {
+            Q215003: {
+              sitelinks: { enwiki: { title: 'Belém Tower' } },
+              claims: {
+                P18: [
+                  {
+                    mainsnak: {
+                      datavalue: { value: 'Torre Belém April 2009-4a.jpg' },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(visitas(12000, 13000, 14000))
+      .mockResolvedValueOnce(resposta({ extract: 'A tower.' }));
+
+    const [sinal] = await service.popularity(['Q215003']);
+
+    expect(sinal.commonsFile).toBe('Torre Belém April 2009-4a.jpg');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('sitelinks|claims');
   });
 });

@@ -154,6 +154,16 @@ export class AdminPlaceResponseDto {
   })
   imageUrl?: string | null;
 
+  @ApiPropertyOptional({
+    description:
+      'Licence of the Commons image; shown with the author wherever the image is.',
+    nullable: true,
+  })
+  imageLicense?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  imageAuthor?: string | null;
+
   @ApiProperty({ example: 'torre-de-belem' })
   slug: string;
 

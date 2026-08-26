@@ -72,7 +72,7 @@ describe('PlaceIngestionRepository', () => {
         ([args]: [{ create: { slug: string } }]) => args.create.slug,
       );
       expect(upsertedSlugs).toEqual(['mosteiro']);
-      expect(result.createdIds).toEqual(['id-mosteiro']);
+      expect(result.created).toEqual([{ id: 'id-mosteiro', slug: 'mosteiro' }]);
       expect(result.conflicts).toEqual([
         {
           slug: 'torre-de-belem',

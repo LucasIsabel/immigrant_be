@@ -19,6 +19,8 @@ const ADMIN_PLACE = {
   countryCode: true,
   city: true,
   imageUrl: true,
+  imageLicense: true,
+  imageAuthor: true,
   slug: true,
   category: true,
   reviewStatus: true,

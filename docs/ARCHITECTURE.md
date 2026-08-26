@@ -717,6 +717,19 @@ medidos no conjunto completo do Porto:
   oposto do que a função existe para evitar. O mais visitado fica com o slug
   limpo.
 
+**Imagens vêm do Commons e moram no R2 (#152).** O P18 do Wikidata pega carona
+na mesma chamada `wbgetentities` que o ranqueamento já faz — zero requisições
+extras. Por lugar criado com imagem: `imageinfo` do Commons (URL **nunca é
+montada na mão** — URLs montadas renderam dez HTTP 400 seguidos neste projeto),
+download com User-Agent identificado, upload em chave determinística
+(`places/{iso2}/{cidade}/{slug}.jpg`, re-run sobrescreve) e gravação de
+`imageUrl` + `imageLicense` + `imageAuthor` — licença CC exige o crédito onde a
+imagem aparece, e hospedar o arquivo não desobriga. Os jobs de imagem correm
+**fora da convergência**: cidade fica `READY` quando os textos terminam, imagem
+que falhar em definitivo é logada e o card cai no tom da categoria. Lugares
+anteriores ao pipeline: `pnpm places:backfill-images` (relatório; `--run`
+enfileira).
+
 **O curado é intocável.** O upsert por `[countryCode, city, slug]` torna a
 ingestão idempotente, mas seria também o caminho para uma descrição gerada
 substituir uma escrita à mão. Lugar já existente com `reviewStatus != DRAFT`

@@ -20,7 +20,12 @@ jest.mock('../../../../generated/prisma', () => ({
 }));
 
 import { AiRouterService } from '@app/ai';
+import { StorageService } from '@app/storage';
 import type { IngestionDispatcher } from '@app/ingestion';
+import {
+  PermanentIngestionError,
+  RetryableIngestionError,
+} from '@app/ingestion';
 import type { OverpassPoi, OverpassService } from './overpass.service';
 import { PlaceIngestionRepository } from './place-ingestion.repository';
 import { PlaceIngestionService } from './place-ingestion.service';
@@ -45,11 +50,16 @@ const poi = (
 });
 
 /** Popularity signal for a QID, so ranking order is controllable in a test. */
-const signal = (qid: string, monthlyViews: number) => ({
+const signal = (
+  qid: string,
+  monthlyViews: number,
+  commonsFile: string | null = null,
+) => ({
   wikidataId: qid,
   title: qid,
   monthlyViews,
   extract: null,
+  commonsFile,
 });
 
 /**
@@ -73,9 +83,12 @@ class FakeRepository {
     osmAreaId: BigInt(3600058691),
   });
 
+  savePlaceImage = jest.fn().mockResolvedValue(undefined);
+
   findPlace = jest.fn().mockImplementation((id: string) =>
     Promise.resolve({
       id,
+      slug: 'torre-de-belem',
       name: 'Torre de Belém',
       category: 'LANDMARK',
       city: 'Lisbon',
@@ -101,7 +114,11 @@ class FakeRepository {
       this.placesWithoutTexts.add(id);
     }
     return Promise.resolve({
-      createdIds: ['place-1', 'place-2', 'place-3'],
+      created: [
+        { id: 'place-1', slug: 'place-0' },
+        { id: 'place-2', slug: 'place-1' },
+        { id: 'place-3', slug: 'place-2' },
+      ],
       conflicts: [],
     });
   });
@@ -130,14 +147,23 @@ class FakeRepository {
 
 describe('PlaceIngestionService', () => {
   let repository: FakeRepository;
-  let dispatcher: { dispatchCity: jest.Mock; dispatchPlaceTexts: jest.Mock };
+  let dispatcher: {
+    dispatchCity: jest.Mock;
+    dispatchPlaceTexts: jest.Mock;
+    dispatchPlaceImages: jest.Mock;
+  };
   let overpass: {
     resolveArea: jest.Mock;
     areaName: jest.Mock;
     fetchPois: jest.Mock;
   };
-  let wikimedia: { popularity: jest.Mock };
+  let wikimedia: {
+    popularity: jest.Mock;
+    imageInfo: jest.Mock;
+    download: jest.Mock;
+  };
   let aiRouter: { generateJson: jest.Mock };
+  let storage: { uploadFileAtKey: jest.Mock };
   let service: PlaceIngestionService;
 
   beforeEach(() => {
@@ -145,6 +171,7 @@ describe('PlaceIngestionService', () => {
     dispatcher = {
       dispatchCity: jest.fn().mockResolvedValue(undefined),
       dispatchPlaceTexts: jest.fn().mockResolvedValue(undefined),
+      dispatchPlaceImages: jest.fn().mockResolvedValue(undefined),
     };
     overpass = {
       resolveArea: jest.fn(),
@@ -154,6 +181,13 @@ describe('PlaceIngestionService', () => {
         .mockResolvedValue([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')]),
     };
     wikimedia = {
+      imageInfo: jest.fn().mockResolvedValue({
+        url: 'https://upload.wikimedia.org/thumb/x.jpg',
+        mime: 'image/jpeg',
+        license: 'CC BY-SA 4.0',
+        author: 'Alvesgaspar',
+      }),
+      download: jest.fn().mockResolvedValue(Buffer.from('img-bytes')),
       popularity: jest.fn().mockResolvedValue([
         {
           wikidataId: 'Q1',
@@ -180,11 +214,18 @@ describe('PlaceIngestionService', () => {
       }),
     };
 
+    storage = {
+      uploadFileAtKey: jest.fn().mockResolvedValue({
+        url: 'https://cdn.example/places/pt/lisbon/x.jpg',
+        key: 'places/pt/lisbon/x.jpg',
+      }),
+    };
     service = new PlaceIngestionService(
       repository as unknown as PlaceIngestionRepository,
       overpass as unknown as OverpassService,
       wikimedia as unknown as WikimediaService,
       aiRouter as unknown as AiRouterService,
+      storage as unknown as StorageService,
       dispatcher as IngestionDispatcher,
     );
   });
@@ -231,7 +272,7 @@ describe('PlaceIngestionService', () => {
 
     it('finishes the ingestion when every place was already curated', async () => {
       repository.persistDrafts.mockResolvedValue({
-        createdIds: [],
+        created: [],
         conflicts: [
           {
             slug: 'torre-de-belem',
@@ -332,6 +373,72 @@ describe('PlaceIngestionService', () => {
       expect(persisted().map((place) => place.popularityScore)).toEqual([
         100, 90, 80, 70, 60, 50, 40, 30, 20, 10,
       ]);
+    });
+  });
+
+  describe('images', () => {
+    it('fans out image jobs only for places whose entity has a P18', async () => {
+      overpass.fetchPois.mockResolvedValue([
+        poi('Torre de Belém', 'Q1'),
+        poi('Sé de Lisboa', 'Q2', { osmId: 11 }),
+      ]);
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 13000, 'Torre de Belém.jpg'),
+        signal('Q2', 4000, null),
+      ]);
+      repository.persistDrafts.mockResolvedValue({
+        created: [
+          { id: 'place-1', slug: 'torre-de-belem' },
+          { id: 'place-2', slug: 'se-de-lisboa' },
+        ],
+        conflicts: [],
+      });
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(dispatcher.dispatchPlaceImages).toHaveBeenCalledWith([
+        {
+          placeId: 'place-1',
+          ingestionId: INGESTION_ID,
+          commonsFile: 'Torre de Belém.jpg',
+        },
+      ]);
+    });
+
+    it('stores the image at a deterministic key, with its attribution', async () => {
+      // Deterministic key: a re-run overwrites the same object instead of
+      // piling up UUIDs; and CC licences require author + licence wherever
+      // the image shows, so they land next to the URL.
+      await service.writePlaceImage('place-1', 'Torre de Belém.jpg');
+
+      expect(storage.uploadFileAtKey).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        'places/pt/lisbon/torre-de-belem.jpg',
+        'image/jpeg',
+      );
+      expect(repository.savePlaceImage).toHaveBeenCalledWith('place-1', {
+        imageUrl: 'https://cdn.example/places/pt/lisbon/x.jpg',
+        imageLicense: 'CC BY-SA 4.0',
+        imageAuthor: 'Alvesgaspar',
+      });
+    });
+
+    it('gives up for good when Commons cannot resolve the file', async () => {
+      // A deleted file will not come back on retry.
+      wikimedia.imageInfo.mockResolvedValue(null);
+
+      await expect(
+        service.writePlaceImage('place-1', 'Gone.jpg'),
+      ).rejects.toThrow(PermanentIngestionError);
+      expect(storage.uploadFileAtKey).not.toHaveBeenCalled();
+    });
+
+    it('retries a failed download', async () => {
+      wikimedia.download.mockResolvedValue(null);
+
+      await expect(
+        service.writePlaceImage('place-1', 'Torre.jpg'),
+      ).rejects.toThrow(RetryableIngestionError);
     });
   });
 

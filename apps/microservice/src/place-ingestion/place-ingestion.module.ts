@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AiModule } from '@app/ai';
 import { DatabaseModule } from '@app/database';
 import { IngestionModule } from '@app/ingestion/ingestion.module';
+import { StorageModule } from '@app/storage';
 import { EventsModule } from '../events/events.module';
 import { OverpassService } from './overpass.service';
 import { PlaceIngestionConsumer } from './place-ingestion.consumer';
@@ -16,7 +17,13 @@ import { WikimediaService } from './wikimedia.service';
  * module only imports it to receive `INGESTION_DISPATCHER`.
  */
 @Module({
-  imports: [DatabaseModule, AiModule, EventsModule, IngestionModule],
+  imports: [
+    DatabaseModule,
+    AiModule,
+    EventsModule,
+    IngestionModule,
+    StorageModule,
+  ],
   providers: [
     PlaceIngestionConsumer,
     PlaceIngestionService,

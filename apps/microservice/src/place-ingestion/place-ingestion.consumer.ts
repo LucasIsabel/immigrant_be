@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 import {
   INGEST_CITY,
   PLACE_INGESTION_QUEUE,
+  WRITE_PLACE_IMAGE,
   WRITE_PLACE_TEXTS,
 } from '@app/config/constants';
 import { runWithCorrelationId } from '@app/config/request-context';
@@ -23,6 +24,12 @@ interface IngestCityJob {
 interface WritePlaceTextsJob {
   placeId: string;
   ingestionId: string;
+}
+
+interface WritePlaceImageJob {
+  placeId: string;
+  ingestionId: string;
+  commonsFile: string;
 }
 
 /**
@@ -87,6 +94,12 @@ export class PlaceIngestionConsumer extends WorkerHost {
         break;
       }
 
+      case WRITE_PLACE_IMAGE: {
+        const { placeId, commonsFile } = job.data as WritePlaceImageJob;
+        await this.ingestion.writePlaceImage(placeId, commonsFile);
+        break;
+      }
+
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);
     }
@@ -114,6 +127,18 @@ export class PlaceIngestionConsumer extends WorkerHost {
 
     const permanent = error instanceof PermanentIngestionError;
     if (!permanent && !isFinalAttempt(job)) return;
+
+    if (job.name === WRITE_PLACE_IMAGE) {
+      // Images sit outside the convergence and are cosmetic by design: the
+      // card falls back to the category tone. A final failure is logged and
+      // nothing else — no admin alert, no city state change. Re-ingesting the
+      // city retries the image for free.
+      const { placeId, commonsFile } = job.data as WritePlaceImageJob;
+      this.logger.warn(
+        `Image abandoned for place ${placeId} (${commonsFile}): ${error.message}`,
+      );
+      return;
+    }
 
     if (job.name === WRITE_PLACE_TEXTS) {
       const { placeId, ingestionId } = job.data as WritePlaceTextsJob;

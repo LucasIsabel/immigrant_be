@@ -66,6 +66,7 @@ admin, e o que chega ao usuário já está no nosso banco.
 | **Overpass / OpenStreetMap** (`OVERPASS_BASE_URL`) | Existência do lugar, nome, coordenada, categoria, endereço, site | Disparo manual por cidade, limitador de 1 cidade/min na fila e **intervalo mínimo de 5s entre consultas**. A instância pública documenta ~10k req/dia e desencoraja uso em lote | 429 espera pelo slot (ver abaixo) e repete até 4 vezes; 504 e 429 persistente viram erro retentável, e o `attempts: 3` do BullMQ re-roda o job |
 | **Wikidata** (`wbgetentities`) | QID → artigo em inglês | Lotes de 50 ids | Sem artigo em inglês, o lugar é **descartado** — é o filtro que separa ponto turístico de estátua de rua |
 | **Wikimedia Pageviews e Summary** | Popularidade (média mensal de 12 meses) e o parágrafo que ancora o texto da IA | Uma chamada por lugar sobrevivente | Devolve `null` em vez de lançar: o lugar sai do ranking, a ingestão da cidade continua |
+| **Wikimedia Commons** (`imageinfo`) | Imagem do lugar (via P18 do Wikidata), licença e autor | Uma chamada + um download por lugar com P18 (~85%, medido no Porto); arquivo fica no **nosso R2**, não em hotlink | Sem P18 ou arquivo irresolúvel → lugar sem imagem, card cai no tom da categoria; a cidade não espera imagem |
 
 **Por que não Google Places**: os termos proíbem armazenar o conteúdo — só o
 `place_id` indefinidamente, e coordenadas por até 30 dias. Nome, endereço, foto
@@ -75,6 +76,13 @@ fonte é incompatível com o desenho, independentemente de preço.
 **Por que não Nominatim**: o Overpass resolve a área da cidade sozinho, o que
 elimina a fonte com o limite mais apertado (1 req/s, 4 req/min para script
 contínuo).
+
+**Licença das imagens**: cada arquivo do Commons traz a própria licença
+(`LicenseShortName` + `Artist` da API), gravada em `image_license` e
+`image_author` no registro do lugar. CC BY-SA exige exibir crédito **onde a
+imagem aparece** — hospedar no R2 não desobriga. A decisão de armazenar em vez
+de hotlink está registrada na issue #152: o Commons não tem SLA, desencoraja
+hotlink em produção, e o volume (~30 × 186 × ~100KB ≈ 500MB) custa centavos.
 
 **Licença**: dado do OSM é **ODbL**. Armazenar é permitido; a atribuição
 "© OpenStreetMap contributors" é obrigatória onde o dado aparece, e cada lugar

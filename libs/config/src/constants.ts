@@ -41,6 +41,7 @@ export const PLACE_INGESTION_QUEUE = 'place_ingestion_queue';
 /** Gathers the facts for one city, then fans out one text job per place. */
 export const INGEST_CITY = 'ingest_city';
 export const WRITE_PLACE_TEXTS = 'write_place_texts';
+export const WRITE_PLACE_IMAGE = 'write_place_image';
 
 /**
  * Filas que o admin pode inspecionar e controlar.

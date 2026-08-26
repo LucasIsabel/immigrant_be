@@ -66,6 +66,8 @@ export class PlacesRepository {
           lat: true,
           lng: true,
           imageUrl: true,
+          imageLicense: true,
+          imageAuthor: true,
           popularityScore: true,
           isFree: true,
           address: true,
