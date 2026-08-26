@@ -131,6 +131,29 @@ describe('WikidataDiscoveryService', () => {
       });
     });
 
+    it('matches the label ignoring accents — "Sao Paulo" is "São Paulo"', async () => {
+      // CountriesNow strips the accent, Wikidata keeps it. Exact-by-bytes
+      // reported the city as nonexistent in production.
+      fetchMock
+        .mockResolvedValueOnce(json({ search: [{ id: 'Q174' }] }))
+        .mockResolvedValueOnce(
+          entities({
+            Q174: {
+              p17: ['Q155'],
+              label: 'São Paulo',
+              coord: true,
+              sitelinks: 250,
+            },
+          }),
+        );
+
+      await expect(
+        service.resolveCity('BR', 'Sao Paulo'),
+      ).resolves.toMatchObject({
+        wikidataId: 'Q174',
+      });
+    });
+
     it('fails permanently when nothing matches — never falls back to a guess', async () => {
       fetchMock
         .mockResolvedValueOnce(json({ search: [{ id: 'Q1' }] }))
