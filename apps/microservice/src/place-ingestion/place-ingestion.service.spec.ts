@@ -1,8 +1,5 @@
 jest.mock('@app/config/env', () => ({
-  env: {
-    OVERPASS_BASE_URL: 'https://overpass.test/api/interpreter',
-    INGESTION_USER_AGENT: 'aloravia-test/1.0',
-  },
+  env: { INGESTION_USER_AGENT: 'aloravia-test/1.0' },
 }));
 
 jest.mock('@app/database', () => ({
@@ -26,9 +23,13 @@ import {
   PermanentIngestionError,
   RetryableIngestionError,
 } from '@app/ingestion';
-import type { OverpassPoi, OverpassService } from './overpass.service';
 import { PlaceIngestionRepository } from './place-ingestion.repository';
 import { PlaceIngestionService } from './place-ingestion.service';
+import {
+  CityNotResolvedError,
+  type DiscoveredPlace,
+  type WikidataDiscoveryService,
+} from './wikidata-discovery.service';
 import type { WikimediaService } from './wikimedia.service';
 
 const INGESTION_ID = 'ingestion-1';
@@ -36,17 +37,22 @@ const INGESTION_ID = 'ingestion-1';
 const poi = (
   name: string,
   qid: string,
-  over: Partial<OverpassPoi> = {},
-): OverpassPoi => ({
-  osmType: 'way',
-  osmId: 10,
+  over: Partial<DiscoveredPlace> = {},
+): DiscoveredPlace => ({
   name,
   wikidataId: qid,
+  articleTitle: name,
   lat: 38.6,
   lng: -9.2,
-  category: 'LANDMARK' as OverpassPoi['category'],
-  isFree: false,
+  category: 'LANDMARK' as DiscoveredPlace['category'],
   ...over,
+});
+
+/** What discovery hands the pipeline for a given candidate list. */
+const discovered = (places: DiscoveredPlace[], droppedAsUnmapped = 0) => ({
+  places,
+  rawCount: places.length + droppedAsUnmapped,
+  droppedAsUnmapped,
 });
 
 /** Popularity signal for a QID, so ranking order is controllable in a test. */
@@ -80,7 +86,6 @@ class FakeRepository {
     id: INGESTION_ID,
     countryCode: 'PT',
     city: 'Lisbon',
-    osmAreaId: BigInt(3600058691),
   });
 
   savePlaceImage = jest.fn().mockResolvedValue(undefined);
@@ -101,7 +106,6 @@ class FakeRepository {
 
   markStep = jest.fn().mockResolvedValue(undefined);
   markFailed = jest.fn().mockResolvedValue(undefined);
-  saveResolvedArea = jest.fn().mockResolvedValue(undefined);
   findCountryIdByName = jest.fn().mockResolvedValue({ id: 'country-1' });
 
   saveStats = jest.fn().mockImplementation((_id: string, stats: unknown) => {
@@ -152,11 +156,7 @@ describe('PlaceIngestionService', () => {
     dispatchPlaceTexts: jest.Mock;
     dispatchPlaceImages: jest.Mock;
   };
-  let overpass: {
-    resolveArea: jest.Mock;
-    areaName: jest.Mock;
-    fetchPois: jest.Mock;
-  };
+  let discovery: { resolveCity: jest.Mock; discover: jest.Mock };
   let wikimedia: {
     popularity: jest.Mock;
     imageInfo: jest.Mock;
@@ -173,12 +173,15 @@ describe('PlaceIngestionService', () => {
       dispatchPlaceTexts: jest.fn().mockResolvedValue(undefined),
       dispatchPlaceImages: jest.fn().mockResolvedValue(undefined),
     };
-    overpass = {
-      resolveArea: jest.fn(),
-      areaName: jest.fn(),
-      fetchPois: jest
+    discovery = {
+      resolveCity: jest
         .fn()
-        .mockResolvedValue([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')]),
+        .mockResolvedValue({ wikidataId: 'Q597', label: 'Lisbon' }),
+      discover: jest
+        .fn()
+        .mockResolvedValue(
+          discovered([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')]),
+        ),
     };
     wikimedia = {
       imageInfo: jest.fn().mockResolvedValue({
@@ -222,7 +225,7 @@ describe('PlaceIngestionService', () => {
     };
     service = new PlaceIngestionService(
       repository as unknown as PlaceIngestionRepository,
-      overpass as unknown as OverpassService,
+      discovery as unknown as WikidataDiscoveryService,
       wikimedia as unknown as WikimediaService,
       aiRouter as unknown as AiRouterService,
       storage as unknown as StorageService,
@@ -242,32 +245,40 @@ describe('PlaceIngestionService', () => {
       ]);
     });
 
-    it('keeps the resolved area even when its name lookup fails', async () => {
-      // Resolving costs up to four queries plus a probe; losing that because a
-      // screen label took a 504 made the retry redo everything.
-      repository.findIngestion.mockResolvedValue({
-        id: INGESTION_ID,
-        countryCode: 'PT',
-        city: 'Sintra',
-        osmAreaId: null,
-      });
-      overpass.resolveArea.mockResolvedValue(3605400893);
-      overpass.areaName.mockRejectedValue(new Error('Overpass respondeu 504'));
+    it('fails for good when the city is not on Wikidata — never guesses', async () => {
+      // A retry will not create the entity. The admin sees the real reason.
+      discovery.resolveCity.mockRejectedValue(
+        new CityNotResolvedError('XX', 'Nowhere'),
+      );
 
-      await service.ingestCity(INGESTION_ID);
+      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
+        PermanentIngestionError,
+      );
+      expect(discovery.discover).not.toHaveBeenCalled();
+    });
 
-      expect(repository.saveResolvedArea).toHaveBeenCalledWith(
-        INGESTION_ID,
-        3605400893,
-        null,
+    it('treats a Wikidata outage as retryable, not as a verdict', async () => {
+      discovery.discover.mockRejectedValue(new Error('WDQS answered 502'));
+
+      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
+        RetryableIngestionError,
       );
     });
 
-    it('reuses the cached area instead of asking OpenStreetMap again', async () => {
+    it('records what discovery found and what it dropped', async () => {
+      // The drop count is the honesty line on the review screen: "431 seen,
+      // 209 classified" tells the reviewer how much the class table left out.
+      discovery.discover.mockResolvedValue(
+        discovered([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')], 223),
+      );
+
       await service.ingestCity(INGESTION_ID);
 
-      expect(overpass.resolveArea).not.toHaveBeenCalled();
-      expect(overpass.fetchPois).toHaveBeenCalledWith(3600058691);
+      expect(repository.savedStats).toMatchObject({
+        rawElements: 225,
+        droppedAsUnmapped: 223,
+        withEnwiki: 2,
+      });
     });
 
     it('finishes the ingestion when every place was already curated', async () => {
@@ -297,32 +308,27 @@ describe('PlaceIngestionService', () => {
         slug: string;
         wikidataId: string;
         popularityScore: number;
-        osmType: string;
+        sourceUrl: string;
       }[];
 
-    it('keeps one place per Wikidata id, preferring the relation over the node', async () => {
-      // Measured in Porto: "Ribeira" exists as a node and as a relation. Same
-      // place, drawn twice — and a relation's centre beats a hand-placed node.
-      overpass.fetchPois.mockResolvedValue([
-        poi('Ribeira', 'Q1', { osmType: 'node', osmId: 1 }),
-        poi('Ribeira', 'Q1', { osmType: 'relation', osmId: 2 }),
-      ]);
-      wikimedia.popularity.mockResolvedValue([signal('Q1', 5000)]);
-
+    it('points sourceUrl at the Wikidata entity', async () => {
+      // CC0, so no attribution obligation — but the link is how a reviewer
+      // audits where a place came from.
       await service.ingestCity(INGESTION_ID);
 
-      expect(persisted()).toHaveLength(1);
-      expect(persisted()[0].osmType).toBe('relation');
+      expect(persisted()[0].sourceUrl).toBe('https://www.wikidata.org/wiki/Q1');
     });
 
     it('gives two different places sharing a name distinct slugs', async () => {
       // "Forte de São João Baptista" is two different forts in Porto. Colliding
       // on [countryCode, city, slug] would make the second upsert overwrite the
       // first, losing a place while still reporting both as created.
-      overpass.fetchPois.mockResolvedValue([
-        poi('Forte de São João Baptista', 'Q10283826'),
-        poi('Forte de São João Baptista', 'Q10284015', { osmId: 11 }),
-      ]);
+      discovery.discover.mockResolvedValue(
+        discovered([
+          poi('Forte de São João Baptista', 'Q10283826'),
+          poi('Forte de São João Baptista', 'Q10284015'),
+        ]),
+      );
       wikimedia.popularity.mockResolvedValue([
         signal('Q10283826', 900),
         signal('Q10284015', 500),
@@ -342,9 +348,9 @@ describe('PlaceIngestionService', () => {
       // negative, ordering backwards and failing the admin PATCH validation.
       // Offering more candidates than the cap also proves the cut itself.
       const many = Array.from({ length: 40 }, (_, i) =>
-        poi(`Place ${i}`, `Q${i}`, { osmId: i }),
+        poi(`Place ${i}`, `Q${i}`),
       );
-      overpass.fetchPois.mockResolvedValue(many);
+      discovery.discover.mockResolvedValue(discovered(many));
       wikimedia.popularity.mockResolvedValue(
         many.map((place, i) => signal(place.wikidataId, 10_000 - i)),
       );
@@ -361,9 +367,9 @@ describe('PlaceIngestionService', () => {
 
     it('reproduces the original scale when ten places are kept', async () => {
       const ten = Array.from({ length: 10 }, (_, i) =>
-        poi(`Place ${i}`, `Q${i}`, { osmId: i }),
+        poi(`Place ${i}`, `Q${i}`),
       );
-      overpass.fetchPois.mockResolvedValue(ten);
+      discovery.discover.mockResolvedValue(discovered(ten));
       wikimedia.popularity.mockResolvedValue(
         ten.map((place, i) => signal(place.wikidataId, 10_000 - i)),
       );
@@ -378,10 +384,9 @@ describe('PlaceIngestionService', () => {
 
   describe('images', () => {
     it('fans out image jobs only for places whose entity has a P18', async () => {
-      overpass.fetchPois.mockResolvedValue([
-        poi('Torre de Belém', 'Q1'),
-        poi('Sé de Lisboa', 'Q2', { osmId: 11 }),
-      ]);
+      discovery.discover.mockResolvedValue(
+        discovered([poi('Torre de Belém', 'Q1'), poi('Sé de Lisboa', 'Q2')]),
+      );
       wikimedia.popularity.mockResolvedValue([
         signal('Q1', 13000, 'Torre de Belém.jpg'),
         signal('Q2', 4000, null),

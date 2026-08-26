@@ -239,7 +239,6 @@ describe('PlacesAdminService', () => {
 
   describe('retry', () => {
     it('re-queues without discarding the area already resolved', async () => {
-      // Resolving costs up to four Overpass queries plus a probe.
       repository.findById.mockResolvedValue(
         ingestion({ status: 'FAILED', osmAreaId: BigInt(3605400893) }) as never,
       );

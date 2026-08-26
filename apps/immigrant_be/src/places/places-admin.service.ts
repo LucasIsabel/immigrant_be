@@ -152,8 +152,8 @@ export class PlacesAdminService {
   /**
    * Re-queue an ingestion that failed.
    *
-   * The already resolved `osmAreaId` stays where it is: reprocessing should not
-   * pay again for up to four Overpass queries plus a probe.
+   * Errors are cleared, everything else stays: reprocessing must not lose what
+   * the previous attempt learned.
    */
   async retry(id: string): Promise<CityIngestionResponseDto> {
     const ingestion = await this.repository.findById(id);

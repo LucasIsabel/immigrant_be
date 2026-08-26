@@ -57,14 +57,14 @@ dele é a referência para integrações futuras.
 
 ### Ingestão de lugares turísticos
 
-Três fontes, cada uma respondendo ao que sabe. Nenhuma delas é consultada em
+Três famílias de fonte, cada uma respondendo ao que sabe. Nenhuma delas é consultada em
 tempo de requisição: entram pelo pipeline de ingestão, disparado à mão por um
 admin, e o que chega ao usuário já está no nosso banco.
 
 | Fonte | O que fornece | Cadência e limites | Em falha |
 |---|---|---|---|
-| **Overpass / OpenStreetMap** (`OVERPASS_BASE_URL`) | Existência do lugar, nome, coordenada, categoria, endereço, site | Disparo manual por cidade, limitador de 1 cidade/min na fila e **intervalo mínimo de 5s entre consultas**. A instância pública documenta ~10k req/dia e desencoraja uso em lote | 429 espera pelo slot (ver abaixo) e repete até 4 vezes; 504 e 429 persistente viram erro retentável, e o `attempts: 3` do BullMQ re-roda o job |
-| **Wikidata** (`wbgetentities`) | QID → artigo em inglês | Lotes de 50 ids | Sem artigo em inglês, o lugar é **descartado** — é o filtro que separa ponto turístico de estátua de rua |
+| **Wikidata Query Service** (SPARQL) + **Wikidata API** (`wbgetentities`) | Existência do lugar, nome, coordenada (P625), classe (P31 → nossa categoria), site (P856), endereço (P6375) | Uma consulta SPARQL por cidade (0,4–7 s medidos) + lotes de 50 ids para classificar. Sem cota diária prática; timeout de 60 s por consulta | 5xx é retentado 3× com pausa crescente; timeout do WDQS (que chega como HTTP 200 com a página de erro colada no JSON parcial) e cidade não encontrada viram erro — o segundo permanente, o primeiro retentável |
+| **Wikidata** (`wbgetentities`, no ranqueamento) | QID → artigo em inglês e imagem (P18), na mesma chamada | Lotes de 50 ids | Sem artigo em inglês, o lugar é **descartado** — é o filtro que separa ponto turístico de estátua de rua |
 | **Wikimedia Pageviews e Summary** | Popularidade (média mensal de 12 meses) e o parágrafo que ancora o texto da IA | Uma chamada por lugar sobrevivente | Devolve `null` em vez de lançar: o lugar sai do ranking, a ingestão da cidade continua |
 | **Wikimedia Commons** (`imageinfo`) | Imagem do lugar (via P18 do Wikidata), licença e autor | Uma chamada + um download por lugar com P18 (~85%, medido no Porto); arquivo fica no **nosso R2**, não em hotlink | Sem P18 ou arquivo irresolúvel → lugar sem imagem, card cai no tom da categoria; a cidade não espera imagem |
 
@@ -73,9 +73,26 @@ admin, e o que chega ao usuário já está no nosso banco.
 e avaliação não têm exceção. O nosso model `Place` guarda tudo isso, então a
 fonte é incompatível com o desenho, independentemente de preço.
 
-**Por que não Nominatim**: o Overpass resolve a área da cidade sozinho, o que
-elimina a fonte com o limite mais apertado (1 req/s, 4 req/min para script
-contínuo).
+**Por que não Overpass / OpenStreetMap** (fonte de descoberta até 2026-08-26,
+`docs/PILOTO_INGESTAO_LUGARES.md` guarda as medições): o Overpass só fornecia a
+lista bruta de candidatos — todo filtro que decide o ranking já era do Wikidata
+(artigo em inglês, visitas, P18). Era também a única fonte com muro de taxa: a
+instância pública passou de 504 a recusar conexão no piloto, e hospedar a
+própria para os 62 países de destino significaria importar o planeta
+(400–600 GB). Ir à fonte do sinal tirou o gargalo em vez de escalá-lo. Medido
+no Porto: uma consulta SPARQL devolveu os clássicos (Dom Luís I, Lello, Sé,
+São Bento, Clérigos, Bolsa, Casa da Música) que o caminho OSM, por um bug de
+área, não tinha achado.
+
+**Por que não Nominatim**: o QID da cidade se resolve na própria API do
+Wikidata, sem uma terceira fonte com o limite mais apertado de todas.
+
+**Licença**: o Wikidata é **CC0** — sem obrigação de atribuição para os lugares.
+Cada registro guarda mesmo assim a entidade de origem em `sourceUrl`
+(`https://www.wikidata.org/wiki/Qxxx`), porque proveniência auditável é
+desenho, não licença. Registros anteriores à troca guardam o elemento OSM
+(`osmType`/`osmId`) e continuam sob ODbL. O `INGESTION_USER_AGENT` identifica a
+aplicação em toda chamada, como a política de uso da Wikimedia exige.
 
 **Licença das imagens**: cada arquivo do Commons traz a própria licença
 (`LicenseShortName` + `Artist` da API), gravada em `image_license` e
@@ -84,72 +101,33 @@ imagem aparece** — hospedar no R2 não desobriga. A decisão de armazenar em v
 de hotlink está registrada na issue #152: o Commons não tem SLA, desencoraja
 hotlink em produção, e o volume (~30 × 186 × ~100KB ≈ 500MB) custa centavos.
 
-**Licença**: dado do OSM é **ODbL**. Armazenar é permitido; a atribuição
-"© OpenStreetMap contributors" é obrigatória onde o dado aparece, e cada lugar
-guarda a URL canônica do elemento em `sourceUrl`. O `INGESTION_USER_AGENT`
-identifica a aplicação, como a política de uso exige — User-Agent genérico de
-biblioteca é motivo declarado de bloqueio.
+**Como a cidade é resolvida.** Nunca pelo primeiro resultado da busca: "Porto"
+devolve Porto Alegre primeiro, e "Castelo de São Jorge" já virou um castelo em
+Gana neste projeto. A candidata precisa ter o **país certo (P17)**, o **rótulo em
+inglês exato** e **coordenada (P625)**; empate se desfaz pelo número de
+sitelinks — cidade tem dezenas, aldeia homônima tem meia dúzia. Não se verifica
+por classe (P31): Lisboa é instância de uma classe que só existe para Portugal,
+e em 62 países uma lista de classes nunca fecha.
 
-**O 429 do Overpass é falta de slot, não cota.** O `/api/status` da instância
-pública responde `Rate limit: 2` — duas consultas simultâneas — e anuncia
-quando a próxima libera: *"Slot available after: …, in 11 seconds"*. Cada slot
-fica preso por um tempo proporcional ao custo da consulta, e a de área de
-Lisboa levou **9,9s**: disparar a sonda logo em seguida tomava 429 sem nenhuma
-cota ter sido excedida. Por isso o cliente (a) espera 5s entre quaisquer duas
-consultas, não só entre categorias, e (b) quando leva 429 sem `Retry-After`,
-pergunta ao `/api/status` quanto falta em vez de chutar.
+**Como os lugares são descobertos.** `P131` **com saltos limitados** (um para
+freguesia, dois para bairro), não o transitivo `P131+`, que levou 44 s no Porto
+e estourou o timeout em Lisboa. A consulta **não filtra por classe**: filtrar
+com `P31/P279*` dentro do SPARQL é o que estoura — o fecho de subclasses é a
+parte cara — enquanto a mesma consulta sem ele responde em 0,4 s. A
+classificação acontece do nosso lado, a partir do `P31` de cada candidato, com
+uma tabela explícita classe → categoria, um salto de `P279` para classes
+desconhecidas, e uma lista de **exclusão** medida (aeroporto, estádio,
+universidade, presídio, porto, prédio de apartamentos — cada um foi visto
+entrando pelo pai genérico "estrutura arquitetônica"). O que não mapeia é
+descartado **e contado** em `stats.droppedAsUnmapped`, para o corte nunca ficar
+invisível na tela de revisão.
 
-**O 504 é congestionamento do servidor, e ele diz isso.** O corpo do erro traz
-`Error: runtime error: … The server is probably too busy to handle your
-request.` — o cliente extrai essa frase para o `errorMessage` da ingestão,
-porque "Overpass respondeu 504" não diz ao admin que basta tentar de novo.
-Medido em 2026-08-25: a mesma consulta alternou 200, 429 e 504 em minutos, e o
-`curl` manual falhou junto com o worker — é a instância, não o cliente. Se isso
-persistir no piloto, `OVERPASS_BASE_URL` aponta para um mirror ou instância
-própria (os mirrors testados na data — `overpass.kumi.systems`,
-`overpass.private.coffee`, `overpass.osm.jp` — devolveram 500 ou não
-responderam, então "usar um mirror" não é plano B pronto: instância própria é a
-saída real).
-
-**Medido no piloto (2026-08-25, `docs/PILOTO_INGESTAO_LUGARES.md`):** o
-intervalo de 5s entre consultas era curto demais — as três cidades do piloto
-falharam todas as tentativas no `fetch_pois`. As mesmas 8 consultas espaçadas
-**15s** devolveram 7/8 na primeira tentativa. E, depois de algumas centenas de
-consultas numa tarde, a instância pública passou de 504 a **recusar conexão**,
-com Wikipedia e Wikidata respondendo normalmente da mesma máquina. Rodar as 186
-cidades contra ela não é viável: instância própria é pré-requisito, não
-contingência.
-
-**A armadilha do nome da cidade**: a nossa lista vem do CountriesNow em inglês
-("Lisbon"), e o OSM usa o nome local ("Lisboa"). Cada passo da resolução é
-**uma consulta que une as duas grafias** (`name:en` e `name`): primeiro
-`place=city|town`, depois `boundary=administrative` com `admin_level` 6 a 8, e
-os dois de novo com padrão tolerante a acento — e falha reportando as
-tentativas, nunca em silêncio.
-
-**E a armadilha do distrito homônimo** (medida em 2026-08-26): "Porto" resolvia
-para o **distrito** (`admin_level=6`), porque o município não tem `name:en`, o
-distrito tem, e o passo `name:en` devolvia só ele — o pipeline aprovou Leixões e
-Mafamude como Porto. Por isso as grafias vão unidas numa consulta e, entre as
-candidatas de **nome exato**, a de **maior `admin_level`** é sondada primeiro.
-Não é "8 primeiro": o nível do município varia por país (Portugal usa 7, e 8 é
-freguesia; Brasil, Espanha e EUA usam 8). "Maior nível com o nome exato" é a
-menor unidade que ainda se chama assim — em PT cai no município porque nenhuma
-freguesia se chama "Porto". A sonda de conteúdo segue como rede de segurança.
-
-**E a armadilha do acento**, que é outra: o CountriesNow escreve "Sao Paulo" e o
-OSM guarda "São Paulo", então nenhuma das quatro tentativas exatas casa. O
-Overpass não compara ignorando acento, e **classe de caracteres não resolve** —
-`[aàáâã]` devolveu zero, porque o regex dele trabalha byte a byte e o `ã` ocupa
-dois. O `.` casa o caractere inteiro, então as duas últimas tentativas trocam
-cada vogal (mais `c` e `n`, que carregam cedilha e til) por `.`.
-
-O padrão fica frouxo de propósito: `^S.. P..l.$` casou **28 áreas** no Brasil,
-entre elas 21 "San Pablo" e duas "St. Pauls". Quem separa é a conferência do
-nome do nosso lado, comparando sem acento — sobrou exatamente uma,
-`3600298285`, São Paulo cidade. Frouxo na consulta, exato na verificação: pedir
-precisão ao Overpass aqui não dá, e aceitar o primeiro resultado dele seria
-loteria.
+**Métricas do spike (2026-08-26, `scripts/wikidata-discovery-spike.ts`):**
+Lisboa contra a lista curada, comparada por QID — 8/10 reencontrados, 7/10 no
+top-30 (meta ≥ 7), ρ de Spearman 0,929 (meta ≥ 0,70). Os dois que faltam: o
+Miradouro da Senhora do Monte não tem artigo em inglês, e o Time Out Market é
+outra entidade. Miami passou na hipótese que o piloto deixou aberta: nenhum
+parque de bairro no topo.
 
 ## Onde o contrato com o frontend é verificado
 

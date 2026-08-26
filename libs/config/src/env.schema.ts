@@ -35,18 +35,6 @@ export const envSchema = zod.object({
   CORS_ORIGINS: zod.string().default('http://localhost:3001'),
 
   /**
-   * Instância do Overpass usada pela ingestão de lugares.
-   *
-   * Configurável porque a pública desencoraja uso em lote — se ela não
-   * sustentar o ritmo, o remédio é apontar para um mirror ou para uma instância
-   * própria, sem tocar em código.
-   */
-  OVERPASS_BASE_URL: zod
-    .string()
-    .url()
-    .default('https://overpass-api.de/api/interpreter'),
-
-  /**
    * User-Agent das chamadas ao OSM e à Wikimedia.
    *
    * Não é cosmético: a política de uso do OSM exige identificar a aplicação, e

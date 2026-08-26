@@ -44,10 +44,7 @@ interface WritePlaceImageJob {
  * queries in quick succession, and each city costs eight of them. One city a
  * minute still clears the 186-city list in about three hours.
  */
-@Processor(PLACE_INGESTION_QUEUE, {
-  concurrency: 1,
-  limiter: { max: 1, duration: 60_000 },
-})
+@Processor(PLACE_INGESTION_QUEUE, { concurrency: 1 })
 export class PlaceIngestionConsumer extends WorkerHost {
   private readonly logger = new Logger(PlaceIngestionConsumer.name);
 

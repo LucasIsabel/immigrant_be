@@ -14,8 +14,6 @@ export interface PlaceToPersist {
   address?: string;
   website?: string;
   isFree: boolean;
-  osmType: string;
-  osmId: number;
   wikidataId: string;
   wikipediaMonthlyViews: number;
   popularityScore: number;
@@ -38,6 +36,8 @@ export type Conflict = {
 /** What one run found, kept and refused. The review screen reads this. */
 export type IngestionStats = {
   rawElements: number;
+  /** Candidates whose Wikidata class maps to no category of ours. */
+  droppedAsUnmapped: number;
   withEnwiki: number;
   kept: number;
   created: number;
@@ -162,7 +162,6 @@ export class PlaceIngestionRepository {
 
       const data = {
         ...place,
-        osmId: BigInt(place.osmId),
         countryCode,
         city,
         countryId,
