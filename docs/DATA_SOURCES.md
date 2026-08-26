@@ -66,6 +66,32 @@ formulários de negócio. Está listado aqui porque é a única fonte de dados
 verdadeiramente externa do backend, e porque o comportamento de cache e falha
 dele é a referência para integrações futuras.
 
+### Manchetes do blog de IA (Google News RSS)
+
+O pipeline de AI blog não escreve do nada: cada post nasce de até cinco itens do
+feed RSS de busca do Google News (`news.google.com/rss/search`, sem chave de
+API), e os guardrails proíbem fato que não venha de lá.
+
+**O termo de busca é o tema da persona**, não uma constante. Até 2026-08-26 a
+busca era sempre `"{país} immigration imigração"`, para qualquer persona — o
+colunista de viagem recebia manchetes de cota de visto e escrevia a partir
+delas.
+
+| Tema da persona | Termos da busca |
+|---|---|
+| `IMMIGRATION` (e post sem persona) | `{país} immigration imigração` |
+| `TOURISM` | `{país} tourism travel beaches attractions` |
+| `CUISINE` | `{país} cuisine food gastronomy restaurants` |
+| `GEOPOLITICS` | `{país} politics geopolitics economy inflation` |
+
+O `topic` preenchido pelo admin **sobrepõe** os termos do tema, mas nunca o país:
+a busca vira `"{país} {topic}"`. Sozinho, o tópico traria notícia do assunto em
+qualquer lugar do mundo.
+
+| Fonte | O que fornece | Cadência e limites | Em falha |
+|---|---|---|---|
+| **Google News RSS** (busca) | Título, descrição, link e data de até 5 manchetes recentes sobre o país | Uma chamada por post gerado, timeout de 10 s. Sem chave, sem cota publicada | Status não-2xx, timeout ou XML inválido devolvem lista vazia, e `generatePost` **lança** em vez de gerar: um post sem manchete seria opinião inventada |
+
 ### Ingestão de lugares turísticos
 
 Três famílias de fonte, cada uma respondendo ao que sabe. Nenhuma delas é consultada em
