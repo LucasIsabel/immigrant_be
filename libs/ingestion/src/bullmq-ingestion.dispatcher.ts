@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import {
   INGEST_CITY,
   PLACE_INGESTION_QUEUE,
+  WRITE_PLACE_IMAGE,
   WRITE_PLACE_TEXTS,
 } from '@app/config/constants';
 import { getCorrelationId } from '@app/config/request-context';
@@ -42,6 +43,20 @@ export class BullmqIngestionDispatcher implements IngestionDispatcher {
     await this.queue.addBulk(
       jobs.map((job) => ({
         name: WRITE_PLACE_TEXTS,
+        data: { ...job, correlationId },
+      })),
+    );
+  }
+
+  async dispatchPlaceImages(
+    jobs: { placeId: string; ingestionId: string; commonsFile: string }[],
+  ): Promise<void> {
+    if (!jobs.length) return;
+
+    const correlationId = getCorrelationId();
+    await this.queue.addBulk(
+      jobs.map((job) => ({
+        name: WRITE_PLACE_IMAGE,
         data: { ...job, correlationId },
       })),
     );

@@ -45,7 +45,8 @@ export type IngestionStats = {
 };
 
 export interface PersistResult {
-  createdIds: string[];
+  /** Id and slug together: the caller pairs the row with per-slug side data. */
+  created: { id: string; slug: string }[];
   conflicts: Conflict[];
 }
 
@@ -145,7 +146,7 @@ export class PlaceIngestionRepository {
     });
     const untouchable = new Set(existing.map((row) => row.slug));
 
-    const createdIds: string[] = [];
+    const created: { id: string; slug: string }[] = [];
     const conflicts: Conflict[] = [];
 
     for (const [index, place] of places.entries()) {
@@ -180,10 +181,10 @@ export class PlaceIngestionRepository {
         update: data,
         select: { id: true },
       });
-      createdIds.push(saved.id);
+      created.push({ id: saved.id, slug: place.slug });
     }
 
-    return { createdIds, conflicts };
+    return { created, conflicts };
   }
 
   async saveTexts(
@@ -210,6 +211,21 @@ export class PlaceIngestionRepository {
         generatedByModel: provenance.generatedByModel,
         generationCostUsd: provenance.generationCostUsd,
       },
+    });
+  }
+
+  /** The image landed: URL plus the attribution the licence requires. */
+  savePlaceImage(
+    placeId: string,
+    image: {
+      imageUrl: string;
+      imageLicense: string | null;
+      imageAuthor: string | null;
+    },
+  ) {
+    return this.prisma.place.update({
+      where: { id: placeId },
+      data: image,
     });
   }
 

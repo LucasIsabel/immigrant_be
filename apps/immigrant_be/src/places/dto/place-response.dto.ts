@@ -42,6 +42,16 @@ export class PlaceResponseDto {
   @ApiPropertyOptional({ nullable: true })
   imageUrl?: string | null;
 
+  @ApiPropertyOptional({
+    description:
+      'Licence of the Commons image (e.g. "CC BY-SA 4.0"). CC licences require showing it, with the author, wherever the image appears.',
+    nullable: true,
+  })
+  imageLicense?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  imageAuthor?: string | null;
+
   @ApiProperty({
     description: 'Ordena os "mais visitados"; maior é mais visitado',
     example: 100,

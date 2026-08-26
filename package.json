@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./apps/immigrant_be/test/jest-e2e.json",
     "seed:admin": "tsx prisma/seeds/create-admin.ts",
     "places:rank-correlation": "tsx scripts/rank-correlation.ts",
+    "places:backfill-images": "tsx scripts/backfill-place-images.ts",
     "openapi:dump": "nest build && node dist/apps/immigrant_be/main"
   },
   "dependencies": {

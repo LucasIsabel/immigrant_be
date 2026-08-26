@@ -73,7 +73,11 @@ describe('PlacesAdminService', () => {
   // A structural type rather than `jest.Mocked<PlacesAdminRepository>`: ESLint
   // reads a class method inside an `expect` as an unbound reference.
   let repository: Record<string, jest.Mock>;
-  let dispatcher: { dispatchCity: jest.Mock; dispatchPlaceTexts: jest.Mock };
+  let dispatcher: {
+    dispatchCity: jest.Mock;
+    dispatchPlaceTexts: jest.Mock;
+    dispatchPlaceImages: jest.Mock;
+  };
   let service: PlacesAdminService;
 
   beforeEach(() => {
@@ -101,6 +105,7 @@ describe('PlacesAdminService', () => {
     dispatcher = {
       dispatchCity: jest.fn().mockResolvedValue(undefined),
       dispatchPlaceTexts: jest.fn().mockResolvedValue(undefined),
+      dispatchPlaceImages: jest.fn().mockResolvedValue(undefined),
     };
 
     service = new PlacesAdminService(

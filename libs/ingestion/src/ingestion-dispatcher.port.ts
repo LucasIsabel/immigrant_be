@@ -30,6 +30,18 @@ export interface IngestionDispatcher {
   dispatchPlaceTexts(
     jobs: { placeId: string; ingestionId: string }[],
   ): Promise<void>;
+
+  /**
+   * Queue the image fetching, one unit per place that has a Commons file.
+   *
+   * Deliberately outside the convergence: a city becomes READY when its texts
+   * are done, images fill in as they land. A missing photo degrades to the
+   * category tone on the card; holding ten reviewed places hostage to a
+   * Commons hiccup would price a cosmetic asset like a critical one.
+   */
+  dispatchPlaceImages(
+    jobs: { placeId: string; ingestionId: string; commonsFile: string }[],
+  ): Promise<void>;
 }
 
 /** DI token. An interface leaves no runtime value for Nest to inject. */

@@ -795,6 +795,11 @@ model Place {
   generatedByModel      String?  @map("generated_by_model")
   generationCostUsd     Decimal? @map("generation_cost_usd") @db.Decimal(10, 6)
 
+  /// Attribution for the Commons image, required by CC licences wherever the
+  /// image is shown. Both null when the image is ours or absent.
+  imageLicense String? @map("image_license") @db.VarChar(80)
+  imageAuthor  String? @map("image_author") @db.VarChar(200)
+
   translations PlaceTranslation[]
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")

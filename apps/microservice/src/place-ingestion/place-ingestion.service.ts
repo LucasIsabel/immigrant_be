@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AiRouterService } from '@app/ai/ai-router.service';
+import { StorageService } from '@app/storage';
 import { buildPlaceWritingPrompt } from '@app/ai/prompts/place-writing.prompt';
 import { placeTextsAiSchema } from '@app/ai/schemas/place-texts.schema';
 import {
@@ -52,6 +53,7 @@ export class PlaceIngestionService {
     private readonly overpass: OverpassService,
     private readonly wikimedia: WikimediaService,
     private readonly aiRouter: AiRouterService,
+    private readonly storage: StorageService,
     @Inject(INGESTION_DISPATCHER)
     private readonly dispatcher: IngestionDispatcher,
   ) {}
@@ -88,7 +90,7 @@ export class PlaceIngestionService {
     const ranked = await this.rank(pois);
 
     const countryId = await this.resolveCountryId(countryCode);
-    const { createdIds, conflicts } = await this.repository.persistDrafts(
+    const { created, conflicts } = await this.repository.persistDrafts(
       ingestionId,
       countryCode,
       city,
@@ -100,11 +102,11 @@ export class PlaceIngestionService {
       rawElements: pois.length,
       withEnwiki: ranked.withEnwiki,
       kept: ranked.places.length,
-      created: createdIds.length,
+      created: created.length,
       conflicts,
     });
 
-    if (!createdIds.length) {
+    if (!created.length) {
       // Nothing new to write about. Either the city is genuinely empty or every
       // place there was already curated — both are a finished ingestion, not a
       // failure, and the review screen will say which.
@@ -114,8 +116,73 @@ export class PlaceIngestionService {
 
     await this.repository.markStep(ingestionId, 'write_texts');
     await this.dispatcher.dispatchPlaceTexts(
-      createdIds.map((placeId) => ({ placeId, ingestionId })),
+      created.map(({ id }) => ({ placeId: id, ingestionId })),
     );
+
+    // Images ride outside the convergence: the city is READY when its texts
+    // are, and a photo that never lands degrades to the category tone. Only
+    // places whose Wikidata entity carries a P18 get a job — measured on
+    // Porto's set, that is about 85% of them.
+    const imageJobs = created
+      .map(({ id, slug }) => ({
+        placeId: id,
+        ingestionId,
+        commonsFile: ranked.imagesBySlug.get(slug),
+      }))
+      .filter(
+        (
+          job,
+        ): job is {
+          placeId: string;
+          ingestionId: string;
+          commonsFile: string;
+        } => !!job.commonsFile,
+      );
+    await this.dispatcher.dispatchPlaceImages(imageJobs);
+  }
+
+  /**
+   * Fetch one place's image from Commons and put it on our bucket.
+   *
+   * Stored rather than hotlinked (decision on #152): Commons has no SLA and
+   * discourages production hotlinking; the bucket gives a consistent 800px
+   * rendition on the CDN the blog covers already use. Licence and author are
+   * stored alongside — CC licences require the credit wherever the image
+   * shows, and hosting the file does not lift that.
+   */
+  async writePlaceImage(placeId: string, commonsFile: string): Promise<void> {
+    const place = await this.repository.findPlace(placeId);
+    if (!place) {
+      throw new PermanentIngestionError(
+        `Place ${placeId} no longer exists`,
+        'write_image',
+      );
+    }
+
+    const info = await this.wikimedia.imageInfo(commonsFile);
+    if (!info) {
+      // The claim exists but Commons cannot resolve it (deleted file, odd
+      // format). Nothing to retry into existence.
+      throw new PermanentIngestionError(
+        `Commons could not resolve ${commonsFile}`,
+        'write_image',
+      );
+    }
+
+    const bytes = await this.wikimedia.download(info.url);
+    if (!bytes) {
+      throw new RetryableIngestionError(`Download failed for ${commonsFile}`);
+    }
+
+    const extension = info.mime === 'image/png' ? 'png' : 'jpg';
+    const key = `places/${place.countryCode.toLowerCase()}/${slugify(place.city)}/${place.slug}.${extension}`;
+    const { url } = await this.storage.uploadFileAtKey(bytes, key, info.mime);
+
+    await this.repository.savePlaceImage(placeId, {
+      imageUrl: url,
+      imageLicense: info.license,
+      imageAuthor: info.author,
+    });
   }
 
   /**
@@ -280,8 +347,11 @@ export class PlaceIngestionService {
   private async rank(pois: OverpassPoi[]): Promise<{
     places: PlaceToPersist[];
     withEnwiki: number;
+    /** slug → Commons file for the kept places that have a P18 image. */
+    imagesBySlug: Map<string, string>;
   }> {
-    if (!pois.length) return { places: [], withEnwiki: 0 };
+    if (!pois.length)
+      return { places: [], withEnwiki: 0, imagesBySlug: new Map() };
 
     const signals = await this.wikimedia.popularity(
       pois.map((poi) => poi.wikidataId),
@@ -301,6 +371,16 @@ export class PlaceIngestionService {
     const kept = scored.slice(0, PLACES_PER_CITY);
     const slugs = uniqueSlugs(kept.map(({ poi }) => poi));
 
+    const imagesBySlug = new Map<string, string>();
+    for (const { poi, signal } of kept) {
+      if (signal.commonsFile) {
+        imagesBySlug.set(
+          slugs.get(poi.wikidataId) as string,
+          signal.commonsFile,
+        );
+      }
+    }
+
     const places = kept.map(({ poi, signal }, index) => ({
       name: poi.name,
       slug: slugs.get(poi.wikidataId) as string,
@@ -319,7 +399,7 @@ export class PlaceIngestionService {
       sourceUrl: `https://www.openstreetmap.org/${poi.osmType}/${poi.osmId}`,
     }));
 
-    return { places, withEnwiki: scored.length };
+    return { places, withEnwiki: scored.length, imagesBySlug };
   }
 
   private async resolveCountryId(countryCode: string): Promise<string | null> {
