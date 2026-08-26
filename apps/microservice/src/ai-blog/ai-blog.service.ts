@@ -48,6 +48,27 @@ export interface GenerateBlogPostJobData extends CorrelatedJobData {
   requestedByUserId?: string;
 }
 
+/**
+ * What to ask Google News for, per theme. Every persona used to read the same
+ * immigration feed, so a travel or food columnist wrote about visa quotas.
+ */
+const NEWS_TERMS_BY_THEME: Record<BlogPersonaTheme, string> = {
+  [BlogPersonaTheme.IMMIGRATION]: 'immigration imigração',
+  [BlogPersonaTheme.TOURISM]: 'tourism travel beaches attractions',
+  [BlogPersonaTheme.CUISINE]: 'cuisine food gastronomy restaurants',
+  [BlogPersonaTheme.GEOPOLITICS]: 'politics geopolitics economy inflation',
+};
+
+/**
+ * Themes that pay for the stronger chain. Opinion and analysis are the two the
+ * reader is asked to trust with an argument; travel and food stay on the cheap
+ * scenario.
+ */
+const OPINION_THEMES: readonly BlogPersonaTheme[] = [
+  BlogPersonaTheme.IMMIGRATION,
+  BlogPersonaTheme.GEOPOLITICS,
+];
+
 @Injectable()
 export class AiBlogWorkerService {
   private readonly logger = new Logger(AiBlogWorkerService.name);
@@ -87,7 +108,11 @@ export class AiBlogWorkerService {
       data.debate_group_id = await this.enqueueCounterpart(data, persona);
     }
 
-    const newsItems = await this.fetchGoogleNewsRss(country.name, data.topic);
+    const newsItems = await this.fetchGoogleNewsRss(
+      country.name,
+      data.topic,
+      persona?.theme,
+    );
 
     if (newsItems.length === 0) {
       throw new Error(
@@ -108,14 +133,15 @@ export class AiBlogWorkerService {
             name: persona.name,
             personaPrompt: persona.persona_prompt,
             styleGuidelines: persona.style_guidelines,
+            theme: persona.theme,
           }
         : undefined,
     });
 
-    // Posts de rotina usam o cenário barato. Colunas de imigração com persona
-    // pagam o cenário de opinião — turismo permanece no barato.
+    // Routine posts use the cheap scenario. Opinion and analysis personas pay
+    // for the opinion chain; travel and food stay on the cheap one.
     const scenario =
-      persona?.theme === BlogPersonaTheme.IMMIGRATION
+      persona && OPINION_THEMES.includes(persona.theme)
         ? 'blog_writing_opinion'
         : 'blog_writing_standard';
 
@@ -300,14 +326,21 @@ export class AiBlogWorkerService {
   /**
    * O `topic` entra na busca em vez de substituí-la: sozinho ele traria notícia
    * do assunto em qualquer lugar do mundo, e o post é sobre um país.
+   *
+   * Without a topic the theme picks the terms, and a persona-less post keeps the
+   * immigration feed it has always read.
    */
   private async fetchGoogleNewsRss(
     countryName: string,
     topic?: string,
+    theme?: BlogPersonaTheme,
   ): Promise<RssNewsItem[]> {
+    const themeTerms =
+      (theme && NEWS_TERMS_BY_THEME[theme]) ??
+      NEWS_TERMS_BY_THEME[BlogPersonaTheme.IMMIGRATION];
     const terms = topic?.trim()
       ? `${countryName} ${topic.trim()}`
-      : `${countryName} immigration imigração`;
+      : `${countryName} ${themeTerms}`;
     const query = encodeURIComponent(terms);
     const url = `https://news.google.com/rss/search?q=${query}&hl=en&gl=US&ceid=US:en`;
 

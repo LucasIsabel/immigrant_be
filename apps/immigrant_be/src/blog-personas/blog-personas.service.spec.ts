@@ -12,6 +12,8 @@ jest.mock('../../../../generated/prisma', () => ({
   BlogPersonaTheme: {
     IMMIGRATION: 'IMMIGRATION',
     TOURISM: 'TOURISM',
+    CUISINE: 'CUISINE',
+    GEOPOLITICS: 'GEOPOLITICS',
   },
 }));
 
@@ -84,6 +86,27 @@ describe('BlogPersonasService', () => {
           blog_author_id: 'author-1',
         }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('hands the tagline through to the repository', async () => {
+      repository.findBySlug.mockResolvedValue(null);
+      repository.findByAuthorId.mockResolvedValue(null);
+      repository.findAuthorById.mockResolvedValue({ id: 'author-9' });
+
+      const dto = {
+        slug: 'chef-tomas-andrade',
+        name: 'Chef Tomás Andrade',
+        tagline: 'Culinária: pratos, ingredientes e onde comer',
+        theme: BlogPersonaThemeDto.CUISINE,
+        editorial_stance: 'GASTRONOMY',
+        persona_prompt: 'x'.repeat(40),
+        style_guidelines: 'y'.repeat(10),
+        blog_author_id: 'author-9',
+      };
+
+      await service.create(dto);
+
+      expect(repository.create).toHaveBeenCalledWith(dto);
     });
   });
 

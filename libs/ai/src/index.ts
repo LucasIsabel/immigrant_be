@@ -55,8 +55,12 @@ export {
 } from './prompts/blog-post.prompt';
 export {
   PERSONA_GUARDRAILS,
+  PERSONA_GUARDRAILS_LIFESTYLE,
+  PERSONA_GUARDRAILS_ANALYSIS,
   buildPersonaPromptSection,
+  guardrailsForTheme,
   type PersonaPromptBlock,
+  type PersonaTheme,
 } from './prompts/persona-guardrails';
 export { buildBlogOpinionModerationPrompt } from './prompts/blog-opinion-moderation.prompt';
 export {
