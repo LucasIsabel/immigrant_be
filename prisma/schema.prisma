@@ -43,6 +43,9 @@ model Users {
   businessPageReviews             BusinessPageReview[]     @relation("ReviewedPages")
   publisherQualificationOverrides PublisherQualification[] @relation("PublisherOverrides")
   tourGuideReviews                TourGuideReview[]
+  organizedEvents                 CommunityEvent[]         @relation("OrganizedEvents")
+  approvedEvents                  CommunityEvent[]         @relation("ApprovedEvents")
+  rejectedEvents                  CommunityEvent[]         @relation("RejectedEvents")
 
   @@unique([email])
   @@map("users")
@@ -587,6 +590,7 @@ model Business {
   businessPage           BusinessPage?
   publisherQualification PublisherQualification?
   tourGuideReviews       TourGuideReview[]
+  communityEvents        CommunityEvent[]
 
   @@index([userId])
   @@index([businessType, isPublic])
@@ -904,4 +908,84 @@ model EventInterest {
 
   @@index([countryCode, city])
   @@map("event_interests")
+}
+
+enum CommunityEventStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum CommunityEventCategory {
+  CONCERT
+  FAIR
+  MEETUP
+  WORKSHOP
+  EXHIBITION
+  SPORTS
+  FOOD
+  OTHER
+}
+
+/// An event published by a community member and shown publicly after moderation.
+/// Named CommunityEvent because `Events` is already taken by the notification table.
+model CommunityEvent {
+  id              String                 @id @default(uuid()) @db.Uuid
+  organizerId     String                 @map("organizer_id") @db.Uuid
+  organizer       Users                  @relation("OrganizedEvents", fields: [organizerId], references: [id], onDelete: Cascade)
+  slug            String                 @unique @db.VarChar(160)
+  title           String                 @db.VarChar(120)
+  description     String                 @db.Text
+  imageUrl        String?                @map("image_url")
+  category        CommunityEventCategory
+  startsAt        DateTime               @map("starts_at")
+  endsAt          DateTime?              @map("ends_at")
+  timezone        String                 @db.VarChar(64)
+  countryCode     String                 @map("country_code") @db.VarChar(2)
+  city            String                 @db.VarChar(100)
+  venueName       String                 @map("venue_name") @db.VarChar(120)
+  venueAddress    String                 @map("venue_address") @db.VarChar(200)
+  lat             Float
+  lng             Float
+  businessId      String?                @map("business_id") @db.Uuid
+  business        Business?              @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  contactEmail    String?                @map("contact_email") @db.VarChar(100)
+  contactPhone    String?                @map("contact_phone") @db.VarChar(20)
+  isFree          Boolean                @default(true) @map("is_free")
+  priceNote       String?                @map("price_note") @db.VarChar(80)
+  externalUrl     String?                @map("external_url") @db.VarChar(300)
+  minAge          Int?                   @map("min_age")
+  termsVersion    String                 @map("terms_version") @db.VarChar(20)
+  termsAcceptedAt DateTime               @map("terms_accepted_at")
+  status          CommunityEventStatus   @default(DRAFT)
+  submittedAt     DateTime?              @map("submitted_at")
+  approvedAt      DateTime?              @map("approved_at")
+  approvedById    String?                @map("approved_by") @db.Uuid
+  approvedBy      Users?                 @relation("ApprovedEvents", fields: [approvedById], references: [id], onDelete: SetNull)
+  rejectedAt      DateTime?              @map("rejected_at")
+  rejectedById    String?                @map("rejected_by") @db.Uuid
+  rejectedBy      Users?                 @relation("RejectedEvents", fields: [rejectedById], references: [id], onDelete: SetNull)
+  rejectionReason String?                @map("rejection_reason") @db.Text
+  reports         CommunityEventReport[]
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  @@index([countryCode, city, status, startsAt])
+  @@index([organizerId])
+  @@map("community_events")
+}
+
+/// An anonymous report against an approved event. The reason is free text and
+/// the reporter is deliberately not identified.
+model CommunityEventReport {
+  id        String         @id @default(uuid()) @db.Uuid
+  eventId   String         @map("event_id") @db.Uuid
+  event     CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  reason    String         @db.VarChar(500)
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@index([eventId])
+  @@map("community_event_reports")
 }
