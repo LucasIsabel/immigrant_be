@@ -138,11 +138,18 @@ describe('WikidataDiscoveryService', () => {
         .mockResolvedValueOnce(json({ search: [{ id: 'Q174' }] }))
         .mockResolvedValueOnce(
           entities({
-            Q174: { p17: ['Q155'], label: 'São Paulo', coord: true, sitelinks: 250 },
+            Q174: {
+              p17: ['Q155'],
+              label: 'São Paulo',
+              coord: true,
+              sitelinks: 250,
+            },
           }),
         );
 
-      await expect(service.resolveCity('BR', 'Sao Paulo')).resolves.toMatchObject({
+      await expect(
+        service.resolveCity('BR', 'Sao Paulo'),
+      ).resolves.toMatchObject({
         wikidataId: 'Q174',
       });
     });
