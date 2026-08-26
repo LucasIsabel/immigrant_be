@@ -23,6 +23,7 @@ import {
   EndsAtNotBeforeStartsAt,
   HasAtLeastOneContact,
   IsFutureDate,
+  IsHtmlFree,
   IsIanaTimeZone,
 } from './community-event.validators';
 
@@ -35,12 +36,14 @@ export class CreateCommunityEventDto {
   title: string;
 
   @ApiProperty({
-    description: 'Plain paragraphs describing the event. No HTML.',
+    description:
+      'Markdown describing the event — headings, lists, links and emphasis. No HTML: a tag is rejected with 400.',
     example:
-      'Uma tarde de artesanato feito por imigrantes da cidade, com música ao vivo e comida de rua.',
+      'Uma tarde de artesanato feito por imigrantes da cidade, com **música ao vivo** e comida de rua.',
   })
   @IsString()
-  @Length(20, 4000)
+  @Length(20, 8000)
+  @IsHtmlFree({ message: 'Descrição não pode conter HTML' })
   description: string;
 
   @ApiProperty({ enum: CommunityEventCategory })

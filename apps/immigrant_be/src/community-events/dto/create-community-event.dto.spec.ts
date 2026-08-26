@@ -86,6 +86,28 @@ describe('CreateCommunityEventDto', () => {
     );
   });
 
+  it('refuses a description carrying HTML', async () => {
+    expect(
+      await failingRules(
+        validPayload({
+          description:
+            'Uma tarde de artesanato <script>alert(1)</script> na cidade.',
+        }),
+      ),
+    ).toContain('isHtmlFree');
+  });
+
+  it('accepts Markdown in the description', async () => {
+    expect(
+      await failingRules(
+        validPayload({
+          description:
+            '## Programa\n\n- 18h **abertura**\n- 20h música ao vivo\n\nEntrada por [aqui](https://exemplo.pt). 5 < 10 e a > b.',
+        }),
+      ),
+    ).toEqual([]);
+  });
+
   it('refuses coordinates outside the globe', async () => {
     expect(await failingRules(validPayload({ lat: 120 }))).toContain(
       'isLatitude',

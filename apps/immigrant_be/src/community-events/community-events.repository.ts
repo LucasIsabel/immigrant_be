@@ -28,6 +28,7 @@ const publicSelect = {
   title: true,
   description: true,
   imageUrl: true,
+  images: true,
   category: true,
   startsAt: true,
   endsAt: true,
