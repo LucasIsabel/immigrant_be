@@ -140,65 +140,74 @@ export class OverpassService {
     const iso = countryCode.toUpperCase();
     const escapado = city.replace(/"/g, '\\"');
 
+    const ADMIN = '["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]';
+    const PLACE = '["place"~"city|town"]';
+    const frouxo = padraoSemAcento(escapado);
+
+    // Cada passo é UMA consulta que une as duas grafias (`name:en` e `name`),
+    // para que a escolha abaixo veja as candidatas juntas em vez de aceitar a
+    // primeira grafia que devolver algo. Foi assim que o Porto virou distrito:
+    // o município não tem `name:en`, o distrito tem, e o passo `name:en`
+    // devolveu só ele. Medido em 2026-08-26.
     const tentativas: {
       rotulo: string;
-      filtro: string;
+      filtros: string[];
       /** O filtro é frouxo de propósito; o nome é conferido aqui. */
       confirmarNome?: boolean;
     }[] = [
       {
-        rotulo: 'name:en',
-        filtro: `area["name:en"="${escapado}"]["place"~"city|town"]`,
+        rotulo: 'place',
+        filtros: [
+          `area["name:en"="${escapado}"]${PLACE}`,
+          `area["name"="${escapado}"]${PLACE}`,
+        ],
       },
+      // Para a cidade que não é `place=city|town` (o Rio de Janeiro) e para a
+      // que não tem `name:en` (Sintra, `admin_level=7`).
       {
-        rotulo: 'name',
-        filtro: `area["name"="${escapado}"]["place"~"city|town"]`,
-      },
-      // As duas últimas existem para a cidade que não é `place=city|town` — foi
-      // o caso do Rio de Janeiro. A variante por `name` não é redundante: a
-      // área de Sintra é `admin_level=7` e **não tem `name:en`**, então filtrar
-      // o fallback por `name:en` o tornava inútil justamente para quem ele
-      // deveria resgatar. Medido em 2026-08-25.
-      {
-        rotulo: 'admin_level:name:en',
-        filtro: `area["name:en"="${escapado}"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
-      },
-      {
-        rotulo: 'admin_level:name',
-        filtro: `area["name"="${escapado}"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
+        rotulo: 'admin_level',
+        filtros: [
+          `area["name:en"="${escapado}"]${ADMIN}`,
+          `area["name"="${escapado}"]${ADMIN}`,
+        ],
       },
       // As duas últimas cobrem o acento: o CountriesNow diz "Sao Paulo", o OSM
       // guarda "São Paulo", e nenhuma das exatas casa. Ver `padraoSemAcento`.
       {
         rotulo: 'sem-acento:place',
-        filtro: `area["name"~"^${padraoSemAcento(escapado)}$"]["place"~"city|town"]`,
+        filtros: [`area["name"~"^${frouxo}$"]${PLACE}`],
         confirmarNome: true,
       },
       {
         rotulo: 'sem-acento:admin_level',
-        filtro: `area["name"~"^${padraoSemAcento(escapado)}$"]["boundary"="administrative"]["admin_level"~"^(6|7|8)$"]`,
+        filtros: [`area["name"~"^${frouxo}$"]${ADMIN}`],
         confirmarNome: true,
       },
     ];
 
-    for (const { rotulo, filtro, confirmarNome } of tentativas) {
+    for (const { rotulo, filtros, confirmarNome } of tentativas) {
       const consulta = `[out:json][timeout:60];
 area["ISO3166-1"="${iso}"][admin_level=2]->.pais;
-${filtro}(area.pais);
+(
+${filtros.map((f) => `  ${f}(area.pais);`).join('\n')}
+);
 out ids tags;`;
       const { elements } = await this.executar(consulta);
 
-      const candidatas = confirmarNome
-        ? elements.filter(
-            (el) => semAcento(el.tags?.name ?? '') === semAcento(city),
-          )
-        : elements;
+      const candidatas = preferirMunicipio(
+        confirmarNome
+          ? elements.filter(
+              (el) => semAcento(el.tags?.name ?? '') === semAcento(city),
+            )
+          : elements,
+        city,
+      );
 
       for (const candidata of candidatas) {
         const areaId = candidata.id;
         if (await this.temConteudo(areaId)) {
           this.logger.log(
-            `Área do OSM para ${city} (${iso}) resolvida por ${rotulo}: ${areaId} — "${candidata.tags?.name ?? '?'}"`,
+            `Área do OSM para ${city} (${iso}) resolvida por ${rotulo}: ${areaId} — "${candidata.tags?.name ?? '?'}" (admin_level ${candidata.tags?.admin_level ?? '-'})`,
           );
           return areaId;
         }
@@ -466,4 +475,35 @@ function padraoSemAcento(cidade: string): string {
         : caractere.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     )
     .join('');
+}
+
+/**
+ * Ordena as candidatas para que a menor unidade administrativa com o nome
+ * exato seja sondada primeiro.
+ *
+ * O bug que isto corrige: "Porto" devolvia o distrito (`admin_level=6`) e o
+ * pipeline aprovou Leixões e Mafamude como Porto. A regra NÃO é "8 primeiro":
+ * o nível do município varia por país — Portugal usa 7 (8 é freguesia),
+ * Brasil, Espanha e EUA usam 8. Entre as candidatas cujo nome bate exato,
+ * a de maior nível é a menor unidade que ainda tem aquele nome — e as
+ * freguesias portuguesas não se chamam "Porto" nem "Lisboa", então em PT isto
+ * cai no município. A sonda de conteúdo continua sendo a rede de segurança.
+ *
+ * Nome exato antes de nível: uma candidata do padrão frouxo com nome só
+ * parecido nunca deve vencer uma com o nome certo.
+ */
+function preferirMunicipio(
+  candidatas: ElementoOverpass[],
+  cidade: string,
+): ElementoOverpass[] {
+  const alvo = semAcento(cidade);
+  const nivel = (el: ElementoOverpass) =>
+    Number(el.tags?.admin_level ?? 0) || 0;
+  const exato = (el: ElementoOverpass) =>
+    semAcento(el.tags?.name ?? '') === alvo ||
+    semAcento(el.tags?.['name:en'] ?? '') === alvo;
+
+  return [...candidatas].sort(
+    (a, b) => Number(exato(b)) - Number(exato(a)) || nivel(b) - nivel(a),
+  );
 }

@@ -104,18 +104,21 @@ describe('OverpassService', () => {
       // existe para resolver.
       fetchMock
         .mockResolvedValueOnce(vazio())
-        .mockResolvedValueOnce(vazio())
-        .mockResolvedValueOnce(vazio())
         .mockResolvedValueOnce(areaEncontrada(3605400893, 'Sintra'))
         .mockResolvedValueOnce(sondaComConteudo());
 
       await expect(service.resolveArea('PT', 'Sintra')).resolves.toBe(
         3605400893,
       );
-      expect(consultaDaChamada(3)).toContain(
-        encodeURIComponent(
-          'area["name"="Sintra"]["boundary"="administrative"]',
-        ),
+      // Uma consulta só, com as duas grafias unidas.
+      const consulta = decodeURIComponent(
+        consultaDaChamada(1).replace(/\+/g, ' '),
+      );
+      expect(consulta).toContain(
+        'area["name"="Sintra"]["boundary"="administrative"]',
+      );
+      expect(consulta).toContain(
+        'area["name:en"="Sintra"]["boundary"="administrative"]',
       );
     });
 
@@ -123,14 +126,13 @@ describe('OverpassService', () => {
       // Foi o caso do Rio de Janeiro na medição.
       fetchMock
         .mockResolvedValueOnce(vazio())
-        .mockResolvedValueOnce(vazio())
         .mockResolvedValueOnce(areaEncontrada(3600002697, 'Rio de Janeiro'))
         .mockResolvedValueOnce(sondaComConteudo());
 
       await expect(service.resolveArea('BR', 'Rio de Janeiro')).resolves.toBe(
         3600002697,
       );
-      expect(consultaDaChamada(2)).toContain(
+      expect(consultaDaChamada(1)).toContain(
         encodeURIComponent('"boundary"="administrative"'),
       );
     });
@@ -141,7 +143,6 @@ describe('OverpassService', () => {
       // do nome no nosso lado é quem descarta "San Pablo" e "St. Pauls" —
       // medido: 28 candidatos no Brasil, um só sobrevive.
       fetchMock
-        .mockResolvedValueOnce(vazio())
         .mockResolvedValueOnce(vazio())
         .mockResolvedValueOnce(vazio())
         .mockResolvedValueOnce(vazio())
@@ -160,7 +161,7 @@ describe('OverpassService', () => {
       );
       // O corpo é `application/x-www-form-urlencoded`, onde espaço vira `+`.
       expect(
-        decodeURIComponent(consultaDaChamada(4).replace(/\+/g, ' ')),
+        decodeURIComponent(consultaDaChamada(3).replace(/\+/g, ' ')),
       ).toContain('^S.. P..l.$');
     });
 
@@ -184,6 +185,69 @@ describe('OverpassService', () => {
       );
     });
 
+    it('prefere o município ao distrito quando os dois se chamam igual', async () => {
+      // Medido em 2026-08-26: "Porto" resolvia para o distrito (admin_level 6)
+      // e o pipeline aprovou Leixões e Mafamude como Porto. O município (7 em
+      // Portugal) tem que vencer — e a sonda é chamada nele primeiro.
+      fetchMock
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(
+          resposta({
+            elements: [
+              {
+                type: 'relation',
+                id: 3603459013,
+                tags: { name: 'Porto', 'name:en': 'Porto', admin_level: '6' },
+              },
+              {
+                type: 'relation',
+                id: 3605400001,
+                tags: { name: 'Porto', admin_level: '7' },
+              },
+            ],
+          }),
+        )
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      await expect(service.resolveArea('PT', 'Porto')).resolves.toBe(
+        3605400001,
+      );
+      expect(decodeURIComponent(consultaDaChamada(2))).toContain(
+        'area(3605400001)',
+      );
+      // O distrito nem foi sondado.
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('nome exato vence nível: um homônimo parecido não passa na frente', async () => {
+      // No passo frouxo, "San Pablo" (nível 8) não pode vencer "São Paulo"
+      // (nível 8) só por vir antes — nem se tivesse nível maior.
+      fetchMock
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(vazio())
+        .mockResolvedValueOnce(
+          resposta({
+            elements: [
+              {
+                type: 'relation',
+                id: 1,
+                tags: { name: 'São Paulo', admin_level: '4' },
+              },
+              {
+                type: 'relation',
+                id: 2,
+                tags: { name: 'São Paulo', admin_level: '8' },
+              },
+            ],
+          }),
+        )
+        .mockResolvedValueOnce(sondaComConteudo());
+
+      // Estado (4) e município (8) com o mesmo nome: o município vence.
+      await expect(service.resolveArea('BR', 'Sao Paulo')).resolves.toBe(2);
+    });
+
     it('recusa área que existe mas está vazia', async () => {
       // Aceitar apontaria o resto do pipeline para o nada.
       fetchMock
@@ -205,10 +269,8 @@ describe('OverpassService', () => {
         name: 'AreaNotResolvedError',
         city: 'Cidade Inexistente',
         attempts: [
-          'name:en',
-          'name',
-          'admin_level:name:en',
-          'admin_level:name',
+          'place',
+          'admin_level',
           'sem-acento:place',
           'sem-acento:admin_level',
         ],
