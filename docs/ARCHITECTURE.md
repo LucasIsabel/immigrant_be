@@ -762,6 +762,29 @@ registro daquela corrida, não atributo do lugar, e uma coluna custaria uma
 migration coordenada com produção para guardar uma frase. Aceitar o motivo e
 descartá-lo seria pior que não pedir.
 
+### API admin do catálogo de lugares (#159)
+
+`places-catalog-admin.controller.ts`, em `admin/places` — um nível acima do
+fluxo de ingestões. A divisão é deliberada:
+
+- **O PATCH da ingestão recusa (409) qualquer lugar fora de `DRAFT`** — editar
+  produção por uma tela de revisão não deixaria trilha do que foi revisado.
+  O catálogo é o *outro fluxo* que aquela recusa prometia: opera sobre a tabela
+  inteira, curados incluídos — que não pertencem a ingestão nenhuma e só são
+  alcançáveis por aqui.
+- **Desativar é o "remover do site" seguro**: as queries públicas já filtram
+  `isActive`, então o lugar some do explorador com dados, traduções e
+  proveniência recuperáveis. O `DELETE` existe para registro que nunca deveria
+  ter existido.
+- **Traduções no edit são upsert**, ao contrário do update estrito da ingestão:
+  lá, tradução ausente significa job de texto ainda não rodado, e escrever uma
+  correria com ele; aqui, curado editado para um idioma que nunca teve deve
+  ganhá-lo, não dar 500.
+- **Nota de roteamento**: o controller de ingestões registra primeiro no módulo
+  (Nest casa rotas por ordem de registro), e o catálogo não tem `GET :id` solto
+  — a lista carrega tudo, e um `:id` na raiz ficaria a um erro de ordem de
+  engolir `/ingestions`.
+
 ### API admin das filas
 
 `GET/POST/DELETE /admin/queues` (módulo `queues/`) é a API JSON que o painel
@@ -856,6 +879,11 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `POST /admin/places/ingestions/:id/approve`  | Places (admin)            | ADMIN — publica a cidade (422 se faltar tradução) |
 | `POST /admin/places/ingestions/:id/reject`   | Places (admin)            | ADMIN — recusa a cidade, motivo obrigatório |
 | `POST /admin/places/ingestions/:id/retry`    | Places (admin)            | ADMIN — reprocessa ingestão em `FAILED`    |
+| `GET /admin/places`                          | Places (catálogo)         | ADMIN — todo lugar, curado ou ingerido, com filtros |
+| `PATCH /admin/places/:id`                    | Places (catálogo)         | ADMIN — edita lugar vivo, qualquer status  |
+| `POST /admin/places/:id/activate`            | Places (catálogo)         | ADMIN — volta ao explorador público        |
+| `POST /admin/places/:id/deactivate`          | Places (catálogo)         | ADMIN — esconde sem apagar                 |
+| `DELETE /admin/places/:id`                   | Places (catálogo)         | ADMIN — hard delete                        |
 | `/storage/upload`                            | Storage                   | Autenticado                                |
 | `POST /event-interest`                       | EventInterest             | Público — captura de interesse (fase 0 de eventos) |
 | `/health`                                    | Health                    | Público                                    |

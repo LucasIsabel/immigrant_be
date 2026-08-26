@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import {
   CityIngestionStatus,
+  PlaceCategory,
   PlaceReviewStatus,
   Prisma,
 } from '../../../../generated/prisma';
@@ -15,6 +16,9 @@ const IN_FLIGHT: CityIngestionStatus[] = [
 const ADMIN_PLACE = {
   id: true,
   name: true,
+  countryCode: true,
+  city: true,
+  imageUrl: true,
   slug: true,
   category: true,
   reviewStatus: true,
@@ -241,6 +245,112 @@ export class PlacesAdminRepository {
         },
       });
     });
+  }
+
+  // ── Live catalogue (#159) ─────────────────────────────────────────────
+  // Everything below operates on the whole `places` table — curated rows
+  // included, which belong to no ingestion and were invisible to the review
+  // flow above.
+
+  async listCatalog(params: {
+    countryCode?: string;
+    city?: string;
+    category?: PlaceCategory;
+    reviewStatus?: PlaceReviewStatus;
+    isActive?: boolean;
+    search?: string;
+    page: number;
+    limit: number;
+  }) {
+    const where: Prisma.PlaceWhereInput = {
+      ...(params.countryCode && { countryCode: params.countryCode }),
+      ...(params.city && { city: params.city }),
+      ...(params.category && { category: params.category }),
+      ...(params.reviewStatus && { reviewStatus: params.reviewStatus }),
+      ...(params.isActive !== undefined && { isActive: params.isActive }),
+      ...(params.search && {
+        name: { contains: params.search, mode: 'insensitive' as const },
+      }),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.place.findMany({
+        where,
+        select: ADMIN_PLACE,
+        orderBy: [{ city: 'asc' }, { popularityScore: 'desc' }],
+        skip: (params.page - 1) * params.limit,
+        take: params.limit,
+      }),
+      this.prisma.place.count({ where }),
+    ]);
+
+    return { data, total };
+  }
+
+  findCatalogPlace(id: string) {
+    return this.prisma.place.findUnique({
+      where: { id },
+      select: ADMIN_PLACE,
+    });
+  }
+
+  /**
+   * Edit any live place, whatever its review status.
+   *
+   * Translations are upserted, not updated: a curated place edited into a
+   * language it never had should gain it, not 500. The ingestion PATCH above
+   * keeps its stricter update — there, a missing translation means the text
+   * job has not run yet, and writing one would race it.
+   */
+  async updateCatalogPlace(
+    placeId: string,
+    data: {
+      name?: string;
+      category?: PlaceCategory;
+      isFree?: boolean;
+      popularityScore?: number;
+      address?: string;
+      website?: string;
+    },
+    translations: { language: string; description?: string; tip?: string }[],
+  ) {
+    for (const translation of translations) {
+      if (!translation.description) continue;
+      await this.prisma.placeTranslation.upsert({
+        where: {
+          placeId_language: { placeId, language: translation.language },
+        },
+        create: {
+          placeId,
+          language: translation.language,
+          description: translation.description,
+          tip: translation.tip ?? null,
+        },
+        update: {
+          description: translation.description,
+          ...(translation.tip !== undefined && { tip: translation.tip }),
+        },
+      });
+    }
+
+    return this.prisma.place.update({
+      where: { id: placeId },
+      data,
+      select: ADMIN_PLACE,
+    });
+  }
+
+  setPlaceActive(placeId: string, isActive: boolean) {
+    return this.prisma.place.update({
+      where: { id: placeId },
+      data: { isActive },
+      select: ADMIN_PLACE,
+    });
+  }
+
+  /** Translations cascade on delete (schema-level), nothing else references a place. */
+  deletePlace(placeId: string) {
+    return this.prisma.place.delete({ where: { id: placeId } });
   }
 
   /** Hand the ingestion back to PROCESSING for another attempt. */

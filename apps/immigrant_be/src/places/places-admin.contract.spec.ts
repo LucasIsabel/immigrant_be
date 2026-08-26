@@ -35,6 +35,8 @@ import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import { PlacesAdminController } from './places-admin.controller';
 import { PlacesAdminService } from './places-admin.service';
+import { PlacesCatalogAdminController } from './places-catalog-admin.controller';
+import { PlacesCatalogAdminService } from './places-catalog-admin.service';
 
 /**
  * The contract with the frontend, verified rather than trusted.
@@ -53,8 +55,11 @@ describe('OpenAPI contract — Places Admin', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [PlacesAdminController],
-      providers: [{ provide: PlacesAdminService, useValue: {} }],
+      controllers: [PlacesAdminController, PlacesCatalogAdminController],
+      providers: [
+        { provide: PlacesAdminService, useValue: {} },
+        { provide: PlacesCatalogAdminService, useValue: {} },
+      ],
     }).compile();
 
     app = moduleRef.createNestApplication();
@@ -94,7 +99,7 @@ describe('OpenAPI contract — Places Admin', () => {
       ),
     );
 
-  it('registers the nine operations of the ingestion flow', () => {
+  it('registers the fourteen operations of the ingestion and catalogue flows', () => {
     const operations = Object.entries(document.paths)
       .flatMap(([route, item]) =>
         Object.keys(item as Record<string, unknown>).map(
@@ -104,15 +109,20 @@ describe('OpenAPI contract — Places Admin', () => {
       .sort();
 
     expect(operations).toEqual([
+      'DELETE /admin/places/{id}',
+      'GET /admin/places',
       'GET /admin/places/ingestions',
       'GET /admin/places/ingestions/{id}',
       'PATCH /admin/places/ingestions/{id}/places/{placeId}',
+      'PATCH /admin/places/{id}',
       'POST /admin/places/ingestions',
       'POST /admin/places/ingestions/{id}/approve',
       'POST /admin/places/ingestions/{id}/places/{placeId}/reject',
       'POST /admin/places/ingestions/{id}/places/{placeId}/retry-texts',
       'POST /admin/places/ingestions/{id}/reject',
       'POST /admin/places/ingestions/{id}/retry',
+      'POST /admin/places/{id}/activate',
+      'POST /admin/places/{id}/deactivate',
     ]);
   });
 
@@ -136,6 +146,10 @@ describe('OpenAPI contract — Places Admin', () => {
         'IngestionStatsDto',
         'IngestionConflictDto',
         'PlaceRejectionDto',
+        // Query DTOs flatten into parameters and never become components —
+        // only bodies and responses are asserted here.
+        'PaginatedCatalogPlacesResponseDto',
+        'UpdateCatalogPlaceDto',
       ]),
     );
   });
