@@ -939,6 +939,7 @@ model CommunityEvent {
   title           String                 @db.VarChar(120)
   description     String                 @db.Text
   imageUrl        String?                @map("image_url")
+  images          String[]               @default([])
   category        CommunityEventCategory
   startsAt        DateTime               @map("starts_at")
   endsAt          DateTime?              @map("ends_at")
