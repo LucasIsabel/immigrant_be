@@ -121,9 +121,21 @@ cidades contra ela não é viável: instância própria é pré-requisito, não
 contingência.
 
 **A armadilha do nome da cidade**: a nossa lista vem do CountriesNow em inglês
-("Lisbon"), e o OSM usa o nome local ("Lisboa"). A resolução tenta `name:en`,
-depois `name`, depois `boundary=administrative` com `admin_level` 6 a 8 — e
-falha reportando as tentativas, nunca em silêncio.
+("Lisbon"), e o OSM usa o nome local ("Lisboa"). Cada passo da resolução é
+**uma consulta que une as duas grafias** (`name:en` e `name`): primeiro
+`place=city|town`, depois `boundary=administrative` com `admin_level` 6 a 8, e
+os dois de novo com padrão tolerante a acento — e falha reportando as
+tentativas, nunca em silêncio.
+
+**E a armadilha do distrito homônimo** (medida em 2026-08-26): "Porto" resolvia
+para o **distrito** (`admin_level=6`), porque o município não tem `name:en`, o
+distrito tem, e o passo `name:en` devolvia só ele — o pipeline aprovou Leixões e
+Mafamude como Porto. Por isso as grafias vão unidas numa consulta e, entre as
+candidatas de **nome exato**, a de **maior `admin_level`** é sondada primeiro.
+Não é "8 primeiro": o nível do município varia por país (Portugal usa 7, e 8 é
+freguesia; Brasil, Espanha e EUA usam 8). "Maior nível com o nome exato" é a
+menor unidade que ainda se chama assim — em PT cai no município porque nenhuma
+freguesia se chama "Porto". A sonda de conteúdo segue como rede de segurança.
 
 **E a armadilha do acento**, que é outra: o CountriesNow escreve "Sao Paulo" e o
 OSM guarda "São Paulo", então nenhuma das quatro tentativas exatas casa. O
