@@ -142,6 +142,18 @@ export class AdminPlaceResponseDto {
   @ApiProperty({ example: 'Torre de Belém' })
   name: string;
 
+  @ApiProperty({ example: 'PT' })
+  countryCode: string;
+
+  @ApiProperty({ example: 'Lisbon' })
+  city: string;
+
+  @ApiPropertyOptional({
+    description: 'Card image. Null falls back to the category tone.',
+    nullable: true,
+  })
+  imageUrl?: string | null;
+
   @ApiProperty({ example: 'torre-de-belem' })
   slug: string;
 
