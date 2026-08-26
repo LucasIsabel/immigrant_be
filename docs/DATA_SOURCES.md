@@ -21,6 +21,17 @@ base própria, escritos por usuários ou por administradores.
 | `GET /api/v1/countries` | Base própria — `country` + `country_translations` | CRUD administrativo, mais seeds versionados em `prisma/seeds/`. Os seeds são aplicados **manualmente** — ver a lição de 2026-08-04 em `tasks/lessons.md` sobre migration e seed no deploy | Idem |
 | `GET /api/v1/blog/posts` | Base própria — `blog_posts` | Publicação administrativa, mais o pipeline de AI blog (cron de geração + microservice de tradução) | Idem |
 
+## Eventos da comunidade (My City)
+
+| Endpoint | Fonte | Como atualiza | Comportamento em falha |
+| --- | --- | --- | --- |
+| `GET /api/v1/events/public` | Base própria — tabela `community_events` | Tempo real: escrita do organizador, publicada só depois de um admin aprovar. `when=today\|weekend` é resolvido em SQL com o `timezone` de cada linha, não com o fuso de quem consulta | Falha propaga → 500 padronizado pelo `AllExceptionsFilter` |
+| `GET /api/v1/events/public/:slug` | Base própria — `community_events` | Idem. Só devolve `APPROVED`; editar um evento aprovado devolve-o a `PENDING_REVIEW` e o slug passa a dar 404 até nova aprovação | Idem |
+
+Nenhum dos dois serve conteúdo não moderado: o `status` não é filtro opcional da query, é
+condição fixa do repositório. O que aparece ao público passou por um admin, e uma denúncia
+(`POST /events/public/:slug/report`) pode tirá-lo de novo.
+
 Em nenhum dos quatro uma falha da fonte é convertida em lista vazia. Isso é
 deliberado e está coberto por teste: uma lista vazia significa "não há nada",
 e engolir o erro faria uma queda de banco ser exibida como "você não tem
