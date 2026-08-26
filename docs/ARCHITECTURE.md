@@ -62,6 +62,7 @@ immigrant_be/
 │   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
 │   │   │   ├── business-pages/ # Módulo de páginas públicas de negócios (My City)
 │   │   │   ├── event-interest/ # Fase 0 de eventos: captura pública de interesse de organizadores
+│   │   │   ├── community-events/ # Eventos da comunidade: criação autenticada, agenda pública e moderação
 │   │   │   ├── publisher-qualification/ # Módulo de qualificação automática de publishers
 │   │   │   └── health/         # Health checks
 │   │   └── test/               # Testes E2E
@@ -333,6 +334,42 @@ BusinessPage ─── Business (1:1) — página pública moderada de um negóc
   Fluxo: DRAFT → PENDING_REVIEW → APPROVED | REJECTED; re-edição: APPROVED → APPROVED_WITH_PENDING
   Página pública acessível sem autenticação via GET /pg/:businessType/:slug
 
+CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
+                ├── Users (N:1, opcional, "ApprovedEvents"/"RejectedEvents") — o admin que moderou
+                ├── Business (N:1, opcional) — negócio anfitrião; FK anulável (SetNull)
+                └── CommunityEventReport (1:N) — denúncias anónimas
+  Tabela: community_events
+  Enum CommunityEventStatus: DRAFT | PENDING_REVIEW | APPROVED | REJECTED | CANCELLED
+  Enum CommunityEventCategory: CONCERT | FAIR | MEETUP | WORKSHOP | EXHIBITION | SPORTS | FOOD | OTHER
+  `Events` já é a tabela de notificações do utilizador — daí `CommunityEvent`, e não `Event`.
+  Armazena: organizerId (FK), slug (único), title, description, imageUrl (obrigatório só para
+            submeter), category, startsAt/endsAt (instantes UTC), timezone (IANA),
+            countryCode + city (string livre, como em Business/Place), venueName, venueAddress,
+            lat/lng (obrigatórios — geolocalização exata), businessId (FK opcional),
+            contactEmail/contactPhone (ao menos um), isFree, priceNote, externalUrl, minAge,
+            termsVersion + termsAcceptedAt, submittedAt, approvedAt/approvedById,
+            rejectedAt/rejectedById/rejectionReason
+  **Fuso.** É a primeira entidade em que "que horas" é local por natureza: nenhum outro
+    `DateTime` do schema guarda fuso. `startsAt`/`endsAt` são instantes; `timezone` é o que
+    permite exibir "sábado, 21h" e responder "hoje" no dia **da cidade**. Os filtros
+    `when=today|weekend` correm em SQL (`(starts_at AT TIME ZONE 'UTC') AT TIME ZONE timezone`)
+    porque duas linhas da mesma lista podem estar em fusos diferentes.
+  **Termo versionado.** A criação exige `acceptTerms: true` e `termsVersion` igual à constante
+    `COMMUNITY_EVENT_TERMS_VERSION` do módulo; versão antiga é 400. O texto do termo é conteúdo
+    de utilizador e vive no frontend.
+  Ciclo: DRAFT → PENDING_REVIEW → APPROVED | REJECTED; CANCELLED a qualquer momento.
+    Editar (ou trocar a capa de) um evento APPROVED devolve-o a PENDING_REVIEW e limpa
+    `approvedAt`/`approvedById` — some do público até nova aprovação. O slug é regenerado
+    enquanto DRAFT/REJECTED e congela depois da primeira aprovação, para o link partilhado
+    continuar a funcionar.
+  Teto de 5 eventos em PENDING_REVIEW por organizador (409 na criação): a fila é revista à mão.
+
+CommunityEventReport ─── CommunityEvent (N:1) — denúncia anónima de um evento aprovado
+  Tabela: community_event_reports
+  Armazena: eventId (FK, cascade), reason, createdAt — o denunciante não é identificado
+  A aprovação segura o que chega; a denúncia segura o que passou. O admin vê `reportCount` na
+  fila e as denúncias no detalhe, e `reject` num evento APPROVED é a derrubada.
+
 PublisherQualification ─── Business (1:1) — qualificação automática do publisher
   Tabela: publisher_qualifications
   PK: businessId (UUID, aponta diretamente para Business)
@@ -572,6 +609,14 @@ apps/immigrant_be/src/storage/
 ```
 ${CLOUDFLARE_R2_PUBLIC_URL}/${folder}/${uuid}.${ext}
 ```
+
+### Chaves determinísticas (upload por entidade)
+
+Alguns módulos não geram UUID por ficheiro: gravam sempre na mesma chave, para que substituir a
+imagem substitua o ficheiro em vez de acumular órfãos no bucket.
+
+- `business-pages/{businessId}/logo.{ext}` e `business-pages/{businessId}/cover.{ext}`
+- `community-events/{eventId}/cover.{ext}` — capa do evento (`POST /events/:id/image`)
 
 ### AI Blog Cover Images
 
@@ -937,6 +982,20 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `DELETE /admin/publishers/:businessId/override`            | PublisherQualification (admin) | ADMIN — remove override, restaura critérios automáticos                                                    |
 | `POST /business-pages/:id/upload/logo`                     | BusinessPages                  | Autenticado (role USER) — upload da logo; multipart/form-data, campo `file`; JPEG/PNG/WebP, máx 5 MB; chave R2 determinística `business-pages/{businessId}/logo.{ext}` |
 | `POST /business-pages/:id/upload/cover`                    | BusinessPages                  | Autenticado (role USER) — upload da foto de capa; mesmas restrições; chave R2 `business-pages/{businessId}/cover.{ext}` |
+| `GET /events/public`                                       | CommunityEvents                | Público (`@AllowAnonymous`) — agenda: só APPROVED com `coalesce(endsAt, startsAt) >= now()`, ordem `startsAt asc`; filtros `countryCode`, `city`, `when=upcoming\|today\|weekend`, `page`, `limit` |
+| `GET /events/public/:slug`                                 | CommunityEvents                | Público (`@AllowAnonymous`) — detalhe do evento aprovado; 404 se não aprovado |
+| `POST /events/public/:slug/report`                         | CommunityEvents                | Público (`@AllowAnonymous`) — denúncia anónima; throttle 3/min, honeypot `website` (descarta em silêncio) |
+| `POST /events`                                             | CommunityEvents                | Autenticado (role USER) — cria em DRAFT; throttle 10/min; 400 se `termsVersion` desatualizada; 409 no teto de 5 em análise |
+| `GET /events/mine`                                         | CommunityEvents                | Autenticado (role USER) — os meus eventos em qualquer status, paginado |
+| `GET /events/:id`                                          | CommunityEvents                | Autenticado (role USER) — detalhe do próprio evento; 403 se não for dele |
+| `PATCH /events/:id`                                        | CommunityEvents                | Autenticado (role USER) — edita DRAFT/REJECTED; em APPROVED edita **e devolve a PENDING_REVIEW**; 409 em PENDING_REVIEW/CANCELLED |
+| `POST /events/:id/image`                                   | CommunityEvents                | Autenticado (role USER) — capa do evento; multipart, campo `file`; JPEG/PNG/WebP, máx 5 MB; chave R2 `community-events/{eventId}/cover.{ext}`; em APPROVED volta a análise |
+| `POST /events/:id/submit`                                  | CommunityEvents                | Autenticado (role USER) — DRAFT/REJECTED → PENDING_REVIEW; 422 sem imagem; 409 se já em análise |
+| `POST /events/:id/cancel`                                  | CommunityEvents                | Autenticado (role USER) — cancela e some do público; 409 se já cancelado |
+| `GET /admin/events`                                        | CommunityEvents (admin)        | ADMIN — fila de moderação: PENDING_REVIEW primeiro por `submittedAt asc`; `?status=&page=&limit=`; cada item traz `reportCount` |
+| `GET /admin/events/:id`                                    | CommunityEvents (admin)        | ADMIN — detalhe com as denúncias |
+| `POST /admin/events/:id/approve`                           | CommunityEvents (admin)        | ADMIN — aprova; 409 se não estiver em análise |
+| `POST /admin/events/:id/reject`                            | CommunityEvents (admin)        | ADMIN — recusa (PENDING_REVIEW) ou derruba (APPROVED); `reason` obrigatório (3–500) |
 
 **Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta `GeminiBaseService`, monta o input a partir do conteúdo da página, chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
