@@ -35,6 +35,7 @@ export class AiBlogRepository {
           select: {
             slug: true,
             name: true,
+            tagline: true,
             theme: true,
             editorial_stance: true,
           },

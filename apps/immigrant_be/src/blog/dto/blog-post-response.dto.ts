@@ -56,6 +56,9 @@ export class BlogPersonaPublicDto {
   @ApiProperty({ example: 'Helena Vargas' })
   name: string;
 
+  @ApiProperty({ example: 'Imigração: política restritiva', nullable: true })
+  tagline: string | null;
+
   @ApiProperty({ example: 'IMMIGRATION' })
   theme: string;
 

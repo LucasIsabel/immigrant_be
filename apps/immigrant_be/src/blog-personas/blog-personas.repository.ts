@@ -84,6 +84,7 @@ export class BlogPersonasRepository {
       data: {
         slug: dto.slug,
         name: dto.name,
+        tagline: dto.tagline ?? null,
         theme: dto.theme,
         editorial_stance: dto.editorial_stance,
         persona_prompt: dto.persona_prompt,
@@ -102,6 +103,7 @@ export class BlogPersonasRepository {
       data: {
         ...(dto.slug !== undefined && { slug: dto.slug }),
         ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.tagline !== undefined && { tagline: dto.tagline }),
         ...(dto.theme !== undefined && { theme: dto.theme }),
         ...(dto.editorial_stance !== undefined && {
           editorial_stance: dto.editorial_stance,

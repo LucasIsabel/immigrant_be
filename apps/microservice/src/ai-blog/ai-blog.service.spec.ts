@@ -19,6 +19,8 @@ jest.mock('../../../../generated/prisma', () => ({
   BlogPersonaTheme: {
     IMMIGRATION: 'IMMIGRATION',
     TOURISM: 'TOURISM',
+    CUISINE: 'CUISINE',
+    GEOPOLITICS: 'GEOPOLITICS',
   },
 }));
 
@@ -333,6 +335,125 @@ describe('AiBlogWorkerService — proveniência da geração', () => {
     expect(created()).toMatchObject({
       persona_id: 'persona-1',
       display_author_id: 'author-1',
+    });
+  });
+  describe('news search per theme', () => {
+    const personaOfTheme = (theme: string) => ({
+      id: `persona-${theme}`,
+      name: 'Columnist',
+      theme,
+      editorial_stance: 'STANCE',
+      persona_prompt: 'You are a columnist.',
+      style_guidelines: 'Short.',
+      preferred_model: null,
+      blog_author_id: 'author-1',
+    });
+
+    const answerBoth = () =>
+      mockAiRouter.generateJson
+        .mockResolvedValueOnce({
+          data: aiPost,
+          result: {
+            model: 'moonshotai/kimi-k2.5',
+            provider: 'openrouter',
+            usage: { costUsd: 0.01 },
+          },
+        })
+        .mockResolvedValueOnce({
+          data: {
+            recommendation: 'approve',
+            riskLevel: 'low',
+            flags: [],
+            summary: 'ok',
+          },
+          result: { model: 'moonshotai/kimi-k2.5', usage: {} },
+        });
+
+    const searchedTerms = () =>
+      decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+
+    it.each([
+      ['IMMIGRATION', 'Canada immigration imigração'],
+      ['TOURISM', 'Canada tourism travel beaches attractions'],
+      ['CUISINE', 'Canada cuisine food gastronomy restaurants'],
+      ['GEOPOLITICS', 'Canada politics geopolitics economy inflation'],
+    ])(
+      '%s searches for the terms of its own theme',
+      async (theme, expected) => {
+        // Every persona used to read the same immigration feed, so the travel
+        // columnist wrote about visa quotas.
+        mockPrisma.blogPersona.findUnique.mockResolvedValue(
+          personaOfTheme(theme),
+        );
+        answerBoth();
+
+        await service.generatePost({
+          country_id: COUNTRY_ID,
+          category_id: CATEGORY_ID,
+          persona_id: `persona-${theme}`,
+        });
+
+        expect(searchedTerms()).toContain(expected);
+      },
+    );
+
+    it('lets the admin topic override the terms of the theme', async () => {
+      mockPrisma.blogPersona.findUnique.mockResolvedValue(
+        personaOfTheme('CUISINE'),
+      );
+      answerBoth();
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+        persona_id: 'persona-CUISINE',
+        topic: 'mercados de rua',
+      });
+
+      expect(searchedTerms()).toContain('Canada mercados de rua');
+      expect(searchedTerms()).not.toContain('gastronomy');
+    });
+
+    it.each([
+      ['IMMIGRATION', 'blog_writing_opinion'],
+      ['GEOPOLITICS', 'blog_writing_opinion'],
+      ['TOURISM', 'blog_writing_standard'],
+      ['CUISINE', 'blog_writing_standard'],
+    ])('writes %s through the %s scenario', async (theme, scenario) => {
+      // Opinion and analysis pay for the strong chain; travel and food do not.
+      mockPrisma.blogPersona.findUnique.mockResolvedValue(
+        personaOfTheme(theme),
+      );
+      answerBoth();
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+        persona_id: `persona-${theme}`,
+      });
+
+      expect(mockAiRouter.generateJson).toHaveBeenNthCalledWith(
+        1,
+        scenario,
+        expect.any(String),
+        expect.anything(),
+        expect.objectContaining({ entityType: 'blog_post' }),
+      );
+    });
+
+    it('runs opinion moderation for every persona, not only the political ones', async () => {
+      mockPrisma.blogPersona.findUnique.mockResolvedValue(
+        personaOfTheme('TOURISM'),
+      );
+      answerBoth();
+
+      await service.generatePost({
+        country_id: COUNTRY_ID,
+        category_id: CATEGORY_ID,
+        persona_id: 'persona-TOURISM',
+      });
+
+      expect(mockAiRouter.generateJson).toHaveBeenCalledTimes(2);
     });
   });
 });

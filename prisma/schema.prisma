@@ -326,6 +326,8 @@ model BlogAuthor {
 enum BlogPersonaTheme {
   IMMIGRATION
   TOURISM
+  CUISINE
+  GEOPOLITICS
 }
 
 /// Colunista editorial gerado por IA. O tom mora aqui, não no dropdown de
@@ -338,6 +340,9 @@ model BlogPersona {
   id                String           @id @default(uuid()) @db.Uuid
   slug              String           @unique
   name              String
+  /// Frase curta que descreve o recorte do colunista. O dropdown do newsroom a
+  /// mostra entre parênteses ao lado do nome.
+  tagline           String?          @db.VarChar(120)
   theme             BlogPersonaTheme
   editorial_stance  String           @map("editorial_stance")
   persona_prompt    String           @map("persona_prompt") @db.Text

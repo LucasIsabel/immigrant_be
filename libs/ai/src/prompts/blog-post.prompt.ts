@@ -2,6 +2,7 @@ import { PostComplexity } from '../enums/post-complexity.enum';
 import { PoliticalTone } from '../enums/political-tone.enum';
 import {
   type PersonaPromptBlock,
+  type PersonaTheme,
   buildPersonaPromptSection,
 } from './persona-guardrails';
 import { HUMAN_WRITING_INSTRUCTION } from './prose-rules';
@@ -55,6 +56,39 @@ const VISUAL_CALLOUT_INSTRUCTION = `Include visual callouts throughout the text 
 - For images with people: describe diverse real humans in candid, authentic moments. Include natural poses, realistic skin tones, everyday settings. Avoid stiff poses, cartoon style, or AI-looking artificial appearance.
 - Do NOT request charts, infographics, dashboards, diagrams with axes/labels, screenshots of UI, or any image that needs readable text. Put numbers and comparisons in Markdown tables in the article instead.
 - Descriptions must be concrete and visual (what the scene shows). They will be used to generate images shared across all locales, so they must work without any lettering.`;
+
+/**
+ * What the columnist is and what the headlines are about, per theme.
+ *
+ * The prompt used to hardcode immigration in both places, so a travel persona
+ * was told to comment on immigration headlines. IMMIGRATION reproduces the
+ * previous wording byte for byte: its output must not move.
+ */
+const PERSONA_FRAMING: Record<
+  PersonaTheme,
+  { role: (countryName: string) => string; newsSubject: string }
+> = {
+  IMMIGRATION: {
+    role: () =>
+      'You are an opinion columnist writing for an immigration platform targeted at people who want to move abroad. Write a signed opinion column, not a news report.',
+    newsSubject: 'immigration to',
+  },
+  TOURISM: {
+    role: (countryName: string) =>
+      `You are a travel columnist writing for people who want to visit or live in ${countryName}. You write about tourism, beaches, landmarks, seasons and what a trip actually costs. Write a signed travel column, not a news report.`,
+    newsSubject: 'travel and tourism in',
+  },
+  CUISINE: {
+    role: (countryName: string) =>
+      `You are a chef and food writer writing for people who want to visit or live in ${countryName}. You write about dishes, ingredients, markets and where to eat. Write a signed food column, not a news report.`,
+    newsSubject: 'food and cuisine in',
+  },
+  GEOPOLITICS: {
+    role: (countryName: string) =>
+      `You are a political, geopolitical and economic analyst writing for people who want to visit or move to ${countryName}. Explain what governments, elections, treaties, conflicts and economic decisions mean for them. Write a signed analysis, not a news report.`,
+    newsSubject: 'politics, geopolitics and the economy of',
+  },
+};
 
 function buildComplexityRequirements(complexity: PostComplexity): string {
   switch (complexity) {
@@ -119,14 +153,21 @@ export function buildBlogPostPrompt(
     ? `\n${buildPersonaPromptSection(persona)}\n`
     : '';
 
-  const role = persona
-    ? `You are an opinion columnist writing for an immigration platform targeted at people who want to move abroad. Write a signed opinion column, not a news report.`
+  // Without a persona the prompt keeps the generic immigration journalist it has
+  // always been: the legacy PoliticalTone path has no theme to read.
+  const framing = persona
+    ? PERSONA_FRAMING[persona.theme ?? 'IMMIGRATION']
+    : undefined;
+
+  const role = framing
+    ? framing.role(countryName)
     : `You are an expert immigration journalist writing for an immigration platform targeted at people who want to move abroad.`;
+  const newsSubject = framing?.newsSubject ?? 'immigration to';
 
   return `
 ${role}
 
-Based on the recent news headlines about immigration to **${countryName}** listed below, write a comprehensive, informative and engaging blog post in **English**.
+Based on the recent news headlines about ${newsSubject} **${countryName}** listed below, write a comprehensive, informative and engaging blog post in **English**.
 ${personaSection}
 ## Recent News
 ${newsSummary}

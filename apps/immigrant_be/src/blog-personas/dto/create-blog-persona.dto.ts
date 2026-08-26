@@ -13,6 +13,8 @@ import {
 export enum BlogPersonaThemeDto {
   IMMIGRATION = 'IMMIGRATION',
   TOURISM = 'TOURISM',
+  CUISINE = 'CUISINE',
+  GEOPOLITICS = 'GEOPOLITICS',
 }
 
 export class CreateBlogPersonaDto {
@@ -27,6 +29,18 @@ export class CreateBlogPersonaDto {
   @IsNotEmpty()
   @MaxLength(120)
   name: string;
+
+  @ApiProperty({
+    description:
+      'Frase curta mostrada entre parênteses no dropdown do newsroom',
+    example: 'Imigração: política restritiva',
+    required: false,
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  tagline?: string;
 
   @ApiProperty({ enum: BlogPersonaThemeDto })
   @IsEnum(BlogPersonaThemeDto)

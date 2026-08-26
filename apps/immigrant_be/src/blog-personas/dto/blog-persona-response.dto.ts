@@ -12,6 +12,12 @@ export class BlogPersonaResponseDto {
   @ApiProperty({ example: 'Helena Vargas' })
   name: string;
 
+  @ApiProperty({
+    example: 'Imigração: política restritiva',
+    nullable: true,
+  })
+  tagline: string | null;
+
   @ApiProperty({ enum: BlogPersonaThemeDto })
   theme: BlogPersonaThemeDto;
 

@@ -267,10 +267,15 @@ Entidade independente: name, bio, avatar_url, website, twitter, linkedin
 BlogAuthor ─────────── BlogPersona (1:1) — byline pública da persona; a bio declara autoria por IA
 
 BlogPersona ────────── BlogPost (1:N) — colunista de IA (opcional)
-  theme: IMMIGRATION | TOURISM
-  editorial_stance: string (RESTRICTIONIST | PROGRESSIVE | DISCOVERY no seed)
+  theme: IMMIGRATION | TOURISM | CUISINE | GEOPOLITICS
+  tagline: String? (VARCHAR 120) — recorte do colunista, mostrado entre
+    parênteses no dropdown do newsroom
+  editorial_stance: string (RESTRICTIONIST | PROGRESSIVE | DISCOVERY |
+    BALANCED_TRAVEL | GASTRONOMY | ANALYST no seed)
   Guardrails de conteúdo NÃO moram na tabela — vivem em
-  `libs/ai/src/prompts/persona-guardrails.ts`
+  `libs/ai/src/prompts/persona-guardrails.ts`, em três blocos escolhidos pelo
+  tema: PERSONA_GUARDRAILS (IMMIGRATION), PERSONA_GUARDRAILS_LIFESTYLE
+  (TOURISM, CUISINE) e PERSONA_GUARDRAILS_ANALYSIS (GEOPOLITICS)
 
 BlogPost ──────────┬── BlogCategory (N:1)
                    ├── BlogPostTag (1:N) ──── BlogTag (N:M)
@@ -284,8 +289,8 @@ Slug e reading_time_min gerados automaticamente pelo Service
 is_ai_generated: Boolean — marca posts criados pelo AI Blog Generator
 original_locale: String (default "en") — idioma original do post
 persona_id, debate_group_id, moderation_flag — colunas de opinião (nulas nos posts sem persona)
-A API pública devolve `persona {slug,name,theme,editorial_stance}` e `counterpart_slug`
-do outro post publicado com o mesmo `debate_group_id`
+A API pública devolve `persona {slug,name,tagline,theme,editorial_stance}` e
+`counterpart_slug` do outro post publicado com o mesmo `debate_group_id`
 
 BlogPostTranslation — traduções de posts do blog
   Campos: id, post_id, locale ("pt"|"en"|"es"), title, excerpt, content,
@@ -476,10 +481,12 @@ apps/microservice/src/plan/
 apps/microservice/src/ai-blog/
 ├── ai-blog.service.ts         # Usa AiRouterService
 │   ├── fetchGoogleNewsRss()          # Busca Google News RSS (sem API key)
+│   │                                 # termos por tema; `topic` do admin sobrepõe
 │   └── generatePost()                # RSS → roteador → BlogPost DRAFT
 │       # sem persona: blog_writing_standard + PoliticalTone legado
-│       # persona IMMIGRATION: blog_writing_opinion + guardrails + auto-moderação
-│       # persona TOURISM: blog_writing_standard + voz da persona
+│       # persona IMMIGRATION/GEOPOLITICS: blog_writing_opinion + guardrails
+│       # persona TOURISM/CUISINE: blog_writing_standard + guardrails lifestyle
+│       # auto-moderação roda para toda persona, qualquer que seja o tema
 │       # generate_both_sides: 2 jobs com o mesmo debate_group_id
 ├── ai-blog-image.service.ts   # Capa (blog_image) — último elo da cadeia
 └── ai-blog-refine.service.ts  # Imagens inline (blog_image)
@@ -516,6 +523,14 @@ apps/microservice/src/ai-blog/
   para geração sem persona). Guardrails versionados em código são injetados **depois** do
   `persona_prompt`. Auto-moderação grava `moderation_flag`; draft flagado não bloqueia — só
   destaca na fila. Não existe caminho de auto-publish para post de persona.
+- **O tema da persona guia o pipeline inteiro**, não só a voz: escolhe os termos da busca no
+  Google News, o papel e o enunciado do prompt, o bloco de guardrails e o cenário de modelo.
+  Antes o tema era ignorado e o colunista de viagem escrevia sobre manchetes de imigração.
+  São três blocos de guardrails: o político (IMMIGRATION, com steelman), o de lifestyle
+  (TOURISM e CUISINE — **nada de política**, prós e contras honestos, nada de lugar, prato ou
+  preço inventado) e o de análise (GEOPOLITICS — apartidário, fato separado de análise, duas
+  leituras antes de pesar). O bloco político é o fallback de quem não tem tema, porque é o
+  mais restritivo.
 - **`@openrouter/sdk` não é usado**: é ESM-only e este repo é CommonJS com ts-jest. Fazê-lo
   importar exigiria `allowJs` no monorepo ou um segundo transformer. `fetch` é nativo no Node 22 e
   a superfície usada são dois endpoints.
