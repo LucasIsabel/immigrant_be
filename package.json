@@ -131,6 +131,7 @@
       "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
       "^@app/database(|/.*)$": "<rootDir>/libs/database/src/$1",
       "^@app/email(|/.*)$": "<rootDir>/libs/email/src/$1",
+      "^@app/immigration(|/.*)$": "<rootDir>/libs/immigration/src/$1",
     "^@app/ingestion(|/.*)$": "<rootDir>/libs/ingestion/src/$1",
       "^@app/storage(|/.*)$": "<rootDir>/libs/storage/src/$1",
       "^generated/prisma(|/.*)$": "<rootDir>/generated/prisma$1"
