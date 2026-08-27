@@ -170,6 +170,14 @@ model ImmigrationVisaType {
 model Country {
   id                        String                    @id @default(uuid()) @db.Uuid
   name                      String                    @unique
+  /// ISO 3166-1 alpha-2 code of the country, uppercase.
+  ///
+  /// Nullable because the column was added to 62 rows that already existed and
+  /// a country can be created through the admin API without it; the seed fills
+  /// every one of them. Unique when present, so two rows cannot claim the same
+  /// code — which would make `hasFreedomOfMovement` answer about the wrong
+  /// destination.
+  iso2                      String?                   @unique @db.VarChar(2)
   flag                      String
   region                    String
   difficulty                String
