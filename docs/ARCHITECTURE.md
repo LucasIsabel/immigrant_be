@@ -423,6 +423,22 @@ Isso não é preferência de estilo, é requisito: `visa_steps.visa_type_id` tem
 visto destrói os steps associados e desvincula o plano do usuário. Remoção de categoria obsoleta
 deve ser uma decisão humana explícita, nunca efeito colateral de rodar o seed.
 
+### Cobertura de steps — o guard contra tipo de visto sem checklist
+
+`countries.seed.ts` declara os tipos de visto que o usuário pode escolher; `prisma/seeds/visa-steps/`
+guarda o checklist de cada um, **casado pela string exata da categoria**. Nada além dessa string
+liga os dois arquivos, e a falha é silenciosa nas duas direções: categoria sem template faz o
+seed logar um aviso e não escrever nada, e o sintoma só aparece como `selectVisaType` devolvendo
+404 para quem escolher aquele visto; template sem categoria é pulado com a mesma discrição.
+
+Por isso a checagem é teste, não script opcional: `visa-steps-coverage.spec.ts` roda no
+`pnpm test` e cobre os dois sentidos. Ele mora em `apps/immigrant_be/src/visa-steps/` porque o
+jest só varre `apps` e `libs`, e lê as categorias do texto de `countries.seed.ts` via
+`prisma/seeds/visa-steps/country-categories.ts` — a lista vive dentro de `seedCountries()`, e
+importar aquele módulo construiria um `PrismaClient`. O mesmo helper alimenta o
+`validate.ts`, que continua sendo o caminho para rodar as checagens de conteúdo sem banco
+(`npx tsx prisma/seeds/visa-steps/validate.ts`).
+
 ---
 
 ### Tabelas de IA
@@ -509,9 +525,10 @@ apps/microservice/src/ai-blog/
   da conta inteira: quando acabam, nenhum modelo **pago** dela responde, e uma cadeia só de
   pagos não teria para onde cair. Dois elos satisfazem isso: `gemini-direct:` (outro provider,
   outra cobrança) ou um modelo **`:free`** — que atravessa o cooldown de 15 min de propósito,
-  porque o cooldown existe para chamadas pagas e o free segue respondendo a custo zero. Os
-  cenários do app da API invertem a forma clássica: `gemini-direct:` como **primário** (é o
-  modelo que essas rotas sempre usaram) e `:free` no fim.
+  porque o cooldown existe para chamadas pagas e o free segue respondendo a custo zero. Nos
+  cenários do app da API quem cumpre esse papel hoje é o `:free` do fim da cadeia
+  (`minimax/minimax-m3:free`), e não um elo `gemini-direct:` — ver o bullet das rotas de IA
+  do app da API mais abaixo.
 - **Um 402 coloca a OpenRouter em cooldown de 15 min** para não martelar a API a cada job —
   exceto para modelos `:free`, que continuam sendo tentados (ver acima).
 - **402 e 429 são erros diferentes.** 402 = créditos, não vale reesperar. 429 = rate limit, vale
@@ -547,13 +564,27 @@ apps/microservice/src/ai-blog/
   (`quiz_suggestions`), recomendação de visto (`visa_recommendation`), tradução de steps
   (`visa_steps_translation`) e moderação (`business_moderation`) chamavam o Gemini cru e
   ficaram sem segunda opção quando o crédito pré-pago esgotou — enquanto o worker inteiro
-  seguia respondendo pelas cadeias. O primário de cada uma é o modelo que sempre usaram,
-  então a migração não trocou modelo nenhum: com Gemini saudável, comportamento idêntico.
-- **Sugestão sem embedding é gravada mesmo assim.** `generateEmbeddings` degrada para `null`
-  quando o Gemini está fora — e o `createSuggestions` do repositório recusava o null,
-  transformando degradação em outage: a sugestão que a cadeia tinha acabado de gerar era
-  barrada na porta. A coluna é nullable; linha sem vetor só não participa do lookup de
-  similaridade. Medido ao provar o aceite da #151.
+  seguia respondendo pelas cadeias. **A cadeia dessas quatro é ordenada por latência medida**,
+  não pelo modelo que a rota usava antes: tem gente olhando para um spinner. Medido em
+  produção em 27/08/2026 com prompt do tamanho do quiz — `google/gemini-3.1-flash-lite` 1,3 s,
+  `minimax/minimax-m3:free` 3,3 s, `deepseek/deepseek-v4-flash` 50 s isolado e 100 s dentro
+  do request real. O `z-ai/glm-5.2:free` saiu porque o provider dele respondia 429: como
+  último recurso, não era recurso nenhum. O `gemini-direct:gemini-2.5-flash-lite` saiu da
+  cadeia só enquanto o crédito pré-pago do Google AI Studio estiver esgotado — ele responde
+  429, embeddings incluídos. Restaurado o crédito, volta pelo painel admin, sem deploy.
+  **A linha em `ai_model_configs` sombreia o default do código**, então mudar o default não
+  muda produção: quem move produção é a migração de dados
+  (`20260827090000_ai_chain_faster_fallbacks`), escrita para tocar só as linhas que ainda
+  tinham o default antigo — quem já editou pelo painel é dono da própria escolha.
+- **Sugestão e recomendação sem embedding são gravadas mesmo assim.** `generateEmbeddings`
+  degrada para `null` quando o Gemini está fora — e o repositório recusava o null,
+  transformando degradação em outage: o que a cadeia tinha acabado de gerar era barrado na
+  porta. A coluna é nullable; linha sem vetor só não participa do lookup de similaridade.
+  Vale para `createSuggestions` (medido ao provar o aceite da #151) e para
+  `createVisaTypeRecommendation`, que ficou com o mesmo defeito uma camada abaixo e
+  devolvia 500 em `getSelectedBestVisaType`. O guard de 768 dimensões continua valendo para
+  vetor que **existe**: largura errada envenena a busca por similaridade, ausência de vetor
+  não.
 - **`GeminiService` (system) ainda estende `GeminiBaseService`, mas só pelos embeddings** —
   a OpenRouter não tem endpoint de embeddings. `plan` segue no legado.
 - Modelo de embeddings: `gemini-embedding-001` (fora do roteador)
