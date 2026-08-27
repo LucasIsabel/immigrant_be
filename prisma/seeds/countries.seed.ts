@@ -1,4 +1,5 @@
 import { PrismaClient } from '../../generated/prisma';
+import { catalogueFieldsFor } from './visa-catalogue';
 
 const prisma = new PrismaClient();
 
@@ -6822,6 +6823,12 @@ export async function seedCountries() {
           (existing) => existing.category === visaType.category,
         );
 
+        // Processing time, cost and requirements are not authored here: they
+        // are derived in `visa-catalogue.ts` from the country translations and
+        // the step templates, so the one place a figure can enter the
+        // catalogue is the one place its provenance is written down.
+        const catalogue = catalogueFieldsFor(country.name, visaType.category);
+
         if (match) {
           // Update in place so the id survives and dependent rows stay linked.
           await prisma.immigrationVisaType.update({
@@ -6829,6 +6836,7 @@ export async function seedCountries() {
             data: {
               description: visaType.description,
               source: visaType.source,
+              ...catalogue,
             },
           });
         } else {
@@ -6838,6 +6846,7 @@ export async function seedCountries() {
               category: visaType.category,
               description: visaType.description,
               source: visaType.source,
+              ...catalogue,
             },
           });
         }

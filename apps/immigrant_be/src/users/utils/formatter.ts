@@ -14,17 +14,30 @@ export type PlanWithRelations = Prisma.PlansGetPayload<{
   };
 }>;
 
+/**
+ * Projection of one visa type into the plan response.
+ *
+ * Written once and reused for the list and for `selected_visa_type`: the two
+ * were copies of the same field list, and the catalogue fields would have had
+ * to be added to both, which is exactly how one of them ends up missing a
+ * field the frontend then reads as undefined.
+ */
+const formatVisaType = (
+  visaType: ImmigrationVisaType,
+): PlanImmigrationVisaTypeDto => ({
+  id: visaType.id,
+  category: visaType.category,
+  description: visaType.description,
+  source: visaType.source,
+  processing_time: visaType.processing_time,
+  estimated_cost: visaType.estimated_cost,
+  main_requirements: visaType.main_requirements,
+  country_id: visaType.country_id,
+});
+
 const formatVisaTypes = (
   visaTypes: ImmigrationVisaType[],
-): PlanImmigrationVisaTypeDto[] => {
-  return visaTypes.map((visaType) => ({
-    id: visaType.id,
-    category: visaType.category,
-    description: visaType.description,
-    source: visaType.source,
-    country_id: visaType.country_id,
-  }));
-};
+): PlanImmigrationVisaTypeDto[] => visaTypes.map(formatVisaType);
 
 export const formatPlanResponse = (
   data: PlanWithRelations,
@@ -54,13 +67,7 @@ export const formatPlanResponse = (
     selected_visa_type_id: data.selected_visa_type_id ?? undefined,
     visa_types: formatVisaTypes(visaTypes),
     selected_visa_type: data.selected_visa_type
-      ? {
-          id: data.selected_visa_type.id,
-          category: data.selected_visa_type.category,
-          description: data.selected_visa_type.description,
-          source: data.selected_visa_type.source,
-          country_id: data.selected_visa_type.country_id,
-        }
+      ? formatVisaType(data.selected_visa_type)
       : undefined,
   };
 };

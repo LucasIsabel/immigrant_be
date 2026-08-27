@@ -19,6 +19,37 @@ class ImmigrationVisaTypeEmbeddedDto {
   @ApiProperty({ description: 'Source URL or reference', type: String })
   source: string;
 
+  @ApiProperty({
+    description:
+      'How long the route takes, in the wording of the source it was taken ' +
+      'from. Null when nothing states it for this specific visa type.',
+    example: '80% of PR applications within 6 months',
+    type: String,
+    nullable: true,
+    required: false,
+  })
+  processing_time: string | null;
+
+  @ApiProperty({
+    description:
+      'Money the route demands (income threshold, investment or fees), in ' +
+      'the wording of the source. Null when nothing states it.',
+    example: 'EB-5: US$800,000 in a targeted employment area',
+    type: String,
+    nullable: true,
+    required: false,
+  })
+  estimated_cost: string | null;
+
+  @ApiProperty({
+    description:
+      'The documents the route requires, taken verbatim from the step ' +
+      'template. Empty when the template records none.',
+    example: ['Valid passport', 'Proof of accommodation'],
+    type: [String],
+  })
+  main_requirements: string[];
+
   @ApiProperty({ description: 'Country ID', type: String })
   country_id: string;
 
