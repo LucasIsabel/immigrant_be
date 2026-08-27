@@ -47,27 +47,39 @@ export const DEFAULT_MODEL_CHAINS: Record<
     ],
   },
   /**
-   * The four API-app scenarios share one chain shape, and the primary is the
-   * exact model these paths called directly before they went through the
-   * router — so with Gemini healthy this is a fix, not a hidden model swap.
-   * The `:free` tail is the zero-cost safety net for the day BOTH paid
-   * providers are out, which is the incident that created these scenarios.
+   * The four API-app scenarios share one chain shape. A person is waiting on
+   * all four, so the chain is ordered by measured latency rather than by which
+   * model these paths used to call directly.
+   *
+   * Timed in production on 2026-08-27 with a quiz-sized prompt:
+   * `google/gemini-3.1-flash-lite` 1.3 s, `minimax/minimax-m3:free` 3.3 s,
+   * `nvidia/nemotron-3.5-lightning:free` 10.4 s, `deepseek/deepseek-v4-flash`
+   * 50 s in isolation and 100 s inside the real request. `z-ai/glm-5.2:free`
+   * was dropped: its provider answered 429, so as a last resort it was no
+   * resort at all. `minimax/minimax-m3:free` takes that seat — still the
+   * zero-cost net for the day both paid providers are out, but one that
+   * actually answers.
+   *
+   * `gemini-direct:gemini-2.5-flash-lite` is out of the chain only while the
+   * Google AI Studio prepay credit is exhausted (it 429s, embeddings included).
+   * When the credit is restored it can be put back from the admin panel, with
+   * no deploy — the row shadows this default.
    */
   quiz_suggestions: {
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   visa_recommendation: {
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   visa_steps_translation: {
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   business_moderation: {
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   blog_image: {
     primaryModel: 'bytedance-seed/seedream-5-0-lite',
