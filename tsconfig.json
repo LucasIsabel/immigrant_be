@@ -27,6 +27,8 @@
       "@app/config": ["libs/config/src"],
       "@app/config/*": ["libs/config/src/*"],
       "@app/database": ["libs/database/src"],
+      "@app/immigration": ["libs/immigration/src"],
+      "@app/immigration/*": ["libs/immigration/src/*"],
       "@app/ingestion": ["libs/ingestion/src"],
       "@app/ingestion/*": ["libs/ingestion/src/*"],
       "@app/database/*": ["libs/database/src/*"],

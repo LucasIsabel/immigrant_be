@@ -81,6 +81,7 @@ immigrant_be/
 │   ├── config/                 # Configuração da app + setup do better-auth
 │   ├── database/               # PrismaService (módulo global)
 │   ├── ai/                     # AiRouterService (multi-provider) + GeminiBaseService
+│   ├── immigration/            # Regras de imigração puras (livre circulação UE/EEE/Suíça)
 │   ├── ingestion/              # Port de despacho da ingestão de lugares + adapter BullMQ
 │   └── email/                  # Envio de emails via Resend
 │   └── storage/                # StorageService (Cloudflare R2 via S3)
@@ -106,6 +107,7 @@ immigrant_be/
 | `@app/ai/*`       | `libs/ai/src/*`       |
 | `@app/config/*`   | `libs/config/src/*`   |
 | `@app/database/*` | `libs/database/src/*` |
+| `@app/immigration` | `libs/immigration/src` |
 | `@app/ingestion`  | `libs/ingestion/src`  |
 | `@app/email/*`    | `libs/email/src/*`    |
 | `@app/storage/*`  | `libs/storage/src/*`  |
@@ -214,13 +216,21 @@ Countries ─────┬──── CountryTranslation (1:N) — todo o tex
                ├──── Plans (1:N)
                ├──── AiBlogCronJob (1:N) — cron jobs de geração automática
                └──── Place (1:N, opcional) — FK anulável; ver abaixo
+  `iso2` (VarChar(2), anulável, único quando presente) é o código ISO 3166-1
+  alpha-2 do país. Existe porque `name` não serve para decidir regra: a livre
+  circulação UE/EEE/Suíça compara dois códigos, e sem a coluna o destino não
+  tinha como ser comparado com o passaporte. Anulável só porque a coluna nasceu
+  em 62 linhas já existentes e o admin pode criar país sem ela — o seed preenche
+  todos os 62, e a etapa de reconciliação reescreve o valor a cada execução.
 
 Place ─────────── PlaceTranslation (1:N) — só description e tip
   category: LANDMARK | MUSEUM | NATURE | BEACH | VIEWPOINT | FOOD_MARKET | NIGHTLIFE | NEIGHBORHOOD
   A chave de busca é `countryCode` (ISO2), não o FK: o seletor do frontend
-  trabalha com ISO2 vindo do CountriesNow, e `Country` só tem `name`. O FK liga
-  o lugar ao destino de imigração quando ele existe, e é anulável porque nem
-  todo país com lugar precisa ser destino.
+  trabalha com ISO2 vindo do CountriesNow, e o lugar existe para países que não
+  são destino de imigração e portanto não têm linha em `countries` (a coluna
+  `Country.iso2` cobre só os 62 destinos). O FK liga o lugar ao destino de
+  imigração quando ele existe, e é anulável porque nem todo país com lugar
+  precisa ser destino.
   `city` é string livre, como em `Business` — não existe model City. O valor tem
   de ser o do CountriesNow ("Lisbon", não "Lisboa"), senão a cidade escolhida
   no frontend nunca casa com os lugares. `name` não é traduzido de propósito:
@@ -466,6 +476,38 @@ mais barato um visto que não declarou prazo nem custo. `visa-catalogue.spec.ts`
 trava as três invariantes: fato ancorado em categoria inexistente, contagem de
 preenchimento e instrução vazando para a lista de requisitos.
 
+### Livre circulação — a regra que não passa pelo modelo
+
+`libs/immigration` exporta `FREEDOM_OF_MOVEMENT_COUNTRIES` (conjunto ISO2) e
+`hasFreedomOfMovement(passaporte, destino)`. É biblioteca pura, sem Nest e sem
+Prisma, porque a resposta é função de dois códigos e de mais nada.
+
+**A lista é UE + EEE + Suíça, não Schengen.** Os dois conjuntos se parecem e
+não são o mesmo: Islândia, Liechtenstein e Noruega estão no EEE e fora da UE
+(o acordo do EEE estende a livre circulação de pessoas); a Suíça tem o direito
+por acordo bilateral; Irlanda e Chipre estão na UE e fora de Schengen, e a
+livre circulação vale igual; Turquia e Reino Unido não estão em nenhum dos
+grupos. Montar a lista a partir de Schengen erraria todos esses casos.
+
+Quem decide é o backend, nunca a IA. `SystemService.getSelectedBestVisaType`
+compara `UserDetailsQueryDto.nationality` com `Country.iso2`, devolve
+`freedom_of_movement` na resposta **e** manda a mesma decisão para o prompt
+(`buildBestVisaTypePrompt(..., { freedomOfMovement: true })`), que então
+explica que não há visto a pedir e fala de registro. O booleano e a prosa saem
+da mesma fonte de propósito: um "não precisa de visto" ao lado de um parágrafo
+sobre visto de residência é pior do que qualquer um dos dois sozinho. No quiz,
+`SuggestionItem.freedom_of_movement` é preenchido por sugestão depois do
+enriquecimento com o cadastro, e `buildCountriesMatchPrompt` recebe a mesma
+regra para que os `reasons` concordem.
+
+Os dois caches são seguros porque já são chaveados pelos parâmetros inteiros:
+`visa_type_recommendations` por `(country_id, parameters, language)`, com
+`parameters` sendo o DTO completo — `nationality` incluída —, e `suggestions`
+pelo JSON canônico dos `steps`, que carrega o passo `NATIONALITY`. Uma linha
+gravada para um passaporte não pode ser servida a outro. Ainda assim o campo é
+**recalculado na leitura**, não lido do JSON gravado: as linhas anteriores a
+esta mudança não o têm, e um booleano ausente é lido como "precisa de visto".
+
 ---
 
 ### Tabelas de IA
@@ -501,8 +543,8 @@ libs/ai/                              # Biblioteca compartilhada de IA
 │   ├── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
 │   └── business-page-moderation.schema.ts # Entrada/saída da moderação de páginas (admin)
 └── prompts/                          # Templates de prompts centralizados
-    ├── countries-match.prompt.ts
-    ├── best-visa-type.prompt.ts
+    ├── countries-match.prompt.ts       # regra da livre circulação junto dos critérios
+    ├── best-visa-type.prompt.ts        # bloco extra sob `{ freedomOfMovement: true }`
     ├── blog-post.prompt.ts           # buildBlogPostPrompt() — usa Google News RSS
     ├── blog-translation.prompt.ts    # buildBlogTranslationPrompt() — preserva Markdown
     └── business-page-moderation.prompt.ts # Moderação de conteúdo de páginas públicas (admin)

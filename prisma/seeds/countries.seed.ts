@@ -7,6 +7,7 @@ export async function seedCountries() {
   const countries = [
     {
       name: 'Spain',
+      iso2: 'ES',
       flag: '🇪🇸',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -108,6 +109,7 @@ export async function seedCountries() {
     },
     {
       name: 'United Kingdom',
+      iso2: 'GB',
       flag: '🇬🇧',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -218,6 +220,7 @@ export async function seedCountries() {
     },
     {
       name: 'Canada',
+      iso2: 'CA',
       flag: '🇨🇦',
       region: 'North America',
       difficulty: 'Moderate',
@@ -338,6 +341,7 @@ export async function seedCountries() {
     },
     {
       name: 'Australia',
+      iso2: 'AU',
       flag: '🇦🇺',
       region: 'Oceania',
       difficulty: 'Moderate',
@@ -450,6 +454,7 @@ export async function seedCountries() {
     },
     {
       name: 'Japan',
+      iso2: 'JP',
       flag: '🇯🇵',
       region: 'Asia',
       difficulty: 'Hard',
@@ -565,6 +570,7 @@ export async function seedCountries() {
     },
     {
       name: 'Germany',
+      iso2: 'DE',
       flag: '🇩🇪',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -671,6 +677,7 @@ export async function seedCountries() {
     },
     {
       name: 'New Zealand',
+      iso2: 'NZ',
       flag: '🇳🇿',
       region: 'Oceania',
       difficulty: 'Moderate',
@@ -777,6 +784,7 @@ export async function seedCountries() {
     },
     {
       name: 'Ireland',
+      iso2: 'IE',
       flag: '🇮🇪',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -889,6 +897,7 @@ export async function seedCountries() {
     },
     {
       name: 'France',
+      iso2: 'FR',
       flag: '🇫🇷',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -989,6 +998,7 @@ export async function seedCountries() {
     },
     {
       name: 'Sweden',
+      iso2: 'SE',
       flag: '🇸🇪',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -1092,6 +1102,7 @@ export async function seedCountries() {
     },
     {
       name: 'Switzerland',
+      iso2: 'CH',
       flag: '🇨🇭',
       region: 'Europe',
       difficulty: 'Hard',
@@ -1193,6 +1204,7 @@ export async function seedCountries() {
     },
     {
       name: 'United States',
+      iso2: 'US',
       flag: '🇺🇸',
       region: 'North America',
       difficulty: 'Hard',
@@ -1334,6 +1346,7 @@ export async function seedCountries() {
     },
     {
       name: 'Singapore',
+      iso2: 'SG',
       flag: '🇸🇬',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -1435,6 +1448,7 @@ export async function seedCountries() {
     },
     {
       name: 'United Arab Emirates',
+      iso2: 'AE',
       flag: '🇦🇪',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -1537,6 +1551,7 @@ export async function seedCountries() {
     },
     {
       name: 'South Korea',
+      iso2: 'KR',
       flag: '🇰🇷',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -1640,6 +1655,7 @@ export async function seedCountries() {
     },
     {
       name: 'Netherlands',
+      iso2: 'NL',
       flag: '🇳🇱',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -1755,6 +1771,7 @@ export async function seedCountries() {
     },
     {
       name: 'Italy',
+      iso2: 'IT',
       flag: '🇮🇹',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -1856,6 +1873,7 @@ export async function seedCountries() {
     },
     {
       name: 'Argentina',
+      iso2: 'AR',
       flag: '🇦🇷',
       region: 'South America',
       difficulty: 'Easy',
@@ -1962,6 +1980,7 @@ export async function seedCountries() {
     },
     {
       name: 'Chile',
+      iso2: 'CL',
       flag: '🇨🇱',
       region: 'South America',
       difficulty: 'Moderate',
@@ -2063,6 +2082,7 @@ export async function seedCountries() {
     },
     {
       name: 'Austria',
+      iso2: 'AT',
       flag: '🇦🇹',
       region: 'Europe',
       difficulty: 'Hard',
@@ -2168,6 +2188,7 @@ export async function seedCountries() {
     },
     {
       name: 'Poland',
+      iso2: 'PL',
       flag: '🇵🇱',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -2283,6 +2304,7 @@ export async function seedCountries() {
     },
     {
       name: 'Finland',
+      iso2: 'FI',
       flag: '🇫🇮',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -2387,6 +2409,7 @@ export async function seedCountries() {
     },
     {
       name: 'Portugal',
+      iso2: 'PT',
       flag: '🇵🇹',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -2495,6 +2518,7 @@ export async function seedCountries() {
     },
     {
       name: 'Mexico',
+      iso2: 'MX',
       flag: '🇲🇽',
       region: 'North America',
       difficulty: 'Easy',
@@ -2602,6 +2626,7 @@ export async function seedCountries() {
     },
     {
       name: 'Norway',
+      iso2: 'NO',
       flag: '🇳🇴',
       region: 'Europe',
       difficulty: 'Hard',
@@ -2710,6 +2735,7 @@ export async function seedCountries() {
     },
     {
       name: 'Denmark',
+      iso2: 'DK',
       flag: '🇩🇰',
       region: 'Europe',
       difficulty: 'Hard',
@@ -2819,6 +2845,7 @@ export async function seedCountries() {
     },
     {
       name: 'Belgium',
+      iso2: 'BE',
       flag: '🇧🇪',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -2929,6 +2956,7 @@ export async function seedCountries() {
     },
     {
       name: 'Czechia',
+      iso2: 'CZ',
       flag: '🇨🇿',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -3037,6 +3065,7 @@ export async function seedCountries() {
     },
     {
       name: 'Greece',
+      iso2: 'GR',
       flag: '🇬🇷',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -3145,6 +3174,7 @@ export async function seedCountries() {
     },
     {
       name: 'Thailand',
+      iso2: 'TH',
       flag: '🇹🇭',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -3255,6 +3285,7 @@ export async function seedCountries() {
     },
     {
       name: 'Brazil',
+      iso2: 'BR',
       flag: '🇧🇷',
       region: 'South America',
       difficulty: 'Easy',
@@ -3371,6 +3402,7 @@ export async function seedCountries() {
     },
     {
       name: 'Uruguay',
+      iso2: 'UY',
       flag: '🇺🇾',
       region: 'South America',
       difficulty: 'Easy',
@@ -3484,6 +3516,7 @@ export async function seedCountries() {
     },
     {
       name: 'Panama',
+      iso2: 'PA',
       flag: '🇵🇦',
       region: 'North America',
       difficulty: 'Easy',
@@ -3592,6 +3625,7 @@ export async function seedCountries() {
     },
     {
       name: 'Costa Rica',
+      iso2: 'CR',
       flag: '🇨🇷',
       region: 'North America',
       difficulty: 'Easy',
@@ -3700,6 +3734,7 @@ export async function seedCountries() {
     },
     {
       name: 'Malta',
+      iso2: 'MT',
       flag: '🇲🇹',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -3811,6 +3846,7 @@ export async function seedCountries() {
     },
     {
       name: 'Croatia',
+      iso2: 'HR',
       flag: '🇭🇷',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -3920,6 +3956,7 @@ export async function seedCountries() {
     },
     {
       name: 'Estonia',
+      iso2: 'EE',
       flag: '🇪🇪',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -4027,6 +4064,7 @@ export async function seedCountries() {
     },
     {
       name: 'Hungary',
+      iso2: 'HU',
       flag: '🇭🇺',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -4134,6 +4172,7 @@ export async function seedCountries() {
     },
     {
       name: 'Turkey',
+      iso2: 'TR',
       flag: '🇹🇷',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -4242,6 +4281,7 @@ export async function seedCountries() {
     },
     {
       name: 'Colombia',
+      iso2: 'CO',
       flag: '🇨🇴',
       region: 'South America',
       difficulty: 'Easy',
@@ -4344,6 +4384,7 @@ export async function seedCountries() {
     },
     {
       name: 'Paraguay',
+      iso2: 'PY',
       flag: '🇵🇾',
       region: 'South America',
       difficulty: 'Easy',
@@ -4457,6 +4498,7 @@ export async function seedCountries() {
     },
     {
       name: 'Malaysia',
+      iso2: 'MY',
       flag: '🇲🇾',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -4570,6 +4612,7 @@ export async function seedCountries() {
     },
     {
       name: 'Israel',
+      iso2: 'IL',
       flag: '🇮🇱',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -4682,6 +4725,7 @@ export async function seedCountries() {
     },
     {
       name: 'Qatar',
+      iso2: 'QA',
       flag: '🇶🇦',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -4790,6 +4834,7 @@ export async function seedCountries() {
     },
     {
       name: 'Indonesia',
+      iso2: 'ID',
       flag: '🇮🇩',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -4898,6 +4943,7 @@ export async function seedCountries() {
     },
     {
       name: 'Romania',
+      iso2: 'RO',
       flag: '🇷🇴',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -5005,6 +5051,7 @@ export async function seedCountries() {
     },
     {
       name: 'Luxembourg',
+      iso2: 'LU',
       flag: '🇱🇺',
       region: 'Europe',
       difficulty: 'Hard',
@@ -5120,6 +5167,7 @@ export async function seedCountries() {
     },
     {
       name: 'Cyprus',
+      iso2: 'CY',
       flag: '🇨🇾',
       region: 'Europe',
       difficulty: 'Moderate',
@@ -5230,6 +5278,7 @@ export async function seedCountries() {
     },
     {
       name: 'Iceland',
+      iso2: 'IS',
       flag: '🇮🇸',
       region: 'Europe',
       difficulty: 'Hard',
@@ -5337,6 +5386,7 @@ export async function seedCountries() {
     },
     {
       name: 'Peru',
+      iso2: 'PE',
       flag: '🇵🇪',
       region: 'South America',
       difficulty: 'Easy',
@@ -5445,6 +5495,7 @@ export async function seedCountries() {
     },
     {
       name: 'Dominican Republic',
+      iso2: 'DO',
       flag: '🇩🇴',
       region: 'North America',
       difficulty: 'Easy',
@@ -5558,6 +5609,7 @@ export async function seedCountries() {
     },
     {
       name: 'Ecuador',
+      iso2: 'EC',
       flag: '🇪🇨',
       region: 'South America',
       difficulty: 'Easy',
@@ -5666,6 +5718,7 @@ export async function seedCountries() {
     },
     {
       name: 'Vietnam',
+      iso2: 'VN',
       flag: '🇻🇳',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -5777,6 +5830,7 @@ export async function seedCountries() {
     },
     {
       name: 'Philippines',
+      iso2: 'PH',
       flag: '🇵🇭',
       region: 'Asia',
       difficulty: 'Easy',
@@ -5886,6 +5940,7 @@ export async function seedCountries() {
     },
     {
       name: 'Taiwan',
+      iso2: 'TW',
       flag: '🇹🇼',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -5997,6 +6052,7 @@ export async function seedCountries() {
     },
     {
       name: 'Hong Kong',
+      iso2: 'HK',
       flag: '🇭🇰',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -6112,6 +6168,7 @@ export async function seedCountries() {
     },
     {
       name: 'China',
+      iso2: 'CN',
       flag: '🇨🇳',
       region: 'Asia',
       difficulty: 'Hard',
@@ -6223,6 +6280,7 @@ export async function seedCountries() {
     },
     {
       name: 'India',
+      iso2: 'IN',
       flag: '🇮🇳',
       region: 'Asia',
       difficulty: 'Hard',
@@ -6334,6 +6392,7 @@ export async function seedCountries() {
     },
     {
       name: 'Saudi Arabia',
+      iso2: 'SA',
       flag: '🇸🇦',
       region: 'Asia',
       difficulty: 'Moderate',
@@ -6444,6 +6503,7 @@ export async function seedCountries() {
     },
     {
       name: 'South Africa',
+      iso2: 'ZA',
       flag: '🇿🇦',
       region: 'Africa',
       difficulty: 'Moderate',
@@ -6555,6 +6615,7 @@ export async function seedCountries() {
     },
     {
       name: 'Morocco',
+      iso2: 'MA',
       flag: '🇲🇦',
       region: 'Africa',
       difficulty: 'Easy',
@@ -6666,6 +6727,7 @@ export async function seedCountries() {
     },
     {
       name: 'Egypt',
+      iso2: 'EG',
       flag: '🇪🇬',
       region: 'Africa',
       difficulty: 'Easy',
@@ -6790,6 +6852,11 @@ export async function seedCountries() {
       background_image: countryInfo.background_image ?? '',
     };
 
+    // `iso2` travels inside `countryInfo`, so the update branch rewrites it on
+    // every run. That is deliberate: the column is what decides whether a
+    // passport carries freedom of movement into this country, and a row that
+    // lost it would quietly turn a "no visa needed" into a visa
+    // recommendation. Nothing here may narrow the update to the create path.
     const country = await prisma.country.upsert({
       where: { name: countryDataWithImage.name },
       update: countryDataWithImage,

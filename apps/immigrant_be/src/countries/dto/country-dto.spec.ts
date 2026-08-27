@@ -91,6 +91,11 @@ describe('country DTOs', () => {
       'difficulty_score',
       'flag',
       'id',
+      // Filled by the seed for all 62 destinations. Deliberately absent from
+      // the two DTOs below: the admin panel has no field for it, and a country
+      // created there is not a freedom-of-movement destination until the seed
+      // gives it a code.
+      'iso2',
       'job_market',
       'name',
       'popular_cities',

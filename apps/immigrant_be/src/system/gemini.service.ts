@@ -11,6 +11,7 @@ import {
   buildCountriesMatchPrompt,
   buildBestVisaTypePrompt,
   stripEmDashes,
+  type BestVisaTypePromptOptions,
 } from '@app/ai';
 
 /**
@@ -74,11 +75,13 @@ export class GeminiService extends GeminiBaseService {
       main_requirements?: string[] | null;
     }>,
     language: string,
+    options: BestVisaTypePromptOptions = {},
   ): Promise<VisaRecommendationType | null> {
     const prompt = buildBestVisaTypePrompt(
       userDetails,
       immigrationVisaTypes,
       language,
+      options,
     );
 
     const { data: parsed } = await this.aiRouter.generateJson(

@@ -43,7 +43,10 @@ export {
   type VisaRecommendationType,
 } from './schemas/visa-recommendation.schema';
 export { buildCountriesMatchPrompt } from './prompts/countries-match.prompt';
-export { buildBestVisaTypePrompt } from './prompts/best-visa-type.prompt';
+export {
+  buildBestVisaTypePrompt,
+  type BestVisaTypePromptOptions,
+} from './prompts/best-visa-type.prompt';
 export {
   blogPostAiSchema,
   type BlogPostAiResponse,

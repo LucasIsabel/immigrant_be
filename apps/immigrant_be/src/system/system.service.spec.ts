@@ -343,7 +343,15 @@ describe('SystemService - createSuggestions', () => {
     expect(gemini.generateSuggestions).not.toHaveBeenCalled();
     expect(gemini.generateEmbeddings).not.toHaveBeenCalled();
     expect(repository.createSuggestions).not.toHaveBeenCalled();
-    expect(result).toEqual(cachedResponse);
+    // `freedom_of_movement` is recomputed on read rather than served from the
+    // snapshot, so a row written before the field existed comes back with it.
+    expect(result).toEqual({
+      ...cachedResponse,
+      suggestions: cachedResponse.suggestions.map((suggestion) => ({
+        ...suggestion,
+        freedom_of_movement: false,
+      })),
+    });
   });
 
   it('should call Gemini and create suggestions when no cache exists', async () => {
@@ -395,6 +403,7 @@ describe('SystemService - createSuggestions', () => {
       expect(result).toEqual({
         id: 'visa-type-1',
         explanations: 'Best fit for a software engineer moving for work.',
+        freedom_of_movement: false,
       });
       expect(repository.createVisaTypeRecommendation).toHaveBeenCalledWith(
         'country-1',
@@ -403,6 +412,164 @@ describe('SystemService - createSuggestions', () => {
         { profession: 'Software Engineer' },
         'en',
       );
+    });
+  });
+
+  // ── Livre circulação UE/EEE/Suíça ───────────────────────────
+
+  describe('freedom of movement', () => {
+    const spain = {
+      id: 'es',
+      name: 'Spain',
+      iso2: 'ES',
+      flag: '🇪🇸',
+      background_image: '',
+      immigration_visa_types: [{ id: 'visa-type-1', category: 'Work Visa' }],
+    };
+    const brazil = {
+      id: 'br',
+      name: 'Brazil',
+      iso2: 'BR',
+      flag: '🇧🇷',
+      background_image: '',
+    };
+
+    const recommendation = {
+      recommended_visa_type_id: 'visa-type-1',
+      explanations: 'No visa is required; you register your residence.',
+    };
+
+    const arrangeRecommendation = () => {
+      mockCountryService.getCountryById.mockResolvedValue(spain);
+      gemini.generateEmbeddings.mockResolvedValue(null);
+      repository.getBestVisaTypeRecommendation.mockResolvedValue(null);
+      gemini.generateVisaSuggestion.mockResolvedValue(recommendation);
+      repository.createVisaTypeRecommendation.mockResolvedValue({
+        visa_type_recommendation_id: 'rec-1',
+      });
+    };
+
+    /**
+     * O bug: um português mudando para a Espanha recebia "Residence Visa
+     * (Type D)". Não existe visto a pedir — a livre circulação dispensa, e o
+     * que resta é registro.
+     */
+    it('marks the recommendation and instructs the prompt for PT to ES', async () => {
+      arrangeRecommendation();
+
+      const result = await service.getSelectedBestVisaType(
+        { nationality: 'PT' },
+        'es',
+        'en',
+      );
+
+      expect(result?.freedom_of_movement).toBe(true);
+      // A prosa não pode contradizer o booleano: a mesma decisão vai para o
+      // prompt como instrução.
+      expect(gemini.generateVisaSuggestion).toHaveBeenCalledWith(
+        { nationality: 'PT' },
+        spain.immigration_visa_types,
+        'en',
+        { freedomOfMovement: true },
+      );
+    });
+
+    it('does not mark it for BR to ES', async () => {
+      arrangeRecommendation();
+
+      const result = await service.getSelectedBestVisaType(
+        { nationality: 'BR' },
+        'es',
+        'en',
+      );
+
+      expect(result?.freedom_of_movement).toBe(false);
+      expect(gemini.generateVisaSuggestion).toHaveBeenCalledWith(
+        { nationality: 'BR' },
+        spain.immigration_visa_types,
+        'en',
+        { freedomOfMovement: false },
+      );
+    });
+
+    /**
+     * O cache é chaveado por (country_id, parameters, language), e
+     * `parameters` é o DTO inteiro — nacionalidade incluída. Uma linha
+     * gravada para um passaporte não pode ser servida para outro; o que este
+     * teste garante é que a resposta em cache também traz o campo, mesmo
+     * tendo sido gravada antes de ele existir.
+     */
+    it('carries the flag on a cache hit too', async () => {
+      mockCountryService.getCountryById.mockResolvedValue(spain);
+      gemini.generateEmbeddings.mockResolvedValue(null);
+      repository.getBestVisaTypeRecommendation.mockResolvedValue({
+        gemini_response: recommendation,
+      });
+
+      const result = await service.getSelectedBestVisaType(
+        { nationality: 'PT' },
+        'es',
+        'en',
+      );
+
+      expect(result?.freedom_of_movement).toBe(true);
+      expect(gemini.generateVisaSuggestion).not.toHaveBeenCalled();
+    });
+
+    it('marks only the EU suggestions of an EU passport in the quiz', async () => {
+      repository.getRawSuggestionsWithParameters.mockResolvedValue(null);
+      gemini.generateSuggestions.mockResolvedValue({
+        suggestions: [
+          { ...geminiSuggestions.suggestions[0], country: 'Spain' },
+          { ...geminiSuggestions.suggestions[0], country: 'Brazil' },
+        ],
+      });
+      gemini.generateEmbeddings.mockResolvedValue(new Array(768).fill(0.1));
+      mockCountryService.findOneByName.mockImplementation((name: string) =>
+        Promise.resolve(name === 'Spain' ? spain : brazil),
+      );
+      repository.createSuggestions.mockResolvedValue({
+        suggestion_id: 'new-id',
+      });
+
+      const steps = [
+        ...makeSteps(),
+        { type: StepType.NATIONALITY, answer: 'PT' },
+      ];
+      const result = await service.createSuggestions({
+        steps: steps as any,
+        parameters: { steps } as any,
+        language: 'en',
+      });
+
+      expect(
+        result.suggestions.map((s) => [s.country, s.freedom_of_movement]),
+      ).toEqual([
+        ['Spain', true],
+        ['Brazil', false],
+      ]);
+    });
+
+    it('marks nothing when the quiz carried no nationality step', async () => {
+      repository.getRawSuggestionsWithParameters.mockResolvedValue(null);
+      gemini.generateSuggestions.mockResolvedValue({
+        suggestions: [
+          { ...geminiSuggestions.suggestions[0], country: 'Spain' },
+        ],
+      });
+      gemini.generateEmbeddings.mockResolvedValue(new Array(768).fill(0.1));
+      mockCountryService.findOneByName.mockResolvedValue(spain);
+      repository.createSuggestions.mockResolvedValue({
+        suggestion_id: 'new-id',
+      });
+
+      const result = await service.createSuggestions({
+        steps: makeSteps() as any,
+        parameters: makeParameters(),
+        language: 'en',
+      });
+
+      expect(result.suggestions[0].freedom_of_movement).toBe(false);
     });
   });
 });

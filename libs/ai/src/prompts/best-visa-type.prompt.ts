@@ -42,6 +42,39 @@ function label(value: string | undefined, labels: Record<string, string>) {
   return labels[value] ?? value;
 }
 
+/**
+ * What the prompt is told beyond the profile and the catalogue.
+ *
+ * A flag rather than a sentence the caller composes: the boolean the endpoint
+ * returns and the prose the model writes have to come from the same decision,
+ * or the answer contradicts its own field.
+ */
+export interface BestVisaTypePromptOptions {
+  /**
+   * The applicant holds an EU/EEA/Swiss passport and the destination is an
+   * EU/EEA/Swiss country, so no visa exists to recommend. Set from
+   * `hasFreedomOfMovement`, never by hand.
+   */
+  freedomOfMovement?: boolean;
+}
+
+/**
+ * The instruction that fires for a move covered by freedom of movement.
+ *
+ * The model still receives the catalogue and still returns a route, because
+ * the closest one is genuine context. What it must not do is present that
+ * route as something the applicant has to apply for: a Portuguese citizen
+ * moving to Spain who is told to file for a Residence Visa (Type D) has been
+ * given a wrong answer, not an approximate one.
+ */
+const FREEDOM_OF_MOVEMENT_INSTRUCTION = `### This applicant needs no visa
+
+The passport above carries freedom of movement into this country: both are in the EU/EEA or Switzerland, so the applicant enters on the passport or national ID card and may settle without any visa and without a residence permit.
+
+Still return the closest route from the list below, because it is useful context. But the explanations field MUST open by stating plainly that no visa is required, and must then be about **registration rather than application**: staying beyond 90 days is a matter of registering with the local authorities (residence certificate), getting a tax number and enrolling in social security or the national health service.
+
+**FORBIDDEN for this applicant**: telling them to apply for the returned route, calling it a requirement, or presenting its processing time, cost or income threshold as something they must meet. Naming a long-stay or national visa (a "Type D", for instance) as what they need is factually wrong.`;
+
 export function buildBestVisaTypePrompt(
   userDetails: {
     profession?: string;
@@ -62,12 +95,19 @@ export function buildBestVisaTypePrompt(
     main_requirements?: string[] | null;
   }>,
   language: string,
+  options: BestVisaTypePromptOptions = {},
 ): string {
   const goal = label(userDetails.goal, GOAL_LABELS);
   const jobOffer = label(userDetails.job_offer, JOB_OFFER_LABELS);
   const goalLine = [goal ?? NOT_SPECIFIED, jobOffer && `(${jobOffer})`]
     .filter(Boolean)
     .join(' ');
+
+  // Empty unless the flag is set, so the prompt every other recommendation has
+  // been running against stays byte-for-byte what it was.
+  const freedomOfMovementSection = options.freedomOfMovement
+    ? `\n${FREEDOM_OF_MOVEMENT_INSTRUCTION}\n`
+    : '';
 
   // The profile fields always render, missing ones as "Not specified": what the
   // user chose not to answer is itself information, and the model has read the
@@ -121,7 +161,7 @@ DO NOT write explanations, comments, introductions, or any text outside the JSON
 
 ### User Information:
 ${userInfoText}
-
+${freedomOfMovementSection}
 ### Available Visa Types (you must choose ONLY from this list):
 ${visaTypesText}
 
