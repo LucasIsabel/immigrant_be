@@ -45,28 +45,31 @@ const CHAINS = [
       'gemini-direct:gemini-2.5-flash-lite',
     ],
   },
-  // The four API-app scenarios (#151). Primary is the exact model these paths
-  // called directly before the router, so seeding changes no behaviour; the
-  // `:free` tail is the zero-cost net for the day both paid providers are out.
+  // The four API-app scenarios (#151), ordered by latency measured in
+  // production on 2026-08-27: gemini-3.1-flash-lite 1.3 s, minimax-m3 3.3 s,
+  // deepseek-v4-flash 50 s. `z-ai/glm-5.2:free` is gone — its provider
+  // answered 429, so it was no last resort at all; minimax takes that seat.
+  // `gemini-direct` is out only while the Google prepay credit is exhausted;
+  // it goes back from the admin panel, no deploy needed.
   {
     scenario: 'quiz_suggestions',
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   {
     scenario: 'visa_recommendation',
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   {
     scenario: 'visa_steps_translation',
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   {
     scenario: 'business_moderation',
-    primaryModel: 'gemini-direct:gemini-2.5-flash-lite',
-    fallbackModels: ['deepseek/deepseek-v4-flash', 'z-ai/glm-5.2:free'],
+    primaryModel: 'google/gemini-3.1-flash-lite',
+    fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   {
     scenario: 'blog_image',

@@ -5,49 +5,13 @@
  * mistake surfaces before `prisma db seed` touches production, and so the
  * coverage number against `countries.seed.ts` is a fact rather than a claim.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { categoriesFromCountrySeed } from './country-categories';
 import { REGISTRY } from './registry';
 import { LANGUAGES, slugifyStepKey, STEP_GROUPS } from './types';
 
 type Problem = { where: string; what: string };
 
 const problems: Problem[] = [];
-
-/** Categories declared in the country seed, keyed by country. */
-function categoriesFromCountrySeed(): Map<string, Set<string>> {
-  const source = readFileSync(
-    join(__dirname, '..', 'countries.seed.ts'),
-    'utf8',
-  );
-  const lines = source.split('\n');
-  const byCountry = new Map<string, Set<string>>();
-  let current: string | null = null;
-
-  for (let i = 0; i < lines.length; i++) {
-    const name = /^ {6}name: '(.+)',$/.exec(lines[i]);
-    if (name) {
-      current = name[1];
-      byCountry.set(current, new Set());
-    }
-
-    if (/^\s*category:/.test(lines[i]) && current) {
-      const inline = lines[i].replace(/^\s*category:\s*/, '');
-      const raw = inline === '' ? lines[i + 1].trim() : inline;
-
-      // Only a quoted literal is data. The file ends with the reconcile loop,
-      // which contains `category: visaType.category,` — counting that as a
-      // country's category inflates the total by one and attributes a
-      // nonexistent category to whichever country happens to be last.
-      const literal = /^'(.*)',$/.exec(raw);
-      if (literal) {
-        byCountry.get(current)?.add(literal[1]);
-      }
-    }
-  }
-
-  return byCountry;
-}
 
 const seedCategories = categoriesFromCountrySeed();
 
@@ -155,6 +119,22 @@ for (const [country, visaTypeMap] of Object.entries(REGISTRY)) {
           });
         }
       }
+    }
+  }
+}
+
+// A category the registry does not cover is the gap that leaves a visa type
+// with no steps: `selectVisaType` then 404s for every user who picks it. It is
+// invisible to the loop above, which only walks what the registry already has.
+for (const [country, categories] of seedCategories) {
+  const covered = REGISTRY[country];
+
+  for (const category of categories) {
+    if (!covered?.[category]) {
+      problems.push({
+        where: `${country} / "${category}"`,
+        what: 'no step template — selecting this visa type would 404',
+      });
     }
   }
 }

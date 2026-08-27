@@ -153,4 +153,50 @@ describe('SystemRepository - normalizeParametersToJson', () => {
       expect(embeddingsParam).toBeNull();
     });
   });
+
+  describe('createVisaTypeRecommendation without embeddings', () => {
+    it('stores the recommendation with a null vector instead of refusing it', async () => {
+      // The Gemini embeddings endpoint shares the Google prepay credit with
+      // the chat models: when that runs out, both 429. Throwing here turned a
+      // recommendation the fallback chain had already produced into a 500.
+      mockPrismaService.$queryRawUnsafe.mockResolvedValue([
+        {
+          id: 'rec-1',
+          embeddings: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]);
+
+      const result = await repository.createVisaTypeRecommendation(
+        'country-1',
+        { recommended_visa_type_id: 'visa-1', explanations: 'Best fit.' },
+        null,
+        { profession: 'Software Engineer' },
+        'en',
+      );
+
+      expect(result.visa_type_recommendation_id).toBe('rec-1');
+      const [, , , embeddingsParam] =
+        mockPrismaService.$queryRawUnsafe.mock.calls.at(-1) as unknown[];
+      expect(embeddingsParam).toBeNull();
+    });
+
+    it('still refuses a vector of the wrong width', async () => {
+      // A vector that exists but is not 768-wide would poison the similarity
+      // search, which is a different failure from having no vector at all.
+      mockPrismaService.$queryRawUnsafe.mockResolvedValue([]);
+
+      await expect(
+        repository.createVisaTypeRecommendation(
+          'country-1',
+          { recommended_visa_type_id: 'visa-1', explanations: 'Best fit.' },
+          new Array(512).fill(0.1),
+          { profession: 'Software Engineer' },
+          'en',
+        ),
+      ).rejects.toThrow('Error creating visa type recommendation');
+      expect(mockPrismaService.$queryRawUnsafe).not.toHaveBeenCalled();
+    });
+  });
 });

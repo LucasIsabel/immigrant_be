@@ -363,4 +363,46 @@ describe('SystemService - createSuggestions', () => {
     expect(repository.createSuggestions).toHaveBeenCalledTimes(1);
     expect(result.suggestion_id).toBe('new-id');
   });
+
+  describe('getSelectedBestVisaType without embeddings', () => {
+    // The embeddings endpoint runs on the same Google prepay credit as the
+    // chat models, so it 429s in exactly the incident the fallback chain
+    // exists to survive. A recommendation the chain already produced must
+    // reach the user even when the vector for it does not exist.
+    it('returns and persists the recommendation when embeddings are null', async () => {
+      const visaRecommendation = {
+        recommended_visa_type_id: 'visa-type-1',
+        explanations: 'Best fit for a software engineer moving for work.',
+      };
+
+      mockCountryService.getCountryById.mockResolvedValue({
+        id: 'country-1',
+        immigration_visa_types: [{ id: 'visa-type-1', category: 'Work' }],
+      });
+      gemini.generateEmbeddings.mockResolvedValue(null);
+      repository.getBestVisaTypeRecommendation.mockResolvedValue(null);
+      gemini.generateVisaSuggestion.mockResolvedValue(visaRecommendation);
+      repository.createVisaTypeRecommendation.mockResolvedValue({
+        visa_type_recommendation_id: 'rec-1',
+      });
+
+      const result = await service.getSelectedBestVisaType(
+        { profession: 'Software Engineer' },
+        'country-1',
+        'en',
+      );
+
+      expect(result).toEqual({
+        id: 'visa-type-1',
+        explanations: 'Best fit for a software engineer moving for work.',
+      });
+      expect(repository.createVisaTypeRecommendation).toHaveBeenCalledWith(
+        'country-1',
+        visaRecommendation,
+        null,
+        { profession: 'Software Engineer' },
+        'en',
+      );
+    });
+  });
 });

@@ -300,6 +300,18 @@ export class SystemRepository {
     } as EventResponseDto;
   }
 
+  /**
+   * Stores the generated recommendation, with or without embeddings.
+   *
+   * Same degradation as `createSuggestions` (#151), one layer further down the
+   * app: when the Gemini embeddings endpoint is out of credit it returns null,
+   * and this method used to throw on null — so `getSelectedBestVisaType` turned
+   * a recommendation the fallback chain had already produced into a 500.
+   *
+   * The embeddings column is nullable; a row without a vector simply never
+   * matches a similarity lookup. Losing one cache candidate beats losing the
+   * user's recommendation.
+   */
   async createVisaTypeRecommendation(
     country_id: string,
     gemini_response: VisaRecommendationType,
@@ -308,17 +320,26 @@ export class SystemRepository {
     language: string,
   ): Promise<{ visa_type_recommendation_id: string }> {
     try {
-      if (!embeddings || embeddings.length === 0) {
-        throw new Error('No embeddings provided');
-      }
+      const hasEmbeddings = !!embeddings && embeddings.length > 0;
 
-      if (embeddings.length !== 768) {
+      // A vector that exists but has the wrong width would poison the
+      // similarity search, so that guard stays. A vector that does not exist
+      // at all is a different case, and is stored as null.
+      if (hasEmbeddings && embeddings.length !== 768) {
         throw new Error(
           `Invalid embedding dimension: expected 768, got ${embeddings.length}`,
         );
       }
 
-      const embeddingsString = `[${embeddings.join(',')}]`;
+      if (!hasEmbeddings) {
+        this.logger.debug(
+          'No embeddings for the visa type recommendation: storing it with a null vector, so the similarity cache will have no candidate for this row',
+        );
+      }
+
+      const embeddingsString = hasEmbeddings
+        ? `[${embeddings.join(',')}]`
+        : null;
 
       const result = await this.prisma.$queryRawUnsafe<
         Array<{
