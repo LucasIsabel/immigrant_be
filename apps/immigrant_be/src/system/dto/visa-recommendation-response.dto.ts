@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class VisaRecommendationResponseDto {
   @ApiProperty({
@@ -21,4 +21,16 @@ export class VisaRecommendationResponseDto {
   @IsString()
   @IsOptional()
   explanations?: string;
+
+  @ApiProperty({
+    description:
+      'True when the passport carries freedom of movement into this country ' +
+      '(both are EU/EEA/Swiss), so no visa is required and only registration ' +
+      'is. The recommended route is then context, not something to apply for.',
+    example: false,
+    type: Boolean,
+    default: false,
+  })
+  @IsBoolean()
+  freedom_of_movement: boolean;
 }

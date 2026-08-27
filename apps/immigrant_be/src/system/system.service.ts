@@ -1,4 +1,5 @@
 import { normalizeCountryName } from '@app/ai';
+import { hasFreedomOfMovement } from '@app/immigration';
 import { pickTranslation } from '../countries/country-translation.util';
 import { GeminiService } from './gemini.service';
 import {
@@ -47,6 +48,8 @@ export class SystemService {
         prompt += this.getUserAnswerBasedOnStepType(step);
       });
 
+      const passport = SystemService.passportFromSteps(steps);
+
       const suggestions =
         await this.getSuggestionsAccordingToParameters(parameters);
 
@@ -54,6 +57,7 @@ export class SystemService {
         const data = await this.getSuggestionAccordingToLanguage(
           suggestions.id,
           language,
+          passport,
         );
 
         if (data) {
@@ -68,6 +72,7 @@ export class SystemService {
             await this.enrichSuggestionsWithCountryDetails(
               geminiResponse?.suggestions || [],
               language,
+              passport,
             );
 
           const suggestion =
@@ -93,6 +98,7 @@ export class SystemService {
         await this.enrichSuggestionsWithCountryDetails(
           response?.suggestions || [],
           language,
+          passport,
         );
 
       const embeddings = await this.geminiService.generateEmbeddings(
@@ -124,6 +130,7 @@ export class SystemService {
   private async enrichSuggestionsWithCountryDetails(
     suggestions: Array<{ country: string; [key: string]: any }>,
     language: string,
+    passportIso2?: string,
   ): Promise<import('./dto/suggestions.dto').SuggestionItem[]> {
     return Promise.all(
       suggestions.map(async (suggestion) => {
@@ -164,6 +171,13 @@ export class SystemService {
           languages: Array.isArray(suggestion.languages)
             ? suggestion.languages
             : [],
+          // Never taken from the model: whether a passport needs a visa is a
+          // fact about two ISO codes, not a judgement, and the quiz prompt
+          // that writes `reasons` is the same one that could get it wrong.
+          freedom_of_movement: hasFreedomOfMovement(
+            passportIso2,
+            country?.iso2,
+          ),
         };
 
         return item as import('./dto/suggestions.dto').SuggestionItem;
@@ -195,6 +209,18 @@ export class SystemService {
       `I hold a ${a} passport, so assess visa eligibility, bilateral agreements ` +
       `and processing times from that citizenship.`,
   };
+
+  /**
+   * The ISO2 passport code the quiz was answered with, if it was asked.
+   *
+   * The `NATIONALITY` step already arrives as a two-letter code, so this is a
+   * lookup and not a parse. It is `undefined` when the step is absent — an
+   * older client, or a user who skipped it — and `hasFreedomOfMovement` then
+   * answers `false`, which is the only honest reading of an unknown passport.
+   */
+  private static passportFromSteps(steps: Steps[]): string | undefined {
+    return steps.find((step) => step.type === StepType.NATIONALITY)?.answer;
+  }
 
   getUserAnswerBasedOnStepType = (step: Steps): string => {
     const template = SystemService.STEP_TEMPLATES[step.type];
@@ -328,6 +354,7 @@ export class SystemService {
   getSuggestionAccordingToLanguage = async (
     suggestionId: string,
     language: string,
+    passportIso2?: string,
   ): Promise<SuggestionsResponseDto | null> => {
     const stored = await this.systemRepository.getSuggestionAccordingToLanguage(
       suggestionId,
@@ -341,6 +368,7 @@ export class SystemService {
       suggestions: await this.refreshCountryFields(
         stored.suggestions,
         language,
+        passportIso2,
       ),
     };
   };
@@ -367,11 +395,11 @@ export class SystemService {
   private async refreshCountryFields(
     suggestions: SuggestionItem[],
     language: string,
+    passportIso2?: string,
   ): Promise<SuggestionItem[]> {
     const ids = [
       ...new Set(suggestions.map((s) => s.country_id).filter(Boolean)),
     ];
-    if (ids.length === 0) return suggestions;
 
     const countries = await Promise.all(
       ids.map((id) => this.countryService.findOne(id).catch(() => null)),
@@ -380,9 +408,14 @@ export class SystemService {
       countries.filter((c) => c != null).map((c) => [c.id, c]),
     );
 
+    // `freedom_of_movement` is recomputed here for the same reason the photo
+    // is: it belongs to the passport and the country, not to the snapshot.
+    // Rows written before the field existed carry none at all, and a missing
+    // boolean reads as "needs a visa" on the client — the exact wrong answer.
     return suggestions.map((suggestion) => {
       const country = byId.get(suggestion.country_id);
-      if (!country) return suggestion;
+
+      if (!country) return { ...suggestion, freedom_of_movement: false };
 
       return {
         ...suggestion,
@@ -392,6 +425,7 @@ export class SystemService {
         investment_required:
           pickTranslation(country.translations, language)
             ?.investment_required || suggestion.investment_required,
+        freedom_of_movement: hasFreedomOfMovement(passportIso2, country.iso2),
       };
     });
   }
@@ -403,6 +437,15 @@ export class SystemService {
   ) => {
     try {
       const country = await this.countryService.getCountryById(countryId);
+
+      // Decided here, from two ISO codes, and then given to the model as an
+      // instruction rather than asked of it. The boolean the client branches
+      // on and the prose the user reads have to come from the same fact, or a
+      // "no visa required" flag arrives next to a paragraph about a Type D.
+      const freedomOfMovement = hasFreedomOfMovement(
+        userDetails.nationality,
+        country?.iso2,
+      );
 
       const embeddings = await this.geminiService.generateEmbeddings(
         this.jsonToEmbeddingArrayOfObjects({ ...userDetails }, language),
@@ -425,9 +468,15 @@ export class SystemService {
           explanations?: string;
         };
 
+        // The cached row is keyed by (country_id, parameters, language) and
+        // `parameters` is the whole DTO, nationality included, so a cached
+        // recommendation cannot cross passports. The flag is still recomputed
+        // rather than stored: rows written before this change have none, and
+        // recomputing costs a set lookup.
         return {
           id: geminiResponse?.recommended_visa_type_id || '',
           explanations: geminiResponse?.explanations || '',
+          freedom_of_movement: freedomOfMovement,
         };
       }
 
@@ -435,6 +484,7 @@ export class SystemService {
         userDetails,
         country?.immigration_visa_types || [],
         language,
+        { freedomOfMovement },
       );
 
       if (!geminiResponse) {
@@ -452,6 +502,7 @@ export class SystemService {
       return {
         id: geminiResponse?.recommended_visa_type_id || '',
         explanations: geminiResponse?.explanations || '',
+        freedom_of_movement: freedomOfMovement,
       };
     } catch (error) {
       this.logger.error(

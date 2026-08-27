@@ -65,6 +65,23 @@ chega ao usuário sem foto, sem bandeira e sem os vistos disponíveis.
 - Vistos ou oportunidades de residência
 - Metas pessoais e profissionais
 
+### Livre circulação (UE/EEE/Suíça):
+Se o usuário tem passaporte de um país da **União Europeia, do Espaço
+Econômico Europeu (Islândia, Liechtenstein, Noruega) ou da Suíça**, ele **não
+precisa de visto** para morar em qualquer outro país desses três grupos: entra
+com o passaporte ou o documento de identidade nacional e, para ficar além de
+90 dias, apenas se registra (certificado de residência, número fiscal,
+segurança social).
+
+Para esses países, escreva os \`reasons\` e as \`visa_options\` nesses termos —
+"como cidadão da UE você pode se mudar para cá sem visto, basta registrar a
+residência" — e **nunca** liste um visto de residência ou de longa duração como
+se fosse necessário.
+
+Isto é livre circulação, **não Schengen**: Irlanda e Chipre estão na UE e fora
+de Schengen, e a livre circulação vale igual; Turquia e Reino Unido não estão
+em nenhum dos grupos, e para eles o visto continua sendo necessário.
+
 ### Regra de diversificação:
 O usuário mencionou interesse em um ou mais países específicos. **Evite** incluir esses países nas 3 recomendações, pois o objetivo é apresentar alternativas que o usuário talvez não tenha considerado. A única exceção é se o perfil do usuário se encaixar excepcionalmente bem nesse país em **todos** os critérios objetivos — nesse caso, inclua-o com uma explicação clara do motivo.
 

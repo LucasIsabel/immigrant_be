@@ -84,6 +84,10 @@ export class UserService {
       languages: translation?.language_requirement
         ? [translation.language_requirement]
         : [],
+      // A plan started from the country page carries no quiz, so no passport:
+      // there is nothing to compare the destination against, and claiming the
+      // exemption on a passport we were never told is worse than omitting it.
+      freedom_of_movement: false,
     };
     return await this.userRepository.createUserPlan({
       user,

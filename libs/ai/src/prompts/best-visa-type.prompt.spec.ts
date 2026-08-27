@@ -140,6 +140,54 @@ describe('buildBestVisaTypePrompt', () => {
     });
   });
 
+  describe('freedom of movement', () => {
+    /**
+     * The wrong answer this fix exists to stop: a Portuguese citizen moving to
+     * Spain being told to apply for a Residence Visa (Type D). The route still
+     * comes back as context, but the prose around it must be about
+     * registration, and the flag on the response cannot be contradicted by it.
+     */
+    it('tells the model no visa is required and to frame it as registration', () => {
+      const prompt = buildBestVisaTypePrompt(
+        { ...LEGACY_PROFILE, nationality: 'PT' },
+        [VISA_TYPE],
+        'pt',
+        { freedomOfMovement: true },
+      );
+
+      expect(prompt).toContain('### This applicant needs no visa');
+      expect(prompt).toContain('registration rather than application');
+      expect(prompt).toContain('residence certificate');
+      expect(prompt).toContain('"Type D"');
+    });
+
+    it('still asks for a route from the list, as context', () => {
+      const prompt = buildBestVisaTypePrompt(
+        { ...LEGACY_PROFILE, nationality: 'PT' },
+        [VISA_TYPE],
+        'pt',
+        { freedomOfMovement: true },
+      );
+
+      expect(prompt).toContain('Still return the closest route from the list');
+      expect(prompt).toContain(`Visa Type ID: ${VISA_TYPE.id}`);
+    });
+
+    it('says nothing at all when the flag is off', () => {
+      const off = buildBestVisaTypePrompt(LEGACY_PROFILE, [VISA_TYPE], 'pt', {
+        freedomOfMovement: false,
+      });
+
+      // Byte-for-byte the prompt of a caller that passes no options at all:
+      // the instruction may not leak into the general case, where it would be
+      // simply false.
+      expect(off).toBe(
+        buildBestVisaTypePrompt(LEGACY_PROFILE, [VISA_TYPE], 'pt'),
+      );
+      expect(off).not.toContain('needs no visa');
+    });
+  });
+
   it('leaves the prompt a legacy profile used to produce otherwise untouched', () => {
     // The fixture is the exact output of this function before the profile and
     // catalogue fields existed. Everything this change adds is listed in

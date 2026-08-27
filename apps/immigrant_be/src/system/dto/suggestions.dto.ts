@@ -1,6 +1,7 @@
 import {
   IsNotEmpty,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsString,
   IsNumber,
@@ -181,6 +182,19 @@ export class SuggestionItem {
   @IsArray()
   @IsString({ each: true })
   languages: string[];
+
+  @ApiProperty({
+    description:
+      'True when the passport the user answered the quiz with carries ' +
+      'freedom of movement into this country (both are EU/EEA/Swiss): no ' +
+      'visa is required, only registration after 90 days. False whenever the ' +
+      'quiz carried no nationality step.',
+    example: false,
+    type: Boolean,
+    default: false,
+  })
+  @IsBoolean()
+  freedom_of_movement: boolean;
 }
 
 export class SuggestionsResponseDto {
