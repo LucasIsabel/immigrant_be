@@ -59,12 +59,19 @@ export class GeminiService extends GeminiBaseService {
       profession?: string;
       country_origin?: string;
       plan_period?: string;
+      goal?: string;
+      nationality?: string;
+      job_offer?: string;
+      income_band?: string;
     },
     immigrationVisaTypes: Array<{
       id: string;
       category: string;
       description: string;
       source: string;
+      processing_time?: string | null;
+      estimated_cost?: string | null;
+      main_requirements?: string[] | null;
     }>,
     language: string,
   ): Promise<VisaRecommendationType | null> {

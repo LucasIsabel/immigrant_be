@@ -259,6 +259,8 @@ Plans ─────────┬──── completed_step_keys (String[]) 
                └──── status: draft | active | completed
 
 ImmigrationVisaType ── VisaSteps (1:N) — por idioma
+ImmigrationVisaType ──┬── processing_time / estimated_cost (nullable) — só onde a fonte declara
+                      └── main_requirements (String[]) — derivado dos templates de steps
 
 Users ─────────────── BlogPost (1:N) — como autor (quem publicou)
 
@@ -438,6 +440,31 @@ jest só varre `apps` e `libs`, e lê as categorias do texto de `countries.seed.
 importar aquele módulo construiria um `PrismaClient`. O mesmo helper alimenta o
 `validate.ts`, que continua sendo o caminho para rodar as checagens de conteúdo sem banco
 (`npx tsx prisma/seeds/visa-steps/validate.ts`).
+
+### Catálogo de vistos — de onde vem cada número
+
+`immigration_visa_types` carrega três campos que a recomendação lê:
+`processing_time`, `estimated_cost` (ambos anuláveis) e `main_requirements`
+(`String[]`, default `[]`). Nenhum deles é escrito à mão no `countries.seed.ts`:
+o único lugar que os preenche é `prisma/seeds/visa-catalogue.ts`, e o seed
+apenas espalha o resultado de `catalogueFieldsFor(country, category)`.
+
+A regra é a razão de o módulo existir. **Nenhum número é inventado**: prazo e
+custo são copiados literalmente das `translations[].processing_time` e
+`investment_required` do país, e só quando a string nomeia uma rota que
+corresponde a exatamente uma categoria daquele país (`Golden Visa`, `MPRP`,
+`EB-5`, `D-8`). Um "2–4 meses" de país não descreve nenhuma das quatro
+categorias dele em particular, então fica `null` — 8 dos 242 tipos de visto têm
+prazo e 38 têm custo, e o resto está vazio de propósito. `main_requirements` é
+**derivado** dos templates de `visa-steps/` (grupos `core_documents` e
+`financial_requirements`, menos os passos imperativos), nunca copiado, para o
+catálogo não divergir do checklist que o usuário recebe.
+
+O prompt `best-visa-type.prompt.ts` omite a linha inteira de um campo vazio em
+vez de escrever "unknown", e manda o modelo não apresentar como mais rápido ou
+mais barato um visto que não declarou prazo nem custo. `visa-catalogue.spec.ts`
+trava as três invariantes: fato ancorado em categoria inexistente, contagem de
+preenchimento e instrução vazando para a lista de requisitos.
 
 ---
 

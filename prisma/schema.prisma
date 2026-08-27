@@ -143,14 +143,25 @@ model CountryTranslation {
 }
 
 model ImmigrationVisaType {
-  id          String      @id @default(uuid()) @db.Uuid
-  category    String
-  description String
-  source      String
-  country     Country     @relation(fields: [country_id], references: [id], onDelete: Cascade)
-  country_id  String      @map("country_id") @db.Uuid
-  plans       Plans[]
-  visa_steps  VisaSteps[]
+  id                String      @id @default(uuid()) @db.Uuid
+  category          String
+  description       String
+  source            String
+  /// How long the route takes, in the wording of the source it was taken from.
+  /// Null whenever no material in the repository states it for this specific
+  /// category: the recommendation prompt then omits the line entirely, because
+  /// an invented figure is what people would plan a move around.
+  processing_time   String?
+  /// Money the route demands (income threshold, investment, fees), same rule.
+  estimated_cost    String?
+  /// The documents the route requires, taken verbatim from the step template.
+  /// Empty when the template has none of the groups that are unambiguously
+  /// requirements.
+  main_requirements String[]    @default([])
+  country           Country     @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  country_id        String      @map("country_id") @db.Uuid
+  plans             Plans[]
+  visa_steps        VisaSteps[]
 
   @@index([country_id])
   @@map("immigration_visa_types")
