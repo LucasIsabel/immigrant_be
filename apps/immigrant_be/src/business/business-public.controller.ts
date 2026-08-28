@@ -9,7 +9,10 @@ import {
 } from '@nestjs/swagger';
 import { BusinessService } from './business.service';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
-import { BusinessResponseDto } from './dto/business-response.dto';
+import {
+  PaginatedPublicBusinessesResponseDto,
+  PublicBusinessResponseDto,
+} from './dto/public-business-response.dto';
 
 @ApiTags('Business')
 @Controller('business')
@@ -21,16 +24,7 @@ export class BusinessPublicController {
   @ApiOperation({ summary: 'Listar negócios públicos com filtros' })
   @ApiOkResponse({
     description: 'Lista paginada de negócios',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'array',
-          items: { $ref: '#/components/schemas/BusinessResponseDto' },
-        },
-        total: { type: 'number', example: 42 },
-      },
-    },
+    type: PaginatedPublicBusinessesResponseDto,
   })
   getPublicBusinesses(@Query() query: BusinessListQueryDto) {
     return this.service.getPublicBusinesses(query);
@@ -40,7 +34,7 @@ export class BusinessPublicController {
   @AllowAnonymous()
   @ApiOperation({ summary: 'Buscar negócio público por ID' })
   @ApiParam({ name: 'id', description: 'ID do negócio' })
-  @ApiOkResponse({ type: BusinessResponseDto })
+  @ApiOkResponse({ type: PublicBusinessResponseDto })
   @ApiNotFoundResponse({ description: 'Negócio não encontrado ou privado' })
   getPublicBusinessById(@Param('id') id: string) {
     return this.service.getPublicBusinessById(id);

@@ -8,9 +8,13 @@ import { PrismaService } from '@app/database';
 import { BusinessRepository } from './business.repository';
 
 const mockPrismaService = {
+  // findPublic batches the page and the count; the mock resolves the array it
+  // is handed, which is what Prisma does.
+  $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   business: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
+    count: jest.fn(),
   },
 };
 
@@ -75,23 +79,20 @@ describe('BusinessRepository', () => {
 
       await repository.findVisibleById('business-1');
 
-      expect(mockPrismaService.business.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'business-1',
-          OR: [
-            { isPublic: true },
-            {
-              businessPage: {
-                status: { in: ['APPROVED', 'APPROVED_WITH_PENDING'] },
-              },
+      const call = mockPrismaService.business.findFirst.mock.calls[0][0];
+      expect(call.where).toEqual({
+        id: 'business-1',
+        OR: [
+          { isPublic: true },
+          {
+            businessPage: {
+              status: { in: ['APPROVED', 'APPROVED_WITH_PENDING'] },
             },
-          ],
-        },
-        include: {
-          businessPage: {
-            select: { id: true, slug: true, status: true },
           },
-        },
+        ],
+      });
+      expect(call.select.businessPage).toEqual({
+        select: { id: true, slug: true, status: true },
       });
     });
 
@@ -116,6 +117,71 @@ describe('BusinessRepository', () => {
         'PENDING_REVIEW',
       );
       expect(where.OR[1].businessPage.status.in).not.toContain('DRAFT');
+    });
+  });
+
+  describe('what the public queries let out of the database', () => {
+    /**
+     * The fields a visitor must not see never leave Postgres, so no later
+     * include, mapper or serialiser can put them back by accident. This test
+     * is the lock: it names the exact key set, so widening it is a decision
+     * somebody has to make on purpose.
+     */
+    const PUBLIC_KEYS = [
+      'address',
+      'businessPage',
+      'businessType',
+      'city',
+      'country',
+      'createdAt',
+      'description',
+      'email',
+      'id',
+      'lat',
+      'lng',
+      'name',
+      'phone',
+      'photos',
+      'state',
+      'typeData',
+      'updatedAt',
+      'website',
+    ];
+
+    it('never lets the owner draft, the owner id or the listing switch out', async () => {
+      mockPrismaService.business.findFirst.mockResolvedValue(null);
+
+      await repository.findVisibleById('business-1');
+
+      const select = mockPrismaService.business.findFirst.mock.calls[0][0]
+        .select as Record<string, unknown>;
+      expect(Object.keys(select).sort()).toEqual(PUBLIC_KEYS);
+      expect(select).not.toHaveProperty('draftData');
+      expect(select).not.toHaveProperty('userId');
+      expect(select).not.toHaveProperty('isPublic');
+    });
+
+    it('uses the same shape for the directory listing', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({ page: 1, limit: 20 });
+
+      const select = mockPrismaService.business.findMany.mock.calls[0][0]
+        .select as Record<string, unknown>;
+      expect(Object.keys(select).sort()).toEqual(PUBLIC_KEYS);
+    });
+
+    it('keeps the owner listing on the full shape, draft and all', async () => {
+      // The owner's own dashboard needs the draft: it is how an unpublished
+      // edit is shown back to them.
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+
+      await repository.findAllByUserId('user-1');
+
+      const call = mockPrismaService.business.findMany.mock.calls[0][0];
+      expect(call.select).toBeUndefined();
+      expect(call.include).toBeDefined();
     });
   });
 });

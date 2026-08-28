@@ -340,6 +340,12 @@ Business ─── Users (N:1) — negócio local de um imigrante
     GET /business/public/:id) responde quando o negócio está listado **ou** quando a página
     dele está `APPROVED`/`APPROVED_WITH_PENDING`: uma página que a plataforma aprovou já é
     pública por esse fato. As listagens do diretório continuam honrando só o `isPublic`.
+  As rotas públicas (`GET /business/public` e `/business/public/:id`) respondem com
+    `PublicBusinessResponseDto`, uma allowlist — e o repositório usa `select`, não
+    `include`, então os campos que ficam de fora nem saem do Postgres. Fora de propósito:
+    `draftData` (o rascunho não publicado do dono, que era legível por quem tivesse o id),
+    `userId` (quem é dono de qual listagem) e `isPublic` (anunciaria a escolha de não
+    aparecer no diretório). O `BusinessResponseDto` do dono continua completo.
   Listagem pública disponível via GET /business/public (diretório "My City")
   Filtro geoespacial por raio: quando os params lat, lng e radius (km) são enviados,
     BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
