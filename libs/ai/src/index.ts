@@ -35,6 +35,12 @@ export {
   parseJsonResponse,
 } from './utils/json-response.util';
 export {
+  flattenModerationContent,
+  MODERATION_FIELD_MAX_CHARS,
+  MODERATION_TOTAL_MAX_CHARS,
+  type FlattenedModerationContent,
+} from './utils/moderation-flatten.util';
+export {
   suggestionsSchema,
   type SuggestionsType,
 } from './schemas/suggestions.schema';

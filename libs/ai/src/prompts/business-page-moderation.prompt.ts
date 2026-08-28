@@ -19,12 +19,14 @@ Analyze the following business page content and check for:
 ${contentJson}
 
 ## Rules
-- Analyze ALL text fields: name, description, address, website, email, phone, whatsapp
+- Analyze EVERY field present in the content above. That means the scalar fields (name, description, address, website, email, phone, whatsapp) **and every entry under \`typeDataText\`**, which holds the page's published sections — tours, menu dishes, itinerary stops, meeting points. There is usually far more text in \`typeDataText\` than in the scalar fields.
+- Keys under \`typeDataText\` and \`typeDataLinks\` are JSON paths into the page's own content (for example \`tours[2].description\`, \`menu[7].name\`, \`itinerary[0].photos[3].url\`). When you flag something found there, set \`field\` to that exact key, copied verbatim — it is how a reviewer locates the text on screen.
+- A value ending in \`…[truncated]\` was cut for length; judge what you can see.
+- \`typeDataLinks\`, along with \`website\`, \`logoUrl\` and \`coverPhotoUrl\`, are URLs: apply the adult-links rule to all of them, photo URLs included.
 - Flag each issue found with a specific category and the problematic text
 - Provide a risk level: "low" (no issues), "medium" (minor concerns), "high" (clear violations)
 - Be thorough but avoid false positives — legitimate business content should pass
 - Consider the business type context when evaluating content appropriateness
-- If website URLs are present, flag any that appear to lead to adult content domains
 
 ## Response Format
 Return a valid JSON object matching this structure:
