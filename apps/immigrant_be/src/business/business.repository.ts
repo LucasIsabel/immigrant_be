@@ -203,9 +203,33 @@ export class BusinessRepository {
     return { data, total: Number(countRows[0].count) };
   }
 
-  findPublicById(id: string) {
+  /**
+   * The business behind a page a visitor can already see.
+   *
+   * `isPublic` is the owner's own switch, and what it promises them is
+   * "list publicly on My City" — the directory, the map, the event
+   * eligibility. It was also, by accident, gating this read, which is where
+   * the public page gets the currency its prices are in and the gallery it
+   * shows. So an approved page whose owner had never flipped that switch went
+   * live with prices missing their symbol and no photographs at all.
+   *
+   * A page the platform has approved is public by that fact. The switch keeps
+   * meaning one thing — whether the business appears in the directory — and
+   * the listings below still honour it.
+   */
+  findVisibleById(id: string) {
     return this.prisma.business.findFirst({
-      where: { id, isPublic: true },
+      where: {
+        id,
+        OR: [
+          { isPublic: true },
+          {
+            businessPage: {
+              status: { in: ['APPROVED', 'APPROVED_WITH_PENDING'] },
+            },
+          },
+        ],
+      },
       include: BUSINESS_PAGE_SUMMARY,
     });
   }

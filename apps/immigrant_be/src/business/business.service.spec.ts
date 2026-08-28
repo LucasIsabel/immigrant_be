@@ -40,7 +40,7 @@ const mockBusinessRepository = {
   delete: jest.fn(),
   toggleVisibility: jest.fn(),
   findPublic: jest.fn(),
-  findPublicById: jest.fn(),
+  findVisibleById: jest.fn(),
 };
 
 describe('BusinessService', () => {
@@ -425,16 +425,16 @@ describe('BusinessService', () => {
   describe('getPublicBusinessById', () => {
     it('should return a public business by id', async () => {
       const publicBusiness = { ...mockBusiness, isPublic: true };
-      repository.findPublicById.mockResolvedValue(publicBusiness);
+      repository.findVisibleById.mockResolvedValue(publicBusiness);
 
       const result = await service.getPublicBusinessById('business-id-1');
 
       expect(result).toEqual(publicBusiness);
-      expect(repository.findPublicById).toHaveBeenCalledWith('business-id-1');
+      expect(repository.findVisibleById).toHaveBeenCalledWith('business-id-1');
     });
 
     it('should throw NotFoundException when business not found (repository returns null)', async () => {
-      repository.findPublicById.mockResolvedValue(null);
+      repository.findVisibleById.mockResolvedValue(null);
 
       await expect(
         service.getPublicBusinessById('non-existent'),

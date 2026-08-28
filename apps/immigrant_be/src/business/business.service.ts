@@ -102,7 +102,7 @@ export class BusinessService {
   }
 
   async getPublicBusinessById(id: string) {
-    const business = await this.repository.findPublicById(id);
+    const business = await this.repository.findVisibleById(id);
     if (!business) {
       throw new NotFoundException('Negócio não encontrado');
     }
