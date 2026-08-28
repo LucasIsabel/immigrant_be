@@ -310,6 +310,23 @@ BlogPostTranslation — traduções de posts do blog
   Unique: (post_id, locale)
   Cascade delete com BlogPost
 
+BlogCategoryTranslation ─── BlogCategory (N:1) — o nome da categoria noutro idioma
+  Tabela: blog_category_translations
+  Chaves: unique (category_id, locale) e unique (locale, slug)
+  Espelha BlogPostTranslation, e pela mesma razão: o leitor em /en via o título, o resumo e
+    o corpo do post traduzidos — e por cima deles a categoria em português, porque a
+    categoria não tinha onde guardar outra língua.
+  Post nasce em inglês; categoria nasce em português. Daí `BlogCategory.original_locale` e
+    `translationTargetsFor()` em libs/config: `TRANSLATION_LOCALES` é a lista de destinos
+    *de post*, e só está certa porque post é escrito em inglês.
+  O slug é traduzido junto com o nome e gerado no servidor (`slugify`), nunca pelo modelo.
+    A rota pública resolve as duas grafias, então link já partilhado nunca quebra.
+  Falta de tradução mostra o nome original, não esconde a categoria — esconder transformaria
+    uma falha temporária da IA num buraco de navegação.
+  Gatilhos: criar e renomear enfileiram `TRANSLATE_BLOG_CATEGORY` (a fila engole a falha —
+    criar categoria não pode depender do Redis); o cron das 03:00 varre o que faltou;
+    `scripts/backfill-category-translations.ts` cobre as que existiam antes.
+
 AiBlogCronJob ─── Country (N:1) — país alvo
                └── BullMQ repeatable job (bullmq_job_id)
                Armazena: cron_expr, is_active, last_run_at

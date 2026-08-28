@@ -23,6 +23,25 @@ export const DEFAULT_JOB_OPTIONS = {
 export const TRANSLATION_LOCALES = ['pt', 'es'] as const;
 export type TranslationLocale = (typeof TRANSLATION_LOCALES)[number];
 
+/**
+ * Every language the site is read in.
+ *
+ * `TRANSLATION_LOCALES` above is the list of *targets for a blog post*, which
+ * is only correct because posts are written in English. A blog category is
+ * written in Portuguese, so its targets are a different pair — and the way to
+ * say that once is to name the whole set and subtract whichever the thing was
+ * written in.
+ */
+export const APP_LOCALES = ['en', 'pt', 'es'] as const;
+export type AppLocale = (typeof APP_LOCALES)[number];
+
+/** The languages a thing written in `originalLocale` still needs. */
+export function translationTargetsFor(
+  originalLocale: string,
+): readonly AppLocale[] {
+  return APP_LOCALES.filter((locale) => locale !== originalLocale);
+}
+
 export const AI_BLOG_QUEUE = 'ai_blog_queue';
 export const GENERATE_AI_BLOG_POST = 'generate_ai_blog_post';
 
@@ -33,6 +52,8 @@ export const REFINE_AI_BLOG_POST = 'refine_ai_blog_post';
 export const BLOG_TRANSLATION_QUEUE = 'blog_translation_queue';
 export const TRANSLATE_BLOG_POST = 'translate_blog_post';
 export const TRANSLATE_ALL_PENDING = 'translate_all_pending';
+/** One job per category; it translates every language the category still needs. */
+export const TRANSLATE_BLOG_CATEGORY = 'translate_blog_category';
 
 export const AI_IMAGE_QUEUE = 'ai_image_queue';
 export const GENERATE_AI_IMAGE = 'generate_ai_image';

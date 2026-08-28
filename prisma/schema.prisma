@@ -380,14 +380,52 @@ model BlogPersona {
 }
 
 model BlogCategory {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String     @unique
-  slug       String     @unique
-  created_at DateTime   @default(now()) @map("created_at")
-  updated_at DateTime   @updatedAt @map("updated_at")
-  posts      BlogPost[]
+  id              String @id @default(uuid()) @db.Uuid
+  /// O nome como foi escrito. `original_locale` diz em que língua.
+  name            String @unique
+  slug            String @unique
+  /// Posts nascem em inglês e são traduzidos; categorias nascem em português.
+  /// Sem isto, "traduzir para os outros idiomas" não tem de onde partir.
+  original_locale String @default("pt") @map("original_locale") @db.VarChar(5)
+
+  created_at   DateTime                  @default(now()) @map("created_at")
+  updated_at   DateTime                  @updatedAt @map("updated_at")
+  posts        BlogPost[]
+  translations BlogCategoryTranslation[]
 
   @@map("blog_categories")
+}
+
+/// O nome e o slug de uma categoria noutro idioma.
+///
+/// Espelha `BlogPostTranslation`, e pela mesma razão: o leitor em inglês via o
+/// título, o resumo e o corpo do post traduzidos — e por cima deles a categoria
+/// em português, porque a categoria não tinha onde guardar outra língua.
+///
+/// O slug é traduzido junto com o nome, e a rota pública resolve as duas
+/// grafias: um link já partilhado para `/blog/category/vistos-e-permissoes`
+/// continua a responder para sempre.
+model BlogCategoryTranslation {
+  id          String       @id @default(uuid()) @db.Uuid
+  category_id String       @db.Uuid
+  category    BlogCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  locale      String       @db.VarChar(5)
+  name        String
+  /// Gerado no servidor a partir do nome traduzido, nunca pelo modelo.
+  slug        String
+
+  translated_by       String  @default("AI")
+  /// Complementa `translated_by`: aquele diz se foi IA ou gente, este diz qual
+  /// modelo. Nulo nas traduções anteriores ao roteador.
+  translated_by_model String? @map("translated_by_model")
+
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt
+
+  @@unique([category_id, locale])
+  @@unique([locale, slug])
+  @@index([category_id])
+  @@map("blog_category_translations")
 }
 
 model BlogTag {

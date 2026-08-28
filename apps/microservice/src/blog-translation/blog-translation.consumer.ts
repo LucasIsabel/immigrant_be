@@ -6,6 +6,7 @@ import {
 } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
+import { BlogCategoryTranslationService } from './blog-category-translation.service';
 import {
   BlogTranslationWorkerService,
   TranslatePostJobData,
@@ -18,6 +19,7 @@ import {
   GENERATE_AI_BLOG_IMAGE,
   TRANSLATE_BLOG_POST,
   TRANSLATE_ALL_PENDING,
+  TRANSLATE_BLOG_CATEGORY,
 } from '@app/config/constants';
 import { BlogPipelineStatus } from '../../../../generated/prisma';
 import {
@@ -35,6 +37,7 @@ export class BlogTranslationConsumer extends WorkerHost {
 
   constructor(
     private readonly translationService: BlogTranslationWorkerService,
+    private readonly categoryTranslationService: BlogCategoryTranslationService,
     private readonly eventsService: EventsService,
     @InjectQueue(BLOG_TRANSLATION_QUEUE) private readonly queue: Queue,
     @InjectQueue(AI_BLOG_IMAGE_QUEUE) private readonly imageQueue: Queue,
@@ -68,6 +71,13 @@ export class BlogTranslationConsumer extends WorkerHost {
         break;
       }
 
+      case TRANSLATE_BLOG_CATEGORY: {
+        const { categoryId } = job.data as { categoryId: string };
+        this.logger.log(`Translating category ${categoryId} (job: ${job.id})`);
+        await this.categoryTranslationService.translateCategory(categoryId);
+        break;
+      }
+
       case TRANSLATE_ALL_PENDING: {
         this.logger.log('Scanning for pending translations…');
         const pending = await this.translationService.getPendingTranslations();
@@ -87,6 +97,22 @@ export class BlogTranslationConsumer extends WorkerHost {
         );
 
         this.logger.log(`Enqueued ${pending.length} translation jobs`);
+
+        // The same sweep picks up categories, so a name that failed once is
+        // retried nightly rather than waiting for somebody to notice.
+        const categories =
+          await this.categoryTranslationService.findCategoriesNeedingTranslation();
+        if (categories.length > 0) {
+          await this.queue.addBulk(
+            categories.map((categoryId) => ({
+              name: TRANSLATE_BLOG_CATEGORY,
+              data: { categoryId, correlationId: getCorrelationId() },
+            })),
+          );
+          this.logger.log(
+            `Enqueued ${categories.length} category translations`,
+          );
+        }
         break;
       }
 
