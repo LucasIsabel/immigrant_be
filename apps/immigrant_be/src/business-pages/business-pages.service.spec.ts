@@ -135,6 +135,12 @@ describe('BusinessPagesService', () => {
     }).compile();
     service = module.get(BusinessPagesService);
     jest.clearAllMocks();
+    mockModeration.moderateContent.mockResolvedValue({
+      riskLevel: 'low',
+      flags: [],
+      summary: 'ok',
+      recommendation: 'approve',
+    });
   });
 
   describe('checkSlugAvailability', () => {
@@ -566,6 +572,79 @@ describe('BusinessPagesService', () => {
       );
       expect(mockRepo.submitPage).not.toHaveBeenCalled();
       expect(result).toEqual({ modal: 'approved', status: 'APPROVED' });
+    });
+
+    it('holds a qualified publisher back when the content is a clear violation', async () => {
+      // Publishing straight through is the only path with no human reviewer,
+      // so it is the one path the model has to clear first.
+      const draftPage = {
+        ...mockPage,
+        status: 'DRAFT',
+        approvedContent: null,
+        pendingContent: { name: 'Padaria' },
+        slugLockedAt: null,
+      };
+      mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
+      mockQualification.isQualified.mockResolvedValue(true);
+      mockModeration.moderateContent.mockResolvedValue({
+        riskLevel: 'high',
+        flags: [],
+        summary: 'Violação clara.',
+        recommendation: 'reject',
+      });
+
+      const result = await service.submitForReview('page-1', 'user-1');
+
+      expect(mockRepo.approvePage).not.toHaveBeenCalled();
+      expect(mockRepo.submitPage).toHaveBeenCalledWith(
+        'page-1',
+        'PENDING_REVIEW',
+      );
+      expect(result).toEqual({ modal: 'first', status: 'PENDING_REVIEW' });
+    });
+
+    it('still publishes for a qualified publisher when moderation is unavailable', async () => {
+      // The service answers medium/review when the model fails. An outage
+      // must not strand a publisher who earned the right to publish.
+      const draftPage = {
+        ...mockPage,
+        status: 'DRAFT',
+        approvedContent: null,
+        pendingContent: { name: 'Padaria' },
+        slugLockedAt: null,
+      };
+      mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
+      mockQualification.isQualified.mockResolvedValue(true);
+      mockModeration.moderateContent.mockResolvedValue({
+        riskLevel: 'medium',
+        flags: [],
+        summary: 'Erro na análise automática.',
+        recommendation: 'review',
+      });
+      mockRepo.approvePage.mockResolvedValue({
+        ...draftPage,
+        status: 'APPROVED',
+      });
+
+      const result = await service.submitForReview('page-1', 'user-1');
+
+      expect(mockRepo.approvePage).toHaveBeenCalled();
+      expect(result).toEqual({ modal: 'approved', status: 'APPROVED' });
+    });
+
+    it('does not moderate the submit of a publisher who is not qualified', async () => {
+      // That path already ends at an admin looking at the real template.
+      const draftPage = { ...mockPage, status: 'DRAFT', approvedContent: null };
+      mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
+      mockQualification.isQualified.mockResolvedValue(false);
+      mockRepo.submitPage.mockResolvedValue({
+        ...draftPage,
+        status: 'PENDING_REVIEW',
+      });
+
+      await service.submitForReview('page-1', 'user-1');
+
+      expect(mockModeration.moderateContent).not.toHaveBeenCalled();
     });
   });
 

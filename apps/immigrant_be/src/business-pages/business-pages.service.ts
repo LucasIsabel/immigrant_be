@@ -159,20 +159,35 @@ export class BusinessPagesService {
       throw new ConflictException('Página já está em análise');
     }
 
-    // Qualified publishers bypass moderation
+    // Publishing straight through is the only path with no human reviewer, so
+    // it is the one path where the model has to read the content first. A
+    // clear violation demotes the page into the normal review queue rather
+    // than rejecting it; anything else — including the model being
+    // unavailable, which falls back to "medium" — still publishes, because a
+    // moderation outage must not strand a publisher who earned the right.
     const qualified = await this.qualificationService.isQualified(id);
     if (qualified) {
-      await this.repository.approvePage(
-        id,
-        page.pendingContent as object,
-        page.slugLockedAt === null,
-        null,
+      const moderation = await this.moderationService.moderateContent(
+        (page.pendingContent ?? {}) as Record<string, unknown>,
+        page.businessType,
       );
-      const typeData = this.extractTypeData(page.pendingContent);
-      if (typeData) {
-        await this.repository.updateBusinessTypeData(page.businessId, typeData);
+
+      if (moderation.riskLevel !== 'high') {
+        await this.repository.approvePage(
+          id,
+          page.pendingContent as object,
+          page.slugLockedAt === null,
+          null,
+        );
+        const typeData = this.extractTypeData(page.pendingContent);
+        if (typeData) {
+          await this.repository.updateBusinessTypeData(
+            page.businessId,
+            typeData,
+          );
+        }
+        return { modal: 'approved', status: 'APPROVED' };
       }
-      return { modal: 'approved', status: 'APPROVED' };
     }
 
     const newStatus =

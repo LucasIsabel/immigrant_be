@@ -404,7 +404,11 @@ PublisherQualification ─── Business (1:1) — qualificação automática d
   Override manual (admin): overrideActive, overrideValue, overrideById (FK Users),
     overrideReason, overrideAt — quando overrideActive=true, ignora critérios automáticos
   Ciclo: criado automaticamente na primeira aprovação/rejeição de página;
-    publisher qualificado tem suas submissões aprovadas diretamente sem moderação
+    publisher qualificado publica direto, sem revisão humana — mas o envio passa
+    antes pela moderação por IA, que é o único leitor desse caminho: `riskLevel`
+    alto demove a página para a fila normal de revisão; qualquer outro resultado
+    (inclusive o `medium` de falha da IA) publica, para que indisponibilidade da
+    moderação não trave quem já ganhou o direito
 ```
 
 ### Convenções do Schema
@@ -534,6 +538,8 @@ libs/ai/                              # Biblioteca compartilhada de IA
 │   ├── openrouter.service.ts         # texto + imagem via fetch (o SDK oficial é ESM-only)
 │   └── gemini-direct.provider.ts     # último elo da cadeia, com a chave Gemini existente
 ├── utils/json-response.util.ts       # parseJsonResponse compartilhado por todos os providers
+├── utils/moderation-flatten.util.ts  # achata typeData em campos nomeados pelo caminho JSON,
+│                                     # para o flag da IA poder ser localizado na tela do admin
 ├── gemini-base.service.ts            # Legado: client Gemini de modelo fixo, ainda usado por
 │                                     #   system, plan e business-pages
 ├── schemas/                          # Zod schemas centralizados
@@ -541,7 +547,9 @@ libs/ai/                              # Biblioteca compartilhada de IA
 │   ├── visa-recommendation.schema.ts # VisaRecommendationType
 │   ├── blog-post.schema.ts           # BlogPostAiResponse — geração de posts
 │   ├── blog-translation.schema.ts    # BlogTranslationAiResponse — tradução de posts
-│   └── business-page-moderation.schema.ts # Entrada/saída da moderação de páginas (admin)
+│   └── business-page-moderation.schema.ts # Entrada/saída da moderação de páginas
+│                                       # inclui typeDataText/typeDataLinks: o typeData
+│                                       # achatado por caminho JSON (tours[2].description)
 └── prompts/                          # Templates de prompts centralizados
     ├── countries-match.prompt.ts       # regra da livre circulação junto dos critérios
     ├── best-visa-type.prompt.ts        # bloco extra sob `{ freedomOfMovement: true }`

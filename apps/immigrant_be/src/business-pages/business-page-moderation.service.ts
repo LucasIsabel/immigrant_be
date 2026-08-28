@@ -2,10 +2,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AiRouterService,
   businessPageModerationResultSchema,
+  flattenModerationContent,
   type BusinessPageModerationResult,
   type BusinessPageModerationInput,
   buildBusinessPageModerationPrompt,
 } from '@app/ai';
+
+/**
+ * Appended when the content was too large to be analysed in full. User-facing
+ * copy, so it stays in Portuguese like the rest of the moderation summary.
+ */
+const TRUNCATED_SUMMARY_NOTE =
+  ' Parte do conteúdo excedeu o limite de análise automática e não foi analisada.';
 
 @Injectable()
 export class BusinessPageModerationService {
@@ -61,6 +69,14 @@ export class BusinessPageModerationService {
       businessType,
     };
 
+    // `typeData` holds the tours, the menu and the itinerary — most of what a
+    // page actually publishes — and none of it used to reach the moderator.
+    const { text, links, truncated } = flattenModerationContent(
+      pendingContent.typeData,
+    );
+    if (Object.keys(text).length > 0) input.typeDataText = text;
+    if (Object.keys(links).length > 0) input.typeDataLinks = links;
+
     const prompt = buildBusinessPageModerationPrompt(input);
 
     try {
@@ -84,7 +100,7 @@ export class BusinessPageModerationService {
         };
       }
 
-      return parsed;
+      return truncated ? this.floorForTruncation(parsed) : parsed;
     } catch (error) {
       this.logger.error(
         'Moderation AI call failed',
@@ -97,5 +113,22 @@ export class BusinessPageModerationService {
         recommendation: 'review',
       };
     }
+  }
+
+  /**
+   * Content nobody read cannot be approved by the model alone, so a truncated
+   * analysis never comes back better than "review". A verdict that is already
+   * worse is left alone — this raises the floor, it never lowers a finding.
+   */
+  private floorForTruncation(
+    result: BusinessPageModerationResult,
+  ): BusinessPageModerationResult {
+    return {
+      ...result,
+      riskLevel: result.riskLevel === 'low' ? 'medium' : result.riskLevel,
+      recommendation:
+        result.recommendation === 'approve' ? 'review' : result.recommendation,
+      summary: result.summary + TRUNCATED_SUMMARY_NOTE,
+    };
   }
 }

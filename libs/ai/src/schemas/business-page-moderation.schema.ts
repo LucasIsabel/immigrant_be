@@ -12,6 +12,10 @@ export const businessPageModerationInputSchema = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
   businessType: z.string().optional(),
+  /** Flattened `typeData`, keyed by its JSON path inside the page content. */
+  typeDataText: z.record(z.string(), z.string()).optional(),
+  /** URLs found in `typeData`, keyed the same way. */
+  typeDataLinks: z.record(z.string(), z.string()).optional(),
 });
 
 export type BusinessPageModerationInput = z.infer<
