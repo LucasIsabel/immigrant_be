@@ -80,23 +80,24 @@ export class BlogTranslationConsumer extends WorkerHost {
 
       case TRANSLATE_ALL_PENDING: {
         this.logger.log('Scanning for pending translations…');
+
+        // Posts and categories are swept independently: a blog whose posts are
+        // all translated is the normal state, and it must not stop the sweep
+        // before it reaches the categories.
         const pending = await this.translationService.getPendingTranslations();
 
-        if (pending.length === 0) {
-          this.logger.log('No pending translations found');
-          break;
+        if (pending.length > 0) {
+          // The fanned-out jobs inherit this scan's ID, so one cron tick and
+          // everything it spawned share a trace.
+          await this.queue.addBulk(
+            pending.map((item) => ({
+              name: TRANSLATE_BLOG_POST,
+              data: { ...item, correlationId: getCorrelationId() },
+            })),
+          );
+
+          this.logger.log(`Enqueued ${pending.length} translation jobs`);
         }
-
-        // The fanned-out jobs inherit this scan's ID, so one cron tick and
-        // everything it spawned share a trace.
-        await this.queue.addBulk(
-          pending.map((item) => ({
-            name: TRANSLATE_BLOG_POST,
-            data: { ...item, correlationId: getCorrelationId() },
-          })),
-        );
-
-        this.logger.log(`Enqueued ${pending.length} translation jobs`);
 
         // The same sweep picks up categories, so a name that failed once is
         // retried nightly rather than waiting for somebody to notice.
@@ -112,6 +113,10 @@ export class BlogTranslationConsumer extends WorkerHost {
           this.logger.log(
             `Enqueued ${categories.length} category translations`,
           );
+        }
+
+        if (pending.length === 0 && categories.length === 0) {
+          this.logger.log('No pending translations found');
         }
         break;
       }
