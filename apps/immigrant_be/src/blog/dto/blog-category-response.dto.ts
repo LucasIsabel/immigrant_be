@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { BlogCategoryTranslationResponseDto } from './blog-category-translation-response.dto';
 
 export class BlogCategoryResponseDto {
   @ApiProperty({
@@ -18,6 +19,22 @@ export class BlogCategoryResponseDto {
     example: 'visto',
   })
   slug: string;
+
+  @ApiProperty({
+    description: 'Idioma em que a categoria foi escrita originalmente',
+    enum: ['pt', 'en', 'es'],
+    example: 'pt',
+  })
+  original_locale: string;
+
+  @ApiProperty({
+    description:
+      'Traduções do nome desta categoria. O `name` e o `slug` acima já vêm ' +
+      'no idioma pedido em `lang`; esta lista existe para quem precisa do ' +
+      'mapa inteiro — o hreflang da página da editoria e a tela de admin.',
+    type: [BlogCategoryTranslationResponseDto],
+  })
+  translations: BlogCategoryTranslationResponseDto[];
 
   @ApiProperty({
     description: 'Data de criação',

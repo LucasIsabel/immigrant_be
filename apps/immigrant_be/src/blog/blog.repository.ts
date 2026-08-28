@@ -35,10 +35,24 @@ const POST_INCLUDE = {
       editorial_stance: true,
     },
   },
-  category: true,
+  category: { include: { translations: true } },
   tags: { include: { tag: true } },
   _count: { select: { likes: true } },
 };
+
+/**
+ * A category matched by either spelling of its slug.
+ *
+ * The slug is translated along with the name, so the same category answers to
+ * `vistos-e-permissoes` and to `visas-and-permits`. Both have to resolve, in
+ * every locale: a link shared before the translations existed must not break,
+ * and the translated URL is the one the site now hands out.
+ */
+function categoryBySlug(slug: string) {
+  return {
+    OR: [{ slug }, { translations: { some: { slug } } }],
+  };
+}
 
 @Injectable()
 export class BlogRepository {
@@ -109,7 +123,7 @@ export class BlogRepository {
     const where = {
       status: BlogPostStatus.PUBLISHED,
       ...searchFilter,
-      ...(opts.categorySlug && { category: { slug: opts.categorySlug } }),
+      ...(opts.categorySlug && { category: categoryBySlug(opts.categorySlug) }),
       ...(opts.tagSlug && {
         tags: { some: { tag: { slug: opts.tagSlug } } },
       }),
@@ -138,7 +152,7 @@ export class BlogRepository {
   }) {
     const where = {
       ...(opts.status && { status: opts.status as BlogPostStatus }),
-      ...(opts.categorySlug && { category: { slug: opts.categorySlug } }),
+      ...(opts.categorySlug && { category: categoryBySlug(opts.categorySlug) }),
       ...(opts.tagSlug && {
         tags: { some: { tag: { slug: opts.tagSlug } } },
       }),
@@ -267,6 +281,7 @@ export class BlogRepository {
     const [categories, groupedCounts] = await Promise.all([
       this.prisma.blogCategory.findMany({
         orderBy: { name: 'asc' },
+        include: { translations: true },
       }),
       this.prisma.blogPost.groupBy({
         by: ['category_id'],
@@ -289,6 +304,26 @@ export class BlogRepository {
 
   async findCategoryBySlug(slug: string) {
     return this.prisma.blogCategory.findUnique({ where: { slug } });
+  }
+
+  /**
+   * The category a URL is asking for, by the canonical slug or a translated one.
+   *
+   * The canonical slug is tried first: it is unique by constraint, while a
+   * translated slug is only unique within its locale, so a translation that
+   * happened to land on another category's canonical slug must not win.
+   */
+  async findCategoryByAnySlug(slug: string) {
+    const canonical = await this.prisma.blogCategory.findUnique({
+      where: { slug },
+      include: { translations: true },
+    });
+    if (canonical) return canonical;
+
+    return this.prisma.blogCategory.findFirst({
+      where: { translations: { some: { slug } } },
+      include: { translations: true },
+    });
   }
 
   async findCategoryById(id: string) {

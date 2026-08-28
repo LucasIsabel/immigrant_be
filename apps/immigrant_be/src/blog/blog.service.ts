@@ -11,6 +11,10 @@ import {
   TRANSLATE_BLOG_CATEGORY,
 } from '@app/config/constants';
 import { BlogRepository } from './blog.repository';
+import {
+  localizeCategory,
+  localizeEmbeddedCategory,
+} from './localize-category';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
@@ -115,7 +119,12 @@ export class BlogService {
 
     const localized = query.lang
       ? await Promise.all(
-          data.map((post) => this.applyTranslation(post, query.lang!)),
+          data.map(async (post) =>
+            localizeEmbeddedCategory(
+              await this.applyTranslation(post, query.lang!),
+              query.lang,
+            ),
+          ),
         )
       : data;
 
@@ -166,7 +175,9 @@ export class BlogService {
       throw new NotFoundException('Post não encontrado');
     }
     void this.blogRepository.incrementViews(post.id);
-    const localized = lang ? await this.applyTranslation(post, lang) : post;
+    const localized = lang
+      ? localizeEmbeddedCategory(await this.applyTranslation(post, lang), lang)
+      : post;
     const likedIds = userId
       ? await this.blogRepository.getLikedPostIdsForUser([post.id], userId)
       : new Set<string>();
@@ -305,8 +316,22 @@ export class BlogService {
     return created;
   }
 
-  async findAllCategories() {
-    return this.blogRepository.findAllCategories();
+  async findAllCategories(lang?: string) {
+    const categories = await this.blogRepository.findAllCategories();
+    return categories.map((category) => localizeCategory(category, lang));
+  }
+
+  /**
+   * One category, by the canonical slug or by a translated one.
+   *
+   * The category page needs a real title and a real 404: today it derives its
+   * heading from the slug, so any invented URL renders a page.
+   */
+  async findCategoryBySlug(slug: string, lang?: string) {
+    const category = await this.blogRepository.findCategoryByAnySlug(slug);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+
+    return localizeCategory(category, lang);
   }
 
   async updateCategory(id: string, dto: UpdateBlogCategoryDto) {

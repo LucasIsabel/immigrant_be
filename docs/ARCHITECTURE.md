@@ -1095,7 +1095,8 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `/blog/posts`                                | Blog                      | Público                                    |
 | `/blog/posts/admin`                          | Blog (admin inline)       | ADMIN                                      |
 | `/blog/posts/:slug`                          | Blog                      | Público                                    |
-| `/blog/categories`                           | Blog (categorias com count de posts PUBLISHED) | Público                                    |
+| `/blog/categories?lang=`                     | Blog (categorias com count de posts PUBLISHED) | Público                                    |
+| `/blog/categories/:slug?lang=`               | Blog (resolve slug canônico ou traduzido)      | Público                                    |
 | `/blog/tags`                                 | Blog                      | Público                                    |
 | `/blog/authors`                              | Blog                      | Público                                    |
 | `/blog/authors/:id`                          | Blog                      | Público                                    |
@@ -1355,6 +1356,20 @@ Pipeline sequencial: **Lint → Test → Build**
   - Query param `?lang=en` nos endpoints públicos aplica overlay de tradução (fallback para PT se ausente)
   - Admin pode gerenciar traduções manualmente (`PUT /admin/blog/posts/:id/translations/:locale`)
   - Worker `blog-translation` gera traduções automáticas via Gemini (cron diário 03:00 UTC ou sob demanda)
+- **Blog Categories**: tabela `BlogCategoryTranslation` guarda **nome e slug** por locale, com
+  `original_locale` na categoria (`pt` na prática — o post nasce em `en` e a categoria em `pt`).
+  - A localização da categoria vive em `localize-category.ts` e é aplicada **fora** de
+    `applyTranslation`, de propósito: aquele helper retorna cedo quando o idioma pedido é o
+    original *do post*, e o leitor em `en` — que não precisa de tradução do post — é justamente
+    quem precisa da tradução da categoria. Colocá-la lá dentro mataria o caso principal.
+  - O **slug é traduzido junto com o nome** e resolvido pelas duas grafias: o filtro
+    `categorySlug` e `GET /blog/categories/:slug` fazem `OR` entre o slug canônico e um
+    traduzido, para que um link compartilhado antes das traduções não quebre. O canônico é
+    tentado primeiro, porque é único por constraint enquanto o traduzido só é único dentro do
+    seu locale.
+  - Fallback: sem `lang`, ou sem linha para o `lang` pedido, saem `name`/`slug` canônicos. Uma
+    categoria **nunca é omitida** — nome em pt numa trilha em inglês é um defeito; categoria
+    ausente da navegação é um buraco.
 
 ---
 
