@@ -13,7 +13,14 @@ jest.mock('../../../../generated/prisma', () => ({
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { getQueueToken } from '@nestjs/bullmq';
+import {
+  BLOG_TRANSLATION_QUEUE,
+  TRANSLATE_BLOG_CATEGORY,
+} from '@app/config/constants';
 import { BlogService } from './blog.service';
+
+const mockTranslationQueue = { add: jest.fn() };
 import { BlogRepository } from './blog.repository';
 
 const mockRepository = {
@@ -31,6 +38,7 @@ const mockRepository = {
   findAllCategories: jest.fn(),
   findCategoryBySlug: jest.fn(),
   findCategoryById: jest.fn(),
+  updateCategory: jest.fn(),
   createTag: jest.fn(),
   findAllTags: jest.fn(),
   findTagBySlug: jest.fn(),
@@ -45,6 +53,10 @@ describe('BlogService', () => {
       providers: [
         BlogService,
         { provide: BlogRepository, useValue: mockRepository },
+        {
+          provide: getQueueToken(BLOG_TRANSLATION_QUEUE),
+          useValue: mockTranslationQueue,
+        },
       ],
     }).compile();
 
@@ -380,6 +392,67 @@ describe('BlogService', () => {
       await expect(
         service.createTag({ name: 'Express Entry' }),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('asking for a category to be translated', () => {
+    /**
+     * Categories are written in Portuguese while the blog is read in three
+     * languages. Until now the reader on /en saw the post's title, excerpt and
+     * body translated, and above them a category still in Portuguese.
+     */
+    it('enqueues a translation for a category that was just created', async () => {
+      mockRepository.findCategoryBySlug.mockResolvedValue(null);
+      mockRepository.createCategory.mockResolvedValue({ id: 'cat-1' });
+
+      await service.createCategory({ name: 'Vistos e Permissões' });
+
+      expect(mockTranslationQueue.add).toHaveBeenCalledWith(
+        TRANSLATE_BLOG_CATEGORY,
+        { categoryId: 'cat-1' },
+      );
+    });
+
+    it('redoes the translation when the name changes', async () => {
+      // The existing translations describe a name that no longer exists.
+      mockRepository.findCategoryById.mockResolvedValue({
+        id: 'cat-1',
+        name: 'Política',
+      });
+      mockRepository.updateCategory.mockResolvedValue({ id: 'cat-1' });
+
+      await service.updateCategory('cat-1', { name: 'Política e Sociedade' });
+
+      expect(mockTranslationQueue.add).toHaveBeenCalledWith(
+        TRANSLATE_BLOG_CATEGORY,
+        { categoryId: 'cat-1' },
+      );
+    });
+
+    it('does not redo it when the name is unchanged', async () => {
+      mockRepository.findCategoryById.mockResolvedValue({
+        id: 'cat-1',
+        name: 'Política',
+      });
+      mockRepository.updateCategory.mockResolvedValue({ id: 'cat-1' });
+
+      await service.updateCategory('cat-1', { name: 'Política' });
+
+      expect(mockTranslationQueue.add).not.toHaveBeenCalled();
+    });
+
+    it('still creates the category when the queue is down', async () => {
+      // A queue nobody can reach must not stop an admin creating a category;
+      // the nightly sweep picks up whatever was missed.
+      mockRepository.findCategoryBySlug.mockResolvedValue(null);
+      mockRepository.createCategory.mockResolvedValue({ id: 'cat-2' });
+      mockTranslationQueue.add.mockRejectedValueOnce(
+        new Error('redis is not answering'),
+      );
+
+      await expect(
+        service.createCategory({ name: 'Nova' }),
+      ).resolves.toMatchObject({ id: 'cat-2' });
     });
   });
 });

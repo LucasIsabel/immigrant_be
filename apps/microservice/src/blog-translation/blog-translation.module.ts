@@ -9,6 +9,7 @@ import {
 } from '@app/config/constants';
 import { EventsModule } from '../events/events.module';
 import { BlogTranslationConsumer } from './blog-translation.consumer';
+import { BlogCategoryTranslationService } from './blog-category-translation.service';
 import { BlogTranslationWorkerService } from './blog-translation.service';
 import { BlogTranslationCronService } from './blog-translation-cron.service';
 
@@ -26,6 +27,7 @@ import { BlogTranslationCronService } from './blog-translation-cron.service';
   providers: [
     BlogTranslationConsumer,
     BlogTranslationWorkerService,
+    BlogCategoryTranslationService,
     BlogTranslationCronService,
   ],
 })

@@ -73,6 +73,14 @@ export {
 } from './prompts/persona-guardrails';
 export { buildBlogOpinionModerationPrompt } from './prompts/blog-opinion-moderation.prompt';
 export {
+  buildBlogCategoryTranslationPrompt,
+  type BlogCategoryTranslationPromptOptions,
+} from './prompts/blog-category-translation.prompt';
+export {
+  blogCategoryTranslationSchema,
+  type BlogCategoryTranslationResult,
+} from './schemas/blog-category-translation.schema';
+export {
   blogOpinionModerationInputSchema,
   blogOpinionModerationResultSchema,
   type BlogOpinionModerationInput,

@@ -1,8 +1,15 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import {
+  BLOG_TRANSLATION_QUEUE,
+  TRANSLATE_BLOG_CATEGORY,
+} from '@app/config/constants';
 import { BlogRepository } from './blog.repository';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
@@ -41,7 +48,34 @@ function calcReadingTime(content: string): number {
 
 @Injectable()
 export class BlogService {
-  constructor(private readonly blogRepository: BlogRepository) {}
+  private readonly logger = new Logger(BlogService.name);
+
+  constructor(
+    private readonly blogRepository: BlogRepository,
+    @InjectQueue(BLOG_TRANSLATION_QUEUE)
+    private readonly translationQueue: Queue,
+  ) {}
+
+  /**
+   * Asks for a category to be translated, and never gets in the way.
+   *
+   * Categories are written in Portuguese while the blog is read in three
+   * languages, so a name arrives needing two more. Enqueuing rather than
+   * translating inline keeps the admin's save instant, and a queue that is
+   * down must not stop somebody creating a category — the nightly sweep picks
+   * up whatever was missed.
+   */
+  private async requestCategoryTranslation(categoryId: string): Promise<void> {
+    try {
+      await this.translationQueue.add(TRANSLATE_BLOG_CATEGORY, { categoryId });
+    } catch (error) {
+      this.logger.warn(
+        `Could not enqueue the translation of category ${categoryId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
 
   // ─── Posts ────────────────────────────────────────────────────────────────
 
@@ -266,7 +300,9 @@ export class BlogService {
     if (existing) {
       throw new ConflictException('Categoria já existe com este nome');
     }
-    return this.blogRepository.createCategory(dto.name, slug);
+    const created = await this.blogRepository.createCategory(dto.name, slug);
+    await this.requestCategoryTranslation(created.id);
+    return created;
   }
 
   async findAllCategories() {
@@ -277,7 +313,19 @@ export class BlogService {
     const category = await this.blogRepository.findCategoryById(id);
     if (!category) throw new NotFoundException('Categoria não encontrada');
     const slug = dto.name ? slugify(dto.name) : undefined;
-    return this.blogRepository.updateCategory(id, { name: dto.name, slug });
+    const updated = await this.blogRepository.updateCategory(id, {
+      name: dto.name,
+      slug,
+    });
+
+    // A rename makes the existing translations describe a name that is gone,
+    // so they are redone from the new one — including any an admin had
+    // corrected by hand, because what they corrected no longer exists.
+    if (dto.name && dto.name !== category.name) {
+      await this.requestCategoryTranslation(id);
+    }
+
+    return updated;
   }
 
   async deleteCategory(id: string) {
