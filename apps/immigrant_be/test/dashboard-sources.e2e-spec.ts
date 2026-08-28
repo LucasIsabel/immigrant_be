@@ -21,6 +21,8 @@ import { CountryController } from '../src/countries/country.controller';
 import { CountryService } from '../src/countries/country.service';
 import { CountryRepository } from '../src/countries/country.repository';
 import { BlogController } from '../src/blog/blog.controller';
+import { getQueueToken } from '@nestjs/bullmq';
+import { BLOG_TRANSLATION_QUEUE } from '@app/config/constants';
 import { BlogService } from '../src/blog/blog.service';
 import { BlogRepository } from '../src/blog/blog.repository';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
@@ -115,6 +117,12 @@ describe('Dashboard data sources (e2e)', () => {
         BlogService,
         { provide: CountryRepository, useValue: countryRepository },
         { provide: BlogRepository, useValue: blogRepository },
+        // BlogService asks for a category translation when one is created or
+        // renamed; this suite never does either, but Nest still has to build it.
+        {
+          provide: getQueueToken(BLOG_TRANSLATION_QUEUE),
+          useValue: { add: jest.fn() },
+        },
       ],
     }).compile();
 
