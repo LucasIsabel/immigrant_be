@@ -20,8 +20,42 @@ const BUSINESS_PAGE_SUMMARY = {
   },
 } satisfies Prisma.BusinessInclude;
 
-type BusinessWithPageSummary = Prisma.BusinessGetPayload<{
-  include: typeof BUSINESS_PAGE_SUMMARY;
+/**
+ * What leaves the database for a visitor.
+ *
+ * A `select`, not an omission after the fact: the fields a visitor must not
+ * see never leave Postgres, so no later `include`, mapper or serialiser can
+ * put them back by accident.
+ *
+ * Absent on purpose — `draftData`, the owner's unpublished edit, which was
+ * readable by anyone holding a business id; `userId`, which tells a visitor
+ * who owns a listing and therefore which listings share an owner; and
+ * `isPublic`, which since the approved-page fix would announce an owner's
+ * choice not to appear in the directory.
+ */
+const PUBLIC_BUSINESS_SELECT = {
+  id: true,
+  businessType: true,
+  name: true,
+  description: true,
+  address: true,
+  city: true,
+  country: true,
+  state: true,
+  lat: true,
+  lng: true,
+  phone: true,
+  email: true,
+  website: true,
+  photos: true,
+  typeData: true,
+  createdAt: true,
+  updatedAt: true,
+  ...BUSINESS_PAGE_SUMMARY,
+} satisfies Prisma.BusinessSelect;
+
+export type PublicBusiness = Prisma.BusinessGetPayload<{
+  select: typeof PUBLIC_BUSINESS_SELECT;
 }>;
 
 @Injectable()
@@ -98,7 +132,7 @@ export class BusinessRepository {
 
   async findPublic(
     query: BusinessListQueryDto,
-  ): Promise<{ data: BusinessWithPageSummary[]; total: number }> {
+  ): Promise<{ data: PublicBusiness[]; total: number }> {
     const {
       city,
       businessType,
@@ -141,7 +175,7 @@ export class BusinessRepository {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: BUSINESS_PAGE_SUMMARY,
+        select: PUBLIC_BUSINESS_SELECT,
       }),
       this.prisma.business.count({ where }),
     ]);
@@ -158,7 +192,7 @@ export class BusinessRepository {
     lat: number;
     lng: number;
     radius: number;
-  }): Promise<{ data: BusinessWithPageSummary[]; total: number }> {
+  }): Promise<{ data: PublicBusiness[]; total: number }> {
     const { city, businessType, search, page, limit, lat, lng, radius } =
       params;
     const offset = (page - 1) * limit;
@@ -196,7 +230,7 @@ export class BusinessRepository {
         ? await this.prisma.business.findMany({
             where: { id: { in: ids } },
             orderBy: { createdAt: 'desc' },
-            include: BUSINESS_PAGE_SUMMARY,
+            select: PUBLIC_BUSINESS_SELECT,
           })
         : [];
 
@@ -230,7 +264,7 @@ export class BusinessRepository {
           },
         ],
       },
-      include: BUSINESS_PAGE_SUMMARY,
+      select: PUBLIC_BUSINESS_SELECT,
     });
   }
 }
