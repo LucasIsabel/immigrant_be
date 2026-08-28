@@ -37,6 +37,7 @@ const mockRepository = {
   createCategory: jest.fn(),
   findAllCategories: jest.fn(),
   findCategoryBySlug: jest.fn(),
+  findCategoryByAnySlug: jest.fn(),
   findCategoryById: jest.fn(),
   updateCategory: jest.fn(),
   createTag: jest.fn(),
@@ -392,6 +393,83 @@ describe('BlogService', () => {
       await expect(
         service.createTag({ name: 'Express Entry' }),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('categories in the language the reader asked for', () => {
+    const CATEGORY = {
+      id: 'category-1',
+      name: 'Vistos e Permissões',
+      slug: 'vistos-e-permissoes',
+      original_locale: 'pt',
+      translations: [
+        { locale: 'en', name: 'Visas and Permits', slug: 'visas-and-permits' },
+      ],
+      published_posts_count: 3,
+    };
+
+    it('lists them translated when a language is asked for', async () => {
+      mockRepository.findAllCategories.mockResolvedValue([CATEGORY]);
+
+      const [category] = await service.findAllCategories('en');
+
+      expect(category.name).toBe('Visas and Permits');
+      expect(category.slug).toBe('visas-and-permits');
+      expect(category.published_posts_count).toBe(3);
+    });
+
+    it('lists them canonically when none is', async () => {
+      mockRepository.findAllCategories.mockResolvedValue([CATEGORY]);
+
+      const [category] = await service.findAllCategories();
+
+      expect(category.name).toBe('Vistos e Permissões');
+    });
+
+    it('resolves a category by a slug in either language', async () => {
+      mockRepository.findCategoryByAnySlug.mockResolvedValue(CATEGORY);
+
+      const category = await service.findCategoryBySlug(
+        'vistos-e-permissoes',
+        'en',
+      );
+
+      expect(mockRepository.findCategoryByAnySlug).toHaveBeenCalledWith(
+        'vistos-e-permissoes',
+      );
+      expect(category.name).toBe('Visas and Permits');
+    });
+
+    it('refuses a slug nothing answers to', async () => {
+      // The category page derives its heading from the slug today, so an
+      // invented URL renders a page instead of a 404.
+      mockRepository.findCategoryByAnySlug.mockResolvedValue(null);
+
+      await expect(service.findCategoryBySlug('made-up')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('translates the category of a post already written in that language', async () => {
+      // Posts are born in English and categories in Portuguese, so this reader
+      // needs no post translation and does need a category one.
+      mockRepository.findPostBySlug.mockResolvedValue({
+        id: 'post-1',
+        slug: 'residence-permit',
+        title: 'Residence permit',
+        excerpt: 'x',
+        content: 'y',
+        original_locale: 'en',
+        category: CATEGORY,
+        _count: { likes: 0 },
+      });
+
+      const post = await service.findPostBySlug('residence-permit', 'en');
+
+      expect(post).toMatchObject({
+        title: 'Residence permit',
+        category: { name: 'Visas and Permits' },
+      });
     });
   });
 

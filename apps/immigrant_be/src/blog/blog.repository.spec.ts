@@ -284,6 +284,9 @@ describe('BlogRepository', () => {
 
       expect(mockPrisma.blogCategory.findMany).toHaveBeenCalledWith({
         orderBy: { name: 'asc' },
+        // The translations ride along: the listing feeds both the public rail
+        // and the admin badges, and neither should cost a second round trip.
+        include: { translations: true },
       });
       expect(mockPrisma.blogPost.groupBy).toHaveBeenCalledWith({
         by: ['category_id'],

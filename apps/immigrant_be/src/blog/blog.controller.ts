@@ -12,6 +12,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiNotFoundResponse,
   ApiCookieAuth,
   ApiUnauthorizedResponse,
@@ -26,6 +27,7 @@ import { BlogService } from './blog.service';
 import { BlogQueryDto, AdminBlogQueryDto } from './dto/blog-query.dto';
 import { BlogPostResponseDto } from './dto/blog-post-response.dto';
 import { BlogPostListResponseDto } from './dto/blog-post-list-response.dto';
+import { BlogCategoryResponseDto } from './dto/blog-category-response.dto';
 import { BlogCategoryWithPublishedCountResponseDto } from './dto/blog-category-with-published-count-response.dto';
 import { BlogTagResponseDto } from './dto/blog-tag-response.dto';
 import { BlogAuthorResponseDto } from './dto/blog-author-response.dto';
@@ -105,15 +107,50 @@ export class BlogController {
   @AllowAnonymous()
   @ApiOperation({
     summary: 'Listar categorias',
-    description: 'Retorna todas as categorias do blog',
+    description:
+      'Retorna todas as categorias do blog. Com `lang`, o nome e o slug vêm ' +
+      'traduzidos; sem tradução para o idioma pedido, vêm no original.',
+  })
+  @ApiQuery({
+    name: 'lang',
+    required: false,
+    enum: ['pt', 'en', 'es'],
+    description: 'Idioma do nome e do slug retornados',
   })
   @ApiResponse({
     status: 200,
     description: 'Categorias listadas com sucesso',
     type: [BlogCategoryWithPublishedCountResponseDto],
   })
-  findAllCategories() {
-    return this.blogService.findAllCategories();
+  findAllCategories(@Query('lang') lang?: string) {
+    return this.blogService.findAllCategories(lang);
+  }
+
+  @Get('categories/:slug')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Buscar categoria por slug',
+    description:
+      'Resolve tanto o slug canônico quanto um traduzido, para que um link ' +
+      'compartilhado antes da tradução continue funcionando.',
+  })
+  @ApiQuery({
+    name: 'lang',
+    required: false,
+    enum: ['pt', 'en', 'es'],
+    description: 'Idioma do nome e do slug retornados',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Categoria encontrada',
+    type: BlogCategoryResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  findCategoryBySlug(
+    @Param('slug') slug: string,
+    @Query('lang') lang?: string,
+  ) {
+    return this.blogService.findCategoryBySlug(slug, lang);
   }
 
   @Get('tags')
