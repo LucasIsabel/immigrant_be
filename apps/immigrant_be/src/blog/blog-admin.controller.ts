@@ -33,7 +33,9 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { BlogService } from './blog.service';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
+import { BlogCategoryTranslationResponseDto } from './dto/blog-category-translation-response.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
+import { UpsertBlogCategoryTranslationDto } from './dto/upsert-blog-category-translation.dto';
 import { UpdateBlogCategoryDto } from './dto/update-blog-category.dto';
 import { CreateBlogTagDto } from './dto/create-blog-tag.dto';
 import { UpdateBlogTagDto } from './dto/update-blog-tag.dto';
@@ -232,6 +234,65 @@ export class BlogAdminController {
   })
   createCategory(@Body() dto: CreateBlogCategoryDto) {
     return this.blogService.createCategory(dto);
+  }
+
+  @Get('categories/:id/translations')
+  @ApiOperation({
+    summary: 'Listar traduções da categoria',
+    description: 'Retorna o nome e o slug da categoria em cada idioma',
+  })
+  @ApiParam({ name: 'id', description: 'ID da categoria' })
+  @ApiResponse({
+    status: 200,
+    description: 'Traduções listadas',
+    type: [BlogCategoryTranslationResponseDto],
+  })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  getCategoryTranslations(@Param('id') id: string) {
+    return this.blogService.getCategoryTranslations(id);
+  }
+
+  @Put('categories/:id/translations/:locale')
+  @ApiOperation({
+    summary: 'Corrigir a tradução de uma categoria',
+    description:
+      'Upsert do nome traduzido, marcado como humano. O slug é derivado do ' +
+      'nome no servidor.',
+  })
+  @ApiParam({ name: 'id', description: 'ID da categoria' })
+  @ApiParam({
+    name: 'locale',
+    description: 'Idioma da tradução',
+    example: 'en',
+  })
+  @ApiBody({ type: UpsertBlogCategoryTranslationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tradução salva com sucesso',
+    type: BlogCategoryTranslationResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  upsertCategoryTranslation(
+    @Param('id') id: string,
+    @Param('locale') locale: string,
+    @Body() dto: UpsertBlogCategoryTranslationDto,
+  ) {
+    return this.blogService.upsertCategoryTranslation(id, locale, dto);
+  }
+
+  @Post('categories/:id/translations/enqueue')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Reenfileirar a tradução automática da categoria',
+    description:
+      'Pede à IA que reescreva a categoria em todos os idiomas. Sobrescreve ' +
+      'uma correção humana, que é o comportamento herdado do post.',
+  })
+  @ApiParam({ name: 'id', description: 'ID da categoria' })
+  @ApiAcceptedResponse({ description: 'Job enfileirado com sucesso' })
+  @ApiNotFoundResponse({ description: 'Categoria não encontrada' })
+  enqueueCategoryTranslation(@Param('id') id: string) {
+    return this.blogService.enqueueCategoryTranslation(id);
   }
 
   @Patch('categories/:id')

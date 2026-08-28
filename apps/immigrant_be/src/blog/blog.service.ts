@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -7,6 +8,8 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
+  APP_LOCALES,
+  type AppLocale,
   BLOG_TRANSLATION_QUEUE,
   TRANSLATE_BLOG_CATEGORY,
 } from '@app/config/constants';
@@ -15,6 +18,7 @@ import {
   localizeCategory,
   localizeEmbeddedCategory,
 } from './localize-category';
+import { UpsertBlogCategoryTranslationDto } from './dto/upsert-blog-category-translation.dto';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { CreateBlogCategoryDto } from './dto/create-blog-category.dto';
@@ -332,6 +336,91 @@ export class BlogService {
     if (!category) throw new NotFoundException('Categoria não encontrada');
 
     return localizeCategory(category, lang);
+  }
+
+  // ─── Category translations (admin) ────────────────────────────────────────
+
+  async getCategoryTranslations(categoryId: string) {
+    const category = await this.blogRepository.findCategoryById(categoryId);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+
+    return this.blogRepository.findCategoryTranslations(categoryId);
+  }
+
+  /**
+   * An admin correcting a name the AI got wrong.
+   *
+   * The slug is recomputed here rather than accepted from the client: it is a
+   * mechanical transformation with one right answer, and letting the two drift
+   * would leave a category reachable at a URL that no longer describes it.
+   */
+  async upsertCategoryTranslation(
+    categoryId: string,
+    locale: string,
+    dto: UpsertBlogCategoryTranslationDto,
+  ) {
+    const category = await this.blogRepository.findCategoryById(categoryId);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+
+    // Validated here and not only in the DTO: the unique constraint accepts any
+    // string, so a locale mistyped in the path would become a permanent row
+    // nobody ever reads. Same guard the country translations use.
+    if (!APP_LOCALES.includes(locale as AppLocale)) {
+      throw new BadRequestException(
+        `Idioma inválido: ${locale}. Use ${APP_LOCALES.join(', ')}.`,
+      );
+    }
+
+    const slug = await this.availableTranslationSlug(
+      locale,
+      slugify(dto.name),
+      categoryId,
+    );
+
+    return this.blogRepository.upsertCategoryTranslation(categoryId, locale, {
+      name: dto.name,
+      slug,
+      translated_by: 'HUMAN',
+      // The model no longer wrote this row, and saying it did would make the
+      // admin's own correction look like the AI's work.
+      translated_by_model: null,
+    });
+  }
+
+  /**
+   * A slug nothing else in that language is already using.
+   *
+   * Twin of `availableSlug` in the translation worker. They may pick different
+   * suffixes for the same collision, which is harmless — both produce a slug
+   * the unique constraint accepts, and neither can take one that is in use.
+   */
+  private async availableTranslationSlug(
+    locale: string,
+    base: string,
+    categoryId: string,
+  ): Promise<string> {
+    const candidate = base || 'categoria';
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const slug = attempt === 0 ? candidate : `${candidate}-${attempt + 1}`;
+      const owner = await this.blogRepository.findCategoryIdByTranslatedSlug(
+        locale,
+        slug,
+      );
+      if (!owner || owner === categoryId) return slug;
+    }
+
+    return `${candidate}-${categoryId.slice(0, 8)}`;
+  }
+
+  /** Hands the category back to the AI, discarding whatever a human corrected. */
+  async enqueueCategoryTranslation(categoryId: string) {
+    const category = await this.blogRepository.findCategoryById(categoryId);
+    if (!category) throw new NotFoundException('Categoria não encontrada');
+
+    await this.translationQueue.add(TRANSLATE_BLOG_CATEGORY, { categoryId });
+
+    return { message: 'Category translation job enqueued', categoryId };
   }
 
   async updateCategory(id: string, dto: UpdateBlogCategoryDto) {

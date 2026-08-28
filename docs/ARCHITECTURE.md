@@ -1102,6 +1102,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `/blog/authors/:id`                          | Blog                      | Público                                    |
 | `/admin/blog/posts`                          | Blog (admin)              | ADMIN                                      |
 | `/admin/blog/categories`                     | Blog (admin)              | ADMIN                                      |
+| `/admin/blog/categories/:id/translations`    | Blog (admin — corrigir tradução de categoria) | ADMIN                   |
 | `/admin/blog/tags`                           | Blog (admin)              | ADMIN                                      |
 | `/admin/blog/authors`                        | Blog (admin)              | ADMIN                                      |
 | `/admin/blog/authors/:id`                    | Blog (admin)              | ADMIN                                      |
@@ -1370,6 +1371,13 @@ Pipeline sequencial: **Lint → Test → Build**
   - Fallback: sem `lang`, ou sem linha para o `lang` pedido, saem `name`/`slug` canônicos. Uma
     categoria **nunca é omitida** — nome em pt numa trilha em inglês é um defeito; categoria
     ausente da navegação é um buraco.
+  - **Correção humana**: `PUT /admin/blog/categories/:id/translations/:locale` grava
+    `translated_by: 'HUMAN'` e `translated_by_model: null`. O DTO carrega **só o nome** — o slug
+    é derivado no servidor, como no rename canônico e no worker. O locale é validado **no
+    service**, não só no DTO, pelo mesmo motivo das traduções de país: o unique aceita qualquer
+    string, e um locale digitado errado no path viraria linha permanente que ninguém lê.
+  - `POST /admin/blog/categories/:id/translations/enqueue` devolve a categoria para a IA e
+    **sobrescreve a correção humana** — comportamento herdado do post, avisado no botão.
 
 ---
 

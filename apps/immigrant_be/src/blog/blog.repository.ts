@@ -326,6 +326,39 @@ export class BlogRepository {
     });
   }
 
+  async findCategoryTranslations(categoryId: string) {
+    return this.prisma.blogCategoryTranslation.findMany({
+      where: { category_id: categoryId },
+      orderBy: { locale: 'asc' },
+    });
+  }
+
+  /** Who, if anyone, already holds this slug in this language. */
+  async findCategoryIdByTranslatedSlug(locale: string, slug: string) {
+    const row = await this.prisma.blogCategoryTranslation.findUnique({
+      where: { locale_slug: { locale, slug } },
+      select: { category_id: true },
+    });
+    return row?.category_id ?? null;
+  }
+
+  async upsertCategoryTranslation(
+    categoryId: string,
+    locale: string,
+    data: {
+      name: string;
+      slug: string;
+      translated_by: string;
+      translated_by_model: string | null;
+    },
+  ) {
+    return this.prisma.blogCategoryTranslation.upsert({
+      where: { category_id_locale: { category_id: categoryId, locale } },
+      create: { category_id: categoryId, locale, ...data },
+      update: data,
+    });
+  }
+
   async findCategoryById(id: string) {
     return this.prisma.blogCategory.findUnique({ where: { id } });
   }

@@ -12,7 +12,11 @@ jest.mock('../../../../generated/prisma', () => ({
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bullmq';
 import {
   BLOG_TRANSLATION_QUEUE,
@@ -39,6 +43,9 @@ const mockRepository = {
   findCategoryBySlug: jest.fn(),
   findCategoryByAnySlug: jest.fn(),
   findCategoryById: jest.fn(),
+  findCategoryTranslations: jest.fn(),
+  findCategoryIdByTranslatedSlug: jest.fn(),
+  upsertCategoryTranslation: jest.fn(),
   updateCategory: jest.fn(),
   createTag: jest.fn(),
   findAllTags: jest.fn(),
@@ -470,6 +477,102 @@ describe('BlogService', () => {
         title: 'Residence permit',
         category: { name: 'Visas and Permits' },
       });
+    });
+  });
+
+  describe('an admin correcting a category translation', () => {
+    const CATEGORY = { id: 'category-1', name: 'Guerra' };
+
+    beforeEach(() => {
+      mockRepository.findCategoryById.mockResolvedValue(CATEGORY);
+      mockRepository.findCategoryIdByTranslatedSlug.mockResolvedValue(null);
+      mockRepository.upsertCategoryTranslation.mockImplementation(
+        (_id: string, locale: string, data: Record<string, unknown>) => ({
+          locale,
+          ...data,
+        }),
+      );
+    });
+
+    it('derives the slug from the name and marks the row human', async () => {
+      const saved = await service.upsertCategoryTranslation(
+        'category-1',
+        'en',
+        { name: 'War and Conflict' },
+      );
+
+      expect(saved).toMatchObject({
+        name: 'War and Conflict',
+        slug: 'war-and-conflict',
+        translated_by: 'HUMAN',
+        // Saying the model wrote this would make the admin's own correction
+        // look like the AI's work.
+        translated_by_model: null,
+      });
+    });
+
+    it('keeps its own slug when the row already holds it', async () => {
+      mockRepository.findCategoryIdByTranslatedSlug.mockResolvedValue(
+        'category-1',
+      );
+
+      const saved = await service.upsertCategoryTranslation(
+        'category-1',
+        'en',
+        { name: 'War and Conflict' },
+      );
+
+      expect(saved).toMatchObject({ slug: 'war-and-conflict' });
+    });
+
+    it('steps aside from a slug another category already uses', async () => {
+      mockRepository.findCategoryIdByTranslatedSlug.mockImplementation(
+        (_locale: string, slug: string) =>
+          slug === 'war-and-conflict' ? 'someone-else' : null,
+      );
+
+      const saved = await service.upsertCategoryTranslation(
+        'category-1',
+        'en',
+        { name: 'War and Conflict' },
+      );
+
+      expect(saved).toMatchObject({ slug: 'war-and-conflict-2' });
+    });
+
+    it('refuses a locale the site is not read in', async () => {
+      // The unique constraint accepts any string, so a locale mistyped in the
+      // path would become a permanent row nobody ever reads.
+      await expect(
+        service.upsertCategoryTranslation('category-1', 'fr', {
+          name: 'Guerre',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRepository.upsertCategoryTranslation).not.toHaveBeenCalled();
+    });
+
+    it('refuses to translate a category that is gone', async () => {
+      mockRepository.findCategoryById.mockResolvedValue(null);
+
+      await expect(
+        service.upsertCategoryTranslation('ghost', 'en', { name: 'Any' }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(service.getCategoryTranslations('ghost')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.enqueueCategoryTranslation('ghost')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('hands the category back to the AI on request', async () => {
+      await service.enqueueCategoryTranslation('category-1');
+
+      expect(mockTranslationQueue.add).toHaveBeenCalledWith(
+        TRANSLATE_BLOG_CATEGORY,
+        { categoryId: 'category-1' },
+      );
     });
   });
 
