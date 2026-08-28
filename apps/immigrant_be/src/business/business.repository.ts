@@ -1,10 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { Business, Prisma } from '../../../../generated/prisma';
+import { Prisma } from '../../../../generated/prisma';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
 import { BusinessType } from '../../../../generated/prisma';
+
+/**
+ * O resumo da página pública, embutido em toda listagem de negócio.
+ *
+ * O dashboard usa o status para o badge; o /my-city usa o slug para linkar o
+ * cartão à página que o dono desenhou. Sem o join nas rotas públicas o link
+ * não existia: nada fora do dashboard sabia que a página existe, e o visitante
+ * (e o crawler) não tinha como chegar nela.
+ */
+const BUSINESS_PAGE_SUMMARY = {
+  businessPage: {
+    select: { id: true, slug: true, status: true },
+  },
+} satisfies Prisma.BusinessInclude;
+
+type BusinessWithPageSummary = Prisma.BusinessGetPayload<{
+  include: typeof BUSINESS_PAGE_SUMMARY;
+}>;
 
 @Injectable()
 export class BusinessRepository {
@@ -23,11 +41,7 @@ export class BusinessRepository {
     return this.prisma.business.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        businessPage: {
-          select: { id: true, slug: true, status: true },
-        },
-      },
+      include: BUSINESS_PAGE_SUMMARY,
     });
   }
 
@@ -84,7 +98,7 @@ export class BusinessRepository {
 
   async findPublic(
     query: BusinessListQueryDto,
-  ): Promise<{ data: Business[]; total: number }> {
+  ): Promise<{ data: BusinessWithPageSummary[]; total: number }> {
     const {
       city,
       businessType,
@@ -127,6 +141,7 @@ export class BusinessRepository {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: BUSINESS_PAGE_SUMMARY,
       }),
       this.prisma.business.count({ where }),
     ]);
@@ -143,7 +158,7 @@ export class BusinessRepository {
     lat: number;
     lng: number;
     radius: number;
-  }): Promise<{ data: Business[]; total: number }> {
+  }): Promise<{ data: BusinessWithPageSummary[]; total: number }> {
     const { city, businessType, search, page, limit, lat, lng, radius } =
       params;
     const offset = (page - 1) * limit;
@@ -181,6 +196,7 @@ export class BusinessRepository {
         ? await this.prisma.business.findMany({
             where: { id: { in: ids } },
             orderBy: { createdAt: 'desc' },
+            include: BUSINESS_PAGE_SUMMARY,
           })
         : [];
 
@@ -190,6 +206,7 @@ export class BusinessRepository {
   findPublicById(id: string) {
     return this.prisma.business.findFirst({
       where: { id, isPublic: true },
+      include: BUSINESS_PAGE_SUMMARY,
     });
   }
 }

@@ -116,8 +116,9 @@ export class BusinessResponseDto {
     nullable: true,
     required: false,
     description:
-      'Resumo da página pública (badge da listagem). Presente em GET /business/me; ' +
-      'null quando o negócio ainda não tem página; ausente nas demais rotas.',
+      'Resumo da página pública. Presente em GET /business/me (badge da listagem) ' +
+      'e nas rotas públicas de negócio, onde o /my-city usa o slug para linkar o ' +
+      'cartão à página; null quando o negócio ainda não tem página.',
   })
   businessPage?: BusinessPageSummaryDto | null;
 
