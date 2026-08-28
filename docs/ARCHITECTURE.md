@@ -331,6 +331,15 @@ Business ─── Users (N:1) — negócio local de um imigrante
             `POST /business/:id/draft/publish` aplica ao vivo e limpa; `DELETE /business/:id/draft` descarta o rascunho;
             typeData (Json — dados específicos por tipo, validados via Zod no Service),
             isPublic (default false)
+  `isPublic` significa UMA coisa: o negócio aparece no diretório do My City — é o que o
+    interruptor promete ao dono ("Listar publicamente no My City"), e é o que alimenta a
+    listagem, o mapa e a elegibilidade de eventos.
+    Ele NÃO governa se a página pública consegue ler o negócio. Governava por acidente, e o
+    efeito era uma página `APPROVED` no ar com preços sem símbolo de moeda e sem galeria,
+    porque as duas coisas vêm do registro do negócio. `findVisibleById` (usado só pelo
+    GET /business/public/:id) responde quando o negócio está listado **ou** quando a página
+    dele está `APPROVED`/`APPROVED_WITH_PENDING`: uma página que a plataforma aprovou já é
+    pública por esse fato. As listagens do diretório continuam honrando só o `isPublic`.
   Listagem pública disponível via GET /business/public (diretório "My City")
   Filtro geoespacial por raio: quando os params lat, lng e radius (km) são enviados,
     BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
