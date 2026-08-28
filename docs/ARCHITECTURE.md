@@ -395,6 +395,24 @@ CommunityEventReport ─── CommunityEvent (N:1) — denúncia anónima de um
   A aprovação segura o que chega; a denúncia segura o que passou. O admin vê `reportCount` na
   fila e as denúncias no detalhe, e `reject` num evento APPROVED é a derrubada.
 
+TourGuideReview ─── Business (N:1) / Users (N:1) — avaliação de um guia turístico
+  Tabela: tour_guide_reviews
+  Uma por utilizador por negócio (unique businessId+userId); o dono não avalia o próprio.
+  O nome exibido vem de `user.name` na leitura, nunca de coluna gravada: `author_name` era
+    digitado por quem avaliava, ou seja, podia ser o nome de qualquer pessoa. A coluna ficou
+    nullable e deixou de ser escrita — o DROP vem quando o FE parar de enviar o campo.
+  Ocultar (soft): hiddenAt, hiddenBy (FK Users, SetNull), hiddenReason — some da listagem
+    pública e da média; é reversível e o motivo fica. Apagar é hard delete, para conteúdo que
+    não pode ficar guardado, com o motivo em log antes da linha sair.
+
+TourGuideReviewReport ─── TourGuideReview (N:1) — denúncia anónima de uma avaliação
+  Tabela: tour_guide_review_reports
+  Armazena: reviewId (FK, cascade), reason, createdAt — o denunciante não é identificado
+  Mesmo desenho do CommunityEventReport, e pela mesma razão: quem lê a página de um guia não
+    está autenticado, e exigir conta para denunciar difamação é como a denúncia nunca chega.
+    Honeypot + throttle de 5/min carregam o abuso. Não há moderação por IA no caminho de
+    escrita: a rede é denúncia + admin.
+
 PublisherQualification ─── Business (1:1) — qualificação automática do publisher
   Tabela: publisher_qualifications
   PK: businessId (UUID, aponta diretamente para Business)

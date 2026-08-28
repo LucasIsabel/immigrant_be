@@ -43,6 +43,7 @@ model Users {
   businessPageReviews             BusinessPageReview[]     @relation("ReviewedPages")
   publisherQualificationOverrides PublisherQualification[] @relation("PublisherOverrides")
   tourGuideReviews                TourGuideReview[]
+  hiddenTourGuideReviews          TourGuideReview[]        @relation("HiddenTourGuideReviews")
   organizedEvents                 CommunityEvent[]         @relation("OrganizedEvents")
   approvedEvents                  CommunityEvent[]         @relation("ApprovedEvents")
   rejectedEvents                  CommunityEvent[]         @relation("RejectedEvents")
@@ -703,11 +704,40 @@ model TourGuideReview {
   user       Users    @relation(fields: [userId], references: [id])
   rating     Int
   comment    String?  @db.Text
-  authorName String   @map("author_name") @db.VarChar(100)
+  /// Deprecated: the reviewer used to type this, so it could be anyone's name.
+  /// The displayed name now comes from the account, which also repairs the
+  /// rows written before. Kept nullable until the frontend stops sending it;
+  /// a later migration drops the column.
+  authorName String?  @map("author_name") @db.VarChar(100)
   createdAt  DateTime @default(now()) @map("created_at")
 
+  /// Hidden by an admin: gone from the public list and from the average, but
+  /// still here, with the reason, so the call can be reviewed or undone.
+  hiddenAt     DateTime? @map("hidden_at")
+  hiddenById   String?   @map("hidden_by") @db.Uuid
+  hiddenBy     Users?    @relation("HiddenTourGuideReviews", fields: [hiddenById], references: [id], onDelete: SetNull)
+  hiddenReason String?   @map("hidden_reason") @db.VarChar(500)
+
+  reports TourGuideReviewReport[]
+
   @@unique([businessId, userId])
+  @@index([businessId, hiddenAt])
   @@map("tour_guide_reviews")
+}
+
+/// A reader flagging a review. Anonymous on purpose, like the community event
+/// report it mirrors: the person reading a guide's page is not logged in, and
+/// asking them to sign up before they can flag defamation is how the flag
+/// never arrives.
+model TourGuideReviewReport {
+  id        String          @id @default(uuid()) @db.Uuid
+  reviewId  String          @map("review_id") @db.Uuid
+  review    TourGuideReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reason    String          @db.VarChar(500)
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@index([reviewId])
+  @@map("tour_guide_review_reports")
 }
 
 /// Which model answers each kind of AI request, and what to fall back to.
