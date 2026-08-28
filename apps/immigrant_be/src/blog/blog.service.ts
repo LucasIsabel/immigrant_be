@@ -17,6 +17,7 @@ import { BlogRepository } from './blog.repository';
 import {
   localizeCategory,
   localizeEmbeddedCategory,
+  withOriginalTranslation,
 } from './localize-category';
 import { UpsertBlogCategoryTranslationDto } from './dto/upsert-blog-category-translation.dto';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
@@ -322,7 +323,9 @@ export class BlogService {
 
   async findAllCategories(lang?: string) {
     const categories = await this.blogRepository.findAllCategories();
-    return categories.map((category) => localizeCategory(category, lang));
+    return categories.map((category) =>
+      localizeCategory(withOriginalTranslation(category), lang),
+    );
   }
 
   /**
@@ -335,7 +338,7 @@ export class BlogService {
     const category = await this.blogRepository.findCategoryByAnySlug(slug);
     if (!category) throw new NotFoundException('Categoria não encontrada');
 
-    return localizeCategory(category, lang);
+    return localizeCategory(withOriginalTranslation(category), lang);
   }
 
   // ─── Category translations (admin) ────────────────────────────────────────

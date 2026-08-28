@@ -1,6 +1,7 @@
 import {
   localizeCategory,
   localizeEmbeddedCategory,
+  withOriginalTranslation,
 } from './localize-category';
 
 const CATEGORY = {
@@ -85,5 +86,60 @@ describe('localizeEmbeddedCategory', () => {
     const post = { title: 'Any', category: CATEGORY };
 
     expect(localizeEmbeddedCategory(post, undefined)).toBe(post);
+  });
+});
+
+/**
+ * The gap found in the browser: the category page could not declare an honest
+ * `hreflang` for Portuguese, because a response localized into English had
+ * already overwritten `slug` and carried no Portuguese row to recover it from.
+ */
+describe('withOriginalTranslation', () => {
+  it('adds the category itself as a row', () => {
+    const complete = withOriginalTranslation(CATEGORY);
+
+    expect(complete.translations).toContainEqual({
+      locale: 'pt',
+      name: 'Vistos e Permissões',
+      slug: 'vistos-e-permissoes',
+      translated_by: 'ORIGINAL',
+      translated_by_model: null,
+    });
+  });
+
+  it('keeps the written translations beside it', () => {
+    const complete = withOriginalTranslation(CATEGORY);
+
+    expect(complete.translations?.map((t) => t.locale).sort()).toEqual([
+      'en',
+      'es',
+      'pt',
+    ]);
+  });
+
+  it('leaves the Portuguese slug recoverable after localizing into English', () => {
+    const asServed = localizeCategory(withOriginalTranslation(CATEGORY), 'en');
+
+    expect(asServed.slug).toBe('visas-and-permits');
+    expect(asServed.translations?.find((t) => t.locale === 'pt')?.slug).toBe(
+      'vistos-e-permissoes',
+    );
+  });
+
+  it('does not duplicate a row that already exists for that language', () => {
+    const already = {
+      ...CATEGORY,
+      translations: [
+        {
+          locale: 'pt',
+          name: 'Outro',
+          slug: 'outro',
+          translated_by: 'HUMAN',
+          translated_by_model: null,
+        },
+      ],
+    };
+
+    expect(withOriginalTranslation(already)).toBe(already);
   });
 });
