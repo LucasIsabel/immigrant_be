@@ -1371,6 +1371,11 @@ Pipeline sequencial: **Lint → Test → Build**
   - Fallback: sem `lang`, ou sem linha para o `lang` pedido, saem `name`/`slug` canônicos. Uma
     categoria **nunca é omitida** — nome em pt numa trilha em inglês é um defeito; categoria
     ausente da navegação é um buraco.
+  - **`translations` inclui o idioma original**, com `translated_by: 'ORIGINAL'`. O topo da
+    resposta é o idioma pedido e `translations` é o mapa completo — sem isso, uma resposta
+    localizada em `en` já tinha sobrescrito `slug` e não trazia linha nenhuma de `pt`, então o
+    `hreflang` português da página da editoria apontava para a URL em inglês (que resolve, mas
+    por redirect).
   - **Correção humana**: `PUT /admin/blog/categories/:id/translations/:locale` grava
     `translated_by: 'HUMAN'` e `translated_by_model: null`. O DTO carrega **só o nome** — o slug
     é derivado no servidor, como no rename canônico e no worker. O locale é validado **no

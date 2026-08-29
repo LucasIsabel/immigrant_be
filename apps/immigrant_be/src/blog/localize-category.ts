@@ -12,6 +12,9 @@ export interface LocalizableCategoryTranslation {
   locale: string;
   name: string;
   slug: string;
+  /** 'ORIGINAL' for the row the category itself is, 'AI' or 'HUMAN' otherwise. */
+  translated_by?: string;
+  translated_by_model?: string | null;
 }
 
 export interface LocalizableCategory {
@@ -53,5 +56,44 @@ export function localizeEmbeddedCategory<
 >(record: T, lang?: string): T {
   if (!lang || !record.category) return record;
 
-  return { ...record, category: localizeCategory(record.category, lang) };
+  return {
+    ...record,
+    category: localizeCategory(withOriginalTranslation(record.category), lang),
+  };
+}
+
+/**
+ * The category's own language, added to the list of translations.
+ *
+ * `translations` holds only the languages a translator wrote, so a response
+ * localized into English carried the English and Spanish rows and nothing for
+ * Portuguese — while `slug` had already been overwritten with the English one.
+ * The original spelling was then unrecoverable, and the category page could not
+ * declare an honest `hreflang` for it: the Portuguese alternate pointed at the
+ * English URL, which resolves, but by redirect.
+ *
+ * With this, the contract is whole: the top level is the language you asked
+ * for, `translations` is every language there is.
+ */
+export function withOriginalTranslation<T extends LocalizableCategory>(
+  category: T,
+): T {
+  const locale = category.original_locale ?? 'pt';
+  const existing = category.translations ?? [];
+  if (existing.some((t) => t.locale === locale)) return category;
+
+  return {
+    ...category,
+    translations: [
+      {
+        locale,
+        name: category.name,
+        slug: category.slug,
+        // Not a translation at all: the row every other one was written from.
+        translated_by: 'ORIGINAL',
+        translated_by_model: null,
+      },
+      ...existing,
+    ],
+  };
 }
