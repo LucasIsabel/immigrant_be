@@ -347,6 +347,13 @@ Business ─── Users (N:1) — negócio local de um imigrante
             draftData (Json?, opcional) — rascunho de edição; `PUT /business/:id` grava apenas aqui;
             `POST /business/:id/draft/publish` aplica ao vivo e limpa; `DELETE /business/:id/draft` descarta o rascunho;
             typeData (Json — dados específicos por tipo, validados via Zod no Service),
+            — `type-data.schemas.ts` é o contrato dos dois caminhos de escrita (`POST /business` e
+              o `pendingContent` da página). **Todo campo tem teto**: é coluna JSON, e sem limite
+              uma requisição forjada grava um megabyte que a página renderiza. Os tetos não são
+              regra de produto (exceto as 6 fotos por parada, que espelham o formulário) — são o
+              ponto em que o conteúdo deixa de ser conteúdo. O 400 nomeia o caminho completo
+              (`itinerary[2].description`) e o limite, em português, numa string: o
+              `extractApiErrorMessage` do FE lê `message` e joga direto no toast.,
             isPublic (default false)
   `isPublic` significa UMA coisa: o negócio aparece no diretório do My City — é o que o
     interruptor promete ao dono ("Listar publicamente no My City"), e é o que alimenta a
