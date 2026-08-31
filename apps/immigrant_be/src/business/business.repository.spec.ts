@@ -15,6 +15,7 @@ const mockPrismaService = {
     findMany: jest.fn(),
     findFirst: jest.fn(),
     count: jest.fn(),
+    groupBy: jest.fn(),
   },
 };
 
@@ -32,6 +33,52 @@ describe('BusinessRepository', () => {
     }).compile();
 
     repository = module.get(BusinessRepository);
+  });
+
+  describe('findPublicCities', () => {
+    const groupByArgs = () =>
+      mockPrismaService.business.groupBy.mock.calls[0][0] as {
+        by: string[];
+        where: Record<string, unknown>;
+      };
+
+    it('counts only what an owner chose to list', async () => {
+      // The whole point of the endpoint is "what is there to look at". A
+      // hidden business is not there.
+      mockPrismaService.business.groupBy.mockResolvedValue([]);
+
+      await repository.findPublicCities({ country: 'Portugal' });
+
+      expect(groupByArgs().by).toEqual(['country', 'city']);
+      expect(groupByArgs().where).toMatchObject({
+        isPublic: true,
+        country: 'Portugal',
+      });
+    });
+
+    it('skips rows with no country when none was asked for', async () => {
+      // `country` is nullable, and a row without one belongs to no country the
+      // selector could be showing — counting it would inflate a total nobody
+      // can reach.
+      mockPrismaService.business.groupBy.mockResolvedValue([]);
+
+      await repository.findPublicCities({});
+
+      expect(groupByArgs().where).toMatchObject({ country: { not: null } });
+    });
+
+    it('drops a null country from the result rather than answering one', async () => {
+      mockPrismaService.business.groupBy.mockResolvedValue([
+        { country: 'Portugal', city: 'Matosinhos', _count: { _all: 3 } },
+        { country: null, city: 'Nowhere', _count: { _all: 9 } },
+      ]);
+
+      const rows = await repository.findPublicCities({});
+
+      expect(rows).toEqual([
+        { country: 'Portugal', city: 'Matosinhos', count: 3 },
+      ]);
+    });
   });
 
   describe('findAllByUserId', () => {

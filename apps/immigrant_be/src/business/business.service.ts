@@ -7,6 +7,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { BusinessType } from '../../../../generated/prisma';
 import { BusinessRepository } from './business.repository';
+import { BusinessCitiesQueryDto } from './dto/business-cities-query.dto';
 import { validateOpeningHours } from './opening-hours.schema';
 
 /**
@@ -132,6 +133,10 @@ export class BusinessService {
 
   getPublicBusinesses(query: BusinessListQueryDto) {
     return this.repository.findPublic(query);
+  }
+
+  getPublicCities(query: BusinessCitiesQueryDto) {
+    return this.repository.findPublicCities({ country: query.country });
   }
 
   async getPublicBusinessById(id: string) {

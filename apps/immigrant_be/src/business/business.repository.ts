@@ -190,6 +190,44 @@ export class BusinessRepository {
     return { data, total };
   }
 
+  /**
+   * The cities that have something to show, straight from the businesses.
+   *
+   * The city selector on My City used to be built from a third-party
+   * catalogue, and a city that catalogue did not name could never be picked —
+   * so a business there was unreachable no matter how correct its record was.
+   * Derived from real rows, the option offered is by construction the spelling
+   * that is stored, which also sidesteps the exact-match comparison in
+   * `findPublic`.
+   *
+   * Grouped by the country **name**: that is what `Business.country` holds.
+   */
+  async findPublicCities(params: { country?: string }) {
+    const rows = await this.prisma.business.groupBy({
+      by: ['country', 'city'],
+      where: {
+        isPublic: true,
+        // `country` is nullable on the model, and a row without one cannot be
+        // attributed to any country the selector might be showing.
+        ...(params.country
+          ? { country: params.country }
+          : { country: { not: null } }),
+      },
+      _count: { _all: true },
+      orderBy: [{ country: 'asc' }, { city: 'asc' }],
+    });
+
+    return rows
+      .filter((row): row is typeof row & { country: string } =>
+        Boolean(row.country),
+      )
+      .map((row) => ({
+        country: row.country,
+        city: row.city,
+        count: row._count._all,
+      }));
+  }
+
   private async findPublicByRadius(params: {
     city?: string;
     businessType?: BusinessType;
