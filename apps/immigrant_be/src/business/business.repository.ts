@@ -156,6 +156,7 @@ export class BusinessRepository {
     query: BusinessListQueryDto,
   ): Promise<{ data: PublicBusiness[]; total: number }> {
     const {
+      country,
       city,
       businessType,
       search,
@@ -171,6 +172,7 @@ export class BusinessRepository {
 
     if (useGeo) {
       return this.findPublicByRadius({
+        country,
         city,
         businessType,
         search,
@@ -184,6 +186,12 @@ export class BusinessRepository {
 
     const where = {
       isPublic: true,
+      // Sem país, "Córdoba" traz a argentina e a espanhola no mesmo balde.
+      // `insensitive` por segurança barata; o nome vem do mesmo catálogo dos
+      // dois lados, então na prática já casa.
+      ...(country && {
+        country: { equals: country, mode: 'insensitive' as const },
+      }),
       // Comparada na forma normalizada, não como foi escrita: os dois
       // catálogos de onde os nomes vêm discordam nos acentos, e uma igualdade
       // exata perde a cidade certa por causa de um til.
@@ -253,6 +261,7 @@ export class BusinessRepository {
   }
 
   private async findPublicByRadius(params: {
+    country?: string;
     city?: string;
     businessType?: BusinessType;
     search?: string;
@@ -262,8 +271,17 @@ export class BusinessRepository {
     lng: number;
     radius: number;
   }): Promise<{ data: PublicBusiness[]; total: number }> {
-    const { city, businessType, search, page, limit, lat, lng, radius } =
-      params;
+    const {
+      country,
+      city,
+      businessType,
+      search,
+      page,
+      limit,
+      lat,
+      lng,
+      radius,
+    } = params;
     const offset = (page - 1) * limit;
 
     const conditions: Prisma.Sql[] = [
@@ -273,6 +291,10 @@ export class BusinessRepository {
       Prisma.sql`(6371 * acos(cos(radians(${lat})) * cos(radians(b.lat)) * cos(radians(b.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(b.lat)))) <= ${radius}`,
     ];
 
+    // O país entra também aqui: um raio junto de uma fronteira atravessa-a —
+    // Elvas e Badajoz estão a quinze quilómetros uma da outra.
+    if (country)
+      conditions.push(Prisma.sql`lower(b.country) = ${country.toLowerCase()}`);
     if (city) conditions.push(Prisma.sql`b.city_key = ${normalizeCity(city)}`);
     if (businessType)
       conditions.push(
