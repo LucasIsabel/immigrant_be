@@ -548,4 +548,129 @@ describe('BusinessService', () => {
       expect(draft.typeData.menu[0].id).toMatch(UUID);
     });
   });
+  /**
+   * O horário saiu de duas strings livres para uma semana estruturada, e o
+   * caminho onde ele mais poderia se perder é o rascunho: `update` grava JSON
+   * cru numa coluna e `publishDraft` o relê, então nada garante que o que sai é
+   * o que entrou a não ser um teste que atravesse os dois.
+   */
+  describe('a semana de funcionamento', () => {
+    const SPLIT_WEEK = {
+      monday: { closed: true },
+      tuesday: {
+        closed: false,
+        intervals: [
+          { open: '12:00', close: '15:00' },
+          { open: '19:00', close: '23:00' },
+        ],
+      },
+      saturday: {
+        closed: false,
+        intervals: [{ open: '19:00', close: '02:00' }],
+      },
+    };
+
+    it('keeps a split service and a closing day on create', async () => {
+      repository.create.mockResolvedValue(mockBusiness);
+
+      await service.create('user-id-1', {
+        businessType: 'RESTAURANT' as any,
+        name: 'A Padaria',
+        city: 'Lisboa',
+        openingHours: SPLIT_WEEK as any,
+        timezone: 'Europe/Lisbon',
+      });
+
+      expect(repository.create).toHaveBeenCalledWith(
+        'user-id-1',
+        expect.objectContaining({
+          openingHours: SPLIT_WEEK,
+          timezone: 'Europe/Lisbon',
+        }),
+      );
+    });
+
+    it('refuses a week that cannot be true, naming the day', () => {
+      // Síncrono como o irmão do `typeData`: a validação lança antes de a
+      // promessa do repositório existir.
+      expect(() =>
+        service.create('user-id-1', {
+          businessType: 'RESTAURANT' as any,
+          name: 'A Padaria',
+          city: 'Lisboa',
+          openingHours: {
+            monday: {
+              closed: false,
+              intervals: [
+                { open: '12:00', close: '16:00' },
+                { open: '15:00', close: '23:00' },
+              ],
+            },
+          } as any,
+        }),
+      ).toThrow(BadRequestException);
+
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('carries the week through the draft and out the other side', async () => {
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+      repository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', {
+        openingHours: SPLIT_WEEK as any,
+      });
+
+      expect(repository.saveDraft).toHaveBeenCalledWith(
+        'business-id-1',
+        expect.objectContaining({ openingHours: SPLIT_WEEK }),
+      );
+
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        draftData: { openingHours: SPLIT_WEEK },
+      });
+      repository.applyDraftAndClearDraft.mockResolvedValue(mockBusiness);
+
+      await service.publishDraft('business-id-1', 'user-id-1');
+
+      expect(repository.applyDraftAndClearDraft).toHaveBeenCalledWith(
+        'business-id-1',
+        expect.objectContaining({ openingHours: SPLIT_WEEK }),
+      );
+    });
+
+    it('catches a broken week stored in a draft, not only one sent by the form', async () => {
+      // O rascunho é JSON cru na coluna; validar só na entrada deixaria passar
+      // qualquer coisa que chegasse por outro caminho.
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        draftData: {
+          openingHours: {
+            monday: {
+              closed: false,
+              intervals: [{ open: '12:00', close: '12:00' }],
+            },
+          },
+        },
+      });
+
+      await expect(
+        service.publishDraft('business-id-1', 'user-id-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.applyDraftAndClearDraft).not.toHaveBeenCalled();
+    });
+
+    it('lets a business exist with no hours at all', async () => {
+      repository.create.mockResolvedValue(mockBusiness);
+
+      await expect(
+        service.create('user-id-1', {
+          businessType: 'GENERAL' as any,
+          name: 'Serviço',
+          city: 'Lisboa',
+        }),
+      ).resolves.toBeDefined();
+    });
+  });
 });

@@ -4,33 +4,9 @@ import {
   type ValidationOptions,
 } from 'class-validator';
 
-/**
- * A valid IANA timezone, decided by the runtime instead of by a list we would
- * have to maintain: `Intl.DateTimeFormat` throws `RangeError` for anything the
- * ICU database does not know.
- */
-export function IsIanaTimeZone(options?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: 'isIanaTimeZone',
-      target: object.constructor,
-      propertyName,
-      options,
-      validator: {
-        validate(value: unknown): boolean {
-          if (typeof value !== 'string' || value.length === 0) return false;
-          try {
-            new Intl.DateTimeFormat(undefined, { timeZone: value });
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        defaultMessage: () => 'timezone deve ser um fuso IANA válido',
-      },
-    });
-  };
-}
+// Reexportado de `common/`: um negócio passou a precisar do mesmo validador, e
+// duas cópias seriam duas respostas no dia em que uma delas fosse corrigida.
+export { IsIanaTimeZone } from '../../common/decorators/is-iana-timezone.decorator';
 
 /**
  * Anything that opens or closes a tag. Deliberately crude: the field is

@@ -2,6 +2,7 @@ import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { BusinessType } from '../../../../../generated/prisma';
 import { BusinessPageSummaryDto } from './business-response.dto';
 import { GeneralTypeDataDto } from './type-data/general-type-data.dto';
+import { WeeklyScheduleDto } from './opening-hours.dto';
 import { LegalTypeDataDto } from './type-data/legal-type-data.dto';
 import { RestaurantTypeDataDto } from './type-data/restaurant-type-data.dto';
 import { TourGuideTypeDataDto } from './type-data/tour-guide-type-data.dto';
@@ -96,6 +97,25 @@ export class PublicBusinessResponseDto {
     ],
   })
   typeData: object | null;
+
+  @ApiProperty({
+    type: WeeklyScheduleDto,
+    nullable: true,
+    description:
+      'Semana de funcionamento. Dia ausente é "não informado", que não é o ' +
+      'mesmo que fechado — quem lê responde "não sei", não "fechado".',
+  })
+  openingHours: WeeklyScheduleDto | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Europe/Lisbon',
+    description:
+      'Fuso IANA do negócio. Sem ele nenhuma superfície afirma "aberto ' +
+      'agora": o relógio do visitante responderia pelo lugar errado.',
+  })
+  timezone: string | null;
 
   @ApiProperty({
     type: BusinessPageSummaryDto,

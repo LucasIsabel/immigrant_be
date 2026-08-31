@@ -7,6 +7,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { BusinessType } from '../../../../generated/prisma';
 import { BusinessRepository } from './business.repository';
+import { validateOpeningHours } from './opening-hours.schema';
 import { validateTypeData } from './type-data.schemas';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -22,6 +23,7 @@ export class BusinessService {
 
   create(userId: string, dto: CreateBusinessDto) {
     this.validateTypeData(dto.businessType, dto.typeData);
+    validateOpeningHours(dto.openingHours);
     return this.repository.create(userId, {
       ...dto,
       typeData: this.assignItemIds(dto.businessType, dto.typeData),
@@ -40,6 +42,9 @@ export class BusinessService {
     if (dto.typeData) {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
+    // Validado ao salvar o rascunho e de novo ao publicar: o rascunho é JSON
+    // cru na coluna, então nada garante que o que sai é o que entrou.
+    validateOpeningHours(dto.openingHours);
     const draft = {
       ...dto,
       ...(dto.typeData
@@ -62,6 +67,7 @@ export class BusinessService {
     if (dto.typeData) {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
+    validateOpeningHours(dto.openingHours);
     const shouldClearTypeData =
       Boolean(dto.businessType) &&
       dto.businessType !== existing.businessType &&
