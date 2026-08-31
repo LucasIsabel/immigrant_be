@@ -49,6 +49,10 @@ const PUBLIC_BUSINESS_SELECT = {
   website: true,
   photos: true,
   typeData: true,
+  // A página pública e o card da listagem leem o horário daqui, ao vivo — ele
+  // não passa mais pelo conteúdo moderado da página.
+  openingHours: true,
+  timezone: true,
   createdAt: true,
   updatedAt: true,
   ...BUSINESS_PAGE_SUMMARY,
@@ -64,7 +68,10 @@ export class BusinessRepository {
 
   create(userId: string, data: CreateBusinessDto) {
     return this.prisma.business.create({
-      data: { userId, ...data },
+      // `openingHours` é uma classe no DTO — para o swagger, e portanto para o
+      // tipo gerado no frontend, dizerem a forma de verdade em vez de `object`.
+      // O Prisma quer JSON puro, e a conversão é aqui, na borda.
+      data: { userId, ...data } as never,
     });
   }
 
@@ -88,7 +95,7 @@ export class BusinessRepository {
   update(id: string, data: UpdateBusinessDto) {
     return this.prisma.business.update({
       where: { id },
-      data,
+      data: data as never,
     });
   }
 
@@ -99,7 +106,7 @@ export class BusinessRepository {
       data: {
         ...data,
         draftData: Prisma.JsonNull,
-      },
+      } as never,
     });
   }
 

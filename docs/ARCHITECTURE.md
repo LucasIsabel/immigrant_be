@@ -346,6 +346,7 @@ Business ─── Users (N:1) — negócio local de um imigrante
   Armazena: userId (FK), businessType, name, city, lat, lng, photos (String[]),
             draftData (Json?, opcional) — rascunho de edição; `PUT /business/:id` grava apenas aqui;
             `POST /business/:id/draft/publish` aplica ao vivo e limpa; `DELETE /business/:id/draft` descarta o rascunho;
+            openingHours (Json? — a semana de funcionamento) e timezone (IANA),
             typeData (Json — dados específicos por tipo, validados via Zod no Service),
             — `type-data.schemas.ts` é o contrato dos dois caminhos de escrita (`POST /business` e
               o `pendingContent` da página). **Todo campo tem teto**: é coluna JSON, e sem limite
@@ -355,6 +356,26 @@ Business ─── Users (N:1) — negócio local de um imigrante
               (`itinerary[2].description`) e o limite, em português, numa string: o
               `extractApiErrorMessage` do FE lê `message` e joga direto no toast.,
             isPublic (default false)
+  **Horário de funcionamento** (`business/opening-hours.schema.ts`): por dia, ou `{closed:true}`
+    ou uma lista de 1..4 intervalos `HH:MM`. Substituiu duas strings livres que uma máscara
+    reduzia a uma janela só — o dono digitava `12:00–15:00 e 19:00–23:00 (fechado à segunda)` e
+    ficava `12:00 - 15:00`. Três decisões que valem lembrar:
+    - **Coluna própria, não `typeData`.** Os três tipos que mostram horário tinham cada um a sua
+      gambiarra, e horário é **fato**, não conteúdo editorial: fora do conteúdo moderado da
+      página, corrigir um horário deixa de exigir re-moderação.
+    - **Dia ausente ≠ fechado.** Ausente é "não informado", e quem lê responde `unknown` em vez de
+      anunciar um negócio como fechado num dia sobre o qual ninguém disse nada.
+    - **A meia-noite mora no schema.** `close < open` significa atravessar para o dia seguinte
+      (`19:00–02:00` no sábado = aberto até domingo às 02:00), e só o último intervalo do dia pode
+      atravessar. Quem calcula "aberto agora" tem de olhar também o intervalo transbordante do dia
+      **anterior** — sem isso o bar às 01:30 aparece fechado. É a regra que quebra a comparação
+      ingênua `abre ≤ agora ≤ fecha`, e por isso ela fica junto do dado.
+  **`timezone`** é IANA, validado pelo `IsIanaTimeZone` (`common/decorators/`, que decide pelo ICU
+    do runtime em vez de por uma lista a manter). Sem ele **nenhuma superfície afirma "aberto
+    agora"** — o relógio do visitante responderia pelo lugar errado, que era o bug original: um
+    leitor em São Paulo era informado de que um restaurante em Lisboa estava aberto, com quatro
+    horas de erro.
+
   `isPublic` significa UMA coisa: o negócio aparece no diretório do My City — é o que o
     interruptor promete ao dono ("Listar publicamente no My City"), e é o que alimenta a
     listagem, o mapa e a elegibilidade de eventos.

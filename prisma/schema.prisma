@@ -644,6 +644,16 @@ model Business {
   email        String?      @db.VarChar(100)
   website      String?      @db.VarChar(200)
   photos       String[]
+  /// A semana de funcionamento: por dia, uma lista de intervalos ou a marca de
+  /// fechado. Coluna de primeira classe e não `typeData` porque os três tipos
+  /// que mostram horário tinham cada um a sua gambiarra, e porque horário é
+  /// fato e não conteúdo editorial — fora do conteúdo moderado, corrigir um
+  /// horário deixa de exigir re-moderação da página.
+  /// Forma e regras (inclusive a da meia-noite) em `business/opening-hours.schema.ts`.
+  openingHours Json?        @map("opening_hours")
+  /// Fuso IANA do negócio. Sem ele o "aberto agora" não é afirmado: o relógio
+  /// do visitante responde pelo lugar errado, que era o bug original.
+  timezone     String?      @db.VarChar(64)
   typeData     Json?        @map("type_data")
   draftData    Json?        @map("draft_data")
   isPublic     Boolean      @default(false) @map("is_public")

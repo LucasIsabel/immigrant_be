@@ -16,8 +16,12 @@ import {
   IsUrl,
   MaxLength,
   ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { BusinessType } from '../../../../../generated/prisma';
+import { IsIanaTimeZone } from '../../common/decorators/is-iana-timezone.decorator';
+import { WeeklyScheduleDto } from './opening-hours.dto';
 import { GeneralTypeDataDto } from './type-data/general-type-data.dto';
 import { LegalTypeDataDto } from './type-data/legal-type-data.dto';
 import { RestaurantTypeDataDto } from './type-data/restaurant-type-data.dto';
@@ -136,6 +140,29 @@ export class CreateBusinessDto {
   @IsObject()
   @IsOptional()
   typeData?: object;
+
+  @ApiPropertyOptional({
+    type: WeeklyScheduleDto,
+    description:
+      'Semana de funcionamento: por dia, uma lista de intervalos ou a marca ' +
+      'de fechado. Dia ausente é "não informado", que não é o mesmo que ' +
+      'fechado. As regras de ordem, sobreposição e meia-noite são validadas ' +
+      'no service.',
+  })
+  @ValidateNested()
+  @Type(() => WeeklyScheduleDto)
+  @IsOptional()
+  openingHours?: WeeklyScheduleDto;
+
+  @ApiPropertyOptional({
+    example: 'Europe/Lisbon',
+    description:
+      'Fuso IANA do negócio. Sem ele o "aberto agora" não é afirmado em ' +
+      'lugar nenhum — o relógio do visitante responderia pelo lugar errado.',
+  })
+  @IsIanaTimeZone()
+  @IsOptional()
+  timezone?: string;
 
   @ApiPropertyOptional({ example: false })
   @IsBoolean()
