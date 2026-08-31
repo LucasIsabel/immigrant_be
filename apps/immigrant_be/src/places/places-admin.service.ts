@@ -58,6 +58,11 @@ export class PlacesAdminService {
     const limit = query.limit ?? 20;
     const { data, total } = await this.repository.list({
       status: query.status,
+      // The ISO2 is stored upper-cased; a caller can send it in any case, and
+      // a `pt` that fails to match `PT` would be an empty list with nothing to
+      // explain it. Same treatment the catalogue already applies.
+      countryCode: query.countryCode?.toUpperCase(),
+      city: query.city,
       page,
       limit,
     });

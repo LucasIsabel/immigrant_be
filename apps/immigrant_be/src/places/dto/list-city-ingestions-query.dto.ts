@@ -1,9 +1,29 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from 'class-validator';
 import { CityIngestionStatus } from '../../../../../generated/prisma';
 
 export class ListCityIngestionsQueryDto {
+  @ApiPropertyOptional({ description: 'ISO2 country code', example: 'PT' })
+  @IsOptional()
+  @IsString()
+  @Length(2, 2)
+  countryCode?: string;
+
+  @ApiPropertyOptional({ example: 'Lisbon' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  city?: string;
+
   @ApiPropertyOptional({ enum: CityIngestionStatus })
   @IsOptional()
   @IsEnum(CityIngestionStatus)
