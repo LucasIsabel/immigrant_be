@@ -78,10 +78,22 @@ export class PlacesAdminRepository {
 
   async list(params: {
     status?: CityIngestionStatus;
+    countryCode?: string;
+    city?: string;
     page: number;
     limit: number;
   }) {
-    const where = params.status ? { status: params.status } : {};
+    const where: Prisma.CityIngestionWhereInput = {
+      ...(params.status && { status: params.status }),
+      ...(params.countryCode && { countryCode: params.countryCode }),
+      // The city is stored as CountriesNow spelled it; `insensitive` stops
+      // "lisbon" from returning nothing. Equality and not `contains`: the list
+      // of cities is closed, so whoever filters picked one from it rather than
+      // typing a fragment of a name.
+      ...(params.city && {
+        city: { equals: params.city, mode: Prisma.QueryMode.insensitive },
+      }),
+    };
     const [data, total] = await Promise.all([
       this.prisma.cityIngestion.findMany({
         where,

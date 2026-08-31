@@ -114,6 +114,44 @@ describe('PlacesAdminService', () => {
     );
   });
 
+  describe('listIngestions', () => {
+    beforeEach(() => {
+      repository.list.mockResolvedValue({ data: [], total: 0 });
+    });
+
+    it('upper-cases the country before it reaches the query', async () => {
+      // The ISO2 is stored upper-cased. A `pt` that fails to match `PT` would
+      // hand back an empty list with nothing to explain why.
+      await service.listIngestions({ countryCode: 'pt' });
+
+      expect(repository.list).toHaveBeenCalledWith(
+        expect.objectContaining({ countryCode: 'PT' }),
+      );
+    });
+
+    it('passes the city through as it was chosen', async () => {
+      await service.listIngestions({ city: 'Lisbon' });
+
+      expect(repository.list).toHaveBeenCalledWith(
+        expect.objectContaining({ city: 'Lisbon' }),
+      );
+    });
+
+    it('asks for no country and no city when neither was given', async () => {
+      // `undefined` and not an empty string: the repository builds its `where`
+      // by presence, and a `''` would become a filter matching nothing.
+      await service.listIngestions({});
+
+      expect(repository.list).toHaveBeenCalledWith({
+        status: undefined,
+        countryCode: undefined,
+        city: undefined,
+        page: 1,
+        limit: 20,
+      });
+    });
+  });
+
   describe('createIngestion', () => {
     it('creates the ingestion and queues the city', async () => {
       await service.createIngestion(
