@@ -132,15 +132,62 @@ describe('BusinessRepository', () => {
 
     it('drops a null country from the result rather than answering one', async () => {
       mockPrismaService.business.groupBy.mockResolvedValue([
-        { country: 'Portugal', city: 'Matosinhos', _count: { _all: 3 } },
-        { country: null, city: 'Nowhere', _count: { _all: 9 } },
+        {
+          country: 'Portugal',
+          city: 'Matosinhos',
+          _count: { _all: 3 },
+          _avg: { lat: 41.18, lng: -8.69 },
+        },
+        {
+          country: null,
+          city: 'Nowhere',
+          _count: { _all: 9 },
+          _avg: { lat: null, lng: null },
+        },
       ]);
 
       const rows = await repository.findPublicCities({});
 
       expect(rows).toEqual([
-        { country: 'Portugal', city: 'Matosinhos', count: 3 },
+        {
+          country: 'Portugal',
+          city: 'Matosinhos',
+          count: 3,
+          lat: 41.18,
+          lng: -8.69,
+        },
       ]);
+    });
+
+    it('carries a centre, so a city can be searched around', async () => {
+      // Picking "Porto" has to be able to reach a business in Vila Nova de
+      // Gaia, four kilometres away. Without a centre there is nothing to
+      // search around.
+      mockPrismaService.business.groupBy.mockResolvedValue([]);
+
+      await repository.findPublicCities({});
+
+      const args = mockPrismaService.business.groupBy.mock.calls[0][0] as {
+        _avg: Record<string, boolean>;
+      };
+      expect(args._avg).toEqual({ lat: true, lng: true });
+    });
+
+    it('answers a null centre rather than a made-up one', async () => {
+      // Every business in the city was registered without coordinates. Zero is
+      // a real place off the coast of Africa, so it must not be invented.
+      mockPrismaService.business.groupBy.mockResolvedValue([
+        {
+          country: 'Portugal',
+          city: 'Fafe',
+          _count: { _all: 1 },
+          _avg: { lat: null, lng: null },
+        },
+      ]);
+
+      const rows = await repository.findPublicCities({});
+
+      expect(rows[0]).toMatchObject({ lat: null, lng: null });
     });
   });
 
