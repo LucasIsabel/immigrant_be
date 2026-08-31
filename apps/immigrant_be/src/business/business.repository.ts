@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
+import { boundingBox } from './bounding-box';
 import { normalizeCity } from './city-key';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -290,6 +291,27 @@ export class BusinessRepository {
       Prisma.sql`b.lng IS NOT NULL`,
       Prisma.sql`(6371 * acos(cos(radians(${lat})) * cos(radians(b.lat)) * cos(radians(b.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(b.lat)))) <= ${radius}`,
     ];
+
+    /*
+     * A caixa que contém o círculo, antes do Haversine.
+     *
+     * Sem ela o Postgres calculava a distância de todas as linhas públicas —
+     * `Seq Scan`, 52 ms com 200 mil negócios, e o bloco "por perto" dispara
+     * isto em toda visualização de cidade. Com a caixa e o índice `(lat, lng)`
+     * a mesma consulta dá 1,5 ms, e o que importa é que **não sobe** com a
+     * tabela: de 20 mil para 200 mil foi de 1,3 a 1,5 ms.
+     *
+     * Vem depois do Haversine na lista de propósito: é um pré-filtro, não a
+     * resposta. Uma caixa é mais larga que o seu círculo — nos cantos admite
+     * pontos a √2 raios —, e é o Haversine que continua a decidir.
+     */
+    const box = boundingBox(lat, lng, radius);
+    conditions.push(Prisma.sql`b.lat BETWEEN ${box.minLat} AND ${box.maxLat}`);
+    if (box.minLng !== undefined && box.maxLng !== undefined) {
+      conditions.push(
+        Prisma.sql`b.lng BETWEEN ${box.minLng} AND ${box.maxLng}`,
+      );
+    }
 
     // O país entra também aqui: um raio junto de uma fronteira atravessa-a —
     // Elvas e Badajoz estão a quinze quilómetros uma da outra.

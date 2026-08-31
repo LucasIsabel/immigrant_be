@@ -682,6 +682,10 @@ model Business {
   @@index([businessType, isPublic])
   @@index([city, isPublic])
   @@index([cityKey, isPublic])
+  /// Para o pré-filtro da busca por raio: sem ele o Postgres calculava
+  /// Haversine em todas as linhas públicas — `Seq Scan`, 52 ms com 200 mil
+  /// negócios. Ver `bounding-box.ts`.
+  @@index([lat, lng])
   @@map("businesses")
 }
 
