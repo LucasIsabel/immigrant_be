@@ -15,16 +15,58 @@ import {
 const TRUNCATED_SUMMARY_NOTE =
   ' Parte do conteúdo excedeu o limite de análise automática e não foi analisada.';
 
+/** O veredicto e quem o produziu. `model` é `null` quando ninguém respondeu. */
+export interface ModerationOutcome {
+  result: BusinessPageModerationResult;
+  model: string | null;
+}
+
+/**
+ * O que fica gravado na página.
+ *
+ * `origin` responde a pergunta que o admin faz ao abrir a fila — "por que esta
+ * página está aqui?" — sem custar mais que uma string: `gate` é o portão do
+ * submit, `manual` é alguém que apertou analisar.
+ */
+export interface BusinessPageModerationRecord
+  extends BusinessPageModerationResult {
+  model: string | null;
+  analyzedAt: string;
+  origin: 'gate' | 'manual';
+}
+
+/** Empacota um veredicto para persistir. */
+export function toModerationRecord(
+  outcome: ModerationOutcome,
+  origin: BusinessPageModerationRecord['origin'],
+): BusinessPageModerationRecord {
+  return {
+    ...outcome.result,
+    model: outcome.model,
+    analyzedAt: new Date().toISOString(),
+    origin,
+  };
+}
+
 @Injectable()
 export class BusinessPageModerationService {
   private readonly logger = new Logger(BusinessPageModerationService.name);
 
   constructor(private readonly aiRouter: AiRouterService) {}
 
+  /**
+   * Analisa o conteúdo e diz **quem** analisou.
+   *
+   * O modelo sempre esteve à mão: `generateJson` devolve `{ data, result }` e
+   * `result.model` é quem respondeu. Era descartado, e sem ele um veredicto
+   * gravado não conta de onde veio — que é metade do valor de gravá-lo.
+   */
   async moderateContent(
     pendingContent: Record<string, unknown>,
     businessType: string,
-  ): Promise<BusinessPageModerationResult> {
+    /** Só para correlacionar a chamada no `AiUsageLog`; a análise não usa. */
+    pageId?: string,
+  ): Promise<ModerationOutcome> {
     const input: BusinessPageModerationInput = {
       name:
         typeof pendingContent.name === 'string'
@@ -80,11 +122,12 @@ export class BusinessPageModerationService {
     const prompt = buildBusinessPageModerationPrompt(input);
 
     try {
-      const { data: parsed } = await this.aiRouter.generateJson(
+      const { data: parsed, result } = await this.aiRouter.generateJson(
         'business_moderation',
         prompt,
         businessPageModerationResultSchema,
-        { entityType: 'business_page' },
+        // Sem `entityId` nem o log de custo sabia de que página se tratava.
+        { entityType: 'business_page', entityId: pageId },
       );
 
       if (!parsed) {
@@ -92,25 +135,37 @@ export class BusinessPageModerationService {
           'Failed to parse moderation response, defaulting to review',
         );
         return {
-          riskLevel: 'medium',
-          flags: [],
-          summary:
-            'Não foi possível analisar o conteúdo automaticamente. Revisão manual recomendada.',
-          recommendation: 'review',
+          result: {
+            riskLevel: 'medium',
+            flags: [],
+            summary:
+              'Não foi possível analisar o conteúdo automaticamente. Revisão manual recomendada.',
+            recommendation: 'review',
+          },
+          // O modelo respondeu — respondeu mal. Guardar qual foi é o que
+          // permite descobrir depois que um deles não sabe responder isto.
+          model: result?.model ?? null,
         };
       }
 
-      return truncated ? this.floorForTruncation(parsed) : parsed;
+      return {
+        result: truncated ? this.floorForTruncation(parsed) : parsed,
+        model: result?.model ?? null,
+      };
     } catch (error) {
       this.logger.error(
         'Moderation AI call failed',
         error instanceof Error ? error.stack : undefined,
       );
       return {
-        riskLevel: 'medium',
-        flags: [],
-        summary: 'Erro na análise automática. Revisão manual recomendada.',
-        recommendation: 'review',
+        result: {
+          riskLevel: 'medium',
+          flags: [],
+          summary: 'Erro na análise automática. Revisão manual recomendada.',
+          recommendation: 'review',
+        },
+        // Ninguém respondeu; dizer que um modelo disse isto seria mentira.
+        model: null,
       };
     }
   }

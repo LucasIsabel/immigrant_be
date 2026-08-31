@@ -99,6 +99,14 @@ export class BusinessPagesRepository {
     });
   }
 
+  /** Grava a última análise; substitui a anterior de propósito. */
+  saveModerationResult(id: string, record: object) {
+    return this.prisma.businessPage.update({
+      where: { id },
+      data: { moderationResult: record },
+    });
+  }
+
   findByIdWithContent(id: string) {
     return this.prisma.businessPage.findUnique({
       where: { id },
@@ -114,6 +122,7 @@ export class BusinessPagesRepository {
         approvedAt: true,
         rejectedAt: true,
         rejectionReason: true,
+        moderationResult: true,
         createdAt: true,
         updatedAt: true,
         business: {

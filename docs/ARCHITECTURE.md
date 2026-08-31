@@ -1194,7 +1194,14 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `POST /admin/events/:id/approve`                           | CommunityEvents (admin)        | ADMIN — aprova; 409 se não estiver em análise |
 | `POST /admin/events/:id/reject`                            | CommunityEvents (admin)        | ADMIN — recusa (PENDING_REVIEW) ou derruba (APPROVED); `reason` obrigatório (3–500) |
 
-**Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta `GeminiBaseService`, monta o input a partir do conteúdo da página, chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
+**Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta o `AiRouterService`, monta o input a partir do conteúdo da página, achata o `typeData` com `flattenModerationContent` (cada folha nomeada pelo caminho JSON — `tours[2].description`), chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
+
+**O veredicto é gravado**, em `business_pages.moderation_result` (JSON). O portão do submit rodava a análise e a jogava fora, então o admin abria a fila e via uma página esperando sem nenhuma indicação de por quê — e o único jeito de descobrir era pagar uma segunda chamada, que podia responder diferente porque nada fixava o modelo nem o momento. O registro é o resultado do schema mais `model`, `analyzedAt` e `origin` (`gate` | `manual`), e o `origin` é o que responde diretamente "por que esta página está aqui".
+
+- **Só o mais recente, não a série.** A trilha de *chamadas* já vive no `AiUsageLog` (agora com `entityId` da página — antes nem o log de custo sabia de que página se tratava). Uma tabela de histórico foi considerada e recusada: `BusinessPageReview` já existe neste domínio para histórico e nenhum código a consulta; uma segunda ao lado dela seria o mesmo erro. Se a sequência "rebaixada → editada → liberada" virar necessidade real, a tabela nasce nesse dia e a coluna vira o cache do último.
+- **Grava nos dois desfechos**, não só no rebaixamento: uma página que passou também tem uma última análise, e guardá-la evita um ramo no código e uma pergunta sem resposta na tela.
+- **`model: null` quando ninguém respondeu.** O fallback de erro não é a opinião de um modelo; atribuir um nome ali seria pôr na boca de alguém uma frase que ele não disse. Quando o modelo respondeu e a resposta não deu parse, o nome dele **fica** — é assim que se descobre depois que um deles não sabe responder isto.
+- **Editar o conteúdo não limpa o registro.** Apagar apagaria o único traço de por que a página está na fila; o `analyzedAt` na tela deixa claro que a análise pode ser anterior à edição.
 
 ### Health
 

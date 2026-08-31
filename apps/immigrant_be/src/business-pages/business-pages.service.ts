@@ -21,8 +21,11 @@ import { UpdateBusinessPageContentDto } from './dto/update-business-page-content
 import { SubmitBusinessPageResponseDto } from './dto/submit-business-page-response.dto';
 import { RejectBusinessPageDto } from './dto/reject-business-page.dto';
 import { StorageService } from '@app/storage';
-import { BusinessPageModerationService } from './business-page-moderation.service';
-import type { BusinessPageModerationResult } from '@app/ai';
+import {
+  BusinessPageModerationService,
+  toModerationRecord,
+  type BusinessPageModerationRecord,
+} from './business-page-moderation.service';
 
 @Injectable()
 export class BusinessPagesService {
@@ -170,9 +173,18 @@ export class BusinessPagesService {
       const moderation = await this.moderationService.moderateContent(
         (page.pendingContent ?? {}) as Record<string, unknown>,
         page.businessType,
+        id,
       );
 
-      if (moderation.riskLevel !== 'high') {
+      // Gravado sempre, não só no rebaixamento: uma página que passou também
+      // tem uma última análise, e guardá-la nos dois casos evita um ramo aqui
+      // e uma pergunta sem resposta lá na tela ("passou, mas o que ele viu?").
+      await this.repository.saveModerationResult(
+        id,
+        toModerationRecord(moderation, 'gate'),
+      );
+
+      if (moderation.result.riskLevel !== 'high') {
         await this.repository.approvePage(
           id,
           page.pendingContent as object,
@@ -230,7 +242,7 @@ export class BusinessPagesService {
     return page;
   }
 
-  async moderatePage(id: string): Promise<BusinessPageModerationResult> {
+  async moderatePage(id: string): Promise<BusinessPageModerationRecord> {
     const page = await this.repository.findByIdWithContent(id);
     if (!page) throw new NotFoundException('Página não encontrada');
 
@@ -242,7 +254,18 @@ export class BusinessPagesService {
       throw new BadRequestException('Página não possui conteúdo para moderar');
     }
 
-    return this.moderationService.moderateContent(content, page.businessType);
+    const outcome = await this.moderationService.moderateContent(
+      content,
+      page.businessType,
+      id,
+    );
+    const record = toModerationRecord(outcome, 'manual');
+    await this.repository.saveModerationResult(id, record);
+
+    // Devolve o registro inteiro, não o veredicto cru: a tela precisa da hora
+    // e do modelo para dizer o que está mostrando, e devolvê-los aqui poupa
+    // um refetch logo depois de uma chamada que já custou dinheiro.
+    return record;
   }
 
   async approveBusinessPage(id: string, adminId: string) {

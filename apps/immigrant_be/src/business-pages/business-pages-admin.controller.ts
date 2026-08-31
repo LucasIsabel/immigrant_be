@@ -58,8 +58,18 @@ export class BusinessPagesAdminController {
 
   @Post(':id/moderate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Analisar conteúdo da página com IA (moderação)' })
-  @ApiOkResponse({ description: 'Resultado da análise de moderação' })
+  @ApiOperation({
+    summary: 'Analisar conteúdo da página com IA (moderação)',
+    description:
+      'Roda a análise e **grava** o resultado na página, substituindo a ' +
+      'anterior. Devolve o registro completo — veredicto, modelo, hora e a ' +
+      'origem — para a tela poder dizer o que está mostrando sem um refetch.',
+  })
+  @ApiOkResponse({
+    description:
+      'Registro da análise: riskLevel, flags (com o caminho JSON do campo), ' +
+      'summary, recommendation, model, analyzedAt e origin.',
+  })
   @ApiNotFoundResponse({ description: 'Página não encontrada' })
   @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
   moderatePage(@Param('id') id: string) {
