@@ -413,6 +413,13 @@ Business ─── Users (N:1) — negócio local de um imigrante
     por `normalizeCity` em `BusinessRepository`, num único ponto por onde passam todas
     as escritas ao vivo, e é **NOT NULL** — uma chave ausente esconderia o negócio da
     busca em silêncio, e é melhor que uma escrita esquecida estoure.
+  Pré-filtro por caixa delimitadora antes do Haversine (`bounding-box.ts`), com índice
+    `@@index([lat, lng])`. Sem ele o Postgres calculava a distância de todas as linhas
+    públicas — `Seq Scan`, 52 ms com 200 mil negócios, e o bloco "por perto" dispara
+    isso em toda visualização de cidade; com ele, 0,5 ms, e o tempo deixa de subir com
+    a tabela. A caixa é **pré-filtro**: é mais larga que o círculo (nos cantos admite
+    √2 raios) e quem decide continua a ser o Haversine. O limite de longitude é omitido
+    junto dos polos e sobre o antimeridiano, onde um `BETWEEN` não exprime o intervalo.
   Filtro geoespacial por raio: quando os params lat, lng e radius (km) são enviados,
     BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
     Haversine SQL via Prisma.$queryRaw para buscar apenas os IDs dentro do raio e
