@@ -636,6 +636,19 @@ model Business {
   description  String?      @db.Text
   address      String?      @db.VarChar(200)
   city         String       @db.VarChar(100)
+  /// A cidade na forma em que é **comparada**: sem acento, minúscula, espaços
+  /// colapsados. `city` continua a ser o que o dono escreveu e o que a tela
+  /// mostra; só a busca passa por aqui.
+  ///
+  /// Existe porque os nomes chegam de dois catálogos do CountriesNow que
+  /// discordam entre si — a lista plana de Portugal não tem um único acento em
+  /// 673 nomes, a lista por distrito tem 27 em 107 só no Porto. `Póvoa de
+  /// Varzim` e `Povoa de Varzim` são a mesma cidade e não se encontravam.
+  ///
+  /// Derivada em `BusinessRepository`, num único lugar, por `normalizeCity`.
+  /// **NOT NULL de propósito:** uma chave ausente esconderia o negócio da busca
+  /// sem erro nenhum, e é melhor que uma escrita esquecida estoure.
+  cityKey      String       @map("city_key") @db.VarChar(100)
   country      String?      @db.VarChar(100)
   state        String?      @db.VarChar(120)
   lat          Float?
@@ -668,6 +681,7 @@ model Business {
   @@index([userId])
   @@index([businessType, isPublic])
   @@index([city, isPublic])
+  @@index([cityKey, isPublic])
   @@map("businesses")
 }
 

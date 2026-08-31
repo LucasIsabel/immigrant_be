@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
+import { normalizeCity } from './city-key';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
@@ -66,12 +67,26 @@ export type PublicBusiness = Prisma.BusinessGetPayload<{
 export class BusinessRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Derives `cityKey` whenever a write carries a city.
+   *
+   * Every live write to `city` goes through here, and that is the whole point:
+   * a row whose key does not match its name is a business the public search
+   * cannot find, and nothing on any screen would say so. Leaving each caller
+   * to remember is how that happens.
+   */
+  private withCityKey<T extends { city?: string }>(data: T): T {
+    return data.city === undefined
+      ? data
+      : { ...data, cityKey: normalizeCity(data.city) };
+  }
+
   create(userId: string, data: CreateBusinessDto) {
     return this.prisma.business.create({
       // `openingHours` é uma classe no DTO — para o swagger, e portanto para o
       // tipo gerado no frontend, dizerem a forma de verdade em vez de `object`.
       // O Prisma quer JSON puro, e a conversão é aqui, na borda.
-      data: { userId, ...data } as never,
+      data: { userId, ...this.withCityKey(data) } as never,
     });
   }
 
@@ -95,7 +110,7 @@ export class BusinessRepository {
   update(id: string, data: UpdateBusinessDto) {
     return this.prisma.business.update({
       where: { id },
-      data: data as never,
+      data: this.withCityKey(data) as never,
     });
   }
 
@@ -104,7 +119,7 @@ export class BusinessRepository {
     return this.prisma.business.update({
       where: { id },
       data: {
-        ...data,
+        ...this.withCityKey(data),
         draftData: Prisma.JsonNull,
       } as never,
     });
@@ -169,7 +184,10 @@ export class BusinessRepository {
 
     const where = {
       isPublic: true,
-      ...(city && { city }),
+      // Comparada na forma normalizada, não como foi escrita: os dois
+      // catálogos de onde os nomes vêm discordam nos acentos, e uma igualdade
+      // exata perde a cidade certa por causa de um til.
+      ...(city && { cityKey: normalizeCity(city) }),
       ...(businessType && { businessType }),
       ...(search && {
         name: { contains: search, mode: 'insensitive' as const },
@@ -249,7 +267,7 @@ export class BusinessRepository {
       Prisma.sql`(6371 * acos(cos(radians(${lat})) * cos(radians(b.lat)) * cos(radians(b.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(b.lat)))) <= ${radius}`,
     ];
 
-    if (city) conditions.push(Prisma.sql`b.city = ${city}`);
+    if (city) conditions.push(Prisma.sql`b.city_key = ${normalizeCity(city)}`);
     if (businessType)
       conditions.push(
         Prisma.sql`b.business_type = ${businessType}::"BusinessType"`,

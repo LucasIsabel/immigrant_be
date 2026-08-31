@@ -392,6 +392,19 @@ Business ─── Users (N:1) — negócio local de um imigrante
     `userId` (quem é dono de qual listagem) e `isPublic` (anunciaria a escolha de não
     aparecer no diretório). O `BusinessResponseDto` do dono continua completo.
   Listagem pública disponível via GET /business/public (diretório "My City")
+  GET /business/public/cities devolve as cidades que têm negócios listados, agrupadas
+    por nome de país e cidade. Existe porque o seletor de cidade do FE vinha de um
+    catálogo de terceiros que não nomeia todas as cidades — 46 das 107 do distrito do
+    Porto faltavam —, e um negócio numa delas era inalcançável. Declarada **antes** de
+    `public/:id`, que senão engole "cities" como id.
+  Comparação de cidade pela coluna `city_key`, não por `city`: os nomes chegam de dois
+    catálogos do CountriesNow que discordam nos acentos (a lista plana de Portugal não
+    tem nenhum em 673 nomes; a lista por distrito tem 27 em 107 só no Porto), então
+    `Póvoa de Varzim` e `Povoa de Varzim` não se encontravam. `city` continua a ser o
+    que o dono escreveu e o que a tela mostra; só a busca é dobrada. A chave é derivada
+    por `normalizeCity` em `BusinessRepository`, num único ponto por onde passam todas
+    as escritas ao vivo, e é **NOT NULL** — uma chave ausente esconderia o negócio da
+    busca em silêncio, e é melhor que uma escrita esquecida estoure.
   Filtro geoespacial por raio: quando os params lat, lng e radius (km) são enviados,
     BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
     Haversine SQL via Prisma.$queryRaw para buscar apenas os IDs dentro do raio e
