@@ -393,7 +393,10 @@ Business ─── Users (N:1) — negócio local de um imigrante
     aparecer no diretório). O `BusinessResponseDto` do dono continua completo.
   Listagem pública disponível via GET /business/public (diretório "My City")
   GET /business/public/cities devolve as cidades que têm negócios listados, agrupadas
-    por nome de país e cidade. Existe porque o seletor de cidade do FE vinha de um
+    por nome de país e cidade, **com o centro** (média das coordenadas dos negócios,
+    null se nenhum tiver). O centro serve à busca por proximidade: escolher "Porto" tem
+    de poder alcançar um negócio em Vila Nova de Gaia, a quatro quilómetros — o FE
+    resolve o centro pelos lugares da cidade e, se não houver, por este. Existe porque o seletor de cidade do FE vinha de um
     catálogo de terceiros que não nomeia todas as cidades — 46 das 107 do distrito do
     Porto faltavam —, e um negócio numa delas era inalcançável. Declarada **antes** de
     `public/:id`, que senão engole "cities" como id.

@@ -232,6 +232,10 @@ export class BusinessRepository {
           : { country: { not: null } }),
       },
       _count: { _all: true },
+      // O centro serve à busca por proximidade: escolher "Porto" tem de poder
+      // encontrar um negócio em Vila Nova de Gaia, a quatro quilómetros. A
+      // média ignora linhas sem coordenada, e devolve null se nenhuma tiver.
+      _avg: { lat: true, lng: true },
       orderBy: [{ country: 'asc' }, { city: 'asc' }],
     });
 
@@ -243,6 +247,8 @@ export class BusinessRepository {
         country: row.country,
         city: row.city,
         count: row._count._all,
+        lat: row._avg.lat,
+        lng: row._avg.lng,
       }));
   }
 
