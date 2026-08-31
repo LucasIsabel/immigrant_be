@@ -37,9 +37,9 @@ describe('BusinessPageModerationService', () => {
       'business_moderation',
       expect.any(String),
       expect.anything(),
-      { entityType: 'business_page' },
+      { entityType: 'business_page', entityId: undefined },
     );
-    expect(result.recommendation).toBe('approve');
+    expect(result.result.recommendation).toBe('approve');
   });
 
   it('defaults to manual review when the chain returns nothing usable', async () => {
@@ -49,8 +49,8 @@ describe('BusinessPageModerationService', () => {
 
     const result = await service.moderateContent({}, 'RESTAURANT');
 
-    expect(result.recommendation).toBe('review');
-    expect(result.riskLevel).toBe('medium');
+    expect(result.result.recommendation).toBe('review');
+    expect(result.result.riskLevel).toBe('medium');
   });
 
   it('sends the page sections to the model, named by their path', async () => {
@@ -164,9 +164,9 @@ describe('BusinessPageModerationService', () => {
       'guia-turistico',
     );
 
-    expect(result.riskLevel).toBe('medium');
-    expect(result.recommendation).toBe('review');
-    expect(result.summary).toContain('não foi analisada');
+    expect(result.result.riskLevel).toBe('medium');
+    expect(result.result.recommendation).toBe('review');
+    expect(result.result.summary).toContain('não foi analisada');
   });
 
   it('leaves a worse verdict alone when the content was truncated', async () => {
@@ -191,7 +191,7 @@ describe('BusinessPageModerationService', () => {
       'guia-turistico',
     );
 
-    expect(result.riskLevel).toBe('high');
-    expect(result.recommendation).toBe('reject');
+    expect(result.result.riskLevel).toBe('high');
+    expect(result.result.recommendation).toBe('reject');
   });
 });

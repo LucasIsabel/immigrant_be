@@ -83,6 +83,8 @@ const mockPageWithBusiness = {
 };
 
 const mockRepo = {
+  findByIdWithContent: jest.fn(),
+  saveModerationResult: jest.fn(),
   isSlugTaken: jest.fn(),
   findApprovedBySlug: jest.fn(),
   findBySlug: jest.fn(),
@@ -136,10 +138,13 @@ describe('BusinessPagesService', () => {
     service = module.get(BusinessPagesService);
     jest.clearAllMocks();
     mockModeration.moderateContent.mockResolvedValue({
-      riskLevel: 'low',
-      flags: [],
-      summary: 'ok',
-      recommendation: 'approve',
+      result: {
+        riskLevel: 'low',
+        flags: [],
+        summary: 'ok',
+        recommendation: 'approve',
+      },
+      model: 'google/gemini-2.5-flash',
     });
   });
 
@@ -587,10 +592,13 @@ describe('BusinessPagesService', () => {
       mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
       mockQualification.isQualified.mockResolvedValue(true);
       mockModeration.moderateContent.mockResolvedValue({
-        riskLevel: 'high',
-        flags: [],
-        summary: 'Violação clara.',
-        recommendation: 'reject',
+        result: {
+          riskLevel: 'high',
+          flags: [],
+          summary: 'Violação clara.',
+          recommendation: 'reject',
+        },
+        model: 'google/gemini-2.5-flash',
       });
 
       const result = await service.submitForReview('page-1', 'user-1');
@@ -616,10 +624,13 @@ describe('BusinessPagesService', () => {
       mockRepo.findByIdAndUserId.mockResolvedValue(draftPage);
       mockQualification.isQualified.mockResolvedValue(true);
       mockModeration.moderateContent.mockResolvedValue({
-        riskLevel: 'medium',
-        flags: [],
-        summary: 'Erro na análise automática.',
-        recommendation: 'review',
+        result: {
+          riskLevel: 'medium',
+          flags: [],
+          summary: 'Erro na análise automática.',
+          recommendation: 'review',
+        },
+        model: 'google/gemini-2.5-flash',
       });
       mockRepo.approvePage.mockResolvedValue({
         ...draftPage,
@@ -645,6 +656,111 @@ describe('BusinessPagesService', () => {
       await service.submitForReview('page-1', 'user-1');
 
       expect(mockModeration.moderateContent).not.toHaveBeenCalled();
+    });
+
+    /**
+     * O veredicto morria no escopo da função. O admin abria a fila e via uma
+     * página esperando sem nenhuma indicação de por quê — e o único jeito de
+     * descobrir era pagar uma segunda chamada de IA, que podia responder
+     * diferente, já que nada fixava o modelo nem o momento.
+     */
+    describe('gravando o veredicto', () => {
+      const qualifiedDraft = {
+        id: 'page-1',
+        businessId: 'biz-1',
+        slug: 'a-padaria',
+        businessType: 'RESTAURANT',
+        status: 'DRAFT',
+        pendingContent: { name: 'A Padaria' },
+        approvedContent: null,
+        slugLockedAt: null,
+      };
+
+      beforeEach(() => {
+        mockRepo.findByIdAndUserId.mockResolvedValue(qualifiedDraft);
+        mockQualification.isQualified.mockResolvedValue(true);
+        mockRepo.approvePage.mockResolvedValue({
+          ...qualifiedDraft,
+          status: 'APPROVED',
+        });
+      });
+
+      const savedRecord = () =>
+        mockRepo.saveModerationResult.mock.calls[0]?.[1] as Record<
+          string,
+          unknown
+        >;
+
+      it('records why a page was held back', async () => {
+        mockModeration.moderateContent.mockResolvedValue({
+          result: {
+            riskLevel: 'high',
+            flags: [
+              {
+                category: 'adult_links',
+                field: 'tours[2].description',
+                excerpt: 'trecho',
+                reason: 'motivo',
+              },
+            ],
+            summary: 'Violação clara.',
+            recommendation: 'reject',
+          },
+          model: 'google/gemini-2.5-flash',
+        });
+
+        await service.submitForReview('page-1', 'user-1');
+
+        expect(savedRecord()).toMatchObject({
+          riskLevel: 'high',
+          origin: 'gate',
+          model: 'google/gemini-2.5-flash',
+          flags: [expect.objectContaining({ field: 'tours[2].description' })],
+        });
+      });
+
+      it('records the analysis of a page that passed, too', async () => {
+        // Sem isto a tela responde "por que foi barrada?" e fica muda no
+        // "passou — mas o que o modelo viu?", e o código ganha um ramo.
+        await service.submitForReview('page-1', 'user-1');
+
+        expect(savedRecord()).toMatchObject({
+          riskLevel: 'low',
+          origin: 'gate',
+        });
+      });
+
+      it('stamps the moment, so the screen can say how old the verdict is', async () => {
+        await service.submitForReview('page-1', 'user-1');
+
+        expect(Date.parse(savedRecord().analyzedAt as string)).not.toBeNaN();
+      });
+
+      it('claims no model when nobody answered', async () => {
+        // O fallback de erro não é a opinião de um modelo, e gravar um nome
+        // ali seria atribuir a alguém uma frase que ele não disse.
+        mockModeration.moderateContent.mockResolvedValue({
+          result: {
+            riskLevel: 'medium',
+            flags: [],
+            summary: 'Erro na análise automática.',
+            recommendation: 'review',
+          },
+          model: null,
+        });
+
+        await service.submitForReview('page-1', 'user-1');
+
+        expect(savedRecord().model).toBeNull();
+      });
+
+      it('does not moderate — or record — an unqualified publisher', async () => {
+        mockQualification.isQualified.mockResolvedValue(false);
+
+        await service.submitForReview('page-1', 'user-1');
+
+        expect(mockRepo.saveModerationResult).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -1054,6 +1170,70 @@ describe('BusinessPagesService', () => {
         ),
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.findByIdAndUserId).not.toHaveBeenCalled();
+    });
+  });
+  /**
+   * O re-run manual do admin existia e também jogava o resultado fora, então a
+   * tela voltava ao "não sei por quê" no reload seguinte.
+   */
+  describe('moderatePage', () => {
+    const page = {
+      id: 'page-1',
+      businessType: 'RESTAURANT',
+      pendingContent: { name: 'A Padaria' },
+      approvedContent: null,
+    };
+
+    beforeEach(() => {
+      mockRepo.findByIdWithContent.mockResolvedValue(page);
+    });
+
+    it('records the run and says a human asked for it', async () => {
+      const record = await service.moderatePage('page-1');
+
+      expect(record).toMatchObject({ origin: 'manual', riskLevel: 'low' });
+      expect(mockRepo.saveModerationResult).toHaveBeenCalledWith(
+        'page-1',
+        expect.objectContaining({ origin: 'manual' }),
+      );
+    });
+
+    it('hands back the whole record, not the bare verdict', async () => {
+      // A tela precisa da hora e do modelo para dizer o que está mostrando, e
+      // devolvê-los aqui poupa um refetch logo após uma chamada que custou.
+      const record = await service.moderatePage('page-1');
+
+      expect(record.model).toBe('google/gemini-2.5-flash');
+      expect(Date.parse(record.analyzedAt)).not.toBeNaN();
+    });
+
+    it('falls back to the approved content when there is nothing pending', async () => {
+      mockRepo.findByIdWithContent.mockResolvedValue({
+        ...page,
+        pendingContent: null,
+        approvedContent: { name: 'A Padaria' },
+      });
+
+      await service.moderatePage('page-1');
+
+      expect(mockModeration.moderateContent).toHaveBeenCalledWith(
+        { name: 'A Padaria' },
+        'RESTAURANT',
+        'page-1',
+      );
+    });
+
+    it('refuses a page with no content at all', async () => {
+      mockRepo.findByIdWithContent.mockResolvedValue({
+        ...page,
+        pendingContent: null,
+        approvedContent: null,
+      });
+
+      await expect(service.moderatePage('page-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockRepo.saveModerationResult).not.toHaveBeenCalled();
     });
   });
 });

@@ -670,26 +670,32 @@ enum BusinessPageStatus {
 }
 
 model BusinessPage {
-  id              String               @id @default(uuid()) @db.Uuid
-  businessId      String               @unique @map("business_id") @db.Uuid
-  business        Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  slug            String               @unique @db.VarChar(48)
-  businessType    String               @map("business_type") @db.VarChar(50)
-  approvedContent Json?                @map("approved_content")
-  approvedAt      DateTime?            @map("approved_at")
-  approvedById    String?              @map("approved_by") @db.Uuid
-  approvedBy      Users?               @relation("ApprovedPages", fields: [approvedById], references: [id], onDelete: SetNull)
-  pendingContent  Json?                @map("pending_content")
-  submittedAt     DateTime?            @map("submitted_at")
-  status          BusinessPageStatus   @default(DRAFT)
-  rejectionReason String?              @map("rejection_reason") @db.Text
-  rejectedAt      DateTime?            @map("rejected_at")
-  rejectedById    String?              @map("rejected_by") @db.Uuid
-  rejectedBy      Users?               @relation("RejectedPages", fields: [rejectedById], references: [id], onDelete: SetNull)
-  slugLockedAt    DateTime?            @map("slug_locked_at")
-  createdAt       DateTime             @default(now()) @map("created_at")
-  updatedAt       DateTime             @updatedAt @map("updated_at")
-  reviews         BusinessPageReview[]
+  id               String               @id @default(uuid()) @db.Uuid
+  businessId       String               @unique @map("business_id") @db.Uuid
+  business         Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  slug             String               @unique @db.VarChar(48)
+  businessType     String               @map("business_type") @db.VarChar(50)
+  approvedContent  Json?                @map("approved_content")
+  approvedAt       DateTime?            @map("approved_at")
+  approvedById     String?              @map("approved_by") @db.Uuid
+  approvedBy       Users?               @relation("ApprovedPages", fields: [approvedById], references: [id], onDelete: SetNull)
+  pendingContent   Json?                @map("pending_content")
+  submittedAt      DateTime?            @map("submitted_at")
+  status           BusinessPageStatus   @default(DRAFT)
+  rejectionReason  String?              @map("rejection_reason") @db.Text
+  rejectedAt       DateTime?            @map("rejected_at")
+  rejectedById     String?              @map("rejected_by") @db.Uuid
+  rejectedBy       Users?               @relation("RejectedPages", fields: [rejectedById], references: [id], onDelete: SetNull)
+  slugLockedAt     DateTime?            @map("slug_locked_at")
+  /// A última análise de moderação por IA — do portão do submit ou de um re-run
+  /// do admin. Só o veredicto mais recente: a trilha de *chamadas* já vive no
+  /// AiUsageLog, e uma página rebaixada precisa dizer por quê, não contar a sua
+  /// história. Guardado como JSON porque a forma é a do schema da IA e muda com
+  /// ele; nunca é filtrado, só lido no detalhe do admin.
+  moderationResult Json?                @map("moderation_result")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  reviews          BusinessPageReview[]
 
   @@index([slug])
   @@index([status])
