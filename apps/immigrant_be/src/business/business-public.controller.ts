@@ -8,6 +8,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { BusinessService } from './business.service';
+import { BusinessCitiesQueryDto } from './dto/business-cities-query.dto';
+import { BusinessCityDto } from './dto/business-city.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
 import {
   PaginatedPublicBusinessesResponseDto,
@@ -28,6 +30,18 @@ export class BusinessPublicController {
   })
   getPublicBusinesses(@Query() query: BusinessListQueryDto) {
     return this.service.getPublicBusinesses(query);
+  }
+
+  /*
+   * Declared before `public/:id` on purpose: Nest matches in order, and the
+   * parameterised route would otherwise swallow "cities" as an id.
+   */
+  @Get('public/cities')
+  @AllowAnonymous()
+  @ApiOperation({ summary: 'Cidades que têm negócios listados' })
+  @ApiOkResponse({ type: [BusinessCityDto] })
+  getPublicCities(@Query() query: BusinessCitiesQueryDto) {
+    return this.service.getPublicCities(query);
   }
 
   @Get('public/:id')
