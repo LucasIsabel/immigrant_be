@@ -391,7 +391,12 @@ Business ─── Users (N:1) — negócio local de um imigrante
     `draftData` (o rascunho não publicado do dono, que era legível por quem tivesse o id),
     `userId` (quem é dono de qual listagem) e `isPublic` (anunciaria a escolha de não
     aparecer no diretório). O `BusinessResponseDto` do dono continua completo.
-  Listagem pública disponível via GET /business/public (diretório "My City")
+  Listagem pública disponível via GET /business/public (diretório "My City"), com
+    filtro por `country` (nome, que é o que o negócio guarda) além de `city`: nomes de
+    cidade repetem-se pelo mundo — Córdoba é argentina e espanhola, e sem o país as
+    duas respondem juntas. O nome basta porque os dois lados leem o mesmo catálogo do
+    CountriesNow; um `countryCode` no model seria mais sólido e é migration com
+    backfill, decidida quando a identidade do país pesar mais.
   GET /business/public/cities devolve as cidades que têm negócios listados, agrupadas
     por nome de país e cidade, **com o centro** (média das coordenadas dos negócios,
     null se nenhum tiver). O centro serve à busca por proximidade: escolher "Porto" tem

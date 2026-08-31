@@ -12,6 +12,15 @@ import {
 import { BusinessType } from '../../../../../generated/prisma';
 
 export class BusinessListQueryDto {
+  @ApiPropertyOptional({
+    example: 'Portugal',
+    description:
+      'Country name as stored on the business. City names repeat across the world — Córdoba, Santiago, Toledo — so a city filter alone is ambiguous.',
+  })
+  @IsString()
+  @IsOptional()
+  country?: string;
+
   @ApiPropertyOptional({ example: 'Lisboa' })
   @IsString()
   @IsOptional()

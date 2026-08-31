@@ -37,6 +37,43 @@ describe('BusinessRepository', () => {
     repository = module.get(BusinessRepository);
   });
 
+  describe('scoping by country', () => {
+    /**
+     * City names repeat across the world. `Córdoba` is in Argentina and in
+     * Spain; so are `Santiago`, `Valencia`, `Toledo` and `Barcelona`. Without a
+     * country the city filter answers about all of them at once.
+     */
+    it('filters by country alongside the city', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        city: 'Porto',
+      } as never);
+
+      const args = mockPrismaService.business.findMany.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(args.where).toMatchObject({
+        country: { equals: 'Portugal', mode: 'insensitive' },
+        cityKey: 'porto',
+      });
+    });
+
+    it('leaves the country out when none was asked for', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({ city: 'Porto' } as never);
+
+      const args = mockPrismaService.business.findMany.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect('country' in args.where).toBe(false);
+    });
+  });
+
   describe('the city key', () => {
     /**
      * A row whose key does not match its name is a business the public search
