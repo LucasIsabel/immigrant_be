@@ -16,6 +16,8 @@ const mockPrismaService = {
     findFirst: jest.fn(),
     count: jest.fn(),
     groupBy: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
   },
 };
 
@@ -33,6 +35,67 @@ describe('BusinessRepository', () => {
     }).compile();
 
     repository = module.get(BusinessRepository);
+  });
+
+  describe('the city key', () => {
+    /**
+     * A row whose key does not match its name is a business the public search
+     * cannot find, and no screen would say so. These pin every live write.
+     */
+    it('derives the key when a business is created', async () => {
+      mockPrismaService.business.create.mockResolvedValue({});
+
+      await repository.create('user-1', {
+        city: 'Póvoa de Varzim',
+      } as never);
+
+      const args = mockPrismaService.business.create.mock.calls[0][0] as {
+        data: Record<string, unknown>;
+      };
+      expect(args.data.cityKey).toBe('povoa de varzim');
+      expect(args.data.city).toBe('Póvoa de Varzim');
+    });
+
+    it('derives the key when a draft is applied live', async () => {
+      mockPrismaService.business.update.mockResolvedValue({});
+
+      await repository.applyDraftAndClearDraft('b-1', {
+        city: 'Águas Santas',
+      } as never);
+
+      const args = mockPrismaService.business.update.mock.calls[0][0] as {
+        data: Record<string, unknown>;
+      };
+      expect(args.data.cityKey).toBe('aguas santas');
+    });
+
+    it('leaves the key alone when a write does not touch the city', async () => {
+      // Overwriting it with `undefined` would blank the column and hide the
+      // business — worse than not updating at all.
+      mockPrismaService.business.update.mockResolvedValue({});
+
+      await repository.applyDraftAndClearDraft('b-1', {
+        name: 'Outro nome',
+      } as never);
+
+      const args = mockPrismaService.business.update.mock.calls[0][0] as {
+        data: Record<string, unknown>;
+      };
+      expect('cityKey' in args.data).toBe(false);
+    });
+
+    it('searches by the key, not by what was typed', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({ city: 'POVOA de Varzim' } as never);
+
+      const args = mockPrismaService.business.findMany.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(args.where).toMatchObject({ cityKey: 'povoa de varzim' });
+      expect('city' in args.where).toBe(false);
+    });
   });
 
   describe('findPublicCities', () => {
