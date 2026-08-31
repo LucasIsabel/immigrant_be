@@ -374,6 +374,46 @@ describe('BusinessService', () => {
     });
   });
 
+  // ── visibility never rides the draft ───────────────────────
+
+  describe('visibility and the draft', () => {
+    it('keeps isPublic out of a draft being saved', async () => {
+      repository.findByIdAndUserId.mockResolvedValue(mockBusiness);
+      repository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', {
+        name: 'Outro nome',
+        isPublic: true,
+      });
+
+      const draft = repository.saveDraft.mock.calls[0][1] as Record<
+        string,
+        unknown
+      >;
+      expect(draft).not.toHaveProperty('isPublic');
+      expect(draft.name).toBe('Outro nome');
+    });
+
+    it('ignores isPublic in a draft written before the rule', async () => {
+      // The one that bit an owner: they turned their listing on, then
+      // published an older draft, and the stored `isPublic: false` put it
+      // straight back. Drafts like that are already in the database.
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+        draftData: { name: 'Outro nome', isPublic: false },
+      });
+      repository.applyDraftAndClearDraft.mockResolvedValue(mockBusiness);
+
+      await service.publishDraft('business-id-1', 'user-id-1');
+
+      const applied = repository.applyDraftAndClearDraft.mock
+        .calls[0][1] as Record<string, unknown>;
+      expect(applied).not.toHaveProperty('isPublic');
+      expect(applied.name).toBe('Outro nome');
+    });
+  });
+
   // ── toggleVisibility ───────────────────────────────────────
 
   describe('toggleVisibility', () => {
