@@ -1,14 +1,15 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -112,7 +113,7 @@ export class ImmigrationVisaTypeController {
   @ApiNotFoundResponse({
     description: 'Immigration visa type not found',
   })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.immigrationVisaTypeService.findOne(id);
   }
 

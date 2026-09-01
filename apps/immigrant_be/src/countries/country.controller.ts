@@ -1,14 +1,15 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Put,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -95,7 +96,7 @@ export class CountryController {
     description: 'Country not found',
   })
   @AllowAnonymous()
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.countryService.findOne(id);
   }
 

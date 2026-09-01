@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import {
   ApiNotFoundResponse,
@@ -50,7 +50,7 @@ export class BusinessPublicController {
   @ApiParam({ name: 'id', description: 'ID do negócio' })
   @ApiOkResponse({ type: PublicBusinessResponseDto })
   @ApiNotFoundResponse({ description: 'Negócio não encontrado ou privado' })
-  getPublicBusinessById(@Param('id') id: string) {
+  getPublicBusinessById(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.getPublicBusinessById(id);
   }
 }
