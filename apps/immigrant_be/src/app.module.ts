@@ -24,6 +24,7 @@ import { AiImageModule } from './ai-image/ai-image.module';
 import { StorageModule } from './storage/storage.module';
 import { ProfessionalProfileModule } from './professional-profile/professional-profile.module';
 import { BusinessModule } from './business/business.module';
+import { MyCityModule } from './my-city/my-city.module';
 import { PlacesModule } from './places/places.module';
 import { EventInterestModule } from './event-interest/event-interest.module';
 import { CommunityEventsModule } from './community-events/community-events.module';
@@ -65,6 +66,7 @@ const bullBoardEnabled =
     StorageModule,
     ProfessionalProfileModule,
     BusinessModule,
+    MyCityModule,
     PlacesModule,
     EventInterestModule,
     CommunityEventsModule,

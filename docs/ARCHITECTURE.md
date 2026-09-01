@@ -59,6 +59,7 @@ immigrant_be/
 │   │   │   ├── bull-board/     # Dashboard Bull Board (break-glass, /admin/queues-board)
 │   │   │   ├── storage/        # Módulo de upload de arquivos para R2
 │   │   │   ├── professional-profile/ # Módulo de perfil profissional do usuário
+│   │   │   ├── my-city/        # Contagens da tela My City (uma chamada, quatro abas)
 │   │   │   ├── business/       # Módulo de negócios locais de imigrantes (My City)
 │   │   │   ├── business-pages/ # Módulo de páginas públicas de negócios (My City)
 │   │   │   ├── event-interest/ # Fase 0 de eventos: captura pública de interesse de organizadores
@@ -783,6 +784,28 @@ apps/microservice/src/ai-blog/
 - `generateImage(prompt)` em `GeminiBaseService` — retorna `Buffer | null` com dados base64 decodificados
 
 ---
+
+## 6.0. My City — por que existe um módulo só para contar
+
+`apps/immigrant_be/src/my-city/` expõe uma rota só, `GET /my-city/summary`, que
+devolve quatro números: restaurantes, guias, eventos e lugares de uma cidade.
+
+**Por que não vive dentro de `business`, `community-events` ou `places`.** Ele
+conta atravessando os três. Pôr a contagem de lugares dentro do módulo de
+negócios seria arquivar pelo lugar onde o número é lido, não pelo assunto do
+número. A tela é o domínio a que esses quatro pertencem juntos.
+
+**Por que a contagem existe.** A tela tem abas, e aba esconde: sem um número no
+rótulo, uma aba vazia só se anuncia depois do clique. O número precisa portanto
+ser conhecido **antes** de qualquer aba abrir — enquanto o sentido da aba é que
+aba fechada não custe requisição. Uma chamada barata com os quatro números
+resolve as duas coisas: as listas passam a carregar quando a aba abre.
+
+**A regra que o código tem de manter.** O número tem de concordar com o que a
+aba depois mostra. Como a lista de negócios funde a cidade exata com o que está
+dentro do raio, a contagem faz o mesmo — num `OR` só, e não em duas consultas
+somadas, que contariam duas vezes tudo o que satisfaz as duas condições. Ver
+`my-city.repository.ts`.
 
 ## 6.1. Envio de Emails (Resend)
 
