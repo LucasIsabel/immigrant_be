@@ -425,7 +425,12 @@ Business ─── Users (N:1) — negócio local de um imigrante
     BusinessRepository.findPublic() delega para findPublicByRadius(), que executa
     Haversine SQL via Prisma.$queryRaw para buscar apenas os IDs dentro do raio e
     depois hidrata os registros completos via Prisma ORM (preserva mapeamento camelCase).
-    Negócios sem lat/lng são excluídos quando o filtro de raio está ativo.
+    Negócios sem lat/lng recuam para o centro da própria cidade — a média dos
+    outros negócios públicos com o mesmo `city_key`. São dois ramos num `OR`, e não
+    um `COALESCE(b.lat, c.lat)`: o COALESCE sobre a coluna juntada não é indexável
+    e devolveria a consulta ao Seq Scan que a caixa delimitadora existe para evitar.
+    Buraco assumido: cidade onde nenhum negócio tem coordenada não tem centro, e os
+    de lá continuam fora — fecha assim que um deles for geocodificado.
     Sem os três params, o caminho Prisma ORM padrão é mantido sem alterações.
   Verificação de propriedade (ownership check) nas operações de update/delete/visibility
 
