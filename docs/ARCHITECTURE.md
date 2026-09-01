@@ -807,6 +807,29 @@ dentro do raio, a contagem faz o mesmo — num `OR` só, e não em duas consulta
 somadas, que contariam duas vezes tudo o que satisfaz as duas condições. Ver
 `my-city.repository.ts`.
 
+## 6.0.1. Destaques — um ato editorial, um módulo
+
+`apps/immigrant_be/src/featured/` expõe `PATCH /admin/featured/:entity/:id`, uma
+rota só para negócios, lugares e eventos. Destacar é o mesmo ato nos três — a
+faixa acima da lista mistura-os —, e três superfícies de admin seriam três
+cópias da mesma decisão.
+
+**Por que `FeatureKind` e não um booleano.** `CURATED` é escolha nossa; `PAID` é
+espaço vendido. A tela tem de poder dizer qual dos dois está a mostrar:
+"Selecionados" sobre um anúncio é a troca silenciosa que gasta a confiança da
+lista inteira, e um booleano tornaria essa troca impossível de evitar. O
+servidor recusa um `PAID` sem data de fim, porque uma campanha sem fim fica no
+ar por esquecimento.
+
+**A regra vive num sítio só** — `common/featured/featured.ts` — em duas formas: a
+função que decide sobre uma linha e o `where` que decide quem volta da base. As
+duas existem porque a base escolhe quem aparece e o código escolhe o que dizer
+sobre cada um; se divergirem, a lista e o rótulo discordam.
+
+**O que sai na API pública:** `featureKind` e `featuredNow`. As datas ficam de
+fora de propósito — mandá-las seria mandar a regra de "agora" junto, e duas
+cópias dessa regra divergem no primeiro fuso horário.
+
 ## 6.1. Envio de Emails (Resend)
 
 ### Arquitetura
