@@ -1,8 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PlaceCategory } from '../../../../../generated/prisma';
 import { PlaceTranslationDto } from './place-translation.dto';
+import { FeatureKind } from '../../../../../generated/prisma';
 
 export class PlaceResponseDto {
+  @ApiProperty({
+    enum: FeatureKind,
+    nullable: true,
+    description:
+      'CURATED é escolha editorial; PAID é espaço vendido. A tela tem de dizer qual dos dois está a mostrar.',
+  })
+  featureKind: FeatureKind | null;
+
+  @ApiProperty({ description: 'Se conta como destaque neste instante' })
+  featuredNow: boolean;
+
   @ApiProperty({ description: 'Identificador do lugar' })
   id: string;
 

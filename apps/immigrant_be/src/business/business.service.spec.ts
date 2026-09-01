@@ -455,8 +455,35 @@ describe('BusinessService', () => {
       const query = { page: 1, limit: 20 };
       const result = await service.getPublicBusinesses(query as any);
 
-      expect(result).toEqual(paginatedResult);
+      expect(result.total).toBe(1);
+      expect(result.data[0]).toMatchObject({ id: mockBusiness.id });
       expect(repository.findPublic).toHaveBeenCalledWith(query);
+    });
+
+    it('answers whether each one is featured, and not since when', async () => {
+      // A tela não decide se um destaque ainda vale — o servidor decide uma vez
+      // e diz. Mandar as datas seria mandar a regra junto, e duas cópias de uma
+      // regra sobre "agora" divergem no primeiro fuso horário.
+      repository.findPublic.mockResolvedValue({
+        data: [
+          {
+            ...mockBusiness,
+            featureKind: 'CURATED',
+            featuredFrom: null,
+            featuredUntil: null,
+          },
+        ],
+        total: 1,
+      });
+
+      const result = await service.getPublicBusinesses({} as any);
+
+      expect(result.data[0]).toMatchObject({
+        featureKind: 'CURATED',
+        featuredNow: true,
+      });
+      expect(result.data[0]).not.toHaveProperty('featuredFrom');
+      expect(result.data[0]).not.toHaveProperty('featuredUntil');
     });
   });
 

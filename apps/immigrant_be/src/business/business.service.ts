@@ -34,6 +34,7 @@ import { validateTypeData } from './type-data.schemas';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
+import { withFeaturedNow } from '../common/featured/with-featured-now';
 
 @Injectable()
 export class BusinessService {
@@ -131,8 +132,8 @@ export class BusinessService {
     return this.repository.toggleVisibility(id, isPublic);
   }
 
-  getPublicBusinesses(query: BusinessListQueryDto) {
-    return this.repository.findPublic(query);
+  async getPublicBusinesses(query: BusinessListQueryDto) {
+    return withFeaturedNow(await this.repository.findPublic(query));
   }
 
   getPublicCities(query: BusinessCitiesQueryDto) {
