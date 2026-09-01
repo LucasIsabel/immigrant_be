@@ -11,6 +11,9 @@ const mockPrismaService = {
   // findPublic batches the page and the count; the mock resolves the array it
   // is handed, which is what Prisma does.
   $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
+  // The radius search builds SQL by hand, so it never touches business.findMany
+  // for the page — it asks for ids and then hydrates them.
+  $queryRaw: jest.fn(),
   business: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
@@ -387,6 +390,99 @@ describe('BusinessRepository', () => {
       const call = mockPrismaService.business.findMany.mock.calls[0][0];
       expect(call.select).toBeUndefined();
       expect(call.include).toBeDefined();
+    });
+  });
+
+  describe('the featured filter', () => {
+    /**
+     * The Destaques row asks for its own rows.
+     *
+     * It cannot pick from the list's page: a page may hold no featured row at
+     * all, and one that sits on page four would slide into the row as the
+     * reader scrolled — a row that changes under you is not a row of featured
+     * things, it is a row of whatever happened to load.
+     */
+    it('narrows the plain query to the featured window', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        city: 'Porto',
+        featured: true,
+      } as never);
+
+      const args = mockPrismaService.business.findMany.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(args.where).toMatchObject({ featureKind: { not: null } });
+      // The dates are half the rule: a campaign that ended yesterday is not
+      // featured today, and one that starts tomorrow is not featured yet.
+      expect(args.where.AND).toHaveLength(2);
+    });
+
+    it('leaves the ordinary list untouched', async () => {
+      // Without the flag the list is everything — a featured constraint
+      // leaking in here would empty the page for every city that has no
+      // featured business, which is all of them at first.
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        city: 'Porto',
+      } as never);
+
+      const args = mockPrismaService.business.findMany.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(args.where.featureKind).toBeUndefined();
+      expect(args.where.AND).toBeUndefined();
+    });
+
+    /**
+     * The radius path is the one that would have failed in silence.
+     *
+     * Every My City tab sends a radius, so a filter honoured only by the Prisma
+     * branch would answer "here is everything" to a request for the featured
+     * few — and the row above the list would quietly become the list.
+     */
+    it('reaches the SQL of the radius search', async () => {
+      mockPrismaService.$queryRaw
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ count: BigInt(0) }]);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        lat: 41.15,
+        lng: -8.61,
+        radius: 60,
+        featured: true,
+      } as never);
+
+      const sql = mockPrismaService.$queryRaw.mock.calls[0][0] as {
+        sql: string;
+      };
+      expect(sql.sql).toContain('feature_kind');
+      expect(sql.sql).toContain('featured_until');
+    });
+
+    it('does not narrow the radius search when the flag is absent', async () => {
+      mockPrismaService.$queryRaw
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ count: BigInt(0) }]);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        lat: 41.15,
+        lng: -8.61,
+        radius: 60,
+      } as never);
+
+      const sql = mockPrismaService.$queryRaw.mock.calls[0][0] as {
+        sql: string;
+      };
+      expect(sql.sql).not.toContain('feature_kind');
     });
   });
 });

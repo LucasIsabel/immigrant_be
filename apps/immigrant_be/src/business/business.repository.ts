@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from './bounding-box';
+import { featuredSql, featuredWhere } from '../common/featured/featured';
 import { normalizeCity } from './city-key';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -171,6 +172,7 @@ export class BusinessRepository {
       lat,
       lng,
       radius,
+      featured,
     } = query;
 
     const useGeo =
@@ -187,6 +189,7 @@ export class BusinessRepository {
         lat: lat,
         lng: lng,
         radius: radius,
+        featured,
       });
     }
 
@@ -206,6 +209,7 @@ export class BusinessRepository {
       ...(search && {
         name: { contains: search, mode: 'insensitive' as const },
       }),
+      ...(featured ? featuredWhere() : {}),
     };
 
     const [data, total] = await this.prisma.$transaction([
@@ -276,6 +280,7 @@ export class BusinessRepository {
     lat: number;
     lng: number;
     radius: number;
+    featured?: boolean;
   }): Promise<{ data: PublicBusiness[]; total: number }> {
     const {
       country,
@@ -287,6 +292,7 @@ export class BusinessRepository {
       lat,
       lng,
       radius,
+      featured,
     } = params;
     const offset = (page - 1) * limit;
 
@@ -328,6 +334,7 @@ export class BusinessRepository {
         Prisma.sql`b.business_type = ${businessType}::"BusinessType"`,
       );
     if (search) conditions.push(Prisma.sql`b.name ILIKE ${'%' + search + '%'}`);
+    if (featured) conditions.push(featuredSql('b'));
 
     const where = Prisma.join(conditions, ' AND ');
 

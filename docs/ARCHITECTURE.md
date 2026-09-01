@@ -853,6 +853,15 @@ sobre cada um; se divergirem, a lista e o rótulo discordam.
 fora de propósito — mandá-las seria mandar a regra de "agora" junto, e duas
 cópias dessa regra divergem no primeiro fuso horário.
 
+**A faixa pede as próprias linhas.** `/business/public` e `/places/public`
+aceitam `featured=true`. A alternativa — a faixa escolher entre o que a página
+da lista trouxe — parece mais simples e não é: uma página pode não conter
+nenhum destaque, e um que esteja na página quatro entraria na faixa quando o
+leitor rolasse. A regra ganhou por isso uma terceira forma, `featuredSql`, em
+`common/featured/featured.ts`: a busca por raio monta SQL à mão para usar o
+índice `(lat, lng)`, e sem ela o filtro seria ignorado em silêncio justamente
+nas consultas que o My City faz.
+
 ## 6.1. Envio de Emails (Resend)
 
 ### Arquitetura

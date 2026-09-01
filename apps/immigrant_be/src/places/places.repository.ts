@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
+import { featuredWhere } from '../common/featured/featured';
 import {
   PlaceCitiesQueryDto,
   PlacesListQueryDto,
@@ -30,6 +31,9 @@ export class PlacesRepository {
     }
     if (query.free) {
       where.isFree = true;
+    }
+    if (query.featured) {
+      Object.assign(where, featuredWhere());
     }
 
     return where;

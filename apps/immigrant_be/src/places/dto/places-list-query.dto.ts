@@ -54,6 +54,18 @@ export class PlacesListQueryDto {
   free?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Only what is featured right now',
+    example: true,
+  })
+  @Transform(
+    ({ value }: { value: unknown }) =>
+      value === true || value === 'true' || value === '1',
+  )
+  @IsBoolean()
+  @IsOptional()
+  featured?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Ordenação',
     enum: ['popular', 'name'],
     default: 'popular',
