@@ -57,6 +57,11 @@ const PUBLIC_BUSINESS_SELECT = {
   timezone: true,
   createdAt: true,
   updatedAt: true,
+  // A faixa de destaques lê daqui: a lista já vem, e um pedido à parte só para
+  // saber quais dela são destaque seria pedir a mesma coisa duas vezes.
+  featureKind: true,
+  featuredFrom: true,
+  featuredUntil: true,
   ...BUSINESS_PAGE_SUMMARY,
 } satisfies Prisma.BusinessSelect;
 
