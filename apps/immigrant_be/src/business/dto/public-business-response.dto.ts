@@ -6,7 +6,6 @@ import { WeeklyScheduleDto } from './opening-hours.dto';
 import { LegalTypeDataDto } from './type-data/legal-type-data.dto';
 import { RestaurantTypeDataDto } from './type-data/restaurant-type-data.dto';
 import { TourGuideTypeDataDto } from './type-data/tour-guide-type-data.dto';
-import { FeatureKind } from '../../../../../generated/prisma';
 
 /**
  * What a visitor is allowed to know about a business.
@@ -41,17 +40,6 @@ import { FeatureKind } from '../../../../../generated/prisma';
   GeneralTypeDataDto,
 )
 export class PublicBusinessResponseDto {
-  @ApiProperty({
-    enum: FeatureKind,
-    nullable: true,
-    description:
-      'CURATED é escolha editorial; PAID é espaço vendido. A tela tem de dizer qual dos dois está a mostrar.',
-  })
-  featureKind: FeatureKind | null;
-
-  @ApiProperty({ description: 'Se conta como destaque neste instante' })
-  featuredNow: boolean;
-
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 

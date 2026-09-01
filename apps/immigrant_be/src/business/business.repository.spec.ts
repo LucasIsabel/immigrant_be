@@ -330,9 +330,6 @@ describe('BusinessRepository', () => {
       'createdAt',
       'description',
       'email',
-      'featureKind',
-      'featuredFrom',
-      'featuredUntil',
       'id',
       'lat',
       'lng',
@@ -347,12 +344,6 @@ describe('BusinessRepository', () => {
       'website',
     ];
 
-    /*
-     * `featuredFrom` e `featuredUntil` saem da base mas não da API: o serviço
-     * usa-as para decidir `featuredNow` e deita-as fora. Estão aqui porque esta
-     * lista é sobre o que a consulta lê, e ler é onde uma coluna esquecida se
-     * torna uma fuga.
-     */
     it('never lets the owner draft, the owner id or the listing switch out', async () => {
       mockPrismaService.business.findFirst.mockResolvedValue(null);
 
