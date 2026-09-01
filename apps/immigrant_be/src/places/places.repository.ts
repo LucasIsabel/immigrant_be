@@ -70,10 +70,6 @@ export class PlacesRepository {
           imageAuthor: true,
           popularityScore: true,
           isFree: true,
-          // A faixa de destaques lê daqui, junto com a lista.
-          featureKind: true,
-          featuredFrom: true,
-          featuredUntil: true,
           address: true,
           website: true,
           sourceUrl: true,

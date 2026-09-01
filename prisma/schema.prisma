@@ -627,18 +627,6 @@ enum BusinessType {
   GENERAL
 }
 
-/// Por que um item está em destaque.
-///
-/// São duas coisas diferentes e o modelo recusa-se a confundi-las: `CURATED` é
-/// escolha editorial nossa, `PAID` é espaço vendido. A tela tem de poder dizer
-/// qual dos dois está a mostrar — "Selecionados" sobre um anúncio é a troca
-/// silenciosa que gasta a confiança da lista inteira, e um único booleano
-/// tornaria essa troca impossível de evitar.
-enum FeatureKind {
-  CURATED
-  PAID
-}
-
 model Business {
   id           String       @id @default(uuid()) @db.Uuid
   userId       String       @map("user_id") @db.Uuid
@@ -689,15 +677,6 @@ model Business {
   publisherQualification PublisherQualification?
   tourGuideReviews       TourGuideReview[]
   communityEvents        CommunityEvent[]
-
-  /// Destaque: o que aparece na faixa acima da lista.
-  ///
-  /// `null` é o caso comum — a esmagadora maioria não é destaque. As duas datas
-  /// existem porque uma promoção sem fim vira permanente por esquecimento;
-  /// ambas nulas significam "enquanto estiver marcado".
-  featureKind   FeatureKind? @map("feature_kind")
-  featuredFrom  DateTime?    @map("featured_from")
-  featuredUntil DateTime?    @map("featured_until")
 
   @@index([userId])
   @@index([businessType, isPublic])
@@ -955,15 +934,6 @@ model Place {
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")
 
-  /// Destaque: o que aparece na faixa acima da lista.
-  ///
-  /// `null` é o caso comum — a esmagadora maioria não é destaque. As duas datas
-  /// existem porque uma promoção sem fim vira permanente por esquecimento;
-  /// ambas nulas significam "enquanto estiver marcado".
-  featureKind   FeatureKind? @map("feature_kind")
-  featuredFrom  DateTime?    @map("featured_from")
-  featuredUntil DateTime?    @map("featured_until")
-
   @@unique([countryCode, city, slug])
   @@index([countryCode, city, isActive])
   @@index([ingestionId, reviewStatus])
@@ -1128,15 +1098,6 @@ model CommunityEvent {
   reports         CommunityEventReport[]
   createdAt       DateTime               @default(now()) @map("created_at")
   updatedAt       DateTime               @updatedAt @map("updated_at")
-
-  /// Destaque: o que aparece na faixa acima da lista.
-  ///
-  /// `null` é o caso comum — a esmagadora maioria não é destaque. As duas datas
-  /// existem porque uma promoção sem fim vira permanente por esquecimento;
-  /// ambas nulas significam "enquanto estiver marcado".
-  featureKind   FeatureKind? @map("feature_kind")
-  featuredFrom  DateTime?    @map("featured_from")
-  featuredUntil DateTime?    @map("featured_until")
 
   @@index([countryCode, city, status, startsAt])
   @@index([organizerId])
