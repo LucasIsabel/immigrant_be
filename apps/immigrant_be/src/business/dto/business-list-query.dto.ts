@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -84,4 +85,17 @@ export class BusinessListQueryDto {
   @Max(200)
   @IsOptional()
   radius?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Only what is featured right now. Feeds the Destaques row, which has to ask for its own rows: a page of the list can hold no featured row at all, and picking from whatever came back would make the row change as the reader scrolls.',
+    example: true,
+  })
+  @Transform(
+    ({ value }: { value: unknown }) =>
+      value === true || value === 'true' || value === '1',
+  )
+  @IsBoolean()
+  @IsOptional()
+  featured?: boolean;
 }

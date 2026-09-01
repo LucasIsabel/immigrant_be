@@ -103,6 +103,22 @@ describe('PlacesRepository', () => {
     expect(argsDaBusca().where).not.toHaveProperty('isFree');
   });
 
+  it('narrows to the featured window when asked', async () => {
+    // The Destaques row asks for its own rows rather than picking from the
+    // list's page — see the business repository spec for why.
+    await repository.findPublic({ countryCode: 'PT', featured: true });
+
+    const { where } = argsDaBusca();
+    expect(where).toMatchObject({ featureKind: { not: null } });
+    expect(where.AND).toHaveLength(2);
+  });
+
+  it('leaves the ordinary list untouched', async () => {
+    await repository.findPublic({ countryCode: 'PT' });
+
+    expect(argsDaBusca().where).not.toHaveProperty('featureKind');
+  });
+
   it('pagina a partir de 1', async () => {
     await repository.findPublic({ countryCode: 'PT', page: 3, limit: 10 });
 
