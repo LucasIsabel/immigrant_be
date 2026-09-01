@@ -807,6 +807,29 @@ dentro do raio, a contagem faz o mesmo — num `OR` só, e não em duas consulta
 somadas, que contariam duas vezes tudo o que satisfaz as duas condições. Ver
 `my-city.repository.ts`.
 
+## 5.1. O deploy aplica as migrations
+
+`scripts/start.sh` — o `CMD` da imagem — corre `prisma migrate deploy` antes de
+arrancar qualquer processo, com `set -e`.
+
+**Por que ali e não no `package.json`.** O `start` de lá é o de
+desenvolvimento (`concurrently nest start`); quem sobe em produção é este script.
+E é o único ponto por onde os dois processos passam, o que resolve de graça a
+corrida entre eles: a migration corre uma vez, antes de existir API ou worker.
+
+**Por que o binário direto.** O estágio de produção do Dockerfile não corre
+`corepack enable`, então `pnpm exec` não existe lá dentro. O `node_modules` é
+copiado inteiro do build, com o CLI do Prisma.
+
+**Por que `set -e`.** Se a migration falhar, o contêiner não arranca. Um
+contêiner que não arranca é visível; uma aplicação a correr contra um schema que
+não conhece não é — foi o que aconteceu a 2026-09-01, com a listagem pública a
+responder 500 porque uma migration aditiva ficou por aplicar.
+
+**A regra que mantém isto seguro.** As migrations passam a correr sem ninguém a
+ver, portanto continuam a ser **aditivas**: expandir num deploy, contrair noutro.
+Uma que apague coluna corre sozinha, e não há passo humano onde reparar nela.
+
 ## 6.1. Envio de Emails (Resend)
 
 ### Arquitetura
