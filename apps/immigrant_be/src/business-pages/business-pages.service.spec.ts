@@ -183,16 +183,21 @@ describe('BusinessPagesService', () => {
     });
 
     it('returns the page when status is APPROVED_WITH_PENDING (old content stays live)', async () => {
+      // The fixture carries no `pendingContent` on purpose: the repository's
+      // `select` means it never leaves the database on this route. It used to
+      // be here, and the shape of the test was quietly asserting that serving
+      // unapproved content to anonymous visitors was fine.
       const page = {
         id: 'uuid',
+        businessId: 'business-uuid',
         slug: 'meu-slug',
         status: 'APPROVED_WITH_PENDING',
         approvedContent: { name: 'Old content' },
-        pendingContent: { name: 'New content under review' },
       };
       mockRepo.findApprovedBySlug.mockResolvedValue(page);
       const result = await service.getPublicPage('meu-slug');
       expect(result).toEqual(page);
+      expect(result).not.toHaveProperty('pendingContent');
     });
   });
 
