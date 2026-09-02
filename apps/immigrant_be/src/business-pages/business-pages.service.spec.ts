@@ -95,6 +95,7 @@ const mockRepo = {
   create: jest.fn(),
   updatePendingContent: jest.fn(),
   submitPage: jest.fn(),
+  withdrawSubmission: jest.fn(),
   // NEW:
   findById: jest.fn(),
   listPages: jest.fn(),
@@ -1239,6 +1240,76 @@ describe('BusinessPagesService', () => {
         BadRequestException,
       );
       expect(mockRepo.saveModerationResult).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('withdrawSubmission', () => {
+    /**
+     * Retirar não é ser reprovado.
+     *
+     * Antes, tirar da fila uma edição que já não se queria publicar só era
+     * possível pedindo ao moderador que a reprovasse — e uma reprovação grava
+     * `lastRejectionAt`, que custa 90 dias de qualificação a quem já a tinha.
+     * Medido a 2026-09-02: uma conta com 11 aprovações contra 3 exigidas perdeu
+     * a qualificação na hora por causa de um descarte operacional.
+     */
+    const paginaEmAnalise = (over: Record<string, unknown> = {}) => ({
+      id: 'uuid',
+      status: 'APPROVED_WITH_PENDING',
+      approvedContent: { name: 'No ar' },
+      pendingContent: { name: 'A rever' },
+      ...over,
+    });
+
+    it('devolve ao ar a página que já tinha conteúdo aprovado', async () => {
+      // O público não é tocado: sai da fila o pedido de revisão, não a página.
+      mockRepo.findByIdAndUserId.mockResolvedValue(paginaEmAnalise());
+
+      await service.withdrawSubmission('uuid', 'user-1');
+
+      expect(mockRepo.withdrawSubmission).toHaveBeenCalledWith(
+        'uuid',
+        'APPROVED',
+      );
+    });
+
+    it('devolve a rascunho a página que nunca foi aprovada', async () => {
+      mockRepo.findByIdAndUserId.mockResolvedValue(
+        paginaEmAnalise({ status: 'PENDING_REVIEW', approvedContent: null }),
+      );
+
+      await service.withdrawSubmission('uuid', 'user-1');
+
+      expect(mockRepo.withdrawSubmission).toHaveBeenCalledWith('uuid', 'DRAFT');
+    });
+
+    it('não passa por nada da moderação', async () => {
+      // É esta a diferença que a issue abriu: nenhuma reprovação é registada,
+      // portanto a qualificação do dono fica onde estava.
+      mockRepo.findByIdAndUserId.mockResolvedValue(paginaEmAnalise());
+
+      await service.withdrawSubmission('uuid', 'user-1');
+
+      expect(mockRepo.rejectPage).not.toHaveBeenCalled();
+      expect(mockQualification.onPageRejected).not.toHaveBeenCalled();
+    });
+
+    it('recusa retirar o que não está em análise', async () => {
+      mockRepo.findByIdAndUserId.mockResolvedValue(
+        paginaEmAnalise({ status: 'APPROVED' }),
+      );
+
+      await expect(
+        service.withdrawSubmission('uuid', 'user-1'),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('recusa quem não é o dono', async () => {
+      mockRepo.findByIdAndUserId.mockResolvedValue(null);
+
+      await expect(service.withdrawSubmission('uuid', 'outro')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

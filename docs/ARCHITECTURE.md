@@ -867,6 +867,25 @@ leitor rolasse. A regra ganhou por isso uma terceira forma, `featuredSql`, em
 índice `(lat, lng)`, e sem ela o filtro seria ignorado em silêncio justamente
 nas consultas que o My City faz.
 
+## 6.0.2. Retirar uma submissão não é ser reprovado
+
+`DELETE /business-pages/:id/submission` tira da fila uma edição que o dono já
+não quer publicar. Volta a `APPROVED` se havia conteúdo no ar — o público não é
+tocado, sai o pedido de revisão e não a página — e a `DRAFT` se a página nunca
+foi aprovada. O `pendingContent` fica onde está: é o rascunho do dono, e
+retirar a submissão não é descartar o trabalho.
+
+**Por que existe.** A única forma de tirar algo da fila era pedir ao moderador
+que reprovasse, e reprovar chama `onPageRejected`, que grava `lastRejectionAt`
+— e a qualificação de publisher exige **90 dias sem reprovação**
+(`publisher-qualification.service.ts`, `rejectionFreeDaysRequired: 90`). Medido
+a 2026-09-02: uma conta com 11 aprovações contra 3 exigidas perdeu a
+qualificação por causa de um descarte puramente operacional, e a tela passou de
+"Publicar agora" para "Submeter para revisão".
+
+Descartar e reprovar são atos diferentes e agora têm caminhos diferentes. A
+reprovação continua a ser juízo de conteúdo, com o preço que tem.
+
 ## 6.1. Envio de Emails (Resend)
 
 ### Arquitetura
@@ -1304,6 +1323,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 > `findPublicList` em `business-pages.repository.ts`.
 | `GET /business-pages/slug-availability`                    | BusinessPages                  | Autenticado — verifica disponibilidade de slug                                                             |
 | `POST /business-pages`                                     | BusinessPages                  | Autenticado (role USER) — cria página (DRAFT)                                                              |
+| `DELETE /business-pages/:id/submission`                     | BusinessPages                  | Autenticado (role USER) — o dono retira a própria submissão, sem penalidade                                |
 | `GET /business-pages/my/:businessId`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página; inclui `isPublisherQualified` (PublisherQualification) |
 | `PUT /business-pages/:id/content`                          | BusinessPages                  | Autenticado (role USER) — atualiza `pendingContent` (DTO `UpdateBusinessPageContentDto`; campo opcional `typeData` como objeto para snapshots por tipo, ex. cardápio) |
 | `POST /business-pages/:id/submit`                          | BusinessPages                  | Autenticado (role USER) — submete para revisão (ou aprova diretamente se publisher qualificado)            |

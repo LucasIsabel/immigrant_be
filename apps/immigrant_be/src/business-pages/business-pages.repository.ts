@@ -126,6 +126,26 @@ export class BusinessPagesRepository {
     });
   }
 
+  /**
+   * Tira a página da fila de análise, a pedido do dono.
+   *
+   * `submittedAt` volta a `null` porque deixou de haver submissão: mantê-lo
+   * faria a coluna "submetido em" da moderação apontar para um pedido que já
+   * não existe.
+   *
+   * O que **não** se toca é tudo o que pertence à moderação —
+   * `rejectedAt`, `rejectedById`, `rejectionReason`, `lastRejectionAt` na
+   * qualificação. Retirar não é ser reprovado, e é essa distinção que a issue
+   * BE#241 abriu: antes, tirar uma edição da fila custava ao dono os mesmos 90
+   * dias de qualificação que uma reprovação por conteúdo.
+   */
+  withdrawSubmission(id: string, status: 'DRAFT' | 'APPROVED') {
+    return this.prisma.businessPage.update({
+      where: { id },
+      data: { status, submittedAt: null },
+    });
+  }
+
   /** Grava a última análise; substitui a anterior de propósito. */
   saveModerationResult(id: string, record: object) {
     return this.prisma.businessPage.update({
