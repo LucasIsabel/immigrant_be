@@ -1293,6 +1293,15 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /business/public`                                     | Business                       | Público (`@AllowAnonymous`) — lista negócios públicos com filtros (city, businessType, search, page, limit) |
 | `GET /business/public/:id`                                 | Business                       | Público (`@AllowAnonymous`) — detalhe de negócio público                                                   |
 | `GET /pg/:businessType/:slug`                              | BusinessPages                  | Público (`@AllowAnonymous`) — detalhe de página aprovada                                                   |
+
+> **As duas rotas anónimas de página levam `select` explícito, e isso é segurança e não
+> optimização.** O controlador devolve o que o serviço lhe der e o Nest não retira campos que o
+> DTO não declara, portanto uma consulta sem `select` põe a linha inteira no HTML público — foi
+> assim que `pendingContent` (conteúdo submetido e ainda **não** aprovado), `moderationResult`,
+> `rejectionReason` e os `approvedById`/`rejectedById` dos moderadores ficaram legíveis por
+> qualquer visitante. Campo novo na página pública entra no `select` **e** no
+> `BusinessPagePublicResponseDto`; a fricção é intencional. Ver `findApprovedBySlug` e
+> `findPublicList` em `business-pages.repository.ts`.
 | `GET /business-pages/slug-availability`                    | BusinessPages                  | Autenticado — verifica disponibilidade de slug                                                             |
 | `POST /business-pages`                                     | BusinessPages                  | Autenticado (role USER) — cria página (DRAFT)                                                              |
 | `GET /business-pages/my/:businessId`                       | BusinessPages                  | Autenticado (role USER) — detalhe da própria página; inclui `isPublisherQualified` (PublisherQualification) |

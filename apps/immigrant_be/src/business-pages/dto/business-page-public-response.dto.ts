@@ -4,6 +4,13 @@ export class BusinessPagePublicResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description:
+      'O negócio dono da página. A página pública lê dele as fotos, os horários e a moeda — campos que o conteúdo aprovado não carrega.',
+  })
+  businessId: string;
+
   @ApiProperty({ example: 'meu-restaurante-centro' })
   slug: string;
 

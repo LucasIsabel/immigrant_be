@@ -16,9 +16,36 @@ export class BusinessPagesRepository {
     return this.prisma.businessPage.findUnique({ where: { slug } });
   }
 
+  /**
+   * A página que um visitante anónimo pode ver.
+   *
+   * O `select` é a rota inteira de segurança desta consulta, e não uma
+   * optimização. Sem ele a linha volta completa — e a rota é anónima, o
+   * controlador devolve o que o serviço lhe der, e o Nest não retira campos
+   * que o DTO não declara. Foi assim que `pendingContent` (conteúdo submetido
+   * e **ainda não aprovado**), `moderationResult`, `rejectionReason` e os
+   * `approvedById`/`rejectedById` dos moderadores acabaram no HTML público:
+   * dava para ler a próxima versão de uma página antes de ela ser aprovada, e
+   * para ler o que tinha sido reprovado.
+   *
+   * Os campos são exactamente os de `BusinessPagePublicResponseDto`. Quando um
+   * campo novo for preciso na página pública, entra nos dois sítios — é essa a
+   * fricção que se quer.
+   *
+   * `findPublicList`, aqui ao lado, já fazia isto pela mesma razão.
+   */
   findApprovedBySlug(slug: string) {
     return this.prisma.businessPage.findFirst({
       where: { slug, status: { in: ['APPROVED', 'APPROVED_WITH_PENDING'] } },
+      select: {
+        id: true,
+        businessId: true,
+        slug: true,
+        businessType: true,
+        status: true,
+        approvedContent: true,
+        approvedAt: true,
+      },
     });
   }
 
