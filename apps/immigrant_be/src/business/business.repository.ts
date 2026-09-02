@@ -296,12 +296,7 @@ export class BusinessRepository {
     } = params;
     const offset = (page - 1) * limit;
 
-    const conditions: Prisma.Sql[] = [
-      Prisma.sql`b.is_public = true`,
-      Prisma.sql`b.lat IS NOT NULL`,
-      Prisma.sql`b.lng IS NOT NULL`,
-      Prisma.sql`(6371 * acos(cos(radians(${lat})) * cos(radians(b.lat)) * cos(radians(b.lng) - radians(${lng})) + sin(radians(${lat})) * sin(radians(b.lat)))) <= ${radius}`,
-    ];
+    const conditions: Prisma.Sql[] = [Prisma.sql`b.is_public = true`];
 
     /*
      * A caixa que contém o círculo, antes do Haversine.
@@ -317,12 +312,64 @@ export class BusinessRepository {
      * pontos a √2 raios —, e é o Haversine que continua a decidir.
      */
     const box = boundingBox(lat, lng, radius);
-    conditions.push(Prisma.sql`b.lat BETWEEN ${box.minLat} AND ${box.maxLat}`);
-    if (box.minLng !== undefined && box.maxLng !== undefined) {
-      conditions.push(
-        Prisma.sql`b.lng BETWEEN ${box.minLng} AND ${box.maxLng}`,
-      );
-    }
+    const withinBox = (
+      latCol: Prisma.Sql,
+      lngCol: Prisma.Sql,
+    ): Prisma.Sql[] => {
+      const parts = [
+        Prisma.sql`${latCol} BETWEEN ${box.minLat} AND ${box.maxLat}`,
+      ];
+      if (box.minLng !== undefined && box.maxLng !== undefined) {
+        parts.push(
+          Prisma.sql`${lngCol} BETWEEN ${box.minLng} AND ${box.maxLng}`,
+        );
+      }
+      return parts;
+    };
+    const haversine = (latCol: Prisma.Sql, lngCol: Prisma.Sql): Prisma.Sql =>
+      Prisma.sql`(6371 * acos(cos(radians(${lat})) * cos(radians(${latCol})) * cos(radians(${lngCol}) - radians(${lng})) + sin(radians(${lat})) * sin(radians(${latCol})))) <= ${radius}`;
+
+    const own = Prisma.join(
+      [
+        Prisma.sql`b.lat IS NOT NULL`,
+        Prisma.sql`b.lng IS NOT NULL`,
+        ...withinBox(Prisma.sql`b.lat`, Prisma.sql`b.lng`),
+        haversine(Prisma.sql`b.lat`, Prisma.sql`b.lng`),
+      ],
+      ' AND ',
+    );
+
+    /*
+     * O recuo para o centro da cidade.
+     *
+     * Um negócio sem coordenada é invisível a qualquer busca por raio, e a
+     * cidade dele já bastava para saber que está perto: quem navega o Porto
+     * nunca via o registo correcto de Gaia a que faltava o par de números.
+     *
+     * Dois ramos num `OR`, e não um `COALESCE(b.lat, c.lat)` — a diferença é
+     * o índice. Um `COALESCE` sobre a coluna juntada não é indexável, e a
+     * consulta voltava ao `Seq Scan` que a caixa acima existe para evitar.
+     * Assim o caminho comum fica byte a byte o que era, e o segundo ramo só
+     * toca nas linhas onde `b.lat IS NULL`.
+     *
+     * O centro sai da média dos outros negócios públicos da mesma cidade, por
+     * `city_key` — a chave já normalizada, sem depender de os acentos baterem.
+     * Fica um buraco assumido: numa cidade onde **nenhum** negócio tem
+     * coordenada não há centro, e os de lá continuam fora. Fecha sozinho
+     * assim que um deles for geocodificado, e o geocoding no cadastro já
+     * entrou.
+     */
+    const fallback = Prisma.join(
+      [
+        Prisma.sql`b.lat IS NULL`,
+        Prisma.sql`c.lat IS NOT NULL`,
+        ...withinBox(Prisma.sql`c.lat`, Prisma.sql`c.lng`),
+        haversine(Prisma.sql`c.lat`, Prisma.sql`c.lng`),
+      ],
+      ' AND ',
+    );
+
+    conditions.push(Prisma.sql`((${own}) OR (${fallback}))`);
 
     // O país entra também aqui: um raio junto de uma fronteira atravessa-a —
     // Elvas e Badajoz estão a quinze quilómetros uma da outra.
@@ -340,12 +387,25 @@ export class BusinessRepository {
 
     // Raw SQL returns only IDs to avoid snake_case/camelCase mismatch.
     // Prisma ORM then fetches full records with correct field mapping.
+    /*
+     * O centro de cada cidade, a partir dos negócios que têm coordenada. É um
+     * `LEFT JOIN`: a cidade sem nenhum ponto não tem centro, e a linha sai da
+     * consulta pelo `c.lat IS NOT NULL` do segundo ramo, não por um `0, 0`
+     * inventado — que é um ponto real no Atlântico.
+     */
+    const centres = Prisma.sql`LEFT JOIN (
+      SELECT city_key, avg(lat) AS lat, avg(lng) AS lng
+      FROM businesses
+      WHERE is_public = true AND lat IS NOT NULL AND lng IS NOT NULL
+      GROUP BY city_key
+    ) c ON c.city_key = b.city_key`;
+
     const [idRows, countRows] = await Promise.all([
       this.prisma.$queryRaw<{ id: string }[]>(
-        Prisma.sql`SELECT b.id FROM businesses b WHERE ${where} ORDER BY b.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+        Prisma.sql`SELECT b.id FROM businesses b ${centres} WHERE ${where} ORDER BY b.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
       ),
       this.prisma.$queryRaw<[{ count: bigint }]>(
-        Prisma.sql`SELECT COUNT(*) as count FROM businesses b WHERE ${where}`,
+        Prisma.sql`SELECT COUNT(*) as count FROM businesses b ${centres} WHERE ${where}`,
       ),
     ]);
 

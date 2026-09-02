@@ -485,4 +485,60 @@ describe('BusinessRepository', () => {
       expect(sql.sql).not.toContain('feature_kind');
     });
   });
+
+  describe('the city-centre fallback in the radius search', () => {
+    const runRadius = async (extra: Record<string, unknown> = {}) => {
+      mockPrismaService.$queryRaw
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ count: BigInt(0) }]);
+
+      await repository.findPublic({
+        country: 'Portugal',
+        lat: 41.1579,
+        lng: -8.6291,
+        radius: 60,
+        ...extra,
+      } as never);
+
+      return (mockPrismaService.$queryRaw.mock.calls[0][0] as { sql: string })
+        .sql;
+    };
+
+    /**
+     * A business without coordinates is invisible to every radius search, and
+     * its city alone was enough to know it is nearby: someone browsing Porto
+     * never saw the perfectly correct Gaia record that happened to be missing
+     * the pair of numbers.
+     */
+    it('lets a row with no coordinates in through its city', async () => {
+      const sql = await runRadius();
+
+      expect(sql).toContain('b.lat IS NULL');
+      expect(sql).toContain('c.city_key = b.city_key');
+    });
+
+    it('keeps the indexed path for rows that have their own point', async () => {
+      // Two branches in an OR rather than COALESCE(b.lat, c.lat): a COALESCE
+      // over the joined column cannot use the (lat, lng) index, and the query
+      // would fall back to the Seq Scan the bounding box exists to avoid.
+      const sql = await runRadius();
+
+      expect(sql).toContain('b.lat BETWEEN');
+      expect(sql).not.toContain('COALESCE');
+    });
+
+    it('requires a centre to exist before using one', async () => {
+      // A city where no business has coordinates has no centre, and the row
+      // stays out. `0, 0` is a real point in the Atlantic — never inferred.
+      const sql = await runRadius();
+
+      expect(sql).toContain('c.lat IS NOT NULL');
+    });
+
+    it('averages only public rows that have a point', async () => {
+      const sql = await runRadius();
+
+      expect(sql).toMatch(/avg\(lat\)[\s\S]*is_public = true/);
+    });
+  });
 });
