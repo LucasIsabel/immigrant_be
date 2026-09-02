@@ -149,6 +149,33 @@ export class BusinessPagesService {
     return typeData;
   }
 
+  /**
+   * O dono retira a própria submissão.
+   *
+   * Existe porque a alternativa era pedir ao moderador que reprovasse — e uma
+   * reprovação grava `lastRejectionAt`, que custa 90 dias de qualificação a
+   * quem já a tinha. Tirar da fila uma edição que já não se quer publicar não é
+   * juízo de qualidade nenhum, e não devia ter esse preço.
+   *
+   * Para onde volta: `APPROVED` quando já havia conteúdo no ar — a versão
+   * pública não é tocada, só o pedido de revisão da nova —, e `DRAFT` quando a
+   * página nunca chegou a ser aprovada. O `pendingContent` fica onde está: é o
+   * rascunho do dono, e retirar a submissão não é descartar o trabalho.
+   */
+  async withdrawSubmission(id: string, userId: string) {
+    const page = await this.repository.findByIdAndUserId(id, userId);
+    if (!page) throw new ForbiddenException('Acesso negado');
+
+    if (!['PENDING_REVIEW', 'APPROVED_WITH_PENDING'].includes(page.status)) {
+      throw new ConflictException('Página não está em análise');
+    }
+
+    return this.repository.withdrawSubmission(
+      id,
+      page.approvedContent ? 'APPROVED' : 'DRAFT',
+    );
+  }
+
   async submitForReview(
     id: string,
     userId: string,

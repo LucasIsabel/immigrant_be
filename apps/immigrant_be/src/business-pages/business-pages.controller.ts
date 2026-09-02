@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -41,6 +42,7 @@ import { BusinessPagePublicResponseDto } from './dto/business-page-public-respon
 import { CreateBusinessPageDto } from './dto/create-business-page.dto';
 import { UpdateBusinessPageContentDto } from './dto/update-business-page-content.dto';
 import { SubmitBusinessPageResponseDto } from './dto/submit-business-page-response.dto';
+import { WithdrawSubmissionResponseDto } from './dto/withdraw-submission-response.dto';
 
 @ApiTags('Business Pages')
 @Controller('business-pages')
@@ -148,6 +150,30 @@ export class BusinessPagesController {
     @Session() session: UserSession,
   ): Promise<SubmitBusinessPageResponseDto> {
     return this.service.submitForReview(id, session.user.id);
+  }
+
+  @Delete(':id/submission')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  @ApiForbiddenResponse({ description: 'Acesso negado' })
+  @ApiConflictResponse({ description: 'Página não está em análise' })
+  @ApiOkResponse({ type: WithdrawSubmissionResponseDto })
+  @ApiOperation({
+    summary: 'Retirar a própria submissão da fila de revisão',
+    description:
+      'Sem penalidade: retirar não é ser reprovado. O conteúdo pendente continua guardado como rascunho do dono.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID da BusinessPage' })
+  withdrawSubmission(
+    @Param('id') id: string,
+    @Session() session: UserSession,
+  ): Promise<WithdrawSubmissionResponseDto> {
+    return this.service.withdrawSubmission(
+      id,
+      session.user.id,
+    ) as unknown as Promise<WithdrawSubmissionResponseDto>;
   }
 
   @Post(':id/upload/logo')
