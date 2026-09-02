@@ -1,3 +1,4 @@
+import { SentryModule } from '@sentry/nestjs/setup';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -46,6 +47,16 @@ const bullBoardEnabled =
 
 @Module({
   imports: [
+    /*
+     * Passo prescrito pelo SDK, e que faltava nos dois apps.
+     *
+     * O `instrument.ts` inicializa o Sentry antes de tudo, e o filtro de
+     * exceções já reportava com `captureException` — mas a documentação do
+     * `@sentry/nestjs` pede também este módulo na raiz, que é o que liga a
+     * instrumentação específica do Nest. Sem ele o SDK carregava pela metade e
+     * ninguém notava, porque a metade que faltava não dá erro: só não gera dado.
+     */
+    SentryModule.forRoot(),
     AppConfigModule,
     LoggerModule.forRoot(buildPinoOptions('immigrant_be')),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
