@@ -876,6 +876,25 @@ caixa contava dois lugares e o Haversine um — a aba diria dois sobre uma lista
 um. Com números pequenos, "generoso" é só errado, e a contagem passou a usar a
 mesma condição exata da lista.
 
+**O raio alarga ou estreita conforme de quem é a origem.** São dois
+comportamentos, e o servidor não distingue um par de coordenadas do outro —
+quem diz é o cliente, no parâmetro `nearMe`.
+
+Sem GPS, a origem é o centro da cidade: um ponto que ninguém escolheu. Quem
+pediu "Lisboa" não pediu "o Marquês de Pombal", e estreitar ali esconderia a
+oferta da própria cidade selecionada. Aqui o raio **alarga** — `cidade OU
+alcance` —, que é o que traz o restaurante de Gaia a quem navega o Porto.
+
+Com GPS, a origem é a pessoa, e a união vira contradição: estar dentro da cidade
+escolhida não faz nada ficar perto de quem lê. Aqui o raio **estreita** — só o
+alcance, sem a cidade a somar. Medido com três guias à volta de Lisboa a 1,0,
+7,8 e 19,2 km: alargando responde 2, 2, 2, 3 nos quatro raios; estreitando
+responde 0, 1, 2, 3, batendo com o Haversine exato em todos.
+
+A regra vale para as quatro abas, e é a coerência que faltava: era a mesma tela
+a comportar-se de dois jeitos, com 1 km a significar 1 km numa aba e nada na
+outra.
+
 **Coordenada parcial é coordenada ausente.** Raio sem origem não tem de onde
 medir, origem sem raio não tem alcance. Preencher a metade que falta com um
 default esconderia conteúdo em silêncio, então um conjunto incompleto é tratado

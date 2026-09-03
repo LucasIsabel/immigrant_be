@@ -11,6 +11,11 @@ interface CountArgs {
   lat?: number;
   lng?: number;
   radius?: number;
+  /**
+   * Whether the origin is the reader rather than the city centre — see the DTO.
+   * Around the reader the reach narrows; around a city centre it widens.
+   */
+  nearMe?: boolean;
 }
 
 @Injectable()
@@ -40,12 +45,21 @@ export class MyCityRepository {
       inCity.push(Prisma.sql`b.city_key = ${normalizeCity(args.city)}`);
     }
 
+    /*
+     * The reach, now with the Haversine the list runs.
+     *
+     * This count used to stop at the box, on the argument that a count may be
+     * generous at the corners where a list may not. Measured with three tour
+     * guides around Lisbon: at a 15km reach the box admitted the one in Sintra,
+     * 19.2km out, so the tab read three over a list of two. Generous is fine
+     * when the numbers are large; here it is just wrong, and a tab that
+     * disagrees with the list it opens is the whole defect.
+     */
     const inReach: Prisma.Sql[] = [];
     if (args.lat !== undefined && args.lng !== undefined && args.radius) {
-      const box = boundingBox(args.lat, args.lng, args.radius);
-      inReach.push(Prisma.sql`b.lat BETWEEN ${box.minLat} AND ${box.maxLat}`);
-      if (box.minLng !== undefined && box.maxLng !== undefined) {
-        inReach.push(Prisma.sql`b.lng BETWEEN ${box.minLng} AND ${box.maxLng}`);
+      const reach = this.reachSql(args, 'b');
+      if (reach) {
+        inReach.push(reach);
       }
     }
 
@@ -60,8 +74,23 @@ export class MyCityRepository {
       );
     }
 
+    /*
+     * City **or** reach — unless the reach is measured from the reader.
+     *
+     * Around a city centre the two are a union, and that is the point: the
+     * centre is a place nobody chose, so narrowing around it would hide the
+     * supply of the very city that was asked for, while widening brings the
+     * restaurant in Gaia to somebody browsing Porto.
+     *
+     * Around the reader the union would be a contradiction. They asked for what
+     * is within N km of themselves; being inside the chosen city does not make
+     * something near them, and a guide 7.8km away staying on screen at a 1km
+     * reach is what the reader reported as broken.
+     */
+    const narrowsToReach = Boolean(args.nearMe) && inReach.length > 0;
+
     const reaches: Prisma.Sql[] = [];
-    if (inCity.length > 0) {
+    if (inCity.length > 0 && !narrowsToReach) {
       reaches.push(Prisma.join(inCity, ' AND '));
     }
     if (inReach.length > 0) {
