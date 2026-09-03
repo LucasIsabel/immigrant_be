@@ -47,6 +47,7 @@ model Users {
   organizedEvents                 CommunityEvent[]         @relation("OrganizedEvents")
   approvedEvents                  CommunityEvent[]         @relation("ApprovedEvents")
   rejectedEvents                  CommunityEvent[]         @relation("RejectedEvents")
+  itineraries                     Itinerary[]
 
   @@unique([email])
   @@map("users")
@@ -699,6 +700,8 @@ model Business {
   featuredFrom  DateTime?    @map("featured_from")
   featuredUntil DateTime?    @map("featured_until")
 
+  itineraryStops ItineraryStop[]
+
   @@index([userId])
   @@index([businessType, isPublic])
   @@index([city, isPublic])
@@ -964,6 +967,8 @@ model Place {
   featuredFrom  DateTime?    @map("featured_from")
   featuredUntil DateTime?    @map("featured_until")
 
+  itineraryStops ItineraryStop[]
+
   @@unique([countryCode, city, slug])
   @@index([countryCode, city, isActive])
   @@index([ingestionId, reviewStatus])
@@ -1154,4 +1159,112 @@ model CommunityEventReport {
 
   @@index([eventId])
   @@map("community_event_reports")
+}
+
+/// Um roteiro: uma sequência ordenada de paradas que alguém montou explorando
+/// o My City, e que pode publicar para os outros.
+///
+/// É a primeira superfície de conteúdo **gerado pelo utilizador e partilhável**
+/// do produto, e o que a torna segura sem fila de moderação é o desenho: o único
+/// campo livre é o `title`. Todo o resto são referências a conteúdo que a
+/// plataforma já curou — `Place` aprovado, `Business` público.
+///
+/// Pertence a **um país**, e as cidades são as das paradas. Um roteiro chamado
+/// "Tour praia de Portugal" atravessa Lagos, Cascais e Almada; prendê-lo a uma
+/// cidade tornaria esse caso impossível, e o filtro público por cidade responde
+/// "roteiros que passam por aqui" através das paradas.
+model Itinerary {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// URL pública estável: nasce do título na criação e **não** é refeita ao
+  /// renomear, para um link que alguém partilhou continuar a resolver.
+  slug  String @unique @db.VarChar(160)
+  title String @db.VarChar(120)
+
+  countryCode String @map("country_code") @db.VarChar(2)
+
+  /// O interruptor do dono, no molde de `Business.isPublic`: publica na hora,
+  /// sem passar por moderação. É defensável porque a superfície de texto livre
+  /// é só o título.
+  isPublic Boolean @default(false) @map("is_public")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  stops   ItineraryStop[]
+  reports ItineraryReport[]
+
+  @@index([userId])
+  @@index([countryCode, isPublic])
+  @@map("itineraries")
+}
+
+/// Uma parada de roteiro — uma referência a um lugar curado ou a um negócio.
+///
+/// É tabela filha e não JSON dentro do roteiro, ao contrário do itinerário do
+/// guia turístico em `Business.typeData`. A diferença é de natureza: aquele JSON
+/// guarda conteúdo **autoral do próprio negócio**, que nasce e morre com ele;
+/// uma parada aponta para um agregado **alheio**, e referência pede chave
+/// estrangeira. Com FK, apagar a conta de um dono leva as paradas dos roteiros
+/// dos outros em cascata e não sobra uuid pendurado que toda leitura tenha de
+/// tratar; e a leitura pública hidrata o conteúdo curado actual num `include`
+/// em vez de dois round-trips e um merge à mão.
+model ItineraryStop {
+  id String @id @default(uuid()) @db.Uuid
+
+  itineraryId String    @map("itinerary_id") @db.Uuid
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  /// Base 1, reescrita por inteiro ao reordenar.
+  ///
+  /// Deliberadamente **sem** `@@unique([itineraryId, position])`: no Postgres um
+  /// unique não-diferível é verificado a cada instrução, então uma permutação
+  /// dentro de uma transacção tropeçaria a meio caminho.
+  position Int
+
+  /// Exactamente um dos dois está preenchido. O `CHECK` que o garante vive na
+  /// migration — o Prisma não sabe exprimir uma restrição entre colunas.
+  placeId String? @map("place_id") @db.Uuid
+  place   Place?  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  businessId String?   @map("business_id") @db.Uuid
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  /// Copiados do alvo no momento em que a parada entra, para o sub-filtro por
+  /// cidade da página pública ser uma coluna indexada em vez de um leque de
+  /// junções. `cityKey` usa a mesma normalização de `Business.cityKey`.
+  cityKey String @map("city_key") @db.VarChar(100)
+  city    String @db.VarChar(100)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  /// No Postgres NULLs são distintos entre si, então estes dois proíbem apenas
+  /// **duplicados** do mesmo lugar ou do mesmo negócio no mesmo roteiro.
+  @@unique([itineraryId, placeId])
+  @@unique([itineraryId, businessId])
+  @@index([itineraryId, position])
+  @@index([cityKey])
+  @@map("itinerary_stops")
+}
+
+/// Uma denúncia anónima de um roteiro público.
+///
+/// A rede de segurança que substitui a fila de moderação: publica-se na hora, e
+/// corrige-se depois se aparecer abuso. Não guarda quem denunciou, de propósito
+/// — o formulário é anónimo e o limite de pedidos vive na rota.
+model ItineraryReport {
+  id String @id @default(uuid()) @db.Uuid
+
+  itineraryId String    @map("itinerary_id") @db.Uuid
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  reason String @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([itineraryId])
+  @@map("itinerary_reports")
 }
