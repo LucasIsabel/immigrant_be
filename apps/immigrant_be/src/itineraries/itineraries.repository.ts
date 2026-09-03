@@ -129,6 +129,45 @@ export class ItinerariesRepository {
     return this.prisma.itinerary.create({ data, select: itinerarySelect });
   }
 
+  /**
+   * A whole itinerary and its stops, in one write.
+   *
+   * The nested `create` is deliberate: Prisma runs it as a single transaction,
+   * so there is no window in which the copy exists with none of its stops —
+   * and a reader who lands on the dashboard mid-copy would otherwise find an
+   * empty itinerary and no way to tell it from a broken one.
+   *
+   * Positions are assigned here from the array order, so the caller decides
+   * the order by the order it passes and never by writing numbers.
+   */
+  copy(data: {
+    userId: string;
+    slug: string;
+    title: string;
+    countryCode: string;
+    stops: {
+      placeId: string | null;
+      businessId: string | null;
+      city: string;
+      cityKey: string;
+    }[];
+  }): Promise<ItineraryRow> {
+    const { stops, ...itinerary } = data;
+
+    return this.prisma.itinerary.create({
+      data: {
+        ...itinerary,
+        stops: {
+          create: stops.map((stop, index) => ({
+            ...stop,
+            position: index + 1,
+          })),
+        },
+      },
+      select: itinerarySelect,
+    });
+  }
+
   update(id: string, data: Prisma.ItineraryUpdateInput): Promise<ItineraryRow> {
     return this.prisma.itinerary.update({
       where: { id },

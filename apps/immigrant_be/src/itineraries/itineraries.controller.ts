@@ -54,6 +54,7 @@ import {
 import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.dto';
+import { CopyItineraryResponseDto } from './dto/copy-itinerary.dto';
 
 /**
  * Declaration order is routing order: `mine` and `stops` are registered before
@@ -114,6 +115,42 @@ export class ItinerariesController {
     @Body() dto: ReportItineraryDto,
   ): Promise<ReportItineraryResponseDto> {
     return this.service.report(slug, dto);
+  }
+
+  /*
+   * Authenticated, but addressed by the public slug and so declared with the
+   * public routes: the caller is copying the thing at that address, and the
+   * address is the one they were looking at. Position in this block does not
+   * grant anonymous access — `@Roles` does that, and this route has it.
+   */
+  @Post('public/:slug/copy')
+  @Roles(UserRole.USER)
+  /*
+   * Tighter than the quick-add's sixty, because one call here writes an
+   * itinerary and every one of its stops. Without this it would fall through
+   * to the global hundred a minute — a looser ceiling for the more expensive
+   * write, which is backwards.
+   */
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Copiar um roteiro público para os meus',
+    description:
+      'A cópia é independente do original: guarda as próprias paradas, então despublicar ou apagar o original não a alcança. Nasce privada — publicar o percurso de outra pessoa com o seu nome é decisão de quem copiou.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug único do roteiro de origem' })
+  @ApiCreatedResponse({ type: CopyItineraryResponseDto })
+  @ApiBadRequestResponse({
+    description: 'O roteiro não tem paradas para copiar',
+  })
+  @ApiNotFoundResponse({ description: 'Roteiro não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  copy(
+    @Param('slug') slug: string,
+    @Session() session: UserSession,
+  ): Promise<CopyItineraryResponseDto> {
+    return this.service.copyPublic(slug, session.user.id);
   }
 
   @Get('mine')
