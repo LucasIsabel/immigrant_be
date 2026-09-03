@@ -388,15 +388,37 @@ export class CommunityEventsService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const when = query.when ?? CommunityEventWhen.UPCOMING;
+    /*
+     * The three travel together or not at all.
+     *
+     * A radius with no origin has nothing to measure from, and an origin with
+     * no radius has no reach. Filling in a default for the missing half would
+     * hide events somebody asked to see, and silently — so a partial set is
+     * treated as no distance filter at all.
+     */
+    const hasReach =
+      query.lat !== undefined && query.lng !== undefined && !!query.radius;
+
     const filters = {
       countryCode: query.countryCode,
       city: query.city,
       when,
+      ...(hasReach
+        ? { lat: query.lat, lng: query.lng, radius: query.radius }
+        : {}),
     };
     const skip = (page - 1) * limit;
 
+    /*
+     * A reach forces the raw path, even for `upcoming`.
+     *
+     * `listPublicUpcoming` is the typed Prisma query, and Haversine cannot be
+     * written in a Prisma `where`. The raw builder already covers `upcoming`
+     * — its window clause is simply empty — so routing there costs nothing and
+     * keeps one implementation of the distance condition instead of two.
+     */
     const { data, total } =
-      when === CommunityEventWhen.UPCOMING
+      when === CommunityEventWhen.UPCOMING && !hasReach
         ? await this.repository.listPublicUpcoming(filters, skip, limit)
         : await this.repository.listPublicByWhen(filters, skip, limit);
 

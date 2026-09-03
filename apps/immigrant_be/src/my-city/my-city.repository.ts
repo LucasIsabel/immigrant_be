@@ -87,34 +87,124 @@ export class MyCityRepository {
     return counts;
   }
 
+  /**
+   * The reader's reach, as raw SQL: the box, then the Haversine.
+   *
+   * The box is the pre-filter the `(lat, lng)` index can answer; the Haversine
+   * decides. Both, because a box is wider than the circle it contains — at the
+   * corners it admits points up to √2 radii away.
+   *
+   * `countBusinesses` above stops at the box on purpose, reasoning that a count
+   * may be generous where a list may not. That holds when the numbers are
+   * large. It does not here: measured in Lisbon at a 1km reach, the box counted
+   * two places and the Haversine one, so the tab would have read two over a
+   * list of one. At small radii "generous" is just wrong, and a tab that
+   * disagrees with the list it opens is the defect this whole change set is
+   * about.
+   *
+   * Places and events both carry `lat`/`lng` as required columns, so there is
+   * no branch here for a row without coordinates.
+   */
+  private reachSql(args: CountArgs, alias: string): Prisma.Sql | null {
+    if (args.lat === undefined || args.lng === undefined || !args.radius) {
+      return null;
+    }
+
+    const { lat, lng, radius } = args;
+    const box = boundingBox(lat, lng, radius);
+    const latCol = Prisma.raw(`${alias}.lat`);
+    const lngCol = Prisma.raw(`${alias}.lng`);
+
+    const parts: Prisma.Sql[] = [
+      Prisma.sql`${latCol} BETWEEN ${box.minLat} AND ${box.maxLat}`,
+    ];
+    // Absent near the poles and across the antimeridian — see `boundingBox`.
+    if (box.minLng !== undefined && box.maxLng !== undefined) {
+      parts.push(Prisma.sql`${lngCol} BETWEEN ${box.minLng} AND ${box.maxLng}`);
+    }
+    parts.push(
+      Prisma.sql`(6371 * acos(
+        cos(radians(${lat})) * cos(radians(${latCol}))
+          * cos(radians(${lngCol}) - radians(${lng}))
+        + sin(radians(${lat})) * sin(radians(${latCol}))
+      )) <= ${radius}`,
+    );
+
+    return Prisma.join(parts, ' AND ');
+  }
+
   /** Approved events that have not finished yet, as the strip lists them. */
   async countEvents(args: CountArgs): Promise<number> {
-    const now = new Date();
-    return this.prisma.communityEvent.count({
-      where: {
-        status: 'APPROVED',
-        ...(args.countryCode ? { countryCode: args.countryCode } : {}),
-        ...(args.city
-          ? { city: { equals: args.city, mode: 'insensitive' as const } }
-          : {}),
-        OR: [
-          { endsAt: { gte: now } },
-          { endsAt: null, startsAt: { gte: now } },
-        ],
-      },
-    });
+    const reach = this.reachSql(args, 'e');
+
+    // No coordinates, no distance to measure: the typed query stays exactly as
+    // it was, so a city view without GPS answers byte for byte what it did.
+    if (!reach) {
+      const now = new Date();
+      return this.prisma.communityEvent.count({
+        where: {
+          status: 'APPROVED',
+          ...(args.countryCode ? { countryCode: args.countryCode } : {}),
+          ...(args.city
+            ? { city: { equals: args.city, mode: 'insensitive' as const } }
+            : {}),
+          OR: [
+            { endsAt: { gte: now } },
+            { endsAt: null, startsAt: { gte: now } },
+          ],
+        },
+      });
+    }
+
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`e.status::text = 'APPROVED'`,
+      Prisma.sql`COALESCE(e.ends_at, e.starts_at) >= (NOW() AT TIME ZONE 'UTC')`,
+      reach,
+    ];
+    if (args.countryCode) {
+      conditions.push(Prisma.sql`e.country_code = ${args.countryCode}`);
+    }
+    if (args.city) {
+      conditions.push(Prisma.sql`lower(e.city) = lower(${args.city})`);
+    }
+
+    const [row] = await this.prisma.$queryRaw<{ total: bigint }[]>(
+      Prisma.sql`SELECT COUNT(*)::bigint AS total
+                 FROM community_events e
+                 WHERE ${Prisma.join(conditions, ' AND ')}`,
+    );
+    return Number(row?.total ?? 0);
   }
 
   /** Places the public list would show — active ones, in this city. */
   async countPlaces(args: CountArgs): Promise<number> {
-    return this.prisma.place.count({
-      where: {
-        isActive: true,
-        ...(args.countryCode ? { countryCode: args.countryCode } : {}),
-        ...(args.city
-          ? { city: { equals: args.city, mode: 'insensitive' as const } }
-          : {}),
-      },
-    });
+    const reach = this.reachSql(args, 'p');
+
+    if (!reach) {
+      return this.prisma.place.count({
+        where: {
+          isActive: true,
+          ...(args.countryCode ? { countryCode: args.countryCode } : {}),
+          ...(args.city
+            ? { city: { equals: args.city, mode: 'insensitive' as const } }
+            : {}),
+        },
+      });
+    }
+
+    const conditions: Prisma.Sql[] = [Prisma.sql`p.is_active = true`, reach];
+    if (args.countryCode) {
+      conditions.push(Prisma.sql`p.country_code = ${args.countryCode}`);
+    }
+    if (args.city) {
+      conditions.push(Prisma.sql`lower(p.city) = lower(${args.city})`);
+    }
+
+    const [row] = await this.prisma.$queryRaw<{ total: bigint }[]>(
+      Prisma.sql`SELECT COUNT(*)::bigint AS total
+                 FROM places p
+                 WHERE ${Prisma.join(conditions, ' AND ')}`,
+    );
+    return Number(row?.total ?? 0);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CommunityEventStatus, Prisma } from '../../../../generated/prisma';
+import { boundingBox } from '../business/bounding-box';
 import { CommunityEventWhen } from './dto/list-public-community-events-query.dto';
 
 /** What the owner and the admin see: every column plus the report tally. */
@@ -71,6 +72,10 @@ export interface PublicEventFilters {
   countryCode?: string;
   city?: string;
   when: CommunityEventWhen;
+  /** Origin and reach of a distance filter. All three, or none. */
+  lat?: number;
+  lng?: number;
+  radius?: number;
 }
 
 @Injectable()
@@ -315,8 +320,46 @@ export class CommunityEventsRepository {
           : Prisma.empty
       }
       ${filters.city ? Prisma.sql`AND lower(e.city) = lower(${filters.city})` : Prisma.empty}
+      ${this.withinRadius(filters)}
       ${window}
     `;
+  }
+
+  /**
+   * The reader's reach, when they shared where they are.
+   *
+   * Box first, Haversine after — the box is a pre-filter the `(lat, lng)`
+   * index can answer, and it is wider than the circle it contains, so the
+   * Haversine stays and still decides. Getting that order backwards would
+   * quietly return events outside the radius somebody asked for. The geometry
+   * and the reasons behind the constant live in `business/bounding-box.ts`.
+   *
+   * `lat` and `lng` are required columns on `CommunityEvent` — at the database,
+   * in Prisma and in the create DTO — so there is no branch here for an event
+   * without coordinates. That is not luck: the field was made mandatory
+   * because the organizer points at the map rather than having an address
+   * geocoded for them.
+   */
+  private withinRadius(filters: PublicEventFilters): Prisma.Sql {
+    const { lat, lng, radius } = filters;
+    if (lat === undefined || lng === undefined || !radius) {
+      return Prisma.empty;
+    }
+
+    const box = boundingBox(lat, lng, radius);
+    const bounds: Prisma.Sql[] = [
+      Prisma.sql`e.lat BETWEEN ${box.minLat} AND ${box.maxLat}`,
+    ];
+    if (box.minLng !== undefined && box.maxLng !== undefined) {
+      bounds.push(Prisma.sql`e.lng BETWEEN ${box.minLng} AND ${box.maxLng}`);
+    }
+
+    return Prisma.sql`AND ${Prisma.join(bounds, ' AND ')}
+      AND (6371 * acos(
+            cos(radians(${lat})) * cos(radians(e.lat))
+              * cos(radians(e.lng) - radians(${lng}))
+            + sin(radians(${lat})) * sin(radians(e.lat))
+          )) <= ${radius}`;
   }
 
   /** Re-reads the rows through the ORM, preserving the order the SQL decided. */
