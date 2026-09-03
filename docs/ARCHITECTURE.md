@@ -861,6 +861,39 @@ dentro do raio, a contagem faz o mesmo — num `OR` só, e não em duas consulta
 somadas, que contariam duas vezes tudo o que satisfaz as duas condições. Ver
 `my-city.repository.ts`.
 
+**O raio alcança os quatro, e nem sempre alcançou.** Ele nasceu dentro da lista
+de negócios — existe para trazer o restaurante de Gaia a quem navega o Porto — e
+por dois meses só os negócios o respeitaram. Um leitor que apertava o raio a um
+quilómetro em Faro continuava a ver sete lugares, um deles a 9,7 km, porque nos
+clássicos e nos eventos a coordenada só ordenava. Reportado por quem usa, não
+descoberto por revisão.
+
+Ao aplicá-lo, uma escolha de `countBusinesses` teve de ser desfeita para lugares
+e eventos: aquela contagem para na **caixa** e não roda o Haversine, com o
+argumento de que uma contagem pode ser generosa nos cantos onde uma lista não
+pode. Vale quando os números são grandes. Medido em Lisboa a um quilómetro, a
+caixa contava dois lugares e o Haversine um — a aba diria dois sobre uma lista de
+um. Com números pequenos, "generoso" é só errado, e a contagem passou a usar a
+mesma condição exata da lista.
+
+**Coordenada parcial é coordenada ausente.** Raio sem origem não tem de onde
+medir, origem sem raio não tem alcance. Preencher a metade que falta com um
+default esconderia conteúdo em silêncio, então um conjunto incompleto é tratado
+como se não houvesse filtro nenhum — e a consulta sem coordenada continua sendo
+a tipada de sempre, byte a byte.
+
+**A lista de lugares filtra no cliente, de propósito.** O explorador já busca a
+cidade inteira (`limit: 100`) e recorta categoria, gratuito e busca ali mesmo; o
+raio entra no mesmo lugar. `GET /places/public` não ganhou o parâmetro porque
+replicar o Haversine ali exigiria trocar a consulta tipada por SQL cru, com o
+`select` de dezoito campos e as traduções escritos à mão, num endpoint público
+que funciona — risco real por um consumidor que não precisa. Se um dia outro
+cliente consumir aquela rota, o parâmetro entra lá; a decisão está aqui para não
+parecer esquecimento. **Eventos são o caso oposto**: a faixa pede seis, e filtrar
+seis no cliente devolveria menos que seis, então lá o raio vai para a consulta —
+e um raio força o caminho de SQL cru mesmo em `upcoming`, porque Haversine não se
+escreve num `where` do Prisma.
+
 ## 5.1. O deploy aplica as migrations
 
 `scripts/start.sh` — o `CMD` da imagem — corre `prisma migrate deploy` antes de

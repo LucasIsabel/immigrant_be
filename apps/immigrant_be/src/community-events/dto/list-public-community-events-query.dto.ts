@@ -3,6 +3,8 @@ import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
+  IsLatitude,
+  IsLongitude,
   IsOptional,
   IsString,
   Length,
@@ -44,6 +46,42 @@ export class ListPublicCommunityEventsQueryDto {
   @IsOptional()
   @IsEnum(CommunityEventWhen)
   when?: CommunityEventWhen = CommunityEventWhen.UPCOMING;
+
+  /*
+   * Distance filtering, and the three arrive together or not at all.
+   *
+   * A radius without an origin has nothing to measure from, and an origin
+   * without a radius has no reach — the service treats a partial set as
+   * absent rather than guessing a default, because a guessed reach silently
+   * hides events somebody asked to see.
+   */
+  @ApiPropertyOptional({
+    description: 'Latitude of the reader. Needs `lng` and `radius` to apply.',
+    example: 38.7169,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsLatitude()
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -9.1662 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsLongitude()
+  lng?: number;
+
+  @ApiPropertyOptional({
+    description: 'Reach in kilometres from `lat`/`lng`.',
+    minimum: 1,
+    maximum: 500,
+    example: 15,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  radius?: number;
 
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()

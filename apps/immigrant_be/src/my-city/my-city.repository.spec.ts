@@ -145,4 +145,77 @@ describe('MyCityRepository', () => {
       expect(args.where.isActive).toBe(true);
     });
   });
+
+  /*
+   * The radius reached businesses and nothing else, so a reader who narrowed it
+   * to a kilometre still saw a place nine kilometres away — reported from
+   * production in Faro, where seven places stayed on screen at the tightest
+   * setting.
+   *
+   * What these check is the shape of the answer, since a mocked Prisma cannot
+   * measure a distance: with a reach, the count leaves the typed query for SQL
+   * that carries both the box and the Haversine; without one, it stays on the
+   * typed path so a city view with no GPS answers exactly what it always did.
+   */
+  describe('honouring the reach', () => {
+    const reach = { countryCode: 'PT', city: 'Lisbon', lat: 38.69, lng: -9.21 };
+
+    it('measures places with the box and the Haversine', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValue([{ total: 3n }]);
+
+      const total = await repository.countPlaces({ ...reach, radius: 5 });
+
+      expect(total).toBe(3);
+      expect(mockPrismaService.place.count).not.toHaveBeenCalled();
+
+      const sql = sqlOf(0);
+      expect(sql).toContain('BETWEEN');
+      expect(sql).toContain('acos');
+      expect(sql).toContain('p.is_active = true');
+    });
+
+    it('measures events the same way', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValue([{ total: 2n }]);
+
+      const total = await repository.countEvents({ ...reach, radius: 5 });
+
+      expect(total).toBe(2);
+      expect(mockPrismaService.communityEvent.count).not.toHaveBeenCalled();
+
+      const sql = sqlOf(0);
+      expect(sql).toContain('acos');
+      expect(sql).toContain("e.status::text = 'APPROVED'");
+    });
+
+    /*
+     * The box alone would have been cheaper, and `countBusinesses` above does
+     * stop there. Measured in Lisbon at one kilometre, the box admitted two
+     * places and the Haversine one — so the tab would have read two over a
+     * list of one. Generous is fine when the numbers are large; at small radii
+     * it is just wrong.
+     */
+    it('does not settle for the box, which over-counts at the corners', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValue([{ total: 1n }]);
+
+      await repository.countPlaces({ ...reach, radius: 1 });
+
+      expect(sqlOf(0)).toContain('acos');
+    });
+
+    it.each([
+      ['no radius', { ...reach }],
+      ['no origin', { countryCode: 'PT', city: 'Lisbon', radius: 5 }],
+      [
+        'half an origin',
+        { countryCode: 'PT', city: 'Lisbon', lat: 38.69, radius: 5 },
+      ],
+    ])('stays on the typed query with %s', async (_label, args) => {
+      mockPrismaService.place.count.mockResolvedValue(10);
+
+      await repository.countPlaces(args);
+
+      expect(mockPrismaService.place.count).toHaveBeenCalled();
+      expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
+    });
+  });
 });
