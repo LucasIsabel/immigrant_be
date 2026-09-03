@@ -6,8 +6,10 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UploadedFile,
   UseInterceptors,
@@ -44,6 +46,11 @@ import { ReportCommunityEventDto } from './dto/report-community-event.dto';
 import { RemoveEventImageDto } from './dto/remove-event-image.dto';
 import { ListCommunityEventsQueryDto } from './dto/list-community-events-query.dto';
 import { ListPublicCommunityEventsQueryDto } from './dto/list-public-community-events-query.dto';
+import {
+  FavouriteEventResponseDto,
+  ListFavouriteEventsQueryDto,
+  PaginatedFavouriteEventsResponseDto,
+} from './dto/favourite-event.dto';
 import {
   CommunityEventResponseDto,
   PaginatedCommunityEventsResponseDto,
@@ -122,6 +129,65 @@ export class CommunityEventsController {
     @Session() session: UserSession,
   ): Promise<PaginatedCommunityEventsResponseDto> {
     return this.service.listMine(session.user.id, query);
+  }
+
+  /*
+   * `favourites` is a literal segment and has to be declared before `:id`, or
+   * Express hands it to the detail handler as an event id and the caller gets
+   * "Evento não encontrado" for a route that exists.
+   */
+  @Get('favourites')
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Listar os meus eventos favoritos',
+    description:
+      'Um favorito cancelado ou recusado continua na lista, com o `status` — saber que aquilo foi abaixo é o motivo de continuar a mostrá-lo.',
+  })
+  @ApiOkResponse({ type: PaginatedFavouriteEventsResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  listFavourites(
+    @Query() query: ListFavouriteEventsQueryDto,
+    @Session() session: UserSession,
+  ): Promise<PaginatedFavouriteEventsResponseDto> {
+    return this.service.listFavourites(session.user.id, query);
+  }
+
+  @Put(':id/favourite')
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Favoritar um evento',
+    description:
+      'Idempotente: favoritar duas vezes deixa uma linha só e responde sucesso das duas vezes. Só um evento aprovado — o que o leitor consegue mesmo ver — pode ser favoritado.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do evento' })
+  @ApiOkResponse({ type: FavouriteEventResponseDto })
+  @ApiNotFoundResponse({ description: 'Evento não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  favourite(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Session() session: UserSession,
+  ): Promise<FavouriteEventResponseDto> {
+    return this.service.setFavourite(session.user.id, id, true);
+  }
+
+  @Delete(':id/favourite')
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Desfavoritar um evento',
+    description:
+      'Idempotente, e sem exigir que o evento ainda esteja aprovado: quem favoritou algo que depois foi abaixo tem de conseguir tirá-lo da lista.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do evento' })
+  @ApiOkResponse({ type: FavouriteEventResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  unfavourite(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Session() session: UserSession,
+  ): Promise<FavouriteEventResponseDto> {
+    return this.service.setFavourite(session.user.id, id, false);
   }
 
   @Post()
