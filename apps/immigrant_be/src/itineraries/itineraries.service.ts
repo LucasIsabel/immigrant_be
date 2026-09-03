@@ -14,6 +14,16 @@ import {
 import { AddItineraryStopDto } from './dto/add-itinerary-stop.dto';
 import { AddItineraryStopResponseDto } from './dto/add-itinerary-stop.dto';
 import { ListMyItinerariesQueryDto } from './dto/list-my-itineraries-query.dto';
+import { ListPublicItinerariesQueryDto } from './dto/list-public-itineraries-query.dto';
+import {
+  PaginatedPublicItinerariesResponseDto,
+  PublicItineraryResponseDto,
+  PublicItineraryStopDto,
+} from './dto/public-itinerary.dto';
+import {
+  ReportItineraryDto,
+  ReportItineraryResponseDto,
+} from './dto/report-itinerary.dto';
 import {
   MyItineraryResponseDto,
   MyItineraryStopDto,
@@ -205,6 +215,143 @@ export class ItinerariesService {
 
     await this.repository.reorderStops(id, incoming);
     return this.toResponse(await this.mustOwn(id, userId));
+  }
+
+  // ── Public ─────────────────────────────────────────────────────────
+
+  async listPublic(
+    query: ListPublicItinerariesQueryDto,
+  ): Promise<PaginatedPublicItinerariesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const [rows, total] = await this.repository.listPublic(
+      { countryCode: query.countryCode, city: query.city },
+      (page - 1) * limit,
+      limit,
+    );
+
+    return {
+      data: rows.map((row) => {
+        const stops = this.publicStops(row);
+        return {
+          slug: row.slug,
+          title: row.title,
+          countryCode: row.countryCode,
+          cities: [...new Set(stops.map((stop) => stop.city))],
+          stopCount: stops.length,
+          // The first stop with a photo, not the first stop: a cover that is
+          // blank because stop one happens to have no picture says nothing
+          // about the itinerary behind it.
+          coverImageUrl: stops.find((stop) => stop.imageUrl)?.imageUrl ?? null,
+          createdAt: row.createdAt,
+        };
+      }),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getPublic(slug: string): Promise<PublicItineraryResponseDto> {
+    const itinerary = await this.mustBePublic(slug);
+
+    return {
+      slug: itinerary.slug,
+      title: itinerary.title,
+      countryCode: itinerary.countryCode,
+      stops: this.publicStops(itinerary),
+      createdAt: itinerary.createdAt,
+    };
+  }
+
+  /**
+   * Approval holds back what arrives; the report holds back what got through.
+   *
+   * A filled honeypot answers exactly like a real report — telling a bot it
+   * was caught is telling it how to try again. Mold of the events report.
+   */
+  async report(
+    slug: string,
+    dto: ReportItineraryDto,
+  ): Promise<ReportItineraryResponseDto> {
+    const itinerary = await this.mustBePublic(slug);
+
+    if (!dto.website) {
+      await this.repository.createReport(itinerary.id, dto.reason);
+    }
+
+    return { received: true };
+  }
+
+  private async mustBePublic(slug: string): Promise<ItineraryRow> {
+    const itinerary = await this.repository.findPublicBySlug(slug);
+    if (!itinerary) {
+      throw new NotFoundException('Roteiro não encontrado');
+    }
+    return itinerary;
+  }
+
+  /**
+   * The stops a visitor sees, numbered as they will count them.
+   *
+   * Unavailable ones are dropped and the rest renumbered 1..n. The renumbering
+   * happens **once, here**, and the same array feeds the list and the map, so
+   * pin three is item three by construction rather than by two pieces of code
+   * agreeing. Numbering before filtering would leave gaps; filtering in the
+   * map alone would slide every later pin by one.
+   *
+   * A stop with no coordinate is a different case and stays: a business
+   * registered before the form geocoded its address is still a real place to
+   * go, and its address is on its own page. It simply cannot be a pin, so
+   * `lat`/`lng` come back null and the map draws one fewer marker than the
+   * list has rows — which is honest, where a shifted number would not be.
+   */
+  private publicStops(row: ItineraryRow): PublicItineraryStopDto[] {
+    return row.stops
+      .filter((stop) => this.toStop(stop).available)
+      .map((stop, index) => {
+        const place = stop.place;
+        if (place) {
+          return {
+            id: stop.id,
+            number: index + 1,
+            kind: 'place' as const,
+            name: place.name,
+            city: stop.city,
+            imageUrl: place.imageUrl,
+            lat: place.lat,
+            lng: place.lng,
+            placeRef: {
+              countryCode: place.countryCode,
+              city: place.city,
+              slug: place.slug,
+            },
+            businessPageSlug: null,
+          };
+        }
+
+        const business = stop.business as NonNullable<typeof stop.business>;
+        const page = business.businessPage;
+        return {
+          id: stop.id,
+          number: index + 1,
+          kind: 'business' as const,
+          name: business.name,
+          city: stop.city,
+          imageUrl: null,
+          lat: business.lat,
+          lng: business.lng,
+          placeRef: null,
+          // Only an approved page is reachable; handing out the slug of a page
+          // still in review would link the visitor to a 404.
+          businessPageSlug:
+            page &&
+            (page.status === 'APPROVED' ||
+              page.status === 'APPROVED_WITH_PENDING')
+              ? page.slug
+              : null,
+        };
+      });
   }
 
   /**
