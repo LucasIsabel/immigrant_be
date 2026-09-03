@@ -1403,6 +1403,14 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /admin/events/:id`                                    | CommunityEvents (admin)        | ADMIN — detalhe com as denúncias |
 | `POST /admin/events/:id/approve`                           | CommunityEvents (admin)        | ADMIN — aprova; 409 se não estiver em análise |
 | `POST /admin/events/:id/reject`                            | CommunityEvents (admin)        | ADMIN — recusa (PENDING_REVIEW) ou derruba (APPROVED); `reason` obrigatório (3–500) |
+| `GET /itineraries/mine`                                    | Itineraries                    | Autenticado (role USER) — os meus roteiros, paginado, com `stopCount` e `unavailableStopCount` |
+| `POST /itineraries/stops`                                  | Itineraries                    | Autenticado (role USER) — adiciona parada; sem `itineraryId` usa o roteiro mais recente naquele país e cria um se não houver; 409 se o item já estiver lá |
+| `GET /itineraries/:id`                                     | Itineraries                    | Autenticado (role USER) — detalhe do próprio roteiro; 404 (não 403) se for de outra pessoa |
+| `PATCH /itineraries/:id`                                   | Itineraries                    | Autenticado (role USER) — renomeia; o slug **não** muda |
+| `PATCH /itineraries/:id/visibility`                        | Itineraries                    | Autenticado (role USER) — publica/despublica na hora, sem moderação |
+| `PUT /itineraries/:id/stops/order`                         | Itineraries                    | Autenticado (role USER) — permutação completa; 400 se o conjunto divergir |
+| `DELETE /itineraries/:id/stops/:stopId`                    | Itineraries                    | Autenticado (role USER) — remove uma parada |
+| `DELETE /itineraries/:id`                                  | Itineraries                    | Autenticado (role USER) — apaga o roteiro; as paradas caem em cascata |
 
 **Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta o `AiRouterService`, monta o input a partir do conteúdo da página, achata o `typeData` com `flattenModerationContent` (cada folha nomeada pelo caminho JSON — `tours[2].description`), chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
@@ -1412,6 +1420,40 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 - **Grava nos dois desfechos**, não só no rebaixamento: uma página que passou também tem uma última análise, e guardá-la evita um ramo no código e uma pergunta sem resposta na tela.
 - **`model: null` quando ninguém respondeu.** O fallback de erro não é a opinião de um modelo; atribuir um nome ali seria pôr na boca de alguém uma frase que ele não disse. Quando o modelo respondeu e a resposta não deu parse, o nome dele **fica** — é assim que se descobre depois que um deles não sabe responder isto.
 - **Editar o conteúdo não limpa o registro.** Apagar apagaria o único traço de por que a página está na fila; o `analyzedAt` na tela deixa claro que a análise pode ser anterior à edição.
+
+### Roteiros — o que as rotas do dono decidem
+
+O módulo `itineraries/` espelha `community-events/`, e três escolhas merecem
+ficar escritas porque são fáceis de desfazer sem perceber:
+
+- **404, nunca 403, para roteiro alheio.** Dizer que um id existe mas não é seu
+  é uma resposta que quem pergunta não merecia: transforma o endpoint num jeito
+  de confirmar que um roteiro existe. A posse vai dentro da consulta
+  (`findFirst({ where: { id, userId } })`, molde de `Plans`), então não há leitura
+  que pudesse devolvê-lo.
+- **O alvo é resolvido antes de qualquer escrita.** Sem essa ordem, um pedido
+  nomeando um lugar inexistente ainda deixaria um roteiro vazio para trás — e a
+  pessoa o encontraria depois sem saber de onde veio.
+- **Reordenar é por igualdade de conjunto, nunca por prefixo.** Uma lista a que
+  falte uma parada, que repita outra, ou que nomeie a de um estranho é recusada
+  inteira. Meia ordem é pior do que nenhuma: está errada e parece deliberada.
+
+`POST /itineraries/stops` é o *quick-add*: uma toque num cartão do My City, e o
+roteiro pode ainda não existir. Pedir para criar um antes de guardar o primeiro
+lugar é um formulário à frente da coisa que a pessoa queria. O `defaultTitle` vem
+do cliente porque é texto que a pessoa lê, e é no cliente que vive o idioma.
+
+`GET /itineraries/:id` devolve as paradas indisponíveis — lugar desativado,
+negócio que o dono tornou privado — com `available: false`. O dono precisa de as
+ver para as remover; some sem explicação lê-se como perda de dados. A leitura
+pública faz o contrário e filtra (BE#247).
+
+A ordem de declaração no controller é a ordem de roteamento: `mine` e `stops`
+estão registados **antes** de `:id`, senão o Express entrega-os ao handler de
+detalhe como se fossem um id. O `itineraries.contract.spec.ts` verifica isso e
+que nenhuma resposta de sucesso é descrita por schema inline — o que compila,
+arranca e responde certo, e só falha dias depois no `pnpm generate:api` do
+frontend, sem tipo nenhum do outro lado.
 
 ### Health
 
