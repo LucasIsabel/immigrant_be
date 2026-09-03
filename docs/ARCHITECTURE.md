@@ -523,6 +523,55 @@ PublisherQualification ─── Business (1:1) — qualificação automática d
     moderação não trave quem já ganhou o direito
 ```
 
+### Roteiros — a primeira coleção do utilizador que é partilhável
+
+```
+Users ────────── Itinerary (1:N)
+Itinerary ──┬─── ItineraryStop (1:N) ──┬── Place (N:1, opcional)
+            │                          └── Business (N:1, opcional)
+            └─── ItineraryReport (1:N) — denúncia anónima
+```
+
+Um roteiro é uma sequência ordenada de paradas que alguém montou explorando o My
+City. Três decisões de modelagem carregam o porquê:
+
+- **Pertence a um país, não a uma cidade.** As cidades saem das paradas. Um
+  roteiro chamado "Tour praia de Portugal" atravessa Lagos, Cascais e Almada;
+  prendê-lo a uma cidade tornaria esse caso impossível. O filtro público por
+  cidade responde "roteiros que passam por aqui" através de
+  `ItineraryStop.cityKey`, desnormalizado do alvo no momento em que a parada
+  entra — uma coluna indexada em vez de um leque de junções.
+- **Tabela filha, não JSON.** O itinerário do guia turístico vive como JSON em
+  `Business.typeData`, e a diferença é de natureza: aquele guarda conteúdo
+  autoral do próprio negócio, que nasce e morre com ele, enquanto uma parada
+  aponta para um agregado alheio. Referência pede FK — com ela, apagar a conta
+  de um dono limpa as paradas em cascata e não sobra uuid pendurado, e a leitura
+  pública hidrata o conteúdo curado actual num `include`.
+- **`position` sem unique, de propósito.** No Postgres um unique não-diferível é
+  verificado a cada instrução, então uma permutação completa dentro de uma
+  transacção tropeçaria a meio caminho. A ordem é reescrita por inteiro ao
+  reordenar.
+
+O único campo de texto livre é `Itinerary.title`. É isso que torna defensável
+publicar sem fila de moderação, no molde de `Business.isPublic`: todo o resto do
+conteúdo já passou pela curadoria da plataforma. A denúncia anónima é a rede de
+segurança, e não guarda quem denunciou.
+
+A restrição de **exactamente um alvo por parada** (`place_id` ou `business_id`,
+nunca ambos, nunca nenhum) vive na migration como um `CHECK` escrito à mão — o
+Prisma não sabe exprimir uma restrição entre colunas:
+
+```sql
+ALTER TABLE itinerary_stops ADD CONSTRAINT itinerary_stops_exactly_one_target
+  CHECK (num_nonnulls(place_id, business_id) = 1);
+```
+
+Os dois `@@unique([itineraryId, placeId])` e `@@unique([itineraryId, businessId])`
+proíbem apenas **duplicados** do mesmo alvo no mesmo roteiro: no Postgres NULLs
+são distintos entre si, então paradas do outro tipo não colidem.
+
+Plano do épico: `plans/2026-09-03-epico-roteiros.md`.
+
 ### Convenções do Schema
 
 - IDs: **UUID** com `@default(uuid())`
