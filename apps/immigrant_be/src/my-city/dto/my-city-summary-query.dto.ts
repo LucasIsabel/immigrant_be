@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 /**
  * Which city to count, and how far around it to look.
@@ -60,4 +67,26 @@ export class MyCitySummaryQueryDto {
   @Max(200)
   @IsOptional()
   radius?: number;
+
+  /**
+   * Whether the origin is the reader, rather than the centre of the city.
+   *
+   * It changes what the reach *does*. Around a city centre the reach widens:
+   * somebody browsing Porto should see the restaurant in Gaia, so the count is
+   * the city **or** what is near it. Around the reader it narrows: they asked
+   * for what is within N km of themselves, and being inside the chosen city
+   * does not make something close to them.
+   *
+   * The server cannot tell the two apart from a pair of coordinates, and
+   * guessing would pick the wrong one half the time, so the client says which.
+   */
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      "True when lat/lng are the reader's own position. The reach then narrows instead of widening.",
+  })
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  nearMe?: boolean;
 }

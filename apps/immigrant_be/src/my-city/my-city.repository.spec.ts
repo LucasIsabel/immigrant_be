@@ -157,6 +157,68 @@ describe('MyCityRepository', () => {
    * that carries both the box and the Haversine; without one, it stays on the
    * typed path so a city view with no GPS answers exactly what it always did.
    */
+  /*
+   * Around a city centre the reach widens; around the reader it narrows.
+   *
+   * The centre is a point nobody chose, so narrowing there would hide the
+   * supply of the very city that was asked for. The reader's own position is
+   * the opposite: they asked for what is within N km of themselves, and a
+   * guide 7.8km away staying on screen at a 1km reach is what was reported.
+   *
+   * Measured against the database with three guides around Lisbon at 1.0, 7.8
+   * and 19.2km: widening answered 2, 2, 2, 3 across the four reaches while
+   * narrowing answered 0, 1, 2, 3 — the second column matching the exact
+   * Haversine at every step.
+   */
+  describe('what the reach does depends on whose it is', () => {
+    const around = {
+      country: 'Portugal',
+      city: 'Lisbon',
+      lat: 38.6916,
+      lng: -9.216,
+      radius: 5,
+    };
+
+    it('joins the city and the reach with OR around a city centre', async () => {
+      await repository.countBusinesses(around);
+
+      const sql = sqlOf(0);
+      expect(sql).toContain('b.city_key');
+      expect(sql).toContain(' OR ');
+    });
+
+    it('drops the city entirely when the reach is the reader’s', async () => {
+      await repository.countBusinesses({ ...around, nearMe: true });
+
+      const sql = sqlOf(0);
+      // Being inside the chosen city does not make something near the reader,
+      // so the city stops widening the answer.
+      expect(sql).not.toContain('b.city_key');
+      expect(sql).toContain('acos');
+    });
+
+    it('still counts the city when the reader shared nothing', async () => {
+      await repository.countBusinesses({
+        country: 'Portugal',
+        city: 'Lisbon',
+        nearMe: true,
+      });
+
+      // `nearMe` with no coordinates is not a reach at all — dropping the city
+      // then would answer with everything in the country.
+      const sql = sqlOf(0);
+      expect(sql).toContain('b.city_key');
+    });
+
+    it('measures the reach with the Haversine, not just the box', async () => {
+      await repository.countBusinesses(around);
+
+      // The box alone admitted a guide 19.2km out at a 15km reach, so the tab
+      // read three over a list of two.
+      expect(sqlOf(0)).toContain('acos');
+    });
+  });
+
   describe('honouring the reach', () => {
     const reach = { countryCode: 'PT', city: 'Lisbon', lat: 38.69, lng: -9.21 };
 
