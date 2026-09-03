@@ -99,7 +99,7 @@ describe('OpenAPI contract — Community Events', () => {
       ),
     );
 
-  it('registers the sixteen operations of the community events flow', () => {
+  it('registers the nineteen operations of the community events flow', () => {
     const operations = Object.entries(document.paths)
       .flatMap(([route, item]) =>
         Object.keys(item as Record<string, unknown>).map(
@@ -109,9 +109,11 @@ describe('OpenAPI contract — Community Events', () => {
       .sort();
 
     expect(operations).toEqual([
+      'DELETE /events/{id}/favourite',
       'DELETE /events/{id}/images',
       'GET /admin/events',
       'GET /admin/events/{id}',
+      'GET /events/favourites',
       'GET /events/mine',
       'GET /events/public',
       'GET /events/public/{slug}',
@@ -125,6 +127,7 @@ describe('OpenAPI contract — Community Events', () => {
       'POST /events/{id}/image',
       'POST /events/{id}/images',
       'POST /events/{id}/submit',
+      'PUT /events/{id}/favourite',
     ]);
   });
 
@@ -188,9 +191,11 @@ describe('OpenAPI contract — Community Events', () => {
     );
 
     expect(secured.sort()).toEqual([
+      'DELETE /events/{id}/favourite',
       'DELETE /events/{id}/images',
       'GET /admin/events',
       'GET /admin/events/{id}',
+      'GET /events/favourites',
       'GET /events/mine',
       'GET /events/{id}',
       'PATCH /events/{id}',
@@ -201,6 +206,7 @@ describe('OpenAPI contract — Community Events', () => {
       'POST /events/{id}/image',
       'POST /events/{id}/images',
       'POST /events/{id}/submit',
+      'PUT /events/{id}/favourite',
     ]);
   });
 

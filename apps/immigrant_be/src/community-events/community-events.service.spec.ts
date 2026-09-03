@@ -17,6 +17,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { StorageService } from '@app/storage';
+import { CommunityEventStatus } from '../../../../generated/prisma';
+import { FavouriteEventsWhen } from './dto/favourite-event.dto';
 import { CommunityEventsService } from './community-events.service';
 import { CommunityEventsRepository } from './community-events.repository';
 import { COMMUNITY_EVENT_TERMS_VERSION } from './community-events.constants';
@@ -119,6 +121,11 @@ const buildRepository = () => ({
   listPublicByWhen: jest.fn(),
   createReport: jest.fn().mockResolvedValue({ id: 'report-1' }),
   findBusinessForEvent: jest.fn(),
+  findApprovedById: jest.fn().mockResolvedValue({ id: 'event-1' }),
+  favourite: jest.fn().mockResolvedValue(undefined),
+  unfavourite: jest.fn().mockResolvedValue(undefined),
+  isFavourite: jest.fn().mockResolvedValue(false),
+  listFavourites: jest.fn().mockResolvedValue({ data: [], total: 0 }),
 });
 
 describe('CommunityEventsService', () => {
@@ -638,6 +645,92 @@ describe('CommunityEventsService', () => {
       await expect(
         service.report('rascunho', { reason: 'dez caracteres pelo menos' }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('favourites', () => {
+    it('refuses to favourite an event the reader cannot see', async () => {
+      repository.findApprovedById.mockResolvedValue(null);
+
+      await expect(
+        service.setFavourite('user-1', 'event-1', true),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.favourite).not.toHaveBeenCalled();
+    });
+
+    /*
+     * The approval check is on the way in only. Somebody who favourited an
+     * event that was later cancelled has to be able to take it off the list,
+     * and requiring approval to un-favourite would strand them with a row they
+     * cannot remove.
+     */
+    it('un-favourites without asking whether the event is still approved', async () => {
+      repository.findApprovedById.mockResolvedValue(null);
+
+      await expect(
+        service.setFavourite('user-1', 'event-1', false),
+      ).resolves.toEqual({ favourited: false });
+      expect(repository.unfavourite).toHaveBeenCalledWith('user-1', 'event-1');
+    });
+
+    it('answers the same both times, because favouriting twice is one gesture', async () => {
+      const first = await service.setFavourite('user-1', 'event-1', true);
+      const second = await service.setFavourite('user-1', 'event-1', true);
+
+      expect(first).toEqual({ favourited: true });
+      expect(second).toEqual(first);
+      expect(repository.favourite).toHaveBeenCalledTimes(2);
+    });
+
+    it('asks for what is coming, oldest first', async () => {
+      await service.listFavourites('user-1', {
+        when: FavouriteEventsWhen.UPCOMING,
+      });
+
+      const [userId, upcoming, , skip, take] = repository.listFavourites.mock
+        .calls[0] as [string, boolean, Date, number, number];
+      expect([userId, upcoming, skip, take]).toEqual(['user-1', true, 0, 20]);
+    });
+
+    it('asks for what is past when told to', async () => {
+      await service.listFavourites('user-1', {
+        when: FavouriteEventsWhen.PAST,
+        page: 3,
+        limit: 10,
+      });
+
+      const [, upcoming, , skip, take] = repository.listFavourites.mock
+        .calls[0] as [string, boolean, Date, number, number];
+      expect([upcoming, skip, take]).toEqual([false, 20, 10]);
+    });
+
+    it('defaults to what is coming when no window is asked for', async () => {
+      await service.listFavourites('user-1', {});
+
+      expect(repository.listFavourites.mock.calls[0][1]).toBe(true);
+    });
+
+    /*
+     * The whole reason the favourites list carries a status the public agenda
+     * never needs: a cancelled event stays, and says so.
+     */
+    it('keeps a cancelled favourite in the list, carrying its status', async () => {
+      repository.listFavourites.mockResolvedValue({
+        data: [
+          {
+            ...baseEvent,
+            status: CommunityEventStatus.CANCELLED,
+            organizer: { name: 'Marta' },
+            business: null,
+          },
+        ],
+        total: 1,
+      });
+
+      const list = await service.listFavourites('user-1', {});
+
+      expect(list.total).toBe(1);
+      expect(list.data[0].status).toBe(CommunityEventStatus.CANCELLED);
     });
   });
 });

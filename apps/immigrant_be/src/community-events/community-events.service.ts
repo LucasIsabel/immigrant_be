@@ -39,6 +39,12 @@ import {
   PaginatedCommunityEventsResponseDto,
 } from './dto/community-event-response.dto';
 import {
+  FavouriteEventResponseDto,
+  FavouriteEventsWhen,
+  ListFavouriteEventsQueryDto,
+  PaginatedFavouriteEventsResponseDto,
+} from './dto/favourite-event.dto';
+import {
   PaginatedPublicCommunityEventsResponseDto,
   PublicCommunityEventDto,
 } from './dto/public-community-event.dto';
@@ -424,6 +430,64 @@ export class CommunityEventsService {
 
     return {
       data: data.map((event) => this.toPublicResponse(event)),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Keep an event, or stop keeping it. Both directions are idempotent.
+   *
+   * Events were kept out of itineraries on purpose — they expire, and a route
+   * saved today should not carry a stop that already happened. A favourite is
+   * where they belong instead: it can age without breaking anything, and a
+   * past one is a record of somewhere the person went.
+   */
+  async setFavourite(
+    userId: string,
+    eventId: string,
+    favourited: boolean,
+  ): Promise<FavouriteEventResponseDto> {
+    if (favourited) {
+      // Only on the way in. Un-favouriting an event that was since pulled down
+      // has to keep working, or somebody would be stuck with a row they cannot
+      // remove.
+      const event = await this.repository.findApprovedById(eventId);
+      if (!event) {
+        throw new NotFoundException('Evento não encontrado');
+      }
+      await this.repository.favourite(userId, eventId);
+    } else {
+      await this.repository.unfavourite(userId, eventId);
+    }
+
+    return { favourited };
+  }
+
+  async listFavourites(
+    userId: string,
+    query: ListFavouriteEventsQueryDto,
+  ): Promise<PaginatedFavouriteEventsResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const upcoming =
+      (query.when ?? FavouriteEventsWhen.UPCOMING) ===
+      FavouriteEventsWhen.UPCOMING;
+
+    const { data, total } = await this.repository.listFavourites(
+      userId,
+      upcoming,
+      new Date(),
+      (page - 1) * limit,
+      limit,
+    );
+
+    return {
+      data: data.map(({ status, ...event }) => ({
+        ...this.toPublicResponse(event),
+        status,
+      })),
       total,
       page,
       limit,

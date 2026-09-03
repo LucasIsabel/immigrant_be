@@ -68,6 +68,22 @@ export type PublicCommunityEventRow = Prisma.CommunityEventGetPayload<{
   select: typeof publicSelect;
 }>;
 
+/**
+ * The public shape plus the status, for the favourites list.
+ *
+ * The agenda never needs it — everything it lists is approved. A favourite
+ * outlives approval, so the reader has to be told when the thing they saved is
+ * off.
+ */
+const favouriteSelect = {
+  ...publicSelect,
+  status: true,
+} satisfies Prisma.CommunityEventSelect;
+
+export type FavouriteEventRow = Prisma.CommunityEventGetPayload<{
+  select: typeof favouriteSelect;
+}>;
+
 export interface PublicEventFilters {
   countryCode?: string;
   city?: string;
@@ -281,6 +297,89 @@ export class CommunityEventsRepository {
       data: await this.hydratePublic(rows.map((row) => row.id)),
       total: Number(counted?.total ?? 0),
     };
+  }
+
+  /**
+   * Favouriting twice is the same gesture, not an error.
+   *
+   * `upsert` on the unique pair rather than a check-then-insert: two taps
+   * arriving together would both pass a check and one would hit the
+   * constraint. The `update` is empty on purpose — there is nothing to change,
+   * the row's existence *is* the state.
+   */
+  /**
+   * An event a reader is allowed to favourite.
+   *
+   * Approved only, because that is exactly what they can see: favouriting a
+   * draft or a rejected event through a guessed id would let somebody hold a
+   * handle on something that was never published.
+   */
+  findApprovedById(id: string): Promise<{ id: string } | null> {
+    return this.prisma.communityEvent.findFirst({
+      where: { id, status: CommunityEventStatus.APPROVED },
+      select: { id: true },
+    });
+  }
+
+  favourite(userId: string, eventId: string): Promise<void> {
+    return this.prisma.eventFavourite
+      .upsert({
+        where: { userId_eventId: { userId, eventId } },
+        create: { userId, eventId },
+        update: {},
+      })
+      .then(() => undefined);
+  }
+
+  /** `deleteMany` and not `delete`: removing what is not there is not a fault. */
+  unfavourite(userId: string, eventId: string): Promise<void> {
+    return this.prisma.eventFavourite
+      .deleteMany({ where: { userId, eventId } })
+      .then(() => undefined);
+  }
+
+  isFavourite(userId: string, eventId: string): Promise<boolean> {
+    return this.prisma.eventFavourite
+      .count({ where: { userId, eventId } })
+      .then((count) => count > 0);
+  }
+
+  /**
+   * The reader's favourites, split by whether the date has passed.
+   *
+   * Ordered through the relation — ascending for what is coming, so the next
+   * thing is first, and descending for what is past, so the most recent is.
+   * Ordering both the same way would bury either the next event or the last
+   * one at the bottom of a list nobody scrolls.
+   *
+   * The status is not filtered. A cancelled event a person saved is still
+   * their favourite, and hearing that it is off is the whole reason to keep
+   * showing it.
+   */
+  async listFavourites(
+    userId: string,
+    upcoming: boolean,
+    now: Date,
+    skip: number,
+    take: number,
+  ): Promise<{ data: FavouriteEventRow[]; total: number }> {
+    const where = {
+      userId,
+      event: upcoming ? { startsAt: { gte: now } } : { startsAt: { lt: now } },
+    } satisfies Prisma.EventFavouriteWhereInput;
+
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.eventFavourite.findMany({
+        where,
+        orderBy: { event: { startsAt: upcoming ? 'asc' : 'desc' } },
+        skip,
+        take,
+        select: { event: { select: favouriteSelect } },
+      }),
+      this.prisma.eventFavourite.count({ where }),
+    ]);
+
+    return { data: rows.map((row) => row.event), total };
   }
 
   createReport(eventId: string, reason: string): Promise<{ id: string }> {
