@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma, PlaceReviewStatus } from '../../../../generated/prisma';
+import { normalizeCity } from '../business/city-key';
 
 /**
  * What a stop needs to be rendered, from whichever side it points at.
@@ -25,10 +26,24 @@ const stopSelect = {
       lng: true,
       isActive: true,
       reviewStatus: true,
+      // A place has no page of ours; the public card links to it by the triple
+      // that identifies it, since `slug` alone is not unique across cities.
+      slug: true,
+      countryCode: true,
+      city: true,
     },
   },
   business: {
-    select: { id: true, name: true, lat: true, lng: true, isPublic: true },
+    select: {
+      id: true,
+      name: true,
+      lat: true,
+      lng: true,
+      isPublic: true,
+      // Only an approved page is reachable, and only then is the slug worth
+      // handing out — `businessPublicPageHref` on the client says the same.
+      businessPage: { select: { slug: true, status: true } },
+    },
   },
 } satisfies Prisma.ItineraryStopSelect;
 
@@ -189,6 +204,85 @@ export class ItinerariesRepository {
     return this.prisma.itineraryStop
       .delete({ where: { id } })
       .then(() => undefined);
+  }
+
+  /**
+   * A stop somebody can actually reach.
+   *
+   * An itinerary whose stops all went out of view still exists for its owner —
+   * they need to see it to fix it — but has nothing to show a visitor, so it
+   * leaves the public listing entirely rather than opening onto an empty page.
+   */
+  private readonly availableStop = {
+    OR: [
+      {
+        place: {
+          isActive: true,
+          reviewStatus: PlaceReviewStatus.APPROVED,
+        },
+      },
+      { business: { isPublic: true } },
+    ],
+  } satisfies Prisma.ItineraryStopWhereInput;
+
+  private publicWhere(filters: {
+    countryCode?: string;
+    city?: string;
+  }): Prisma.ItineraryWhereInput {
+    return {
+      isPublic: true,
+      ...(filters.countryCode
+        ? { countryCode: filters.countryCode.toUpperCase() }
+        : {}),
+      /*
+       * One `some`, not two.
+       *
+       * The city and the availability have to be satisfied by the **same**
+       * stop: an itinerary that passes through Cascais by way of a business
+       * its owner made private does not pass through Cascais any more, as far
+       * as a visitor is concerned. Two separate `some` clauses would let one
+       * stop answer for the city and another for the availability.
+       */
+      stops: {
+        some: {
+          ...this.availableStop,
+          ...(filters.city ? { cityKey: normalizeCity(filters.city) } : {}),
+        },
+      },
+    };
+  }
+
+  async listPublic(
+    filters: { countryCode?: string; city?: string },
+    skip: number,
+    take: number,
+  ): Promise<[ItineraryRow[], number]> {
+    const where = this.publicWhere(filters);
+
+    return this.prisma.$transaction([
+      this.prisma.itinerary.findMany({
+        where,
+        select: itinerarySelect,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.itinerary.count({ where }),
+    ]);
+  }
+
+  findPublicBySlug(slug: string): Promise<ItineraryRow | null> {
+    return this.prisma.itinerary.findFirst({
+      where: { slug, isPublic: true },
+      select: itinerarySelect,
+    });
+  }
+
+  createReport(itineraryId: string, reason: string): Promise<{ id: string }> {
+    return this.prisma.itineraryReport.create({
+      data: { itineraryId, reason },
+      select: { id: true },
+    });
   }
 
   /**

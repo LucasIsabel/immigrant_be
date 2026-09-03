@@ -184,6 +184,20 @@ function fakeRepository() {
         row.stops = row.stops.filter((s) => s.id !== id);
       }
     }),
+    listPublic: jest.fn(async () => {
+      const rows = [...itineraries.values()].filter((r) => r.isPublic);
+      return [rows.map((r) => structuredClone(r)), rows.length] as [
+        (typeof rows)[number][],
+        number,
+      ];
+    }),
+    findPublicBySlug: jest.fn(async (slug: string) => {
+      const row = [...itineraries.values()].find(
+        (r) => r.slug === slug && r.isPublic,
+      );
+      return row ? structuredClone(row) : null;
+    }),
+    createReport: jest.fn(async () => ({ id: 'report-1' })),
     reorderStops: jest.fn(async (itineraryId: string, ordered: string[]) => {
       const row = itineraries.get(itineraryId);
       if (!row) throw new Error('missing');
@@ -364,6 +378,108 @@ describe('ItinerariesService', () => {
 
       expect(positions).toEqual([1, 2, 3]);
       expect(new Set(after.stops.map((s) => s.id)).size).toBe(3);
+    });
+  });
+
+  describe('the public read', () => {
+    const publicar = async () => {
+      const { itineraryId } = await add('place-1');
+      await add('place-2');
+      await add('place-3');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      return itineraryId;
+    };
+
+    it('404s on an itinerary its owner has not published', async () => {
+      const { itineraryId } = await add('place-1');
+      const mine = await service.getMine(itineraryId, 'user-a');
+
+      await expect(service.getPublic(mine.slug)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    /*
+     * The renumbering is the whole reason this happens in one place. Numbering
+     * before filtering would leave a gap; filtering in the map alone would
+     * slide every later pin by one, and pin three would stop being item three.
+     */
+    it('drops an unavailable stop and renumbers what is left, without a gap', async () => {
+      const itineraryId = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+      const meio = stored?.stops[1];
+      if (meio?.place) meio.place.isActive = false;
+
+      const detail = await service.getPublic(stored?.slug ?? '');
+
+      expect(detail.stops).toHaveLength(2);
+      expect(detail.stops.map((s) => s.number)).toEqual([1, 2]);
+      expect(detail.stops.map((s) => s.name)).toEqual([
+        'Lugar place-1',
+        'Lugar place-3',
+      ]);
+    });
+
+    it('keeps a stop that has no coordinate, and says so with nulls', async () => {
+      const itineraryId = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+      const semCoordenada = stored?.stops[1];
+      if (semCoordenada?.place) {
+        semCoordenada.place.lat = null;
+        semCoordenada.place.lng = null;
+      }
+
+      const detail = await service.getPublic(stored?.slug ?? '');
+
+      // Still three stops, still numbered 1..3 — it simply cannot be a pin.
+      expect(detail.stops.map((s) => s.number)).toEqual([1, 2, 3]);
+      expect(detail.stops[1].lat).toBeNull();
+      expect(detail.stops[1].lng).toBeNull();
+    });
+
+    it('counts only what a visitor can see, and covers with the first photo', async () => {
+      const itineraryId = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+      if (stored?.stops[0].place) stored.stops[0].place.isActive = false;
+      if (stored?.stops[2].place) stored.stops[2].place.imageUrl = 'foto.jpg';
+
+      const list = await service.listPublic({});
+
+      expect(list.data[0].stopCount).toBe(2);
+      expect(list.data[0].coverImageUrl).toBe('foto.jpg');
+    });
+  });
+
+  describe('the report', () => {
+    it('stores a real one', async () => {
+      const { itineraryId } = await add('place-1');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const mine = await service.getMine(itineraryId, 'user-a');
+
+      const answer = await service.report(mine.slug, {
+        reason: 'O título é ofensivo.',
+      });
+
+      expect(answer).toEqual({ received: true });
+      expect(repo.createReport).toHaveBeenCalled();
+    });
+
+    /*
+     * A filled honeypot answers exactly like a real report. Telling a bot it
+     * was caught is telling it how to try again.
+     */
+    it('drops a bot in silence, answering the same', async () => {
+      const { itineraryId } = await add('place-1');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const mine = await service.getMine(itineraryId, 'user-a');
+
+      const answer = await service.report(mine.slug, {
+        reason: 'O título é ofensivo.',
+        website: 'http://spam.example',
+      });
+
+      expect(answer).toEqual({ received: true });
+      expect(repo.createReport).not.toHaveBeenCalled();
     });
   });
 

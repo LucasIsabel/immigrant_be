@@ -12,7 +12,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import {
+  AllowAnonymous,
+  Session,
+  type UserSession,
+} from '@thallesp/nestjs-better-auth';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -34,6 +38,15 @@ import {
   AddItineraryStopResponseDto,
 } from './dto/add-itinerary-stop.dto';
 import { ListMyItinerariesQueryDto } from './dto/list-my-itineraries-query.dto';
+import { ListPublicItinerariesQueryDto } from './dto/list-public-itineraries-query.dto';
+import {
+  PaginatedPublicItinerariesResponseDto,
+  PublicItineraryResponseDto,
+} from './dto/public-itinerary.dto';
+import {
+  ReportItineraryDto,
+  ReportItineraryResponseDto,
+} from './dto/report-itinerary.dto';
 import {
   MyItineraryResponseDto,
   PaginatedMyItinerariesResponseDto,
@@ -47,13 +60,61 @@ import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.
  * `:id`, or Express hands them to the detail handler as an id and the caller
  * gets "Roteiro não encontrado" for a route that exists.
  *
- * The anonymous routes — the public listing, the public detail and the report —
- * land in this same controller in BE#247, and they go **above** these.
+ * The anonymous routes come first for the same reason: `public` is a literal
+ * segment, and Express would hand `/itineraries/public` to the detail handler
+ * as if `public` were a slug.
  */
 @ApiTags('Itineraries')
 @Controller('itineraries')
 export class ItinerariesController {
   constructor(private readonly service: ItinerariesService) {}
+
+  @Get('public')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Listar roteiros públicos',
+    description:
+      'O país filtra a coluna do roteiro; a cidade sub-filtra pelas paradas — "roteiros que passam por aqui", porque um percurso atravessa cidades.',
+  })
+  @ApiOkResponse({ type: PaginatedPublicItinerariesResponseDto })
+  listPublic(
+    @Query() query: ListPublicItinerariesQueryDto,
+  ): Promise<PaginatedPublicItinerariesResponseDto> {
+    return this.service.listPublic(query);
+  }
+
+  @Get('public/:slug')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Detalhe público de um roteiro',
+    description:
+      'Paradas indisponíveis saem e as restantes são renumeradas 1..n, para a lista e os pinos do mapa não poderem discordar.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug único do roteiro' })
+  @ApiOkResponse({ type: PublicItineraryResponseDto })
+  @ApiNotFoundResponse({ description: 'Roteiro não encontrado' })
+  getPublic(@Param('slug') slug: string): Promise<PublicItineraryResponseDto> {
+    return this.service.getPublic(slug);
+  }
+
+  @Post('public/:slug/report')
+  @AllowAnonymous()
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Denunciar um roteiro público',
+    description:
+      'Anónimo de propósito: exigir conta para denunciar é como a denúncia morre. É a rede que substitui a fila de moderação.',
+  })
+  @ApiParam({ name: 'slug', description: 'Slug único do roteiro' })
+  @ApiCreatedResponse({ type: ReportItineraryResponseDto })
+  @ApiNotFoundResponse({ description: 'Roteiro não encontrado' })
+  report(
+    @Param('slug') slug: string,
+    @Body() dto: ReportItineraryDto,
+  ): Promise<ReportItineraryResponseDto> {
+    return this.service.report(slug, dto);
+  }
 
   @Get('mine')
   @Roles(UserRole.USER)

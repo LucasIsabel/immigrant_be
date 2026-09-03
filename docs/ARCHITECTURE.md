@@ -1455,6 +1455,9 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /admin/events/:id`                                    | CommunityEvents (admin)        | ADMIN — detalhe com as denúncias |
 | `POST /admin/events/:id/approve`                           | CommunityEvents (admin)        | ADMIN — aprova; 409 se não estiver em análise |
 | `POST /admin/events/:id/reject`                            | CommunityEvents (admin)        | ADMIN — recusa (PENDING_REVIEW) ou derruba (APPROVED); `reason` obrigatório (3–500) |
+| `GET /itineraries/public`                                  | Itineraries                    | Público (`@AllowAnonymous`) — país filtra a coluna do roteiro, cidade sub-filtra pelas paradas; roteiro sem parada visível não lista |
+| `GET /itineraries/public/:slug`                            | Itineraries                    | Público (`@AllowAnonymous`) — paradas indisponíveis filtradas e renumeradas 1..n |
+| `POST /itineraries/public/:slug/report`                    | Itineraries                    | Público (`@AllowAnonymous`) — denúncia anónima; throttle 3/min, honeypot `website` (descarta em silêncio) |
 | `GET /itineraries/mine`                                    | Itineraries                    | Autenticado (role USER) — os meus roteiros, paginado, com `stopCount` e `unavailableStopCount` |
 | `POST /itineraries/stops`                                  | Itineraries                    | Autenticado (role USER) — adiciona parada; sem `itineraryId` usa o roteiro mais recente naquele país e cria um se não houver; 409 se o item já estiver lá |
 | `GET /itineraries/:id`                                     | Itineraries                    | Autenticado (role USER) — detalhe do próprio roteiro; 404 (não 403) se for de outra pessoa |
@@ -1500,9 +1503,33 @@ negócio que o dono tornou privado — com `available: false`. O dono precisa de
 ver para as remover; some sem explicação lê-se como perda de dados. A leitura
 pública faz o contrário e filtra (BE#247).
 
-A ordem de declaração no controller é a ordem de roteamento: `mine` e `stops`
-estão registados **antes** de `:id`, senão o Express entrega-os ao handler de
-detalhe como se fossem um id. O `itineraries.contract.spec.ts` verifica isso e
+**A renumeração acontece uma vez, no servidor.** Uma parada cujo alvo saiu de
+vista — lugar desativado, negócio que o dono tornou privado — desaparece da
+leitura pública, e as restantes são renumeradas 1..n ali mesmo. O mesmo array
+alimenta a lista e o mapa, então o pino 3 é o item 3 por construção, e não por
+dois pedaços de código concordarem. Numerar antes de filtrar deixaria buracos;
+filtrar só no mapa deslocaria todos os pinos seguintes.
+
+**Parada sem coordenada é outro caso, e fica.** `Business.lat` e `lng` são
+anuláveis — herança de cadastros feitos antes de o formulário geocodificar o
+endereço —, enquanto `Place` e `CommunityEvent` exigem o par. Uma parada que não
+se consegue desenhar continua na lista, numerada, com `lat`/`lng` nulos: o
+endereço está na página dela e é um sítio real para ir. O mapa desenha um pino a
+menos do que a lista tem linhas, o que é honesto; um número deslocado não seria.
+Esconder o que não se consegue colocar no mapa seria decidir por render o que é
+uma questão de conteúdo.
+
+**Medido antes do merge**, com 5 mil roteiros e 50 mil paradas: a listagem com
+país e cidade responde em **7,5 ms** pelo índice `itinerary_stops_city_key_idx`;
+só com país, 19 ms; o detalhe por slug, 0,04 ms pelo índice único. A varredura
+sequencial em `itineraries` aparece porque a semente é uniforme — 5 mil linhas
+todas públicas e todas de Portugal —, então o índice `(country_code, is_public)`
+não tem o que descartar; com dado real ele entra.
+
+A ordem de declaração no controller é a ordem de roteamento: `public`,
+`public/:slug`, `mine` e `stops` estão registados **antes** de `:id`, senão o
+Express entrega-os ao handler de detalhe como se fossem um id — e `public` é um
+segmento literal que seria lido como slug. O `itineraries.contract.spec.ts` verifica isso e
 que nenhuma resposta de sucesso é descrita por schema inline — o que compila,
 arranca e responde certo, e só falha dias depois no `pnpm generate:api` do
 frontend, sem tipo nenhum do outro lado.

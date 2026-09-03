@@ -61,14 +61,17 @@ describe('OpenAPI contract — Itineraries', () => {
       )
       .sort();
 
-  it('registers the owner-facing operations', () => {
+  it('registers every operation of the itineraries flow', () => {
     expect(operations()).toEqual([
       'DELETE /itineraries/{id}',
       'DELETE /itineraries/{id}/stops/{stopId}',
       'GET /itineraries/mine',
+      'GET /itineraries/public',
+      'GET /itineraries/public/{slug}',
       'GET /itineraries/{id}',
       'PATCH /itineraries/{id}',
       'PATCH /itineraries/{id}/visibility',
+      'POST /itineraries/public/{slug}/report',
       'POST /itineraries/stops',
       'PUT /itineraries/{id}/stops/order',
     ]);
@@ -87,6 +90,15 @@ describe('OpenAPI contract — Itineraries', () => {
       indexOf('/itineraries/{id}'),
     );
     expect(indexOf('/itineraries/stops')).toBeLessThan(
+      indexOf('/itineraries/{id}'),
+    );
+
+    // `public` would otherwise be read as a slug by `public/{slug}`, and as an
+    // id by `{id}`.
+    expect(indexOf('/itineraries/public')).toBeLessThan(
+      indexOf('/itineraries/public/{slug}'),
+    );
+    expect(indexOf('/itineraries/public')).toBeLessThan(
       indexOf('/itineraries/{id}'),
     );
   });
