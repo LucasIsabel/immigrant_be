@@ -71,6 +71,7 @@ describe('OpenAPI contract — Itineraries', () => {
       'GET /itineraries/{id}',
       'PATCH /itineraries/{id}',
       'PATCH /itineraries/{id}/visibility',
+      'POST /itineraries/public/{slug}/copy',
       'POST /itineraries/public/{slug}/report',
       'POST /itineraries/stops',
       'PUT /itineraries/{id}/stops/order',
@@ -101,6 +102,28 @@ describe('OpenAPI contract — Itineraries', () => {
     expect(indexOf('/itineraries/public')).toBeLessThan(
       indexOf('/itineraries/{id}'),
     );
+  });
+
+  /*
+   * The copy route sits among the anonymous ones because it is addressed by
+   * the public slug. That placement is a readability choice and grants nothing
+   * — the guard does — so the contract is where it gets checked: this asserts
+   * the route declares the session cookie its neighbours in the public block
+   * deliberately do not.
+   */
+  it('keeps the copy route authenticated, unlike the public block it sits in', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, { security?: unknown[] }>
+    >;
+
+    const copy = paths['/itineraries/public/{slug}/copy'].post;
+    const report = paths['/itineraries/public/{slug}/report'].post;
+    const detail = paths['/itineraries/public/{slug}'].get;
+
+    expect(copy.security).toEqual([{ 'better-auth.session_token': [] }]);
+    expect(report.security).toBeUndefined();
+    expect(detail.security).toBeUndefined();
   });
 
   it('answers every success with a named schema, never an inline one', () => {

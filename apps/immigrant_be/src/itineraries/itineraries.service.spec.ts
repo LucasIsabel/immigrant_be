@@ -197,6 +197,56 @@ function fakeRepository() {
       );
       return row ? structuredClone(row) : null;
     }),
+    copy: jest.fn(
+      async (data: {
+        userId: string;
+        slug: string;
+        title: string;
+        countryCode: string;
+        stops: {
+          placeId: string | null;
+          businessId: string | null;
+          city: string;
+          cityKey: string;
+        }[];
+      }) => {
+        const row = {
+          userId: data.userId,
+          slug: data.slug,
+          title: data.title,
+          countryCode: data.countryCode,
+          id: `itin-${++sequence}`,
+          isPublic: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          // Rows of its own, holding the target ids directly — which is the
+          // whole point, so the double has to store them that way too.
+          stops: data.stops.map((stop, index) => {
+            const copied = placeStop(
+              `stop-${++sequence}`,
+              stop.placeId ?? stop.businessId ?? '',
+              index + 1,
+            );
+            copied.placeId = stop.placeId;
+            copied.businessId = stop.businessId;
+            copied.city = stop.city;
+            if (stop.businessId) {
+              copied.place = null;
+              copied.business = {
+                id: stop.businessId,
+                name: `Negócio ${stop.businessId}`,
+                lat: 38.7,
+                lng: -9.4,
+                isPublic: true,
+              };
+            }
+            return copied;
+          }),
+        };
+        itineraries.set(row.id, row);
+        return structuredClone(row);
+      },
+    ),
     createReport: jest.fn(async () => ({ id: 'report-1' })),
     reorderStops: jest.fn(async (itineraryId: string, ordered: string[]) => {
       const row = itineraries.get(itineraryId);
@@ -447,6 +497,111 @@ describe('ItinerariesService', () => {
 
       expect(list.data[0].stopCount).toBe(2);
       expect(list.data[0].coverImageUrl).toBe('foto.jpg');
+    });
+  });
+
+  describe('copying a public itinerary', () => {
+    const publicar = async () => {
+      const { itineraryId } = await add('place-1');
+      await add('place-2');
+      await add('place-3');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const mine = await service.getMine(itineraryId, 'user-a');
+      return { itineraryId, slug: mine.slug };
+    };
+
+    it('gives the caller a private itinerary with the same stops in order', async () => {
+      const { slug } = await publicar();
+
+      const copy = await service.copyPublic(slug, 'user-b');
+      const mine = await service.getMine(copy.id, 'user-b');
+
+      expect(mine.title).toBe('Meu roteiro em Portugal');
+      expect(mine.isPublic).toBe(false);
+      expect(mine.stops.map((stop) => stop.name)).toEqual([
+        'Lugar place-1',
+        'Lugar place-2',
+        'Lugar place-3',
+      ]);
+      expect(mine.stops.map((stop) => stop.position)).toEqual([1, 2, 3]);
+    });
+
+    it('gives the copy its own address, never the original’s', async () => {
+      const { slug } = await publicar();
+
+      const copy = await service.copyPublic(slug, 'user-b');
+
+      // Two itineraries cannot share a slug, and the copy is not a mirror of
+      // the original — it is a second thing that happens to start the same.
+      expect(copy.slug).not.toBe(slug);
+    });
+
+    /*
+     * This is the whole request. A copy that a source could take with it would
+     * be a bookmark, and a bookmark is what the reader already had.
+     */
+    it('survives the original being unpublished and then deleted', async () => {
+      const { itineraryId, slug } = await publicar();
+      const copy = await service.copyPublic(slug, 'user-b');
+
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: false });
+      await service.remove(itineraryId, 'user-a');
+
+      const mine = await service.getMine(copy.id, 'user-b');
+      expect(mine.stops).toHaveLength(3);
+      expect(await service.getPublic(slug).catch(() => 'foi-se')).toBe(
+        'foi-se',
+      );
+    });
+
+    it('skips an unavailable stop and renumbers without a gap', async () => {
+      const { itineraryId, slug } = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+      const meio = stored?.stops[1];
+      if (meio?.place) meio.place.isActive = false;
+
+      const copy = await service.copyPublic(slug, 'user-b');
+      const mine = await service.getMine(copy.id, 'user-b');
+
+      expect(mine.stops.map((stop) => stop.name)).toEqual([
+        'Lugar place-1',
+        'Lugar place-3',
+      ]);
+      expect(mine.stops.map((stop) => stop.position)).toEqual([1, 2]);
+    });
+
+    it('refuses to copy an itinerary with nothing left to copy', async () => {
+      const { itineraryId, slug } = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+      for (const stop of stored?.stops ?? []) {
+        if (stop.place) stop.place.isActive = false;
+      }
+
+      // The public detail still opens — `findPublicBySlug` does not require an
+      // available stop — so the empty copy is reachable and has to be refused
+      // rather than silently made.
+      await expect(service.copyPublic(slug, 'user-b')).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('404s on an itinerary that was never published', async () => {
+      const { itineraryId } = await add('place-1');
+      const mine = await service.getMine(itineraryId, 'user-a');
+
+      await expect(
+        service.copyPublic(mine.slug, 'user-b'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('lets the same reader copy twice, as two separate itineraries', async () => {
+      const { slug } = await publicar();
+
+      const first = await service.copyPublic(slug, 'user-b');
+      const second = await service.copyPublic(slug, 'user-b');
+
+      expect(first.id).not.toBe(second.id);
+      expect(first.slug).not.toBe(second.slug);
     });
   });
 

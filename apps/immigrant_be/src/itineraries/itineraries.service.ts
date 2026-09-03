@@ -32,6 +32,7 @@ import {
 import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.dto';
+import { CopyItineraryResponseDto } from './dto/copy-itinerary.dto';
 
 @Injectable()
 export class ItinerariesService {
@@ -262,6 +263,71 @@ export class ItinerariesService {
       stops: this.publicStops(itinerary),
       createdAt: itinerary.createdAt,
     };
+  }
+
+  /**
+   * Take somebody else's public itinerary and make one of your own.
+   *
+   * Nothing links the copy back to the source, and that is the requirement
+   * rather than a shortcut: the copy holds its own stop rows pointing straight
+   * at the places and businesses, so the original being unpublished — or
+   * deleted, taking its own rows with it — cannot reach it. A reference would
+   * have made the copy exactly as fragile as the thing it was meant to
+   * outlive.
+   *
+   * Only the stops a visitor can see are copied, renumbered by the order they
+   * are passed in. Copying a hole would hand somebody a route with a gap they
+   * did not choose and cannot explain.
+   *
+   * The copy is private. It is the reader's own itinerary from the first
+   * second — publishing somebody else's route under your name is a decision,
+   * and it is not one this endpoint gets to make for them.
+   */
+  async copyPublic(
+    slug: string,
+    userId: string,
+  ): Promise<CopyItineraryResponseDto> {
+    const source = await this.mustBePublic(slug);
+
+    const stops = source.stops
+      .filter((stop) => this.toStop(stop).available)
+      .map((stop) => ({
+        placeId: stop.placeId,
+        businessId: stop.businessId,
+        city: stop.city,
+        /*
+         * Derived again rather than read across: `cityKey` is only ever
+         * compared against `normalizeCity(filter)` computed at query time, so
+         * a key written under an older normalisation is already unfindable.
+         * Re-deriving means the copy answers the city filter the way a stop
+         * added today would, instead of inheriting a key that no longer
+         * matches anything.
+         */
+        cityKey: normalizeCity(stop.city),
+      }));
+
+    /*
+     * A public itinerary can reach zero available stops without leaving the
+     * public detail: the listing requires one, `findPublicBySlug` does not, so
+     * the page still opens on an empty list. Copying that would put an empty
+     * itinerary in somebody's dashboard, which reads as a failed copy rather
+     * than as a faithful one.
+     */
+    if (stops.length === 0) {
+      throw new BadRequestException(
+        'Este roteiro já não tem paradas para copiar',
+      );
+    }
+
+    const copy = await this.repository.copy({
+      userId,
+      slug: await this.buildUniqueSlug(source.title),
+      title: source.title,
+      countryCode: source.countryCode,
+      stops,
+    });
+
+    return { id: copy.id, slug: copy.slug, title: copy.title };
   }
 
   /**
