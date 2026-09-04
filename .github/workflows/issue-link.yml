@@ -1,0 +1,107 @@
+name: Issue link
+
+# `edited` and `reopened` matter as much as `opened`: the fix for a red run
+# here is almost always editing the body, and without them the check would stay
+# red until an unrelated push happened to re-trigger it.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Two things went wrong in the same week, and neither was caught by a person
+  # reading the PR.
+  #
+  # BE#188 shipped its work and the PR never said `Closes`, so the issue stayed
+  # open with the card in "In progress" for weeks while the code was live. And a
+  # PR body that said, in prose, "this is what closes …#412" linked that issue
+  # for real and would have closed it a whole slice early.
+  #
+  # Both are cheap to catch here and expensive to find later: the second was
+  # found by luck, and the first only because somebody went looking.
+  #
+  # The check is deliberately not "does the body match a regex". It reads
+  # `closingIssuesReferences`, which is what GitHub itself resolved — the same
+  # field that would have shown the accidental link, and the only thing that
+  # says what will actually close on merge.
+  link:
+    name: Closes an issue, or says why not
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the pull request links an issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const { repository } = await github.graphql(
+              `query($owner: String!, $repo: String!, $number: Int!) {
+                 repository(owner: $owner, name: $repo) {
+                   pullRequest(number: $number) {
+                     closingIssuesReferences(first: 20) {
+                       nodes { number title repository { nameWithOwner } }
+                     }
+                   }
+                 }
+               }`,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: context.payload.pull_request.number,
+              },
+            );
+
+            const linked =
+              repository.pullRequest.closingIssuesReferences.nodes ?? [];
+
+            if (linked.length > 0) {
+              // Printed, not just counted: the accidental cross-repo link was
+              // only visible by reading the title of what got attached.
+              core.summary.addHeading('This pull request closes', 3);
+              core.summary.addList(
+                linked.map((issue) => {
+                  // Defensive: a linked issue may live in another repository
+                  // this token cannot read, and GitHub then hands back a node
+                  // with the fields nulled. The count is what gates; the title
+                  // is a courtesy, and a courtesy must not turn the check red.
+                  const where = issue.repository?.nameWithOwner ?? 'another repo';
+                  const what = issue.title ?? '(title not readable from here)';
+                  return `${where}#${issue.number} — ${what}`;
+                }),
+              );
+              await core.summary.write();
+              return;
+            }
+
+            // The escape hatch carries its reason, so the exemption is
+            // reviewable instead of invisible. A label would have been one
+            // click and no explanation.
+            const excuse = (pr.body ?? '').match(/^\s*No issue:\s*(\S.*)$/im);
+            if (excuse) {
+              core.notice(`No issue, by declaration: ${excuse[1].trim()}`);
+              return;
+            }
+
+            core.setFailed(
+              [
+                'This pull request closes no issue and gives no reason.',
+                '',
+                'Either add a closing keyword on its own line — `Closes #123`,',
+                'one keyword per issue — or, if there genuinely is no issue,',
+                'add a line saying so and why:',
+                '',
+                '    No issue: documentation only, no code change.',
+                '',
+                'Note that keywords work anywhere in the body, including inside',
+                'a sentence, so write "part of #123" when you only mean to',
+                'reference it.',
+              ].join('\n'),
+            );
