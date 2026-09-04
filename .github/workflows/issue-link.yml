@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  # Without this the check is worse than absent. `closingIssuesReferences`
+  # needs to read issues, and a token that cannot returns an empty list rather
+  # than an error — so every pull request that correctly says `Closes #N`
+  # fails, and the message tells the author to add the line they already have.
+  issues: read
 
 jobs:
   # Two things went wrong in the same week, and neither was caught by a person
@@ -84,7 +89,21 @@ jobs:
             // The escape hatch carries its reason, so the exemption is
             // reviewable instead of invisible. A label would have been one
             // click and no explanation.
-            const excuse = (pr.body ?? '').match(/^\s*No issue:\s*(\S.*)$/im);
+            //
+            // Quoted text is not a declaration. The pull request that
+            // introduced this check documented the hatch inside a fenced code
+            // block, the old pattern matched that example, and the check
+            // passed itself without ever exercising the branch above — the
+            // same defect it exists to catch, one level up. So fences and
+            // block quotes come out first, and the line has to start at
+            // column zero: an indented example, such as the one this very
+            // check prints when it fails, is a quotation too.
+            const prose = (pr.body ?? '')
+              .replace(/^```[\s\S]*?^```/gm, '')
+              .split('\n')
+              .filter((line) => !line.startsWith('>'))
+              .join('\n');
+            const excuse = prose.match(/^No issue:[ \t]*(\S.*)$/m);
             if (excuse) {
               core.notice(`No issue, by declaration: ${excuse[1].trim()}`);
               return;
