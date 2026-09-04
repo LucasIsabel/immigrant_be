@@ -48,6 +48,7 @@ function fakeRepository() {
       lat: number | null;
       lng: number | null;
       isPublic: boolean;
+      photos: string[];
     } | null;
   };
 
@@ -69,6 +70,14 @@ function fakeRepository() {
   >();
 
   let sequence = 0;
+
+  /**
+   * The photos a given business has, so a test can say what it owns before the
+   * stop that points at it exists. Empty when nothing was said, which is the
+   * common case and the one the column returns for a business that uploaded
+   * nothing.
+   */
+  const businessPhotos = new Map<string, string[]>();
 
   /**
    * A write is later than the write before it.
@@ -103,6 +112,7 @@ function fakeRepository() {
   const repo = {
     _itineraries: itineraries,
     _placeStop: placeStop,
+    _businessPhotos: businessPhotos,
 
     findOwned: jest.fn(async (id: string, userId: string) => {
       const row = itineraries.get(id);
@@ -208,6 +218,7 @@ function fakeRepository() {
             lat: 38.7,
             lng: -9.4,
             isPublic: true,
+            photos: businessPhotos.get(data.businessId) ?? [],
           };
         }
         stop.city = data.city;
@@ -318,6 +329,10 @@ function fakeRepository() {
                 lat: 38.7,
                 lng: -9.4,
                 isPublic: true,
+                // A copy points at the same business, so it sees whatever
+                // photos that business has now — the copy stores the target,
+                // not a snapshot of it.
+                photos: businessPhotos.get(stop.businessId) ?? [],
               };
             }
             return copied;
@@ -1091,6 +1106,96 @@ describe('ItinerariesService', () => {
 
       expect(answer).toEqual({ received: true });
       expect(repo.createReport).not.toHaveBeenCalled();
+    });
+  });
+
+  /*
+   * A business stop had no photo at all — `imageUrl` was a hard-coded `null`
+   * on both the owner's read and the public one — so an itinerary made only of
+   * businesses had no cover and drew a blank card at every stop. The owner's
+   * own photos are what the business card already shows; there was nothing new
+   * to decide, only a field nobody had filled in.
+   */
+  describe('the photo a business stop carries', () => {
+    const addBusiness = (businessId: string, photos: string[]) => {
+      repo._businessPhotos.set(businessId, photos);
+      return service.addStop('user-a', {
+        businessId,
+        countryCode: 'pt',
+        defaultTitle: 'Meu roteiro em Portugal',
+      });
+    };
+
+    it('shows the first photo the owner uploaded', async () => {
+      const { itineraryId } = await addBusiness('biz-1', [
+        'https://cdn.example/one.jpg',
+        'https://cdn.example/two.jpg',
+      ]);
+
+      const mine = await service.getMine(itineraryId, 'user-a');
+      expect(mine.stops[0].imageUrl).toBe('https://cdn.example/one.jpg');
+
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const seen = await service.getPublic(mine.slug);
+      expect(seen.stops[0].imageUrl).toBe('https://cdn.example/one.jpg');
+    });
+
+    it('claims no photo when every entry is blank', async () => {
+      const { itineraryId } = await addBusiness('biz-2', ['', '   ']);
+
+      const mine = await service.getMine(itineraryId, 'user-a');
+      expect(mine.stops[0].imageUrl).toBeNull();
+    });
+
+    it('claims no photo when the business uploaded none', async () => {
+      const { itineraryId } = await addBusiness('biz-3', []);
+
+      const mine = await service.getMine(itineraryId, 'user-a');
+      expect(mine.stops[0].imageUrl).toBeNull();
+    });
+  });
+
+  /*
+   * The owner's summary had no image field at all, so the dashboard card could
+   * not draw a cover without asking for every itinerary's detail one by one.
+   */
+  describe('the cover on my own summary', () => {
+    it('is the first available stop that has a photo', async () => {
+      repo._businessPhotos.set('biz-cover', ['https://cdn.example/cover.jpg']);
+      const { itineraryId } = await add('place-1');
+      await service.addStop('user-a', {
+        itineraryId,
+        businessId: 'biz-cover',
+        countryCode: 'pt',
+        defaultTitle: 'Meu roteiro em Portugal',
+      });
+
+      const list = await service.listMine('user-a', {});
+      expect(list.data[0].coverImageUrl).toBe('https://cdn.example/cover.jpg');
+    });
+
+    it('is null when the only stop with a photo went out of view', async () => {
+      repo._businessPhotos.set('biz-gone', ['https://cdn.example/gone.jpg']);
+      const { itineraryId } = await service.addStop('user-a', {
+        businessId: 'biz-gone',
+        countryCode: 'pt',
+        defaultTitle: 'Meu roteiro em Portugal',
+      });
+
+      // The owner takes the business private behind the itinerary's back.
+      const stored = repo._itineraries.get(itineraryId);
+      const stop = stored?.stops[0];
+      if (stop?.business) stop.business.isPublic = false;
+
+      const list = await service.listMine('user-a', {});
+      expect(list.data[0].coverImageUrl).toBeNull();
+    });
+
+    it('is null when nothing has a photo', async () => {
+      await add('place-1');
+
+      const list = await service.listMine('user-a', {});
+      expect(list.data[0].coverImageUrl).toBeNull();
     });
   });
 

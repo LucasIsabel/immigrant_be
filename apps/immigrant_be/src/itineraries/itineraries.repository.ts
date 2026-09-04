@@ -40,6 +40,11 @@ const stopSelect = {
       lat: true,
       lng: true,
       isPublic: true,
+      // A stop is a stop: to whoever reads the itinerary a restaurant is a
+      // place with a photo, and a business one was the only kind that had
+      // none. The owner's own photos are what the business card already
+      // shows, so there is nothing new to moderate here.
+      photos: true,
       // Only an approved page is reachable, and only then is the slug worth
       // handing out — `businessPublicPageHref` on the client says the same.
       businessPage: { select: { slug: true, status: true } },
