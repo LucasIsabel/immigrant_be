@@ -565,6 +565,24 @@ City. Três decisões de modelagem carregam o porquê:
   Segura contra o engano, não contra a tentativa — e é assim que está
   documentado, em vez de se fingir que é um controlo. O que mantém a listagem
   pública honesta é a denúncia anónima, não este número.
+- **Recopiar é um pedido em dois tempos, e o primeiro não escreve.** `POST
+  /itineraries/public/:slug/copy` responde **409** quando já existe cópia, com
+  o corpo a descrever qual (`CopyItineraryConflictDto`: título, `copiedAt` e
+  `editedSinceCopy`) — e **nada é escrito**. A confirmação da pessoa volta como
+  `overwrite: true`, e só então a cópia é substituída pela versão actual da
+  origem, preservando `id`, `slug` e `isPublic` para o link que ela partilhou
+  continuar a resolver. Um `GET` de pré-voo custaria um pedido a cada visitante
+  com sessão em cada página pública para uma resposta que é "não" quase sempre.
+  O `AllExceptionsFilter` preserva o detalhe de qualquer erro 4xx lançado com
+  campos além dos três do Nest — antes colapsava tudo em `message`, e o diálogo
+  ficaria a adivinhar o que está prestes a destruir.
+- **`copiedAt` é carimbado a partir de `updatedAt`, não do relógio.** Os dois
+  são escritos por mãos diferentes na mesma instrução, e compará-los através
+  dessa fenda obriga a uma tolerância que erra nas duas direcções: apertada de
+  mais e uma cópia acabada de fazer anuncia que já foi editada; larga de mais e
+  uma edição feita logo a seguir é engolida — **medido a 28 ms** — e o diálogo
+  promete que nada se perde enquanto algo se perde. Um `UPDATE` cru dentro da
+  mesma transacção iguala os dois, e a comparação passa a ser estrita.
 - **`sourceItineraryId` é um uuid solto, não uma relação.** Registado quando a
   linha nasceu como cópia de um roteiro público, e **nunca é dereferenciado**:
   a cópia tem as próprias paradas a apontar direto para `Place`/`Business` e
