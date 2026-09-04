@@ -74,6 +74,11 @@ export class ItinerariesService {
           ],
           stopCount: stops.filter((s) => s.available).length,
           unavailableStopCount: stops.filter((s) => !s.available).length,
+          // The same rule the public listing uses, off the stops this already
+          // walked to count them: no extra query, and an unavailable stop
+          // never lends its photo to a cover the owner cannot show.
+          coverImageUrl:
+            stops.find((s) => s.available && s.imageUrl)?.imageUrl ?? null,
           isCopy: row.sourceItineraryId !== null,
           copiedAt: row.copiedAt,
           isPublic: row.isPublic,
@@ -564,7 +569,7 @@ export class ItinerariesService {
           kind: 'business' as const,
           name: business.name,
           city: stop.city,
-          imageUrl: null,
+          imageUrl: this.stopPhoto(business.photos),
           lat: business.lat,
           lng: business.lng,
           placeRef: null,
@@ -644,6 +649,17 @@ export class ItinerariesService {
    * The owner still sees it, flagged, because a stop that vanished with no
    * explanation reads as data loss; the public read drops it instead.
    */
+  /**
+   * The photo a business stop shows, or null.
+   *
+   * `photos` is an array the owner controls and it can hold a blank string, so
+   * the first entry is not necessarily a URL. Asking for the first one that is
+   * not blank keeps a stop from claiming a photo it cannot draw.
+   */
+  private stopPhoto(photos: string[]): string | null {
+    return photos.find((photo) => photo.trim().length > 0) ?? null;
+  }
+
   private toStop(stop: StopRow): MyItineraryStopDto {
     if (stop.place) {
       return {
@@ -675,7 +691,7 @@ export class ItinerariesService {
       kind: 'business',
       targetId: business.id,
       name: business.name,
-      imageUrl: null,
+      imageUrl: this.stopPhoto(business.photos),
       lat: business.lat,
       lng: business.lng,
       city: stop.city,

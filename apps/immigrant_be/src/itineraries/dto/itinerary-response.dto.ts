@@ -26,6 +26,12 @@ export class MyItinerarySummaryDto {
   })
   unavailableStopCount: number;
 
+  @ApiPropertyOptional({
+    description: 'The first available stop that has a photo, if any has one.',
+    nullable: true,
+  })
+  coverImageUrl?: string | null;
+
   /**
    * Whether this itinerary was copied from a public one rather than written
    * here.
