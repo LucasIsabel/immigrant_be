@@ -91,16 +91,21 @@ export class ItinerariesRepository {
     userId: string,
     page: number,
     limit: number,
+    countryCode?: string,
   ): Promise<[ItineraryRow[], number]> {
+    const where = { userId, ...(countryCode ? { countryCode } : {}) };
+
     return this.prisma.$transaction([
       this.prisma.itinerary.findMany({
-        where: { userId },
+        where,
         select: itinerarySelect,
+        // Most recently touched first, which is also what makes the picker's
+        // pre-selected option right without any state of its own.
         orderBy: { updatedAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.itinerary.count({ where: { userId } }),
+      this.prisma.itinerary.count({ where }),
     ]);
   }
 
@@ -113,6 +118,19 @@ export class ItinerariesRepository {
       where: { userId, countryCode },
       select: itinerarySelect,
       orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  /**
+   * How many itineraries this person wrote in this country.
+   *
+   * `sourceItineraryId: null` is the whole of "created rather than copied" —
+   * see the column's comment in the schema for why that stays true even after
+   * the source is deleted.
+   */
+  countCreatedInCountry(userId: string, countryCode: string): Promise<number> {
+    return this.prisma.itinerary.count({
+      where: { userId, countryCode, sourceItineraryId: null },
     });
   }
 

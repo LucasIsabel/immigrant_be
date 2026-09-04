@@ -13,6 +13,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ItinerariesService } from './itineraries.service';
 import type { ItinerariesRepository } from './itineraries.repository';
@@ -95,13 +96,24 @@ function fakeRepository() {
       const row = itineraries.get(id);
       return row && row.userId === userId ? structuredClone(row) : null;
     }),
-    listOwned: jest.fn(async (userId: string) => {
-      const rows = [...itineraries.values()].filter((r) => r.userId === userId);
-      return [rows.map((r) => structuredClone(r)), rows.length] as [
-        (typeof rows)[number][],
-        number,
-      ];
-    }),
+    listOwned: jest.fn(
+      async (
+        userId: string,
+        _page: number,
+        _limit: number,
+        countryCode?: string,
+      ) => {
+        const rows = [...itineraries.values()].filter(
+          (r) =>
+            r.userId === userId &&
+            (countryCode === undefined || r.countryCode === countryCode),
+        );
+        return [rows.map((r) => structuredClone(r)), rows.length] as [
+          (typeof rows)[number][],
+          number,
+        ];
+      },
+    ),
     findMostRecentInCountry: jest.fn(
       async (userId: string, countryCode: string) => {
         const row = [...itineraries.values()]
@@ -109,6 +121,15 @@ function fakeRepository() {
           .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
         return row ? structuredClone(row) : null;
       },
+    ),
+    countCreatedInCountry: jest.fn(
+      async (userId: string, countryCode: string) =>
+        [...itineraries.values()].filter(
+          (r) =>
+            r.userId === userId &&
+            r.countryCode === countryCode &&
+            r.sourceItineraryId === null,
+        ).length,
     ),
     isSlugTaken: jest.fn(async (slug: string) =>
       [...itineraries.values()].some((r) => r.slug === slug),
@@ -347,6 +368,163 @@ describe('ItinerariesService', () => {
           defaultTitle: 'irrelevante',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe('creating an itinerary, and the ceiling on it', () => {
+    const criar = (title: string, countryCode = 'PT') =>
+      service.create('user-a', { title, countryCode });
+
+    it('creates an empty itinerary somebody asked for', async () => {
+      const made = await criar('Porto num fim de semana');
+
+      expect(made.title).toBe('Porto num fim de semana');
+      expect(made.countryCode).toBe('PT');
+      expect(made.stops).toEqual([]);
+      expect(made.isPublic).toBe(false);
+      expect(made.isCopy).toBe(false);
+    });
+
+    it('allows three in a country and refuses the fourth', async () => {
+      await criar('Um');
+      await criar('Dois');
+      await criar('Três');
+
+      await expect(criar('Quatro')).rejects.toBeInstanceOf(
+        UnprocessableEntityException,
+      );
+    });
+
+    it('counts per country, so a full Portugal does not block Spain', async () => {
+      await criar('Um');
+      await criar('Dois');
+      await criar('Três');
+
+      await expect(criar('Uno', 'ES')).resolves.toMatchObject({
+        countryCode: 'ES',
+      });
+    });
+
+    /*
+     * The whole reason copies are exempt: somebody who copied three Portuguese
+     * itineraries would otherwise be unable to write one of their own, and the
+     * recopy-to-refresh flow would hit a wall they never built.
+     */
+    it('does not count copies against the ceiling', async () => {
+      const { itineraryId } = await add('place-1');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const publico = await service.getMine(itineraryId, 'user-a');
+
+      // user-b now owns a Portuguese itinerary they did not write.
+      await service.copyPublic(publico.slug, 'user-b');
+      expect((await service.listMine('user-b', {})).total).toBe(1);
+
+      // It buys them nothing and costs them nothing: three of their own still
+      // fit, and only the fourth is refused.
+      for (const title of ['Meu um', 'Meu dois', 'Meu três']) {
+        await expect(
+          service.create('user-b', { title, countryCode: 'PT' }),
+        ).resolves.toMatchObject({ title });
+      }
+      await expect(
+        service.create('user-b', { title: 'Meu quatro', countryCode: 'PT' }),
+      ).rejects.toBeInstanceOf(UnprocessableEntityException);
+
+      // Four rows in the country, three of them written by them.
+      expect(
+        (await service.listMine('user-b', { countryCode: 'PT' })).total,
+      ).toBe(4);
+    });
+
+    it('normalises the country code, so "pt" and "PT" share one ceiling', async () => {
+      await criar('Um', 'pt');
+      await criar('Dois', 'PT');
+      await criar('Três', 'pt');
+
+      await expect(criar('Quatro', 'PT')).rejects.toBeInstanceOf(
+        UnprocessableEntityException,
+      );
+    });
+  });
+
+  describe('starting a second itinerary from a card', () => {
+    it('creates a new one instead of appending to the most recent', async () => {
+      const first = await add('place-1');
+
+      const second = await service.addStop('user-a', {
+        placeId: 'place-2',
+        countryCode: 'pt',
+        defaultTitle: 'Porto num fim de semana',
+        startNew: true,
+      });
+
+      expect(second.itineraryId).not.toBe(first.itineraryId);
+      expect(second.created).toBe(true);
+      expect(second.itineraryTitle).toBe('Porto num fim de semana');
+      // This is the acceptance for #412: two itineraries, one country.
+      const mine = await service.listMine('user-a', {});
+      expect(mine.total).toBe(2);
+    });
+
+    it('refuses startNew together with an itineraryId', async () => {
+      const { itineraryId } = await add('place-1');
+
+      await expect(
+        service.addStop('user-a', {
+          itineraryId,
+          placeId: 'place-2',
+          countryCode: 'pt',
+          defaultTitle: 'Contraditório',
+          startNew: true,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('writes no stop when the ceiling refuses the new itinerary', async () => {
+      await service.create('user-a', { title: 'Um', countryCode: 'PT' });
+      await service.create('user-a', { title: 'Dois', countryCode: 'PT' });
+      await service.create('user-a', { title: 'Três', countryCode: 'PT' });
+
+      await expect(
+        service.addStop('user-a', {
+          placeId: 'place-1',
+          countryCode: 'pt',
+          defaultTitle: 'Quatro',
+          startNew: true,
+        }),
+      ).rejects.toBeInstanceOf(UnprocessableEntityException);
+
+      // Nothing half-written: no fourth itinerary, and no orphan stop.
+      const mine = await service.listMine('user-a', {});
+      expect(mine.total).toBe(3);
+      expect(mine.data.every((it) => it.stopCount === 0)).toBe(true);
+    });
+
+    it('still appends to the most recent when nothing is asked', async () => {
+      const first = await add('place-1');
+      const again = await add('place-2');
+
+      expect(again.itineraryId).toBe(first.itineraryId);
+      expect(again.created).toBe(false);
+    });
+  });
+
+  describe('listing my itineraries by country', () => {
+    it('returns only the country asked for', async () => {
+      await service.create('user-a', { title: 'Lisboa', countryCode: 'PT' });
+      await service.create('user-a', { title: 'Madrid', countryCode: 'ES' });
+
+      const pt = await service.listMine('user-a', { countryCode: 'pt' });
+
+      expect(pt.total).toBe(1);
+      expect(pt.data[0].title).toBe('Lisboa');
+    });
+
+    it('returns everything when no country is asked for', async () => {
+      await service.create('user-a', { title: 'Lisboa', countryCode: 'PT' });
+      await service.create('user-a', { title: 'Madrid', countryCode: 'ES' });
+
+      expect((await service.listMine('user-a', {})).total).toBe(2);
     });
   });
 

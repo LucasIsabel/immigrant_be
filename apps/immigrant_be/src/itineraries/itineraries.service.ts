@@ -3,10 +3,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma';
 import { normalizeCity } from '../business/city-key';
 import { buildItinerarySlugBase } from './itinerary-slug';
+import { MAX_CREATED_ITINERARIES_PER_COUNTRY } from './itineraries.constants';
+import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import {
   type ItineraryRow,
   ItinerariesRepository,
@@ -45,7 +48,14 @@ export class ItinerariesService {
   ): Promise<PaginatedMyItinerariesResponseDto> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const [rows, total] = await this.repository.listOwned(userId, page, limit);
+    const [rows, total] = await this.repository.listOwned(
+      userId,
+      page,
+      limit,
+      // Upper-cased on the way in, because the column stores ISO2 upper and a
+      // hand-typed `?countryCode=pt` should still find something.
+      query.countryCode?.toUpperCase(),
+    );
 
     return {
       data: rows.map((row) => {
@@ -108,6 +118,53 @@ export class ItinerariesService {
   }
 
   /**
+   * The one place an itinerary is written, whichever door it came through.
+   *
+   * The count is derived, never stored: a counter would be a second truth to
+   * keep in step with every delete and every cascaded account, and counting to
+   * three over an indexed column costs nothing.
+   *
+   * The count and the insert are not locked against each other, and the size of
+   * that hole was measured rather than guessed: see the constant's comment. In
+   * short, it holds against the mistake and not against the attempt, and the
+   * ceiling is documented as the former.
+   */
+  private async createOwned(
+    userId: string,
+    countryCode: string,
+    title: string,
+  ): Promise<ItineraryRow> {
+    const created = await this.repository.countCreatedInCountry(
+      userId,
+      countryCode,
+    );
+    if (created >= MAX_CREATED_ITINERARIES_PER_COUNTRY) {
+      throw new UnprocessableEntityException(
+        `Limite de ${MAX_CREATED_ITINERARIES_PER_COUNTRY} roteiros por país`,
+      );
+    }
+
+    return this.repository.create({
+      userId,
+      slug: await this.buildUniqueSlug(title),
+      title,
+      countryCode,
+    });
+  }
+
+  async create(
+    userId: string,
+    dto: CreateItineraryDto,
+  ): Promise<MyItineraryResponseDto> {
+    const itinerary = await this.createOwned(
+      userId,
+      dto.countryCode.toUpperCase(),
+      dto.title,
+    );
+    return this.toResponse(itinerary);
+  }
+
+  /**
    * Add a stop, creating the itinerary if this is the first one.
    *
    * The order of the checks is what makes it safe: the target is resolved
@@ -121,6 +178,12 @@ export class ItinerariesService {
     const target = await this.resolveTarget(dto);
     const countryCode = dto.countryCode.toUpperCase();
 
+    if (dto.startNew && dto.itineraryId) {
+      throw new BadRequestException(
+        'startNew e itineraryId pedem coisas diferentes',
+      );
+    }
+
     let itinerary: ItineraryRow | null = null;
     let created = false;
 
@@ -131,18 +194,26 @@ export class ItinerariesService {
           'A parada é de outro país que não o do roteiro',
         );
       }
+    } else if (dto.startNew) {
+      /*
+       * The picker's "new itinerary", in one call rather than two. Creating
+       * first and adding after would leave an empty itinerary behind whenever
+       * the stop failed — and the target was already resolved above, so by the
+       * time we write there is nothing left that can refuse.
+       */
+      itinerary = await this.createOwned(userId, countryCode, dto.defaultTitle);
+      created = true;
     } else {
       itinerary = await this.repository.findMostRecentInCountry(
         userId,
         countryCode,
       );
       if (!itinerary) {
-        itinerary = await this.repository.create({
+        itinerary = await this.createOwned(
           userId,
-          slug: await this.buildUniqueSlug(dto.defaultTitle),
-          title: dto.defaultTitle,
           countryCode,
-        });
+          dto.defaultTitle,
+        );
         created = true;
       }
     }
