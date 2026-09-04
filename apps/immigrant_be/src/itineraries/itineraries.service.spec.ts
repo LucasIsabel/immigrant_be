@@ -58,6 +58,8 @@ function fakeRepository() {
       slug: string;
       title: string;
       countryCode: string;
+      sourceItineraryId: string | null;
+      copiedAt: Date | null;
       isPublic: boolean;
       createdAt: Date;
       updatedAt: Date;
@@ -120,6 +122,8 @@ function fakeRepository() {
       }) => {
         const row = {
           ...data,
+          sourceItineraryId: null as string | null,
+          copiedAt: null as Date | null,
           id: `itin-${++sequence}`,
           isPublic: false,
           createdAt: new Date(),
@@ -179,10 +183,12 @@ function fakeRepository() {
         return structuredClone(stop);
       },
     ),
-    deleteStop: jest.fn(async (id: string) => {
+    deleteStop: jest.fn(async (id: string, itineraryId: string) => {
       for (const row of itineraries.values()) {
         row.stops = row.stops.filter((s) => s.id !== id);
       }
+      const owner = itineraries.get(itineraryId);
+      if (owner) owner.updatedAt = new Date();
     }),
     listPublic: jest.fn(async () => {
       const rows = [...itineraries.values()].filter((r) => r.isPublic);
@@ -197,12 +203,19 @@ function fakeRepository() {
       );
       return row ? structuredClone(row) : null;
     }),
+    findCopyOf: jest.fn(async (userId: string, sourceItineraryId: string) => {
+      const row = [...itineraries.values()].find(
+        (r) => r.userId === userId && r.sourceItineraryId === sourceItineraryId,
+      );
+      return row ? structuredClone(row) : null;
+    }),
     copy: jest.fn(
       async (data: {
         userId: string;
         slug: string;
         title: string;
         countryCode: string;
+        sourceItineraryId: string;
         stops: {
           placeId: string | null;
           businessId: string | null;
@@ -215,6 +228,8 @@ function fakeRepository() {
           slug: data.slug,
           title: data.title,
           countryCode: data.countryCode,
+          sourceItineraryId: data.sourceItineraryId,
+          copiedAt: new Date(),
           id: `itin-${++sequence}`,
           isPublic: false,
           createdAt: new Date(),
@@ -256,6 +271,7 @@ function fakeRepository() {
         if (stop) stop.position = index + 1;
       });
       row.stops.sort((a, b) => a.position - b.position);
+      row.updatedAt = new Date();
     }),
   };
 
@@ -549,6 +565,11 @@ describe('ItinerariesService', () => {
 
       const mine = await service.getMine(copy.id, 'user-b');
       expect(mine.stops).toHaveLength(3);
+      // Still a copy afterwards. The provenance is a fact about the past, and
+      // it does not stop being true because what it points at is gone — which
+      // is the whole reason it is a bare uuid and not a relation that would
+      // have been nulled here.
+      expect(mine.isCopy).toBe(true);
       expect(await service.getPublic(slug).catch(() => 'foi-se')).toBe(
         'foi-se',
       );
@@ -594,14 +615,97 @@ describe('ItinerariesService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('lets the same reader copy twice, as two separate itineraries', async () => {
+    /*
+     * This asserted the opposite until now, and the reversal is deliberate.
+     *
+     * Two copies of one source side by side are a pair of itineraries with the
+     * same name where only one is current, and the reader has to work out
+     * which. Refusing the second is what makes "copy again to get the updated
+     * version" possible at all — the refusal is the question the overwrite
+     * dialog answers.
+     */
+    it('refuses a second copy of the same source, so recopying can mean refresh', async () => {
       const { slug } = await publicar();
 
       const first = await service.copyPublic(slug, 'user-b');
-      const second = await service.copyPublic(slug, 'user-b');
 
-      expect(first.id).not.toBe(second.id);
-      expect(first.slug).not.toBe(second.slug);
+      await expect(service.copyPublic(slug, 'user-b')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+
+      const mine = await service.listMine('user-b', {});
+      expect(mine.total).toBe(1);
+      expect(mine.data[0].id).toBe(first.id);
+    });
+
+    it('marks a copy as copied, and something written here as not', async () => {
+      const { itineraryId, slug } = await publicar();
+
+      const copy = await service.copyPublic(slug, 'user-b');
+      const theirs = await service.getMine(copy.id, 'user-b');
+      const original = await service.getMine(itineraryId, 'user-a');
+
+      expect(theirs.isCopy).toBe(true);
+      // Not `toBeInstanceOf(Date)`: the fake clones rows with `structuredClone`,
+      // which hands back a Date from another realm — a real date that fails an
+      // identity check against this file's `Date`.
+      expect(theirs.copiedAt).not.toBeNull();
+      expect(Number.isFinite(new Date(theirs.copiedAt as Date).getTime())).toBe(
+        true,
+      );
+      expect(original.isCopy).toBe(false);
+      expect(original.copiedAt).toBeNull();
+    });
+
+    it('lets two different readers each copy the same source', async () => {
+      const { slug } = await publicar();
+
+      const b = await service.copyPublic(slug, 'user-b');
+      const c = await service.copyPublic(slug, 'user-c');
+
+      // The pair is unique per reader, not per source.
+      expect(b.id).not.toBe(c.id);
+      expect(b.slug).not.toBe(c.slug);
+    });
+  });
+
+  describe('editing a stop list touches the itinerary', () => {
+    /*
+     * Two things read `updatedAt` and were quietly wrong without this: the
+     * order of "my most recent itinerary in this country", which decides where
+     * a quick-add lands, and the comparison against `copiedAt` that tells a
+     * copy it has been edited since it was taken.
+     */
+    const stale = new Date('2020-01-01T00:00:00.000Z');
+
+    it('marks the itinerary changed when the stops are reordered', async () => {
+      const { itineraryId } = await add('place-1');
+      await add('place-2');
+      const stored = repo._itineraries.get(itineraryId);
+      if (stored) stored.updatedAt = stale;
+
+      const [first, second] = (await service.getMine(itineraryId, 'user-a'))
+        .stops;
+      await service.reorderStops(itineraryId, 'user-a', {
+        stopIds: [second.id, first.id],
+      });
+
+      expect(
+        repo._itineraries.get(itineraryId)?.updatedAt.getTime(),
+      ).toBeGreaterThan(stale.getTime());
+    });
+
+    it('marks it changed when a stop is removed', async () => {
+      const { itineraryId, stopId } = await add('place-1');
+      await add('place-2');
+      const stored = repo._itineraries.get(itineraryId);
+      if (stored) stored.updatedAt = stale;
+
+      await service.removeStop(itineraryId, stopId, 'user-a');
+
+      expect(
+        repo._itineraries.get(itineraryId)?.updatedAt.getTime(),
+      ).toBeGreaterThan(stale.getTime());
     });
   });
 

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '../../../../generated/prisma';
 import { normalizeCity } from '../business/city-key';
 import { buildItinerarySlugBase } from './itinerary-slug';
 import {
@@ -59,6 +60,8 @@ export class ItinerariesService {
           ],
           stopCount: stops.filter((s) => s.available).length,
           unavailableStopCount: stops.filter((s) => !s.available).length,
+          isCopy: row.sourceItineraryId !== null,
+          copiedAt: row.copiedAt,
           isPublic: row.isPublic,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
@@ -180,7 +183,7 @@ export class ItinerariesService {
       throw new NotFoundException('Parada não encontrada');
     }
 
-    await this.repository.deleteStop(stopId);
+    await this.repository.deleteStop(stopId, id);
     // Positions are left with the gap the removal opened. They are an order,
     // not an index: renumbering here would be a second write for a difference
     // nobody can see, and the next reorder rewrites them anyway.
@@ -319,15 +322,38 @@ export class ItinerariesService {
       );
     }
 
-    const copy = await this.repository.copy({
-      userId,
-      slug: await this.buildUniqueSlug(source.title),
-      title: source.title,
-      countryCode: source.countryCode,
-      stops,
-    });
+    /*
+     * One copy per source per reader, enforced by the unique pair rather than
+     * by a check before the write: two taps arriving together would both pass
+     * a check, and the second would hit the constraint anyway. Catching it
+     * here turns the race into the same answer the second tap would have got
+     * a moment later.
+     */
+    const existing = await this.repository.findCopyOf(userId, source.id);
+    if (existing) {
+      throw new ConflictException('Já tens uma cópia deste roteiro');
+    }
 
-    return { id: copy.id, slug: copy.slug, title: copy.title };
+    try {
+      const copy = await this.repository.copy({
+        userId,
+        slug: await this.buildUniqueSlug(source.title),
+        title: source.title,
+        countryCode: source.countryCode,
+        sourceItineraryId: source.id,
+        stops,
+      });
+
+      return { id: copy.id, slug: copy.slug, title: copy.title };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Já tens uma cópia deste roteiro');
+      }
+      throw error;
+    }
   }
 
   /**
@@ -529,6 +555,8 @@ export class ItinerariesService {
       slug: row.slug,
       title: row.title,
       countryCode: row.countryCode,
+      isCopy: row.sourceItineraryId !== null,
+      copiedAt: row.copiedAt,
       isPublic: row.isPublic,
       stops: row.stops.map((stop) => this.toStop(stop)),
       createdAt: row.createdAt,
