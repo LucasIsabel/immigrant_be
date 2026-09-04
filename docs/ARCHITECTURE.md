@@ -551,6 +551,24 @@ City. Três decisões de modelagem carregam o porquê:
   verificado a cada instrução, então uma permutação completa dentro de uma
   transacção tropeçaria a meio caminho. A ordem é reescrita por inteiro ao
   reordenar.
+- **`sourceItineraryId` é um uuid solto, não uma relação.** Registado quando a
+  linha nasceu como cópia de um roteiro público, e **nunca é dereferenciado**:
+  a cópia tem as próprias paradas a apontar direto para `Place`/`Business` e
+  sobrevive à origem ser despublicada ou apagada — que é a promessa em que ela
+  foi construída. Serve duas perguntas que já têm a origem em mão ("esta pessoa
+  já tem cópia dela?", para recopiar reescrever em vez de acrescentar; e "isto
+  foi criado ou copiado?", de que o tecto por país precisa). Uma FK com
+  `onDelete: SetNull` transformaria uma cópia num roteiro criado no dia em que
+  a origem fosse apagada, gastando um lugar que o dono nunca gastou — um facto
+  sobre o passado não deixa de ser verdade porque aquilo que ele aponta
+  desapareceu. Sem FK, o Prisma nem permite escrever um `include` por ele, que
+  é a garantia que queremos que o código não consiga violar por distracção.
+  Mesmo raciocínio de `AiUsageLog.entityId`. O par `@@unique([userId,
+  sourceItineraryId])` dá **uma cópia por origem por pessoa**; NULLs são
+  distintos no Postgres, então os roteiros criados nunca colidem entre si.
+  Para fora, os DTOs do dono expõem `isCopy` e `copiedAt`, nunca o id da
+  origem: de quem veio o roteiro não é assunto de quem o copiou, e "nunca
+  caminho de leitura" vale também no cliente.
 
 O único campo de texto livre é `Itinerary.title`. É isso que torna defensável
 publicar sem fila de moderação, no molde de `Business.isPublic`: todo o resto do

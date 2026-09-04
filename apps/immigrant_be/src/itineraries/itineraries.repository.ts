@@ -57,6 +57,8 @@ const itinerarySelect = {
   title: true,
   countryCode: true,
   isPublic: true,
+  sourceItineraryId: true,
+  copiedAt: true,
   createdAt: true,
   updatedAt: true,
   stops: { select: stopSelect, orderBy: { position: 'asc' } },
@@ -140,11 +142,23 @@ export class ItinerariesRepository {
    * Positions are assigned here from the array order, so the caller decides
    * the order by the order it passes and never by writing numbers.
    */
+  /** The reader's copy of one source, if they have one. */
+  findCopyOf(
+    userId: string,
+    sourceItineraryId: string,
+  ): Promise<ItineraryRow | null> {
+    return this.prisma.itinerary.findUnique({
+      where: { userId_sourceItineraryId: { userId, sourceItineraryId } },
+      select: itinerarySelect,
+    });
+  }
+
   copy(data: {
     userId: string;
     slug: string;
     title: string;
     countryCode: string;
+    sourceItineraryId: string;
     stops: {
       placeId: string | null;
       businessId: string | null;
@@ -157,6 +171,7 @@ export class ItinerariesRepository {
     return this.prisma.itinerary.create({
       data: {
         ...itinerary,
+        copiedAt: new Date(),
         stops: {
           create: stops.map((stop, index) => ({
             ...stop,
@@ -239,9 +254,23 @@ export class ItinerariesRepository {
     });
   }
 
-  deleteStop(id: string): Promise<void> {
-    return this.prisma.itineraryStop
-      .delete({ where: { id } })
+  /**
+   * Removing a stop changes the itinerary, so the itinerary says so.
+   *
+   * `updatedAt` is read by two things that were quietly wrong without this:
+   * the order of "my most recent itinerary in this country", which decides
+   * where a quick-add lands, and `copiedAt` against `updatedAt`, which is how
+   * a copy knows it has been edited since it was taken.
+   */
+  deleteStop(id: string, itineraryId: string): Promise<void> {
+    return this.prisma
+      .$transaction([
+        this.prisma.itineraryStop.delete({ where: { id } }),
+        this.prisma.itinerary.update({
+          where: { id: itineraryId },
+          data: { updatedAt: new Date() },
+        }),
+      ])
       .then(() => undefined);
   }
 
@@ -335,14 +364,21 @@ export class ItinerariesRepository {
    */
   reorderStops(itineraryId: string, orderedIds: string[]): Promise<void> {
     return this.prisma
-      .$transaction(
-        orderedIds.map((id, index) =>
+      .$transaction([
+        ...orderedIds.map((id, index) =>
           this.prisma.itineraryStop.update({
             where: { id, itineraryId },
             data: { position: index + 1 },
           }),
         ),
-      )
+        // In the same transaction as the positions: a reorder that bumped the
+        // timestamp without settling the order, or the other way round, would
+        // be a lie in one of the two directions.
+        this.prisma.itinerary.update({
+          where: { id: itineraryId },
+          data: { updatedAt: new Date() },
+        }),
+      ])
       .then(() => undefined);
   }
 }

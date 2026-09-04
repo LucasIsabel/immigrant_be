@@ -26,6 +26,24 @@ export class MyItinerarySummaryDto {
   })
   unavailableStopCount: number;
 
+  /**
+   * Whether this itinerary was copied from a public one rather than written
+   * here.
+   *
+   * The source's id is deliberately not exposed. It is provenance, not a link:
+   * whose itinerary this came from is not the owner's business, and "never a
+   * read path" has to hold on the client too.
+   */
+  @ApiProperty() isCopy: boolean;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Date,
+    description:
+      'Quando as paradas foram tiradas da origem pela última vez. Nulo num roteiro criado aqui.',
+  })
+  copiedAt?: Date | null;
+
   @ApiProperty() isPublic: boolean;
   @ApiProperty() createdAt: Date;
   @ApiProperty() updatedAt: Date;
@@ -76,6 +94,25 @@ export class MyItineraryResponseDto {
   @ApiProperty() slug: string;
   @ApiProperty() title: string;
   @ApiProperty({ example: 'PT' }) countryCode: string;
+
+  /**
+   * Whether this itinerary was copied from a public one rather than written
+   * here.
+   *
+   * The source's id is deliberately not exposed. It is provenance, not a link:
+   * whose itinerary this came from is not the owner's business, and "never a
+   * read path" has to hold on the client too.
+   */
+  @ApiProperty() isCopy: boolean;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Date,
+    description:
+      'Quando as paradas foram tiradas da origem pela última vez. Nulo num roteiro criado aqui.',
+  })
+  copiedAt?: Date | null;
+
   @ApiProperty() isPublic: boolean;
 
   @ApiProperty({ type: [MyItineraryStopDto] })

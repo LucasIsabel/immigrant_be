@@ -1217,12 +1217,39 @@ model Itinerary {
   /// é só o título.
   isPublic Boolean @default(false) @map("is_public")
 
+  /// Procedência, nunca caminho de leitura. Preenchido quando esta linha
+  /// nasceu como cópia de um roteiro público. Nada o dereferencia: a cópia tem
+  /// as próprias paradas e sobrevive à origem, que é a promessa em que ela foi
+  /// construída.
+  ///
+  /// Existe para responder a duas perguntas que já têm a origem em mão: "esta
+  /// pessoa já tem cópia dela?" — para recopiar reescrever esta linha em vez
+  /// de acrescentar uma segunda — e "isto foi criado ou copiado?", de que o
+  /// limite por país precisa.
+  ///
+  /// É um uuid solto e não uma relação de propósito. `onDelete: SetNull`
+  /// transformaria uma cópia num roteiro criado no dia em que a origem fosse
+  /// apagada, gastando um dos três lugares que o dono nunca gastou. Um facto
+  /// sobre o passado não deixa de ser verdade porque aquilo que ele aponta
+  /// desapareceu. Mesmo raciocínio de `AiUsageLog.entityId`.
+  sourceItineraryId String? @map("source_itinerary_id") @db.Uuid
+
+  /// Quando as paradas foram tiradas da origem pela última vez: na primeira
+  /// cópia e em cada sobrescrita. `updatedAt > copiedAt` é como se sabe que o
+  /// dono editou a cópia desde então — e é o que o diálogo de sobrescrita usa
+  /// para dizer o que está prestes a destruir.
+  copiedAt DateTime? @map("copied_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   stops   ItineraryStop[]
   reports ItineraryReport[]
 
+  /// Uma cópia por origem por utilizador. NULLs são distintos no Postgres,
+  /// então os roteiros que alguém criou — todos com NULL aqui — nunca colidem
+  /// entre si.
+  @@unique([userId, sourceItineraryId])
   @@index([userId])
   @@index([countryCode, isPublic])
   @@map("itineraries")
