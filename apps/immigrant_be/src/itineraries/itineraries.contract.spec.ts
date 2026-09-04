@@ -132,6 +132,35 @@ describe('OpenAPI contract — Itineraries', () => {
     expect(detail.security).toBeUndefined();
   });
 
+  /*
+   * The 409 on the copy route is a question, not a failure: the frontend reads
+   * its body to decide what the confirmation dialog says. An inline schema
+   * compiles and answers correctly and lands as `any` on the other side, which
+   * is exactly where that dialog would start guessing at field names.
+   */
+  it('names the schema of the copy conflict, because the client reads it', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<
+        string,
+        {
+          responses?: Record<
+            string,
+            {
+              content?: { 'application/json'?: { schema?: { $ref?: string } } };
+            }
+          >;
+        }
+      >
+    >;
+
+    const conflito =
+      paths['/itineraries/public/{slug}/copy'].post.responses?.['409'];
+    const schema = conflito?.content?.['application/json']?.schema;
+
+    expect(schema?.$ref).toBe('#/components/schemas/CopyItineraryConflictDto');
+  });
+
   it('answers every success with a named schema, never an inline one', () => {
     const inline = Object.entries(document.paths).flatMap(([route, item]) =>
       Object.entries(item as Record<string, unknown>).flatMap(

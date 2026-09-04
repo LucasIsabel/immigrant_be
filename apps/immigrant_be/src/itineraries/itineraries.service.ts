@@ -36,7 +36,11 @@ import {
 import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.dto';
-import { CopyItineraryResponseDto } from './dto/copy-itinerary.dto';
+import {
+  CopyItineraryConflictDto,
+  CopyItineraryDto,
+  CopyItineraryResponseDto,
+} from './dto/copy-itinerary.dto';
 
 @Injectable()
 export class ItinerariesService {
@@ -360,6 +364,7 @@ export class ItinerariesService {
   async copyPublic(
     slug: string,
     userId: string,
+    dto: CopyItineraryDto = {},
   ): Promise<CopyItineraryResponseDto> {
     const source = await this.mustBePublic(slug);
 
@@ -394,15 +399,28 @@ export class ItinerariesService {
     }
 
     /*
-     * One copy per source per reader, enforced by the unique pair rather than
-     * by a check before the write: two taps arriving together would both pass
-     * a check, and the second would hit the constraint anyway. Catching it
-     * here turns the race into the same answer the second tap would have got
-     * a moment later.
+     * One copy per source per reader. The first request is the question: if a
+     * copy is in the way it answers 409 and **writes nothing**, so the reader
+     * decides before anything is destroyed rather than after. Their answer
+     * comes back as `overwrite`.
      */
     const existing = await this.repository.findCopyOf(userId, source.id);
     if (existing) {
-      throw new ConflictException('Já tens uma cópia deste roteiro');
+      if (!dto.overwrite) {
+        throw new ConflictException(this.copyConflict(existing));
+      }
+
+      const updated = await this.repository.overwriteCopy(existing.id, {
+        title: source.title,
+        stops,
+      });
+
+      return {
+        id: updated.id,
+        slug: updated.slug,
+        title: updated.title,
+        overwritten: true,
+      };
     }
 
     try {
@@ -415,16 +433,61 @@ export class ItinerariesService {
         stops,
       });
 
-      return { id: copy.id, slug: copy.slug, title: copy.title };
+      return {
+        id: copy.id,
+        slug: copy.slug,
+        title: copy.title,
+        overwritten: false,
+      };
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Já tens uma cópia deste roteiro');
+        /*
+         * Two first-copies arriving together: the loser re-reads and answers
+         * the same question the winner's copy now poses, so the second tab
+         * sees the confirmation dialog instead of an error it cannot act on.
+         */
+        const raced = await this.repository.findCopyOf(userId, source.id);
+        throw new ConflictException(
+          raced ? this.copyConflict(raced) : 'Já tens uma cópia deste roteiro',
+        );
       }
       throw error;
     }
+  }
+
+  /**
+   * The 409 body, describing the copy that is in the way.
+   *
+   * `editedSinceCopy` compares `updatedAt` with `copiedAt`, which is only
+   * honest because every gesture that changes a copy now touches `updatedAt` —
+   * renaming did already, reordering and removing a stop were fixed in #258
+   * for exactly this.
+   *
+   * Strictly greater, with no tolerance, because the repository stamps
+   * `copiedAt` **from** `updatedAt` on every copy and overwrite — the two are
+   * equal by construction the moment a copy is taken, so any later write makes
+   * this true and nothing else does. A window here was tried and was wrong in
+   * both directions: too tight and a fresh copy claims it was edited, too loose
+   * and an edit 149 ms after copying is swallowed, which is the failure that
+   * matters — the dialog would promise nothing will be lost while something is.
+   */
+  private copyConflict(existing: ItineraryRow): CopyItineraryConflictDto {
+    const edited =
+      existing.copiedAt !== null &&
+      existing.updatedAt.getTime() > existing.copiedAt.getTime();
+
+    return {
+      message: 'Já tens uma cópia deste roteiro',
+      existingCopy: {
+        id: existing.id,
+        title: existing.title,
+        copiedAt: existing.copiedAt as Date,
+        editedSinceCopy: edited,
+      },
+    };
   }
 
   /**

@@ -70,6 +70,18 @@ function fakeRepository() {
 
   let sequence = 0;
 
+  /**
+   * A write is later than the write before it.
+   *
+   * Postgres gives every statement its own timestamp and the tests here finish
+   * inside one millisecond, so `new Date()` would have a rename land at the
+   * same instant as the copy it follows — and `editedSinceCopy`, which is a
+   * strict comparison on purpose, would read false for an edit that happened.
+   * The double's clock moves forward because the real one does.
+   */
+  const laterThan = (previous: Date) =>
+    new Date(Math.max(Date.now(), previous.getTime() + 1));
+
   const placeStop = (id: string, placeId: string, position: number): Stop => ({
     id,
     position,
@@ -158,7 +170,7 @@ function fakeRepository() {
     update: jest.fn(async (id: string, data: Record<string, unknown>) => {
       const row = itineraries.get(id);
       if (!row) throw new Error('missing');
-      Object.assign(row, data, { updatedAt: new Date() });
+      Object.assign(row, data, { updatedAt: laterThan(row.updatedAt) });
       return structuredClone(row);
     }),
     delete: jest.fn(async (id: string) => {
@@ -200,7 +212,7 @@ function fakeRepository() {
         }
         stop.city = data.city;
         row.stops.push(stop);
-        row.updatedAt = new Date();
+        row.updatedAt = laterThan(row.updatedAt);
         return structuredClone(stop);
       },
     ),
@@ -209,7 +221,7 @@ function fakeRepository() {
         row.stops = row.stops.filter((s) => s.id !== id);
       }
       const owner = itineraries.get(itineraryId);
-      if (owner) owner.updatedAt = new Date();
+      if (owner) owner.updatedAt = laterThan(owner.updatedAt);
     }),
     listPublic: jest.fn(async () => {
       const rows = [...itineraries.values()].filter((r) => r.isPublic);
@@ -224,6 +236,38 @@ function fakeRepository() {
       );
       return row ? structuredClone(row) : null;
     }),
+    overwriteCopy: jest.fn(
+      async (
+        id: string,
+        data: {
+          title: string;
+          stops: {
+            placeId: string | null;
+            businessId: string | null;
+            city: string;
+            cityKey: string;
+          }[];
+        },
+      ) => {
+        const row = itineraries.get(id);
+        if (!row) throw new Error('missing');
+        row.title = data.title;
+        row.updatedAt = laterThan(row.updatedAt);
+        row.copiedAt = row.updatedAt;
+        row.stops = data.stops.map((stop, index) => {
+          const copied = placeStop(
+            `stop-${++sequence}`,
+            stop.placeId ?? stop.businessId ?? '',
+            index + 1,
+          );
+          copied.placeId = stop.placeId;
+          copied.businessId = stop.businessId;
+          copied.city = stop.city;
+          return copied;
+        });
+        return structuredClone(row);
+      },
+    ),
     findCopyOf: jest.fn(async (userId: string, sourceItineraryId: string) => {
       const row = [...itineraries.values()].find(
         (r) => r.userId === userId && r.sourceItineraryId === sourceItineraryId,
@@ -250,7 +294,7 @@ function fakeRepository() {
           title: data.title,
           countryCode: data.countryCode,
           sourceItineraryId: data.sourceItineraryId,
-          copiedAt: new Date(),
+          copiedAt: null as Date | null,
           id: `itin-${++sequence}`,
           isPublic: false,
           createdAt: new Date(),
@@ -279,6 +323,9 @@ function fakeRepository() {
             return copied;
           }),
         };
+        // Mirrors `stampCopiedAt`: the two timestamps are equal the moment a
+        // copy is taken, which is what lets the comparison be strict.
+        row.copiedAt = row.updatedAt;
         itineraries.set(row.id, row);
         return structuredClone(row);
       },
@@ -292,7 +339,7 @@ function fakeRepository() {
         if (stop) stop.position = index + 1;
       });
       row.stops.sort((a, b) => a.position - b.position);
-      row.updatedAt = new Date();
+      row.updatedAt = laterThan(row.updatedAt);
     }),
   };
 
@@ -833,6 +880,133 @@ describe('ItinerariesService', () => {
       );
       expect(original.isCopy).toBe(false);
       expect(original.copiedAt).toBeNull();
+    });
+
+    it('describes the copy in the way, and writes nothing', async () => {
+      const { slug } = await publicar();
+      const first = await service.copyPublic(slug, 'user-b');
+      const antes = structuredClone(repo._itineraries.get(first.id));
+
+      const erro = await service
+        .copyPublic(slug, 'user-b')
+        .catch((e: ConflictException) => e);
+
+      expect(erro).toBeInstanceOf(ConflictException);
+      const corpo = (erro as ConflictException).getResponse() as {
+        existingCopy: { id: string; editedSinceCopy: boolean };
+      };
+      expect(corpo.existingCopy.id).toBe(first.id);
+      expect(corpo.existingCopy.editedSinceCopy).toBe(false);
+
+      // The question left the answer alone: same stops, same timestamp.
+      const depois = repo._itineraries.get(first.id);
+      expect(depois?.stops.map((x) => x.id)).toEqual(
+        antes?.stops.map((x) => x.id),
+      );
+      expect(depois?.updatedAt.getTime()).toBe(antes?.updatedAt.getTime());
+    });
+
+    it('says the copy was edited once the owner has touched it', async () => {
+      const { slug } = await publicar();
+      const copy = await service.copyPublic(slug, 'user-b');
+      await service.rename(copy.id, 'user-b', { title: 'O meu nome' });
+
+      const erro = await service
+        .copyPublic(slug, 'user-b')
+        .catch((e: ConflictException) => e);
+
+      const corpo = (erro as ConflictException).getResponse() as {
+        existingCopy: { editedSinceCopy: boolean };
+      };
+      expect(corpo.existingCopy.editedSinceCopy).toBe(true);
+    });
+
+    it('refreshes the existing copy when told to overwrite', async () => {
+      const { itineraryId, slug } = await publicar();
+      const copy = await service.copyPublic(slug, 'user-b');
+      await service.rename(copy.id, 'user-b', { title: 'O meu nome' });
+
+      // The source moves on: a stop removed and the rest reordered.
+      const source = await service.getMine(itineraryId, 'user-a');
+      await service.removeStop(itineraryId, source.stops[1].id, 'user-a');
+      const restantes = (await service.getMine(itineraryId, 'user-a')).stops;
+      await service.reorderStops(itineraryId, 'user-a', {
+        stopIds: [restantes[1].id, restantes[0].id],
+      });
+
+      const again = await service.copyPublic(slug, 'user-b', {
+        overwrite: true,
+      });
+
+      expect(again.overwritten).toBe(true);
+      // The reader keeps the itinerary; only its contents are replaced.
+      expect(again.id).toBe(copy.id);
+      expect(again.slug).toBe(copy.slug);
+
+      const mine = await service.getMine(copy.id, 'user-b');
+      expect(mine.title).toBe('Meu roteiro em Portugal');
+      expect(mine.stops.map((x) => x.name)).toEqual([
+        'Lugar place-3',
+        'Lugar place-1',
+      ]);
+      expect(mine.stops.map((x) => x.position)).toEqual([1, 2]);
+    });
+
+    it('keeps a published copy published, so the shared link still resolves', async () => {
+      const { slug } = await publicar();
+      const copy = await service.copyPublic(slug, 'user-b');
+      await service.setVisibility(copy.id, 'user-b', { isPublic: true });
+
+      await service.copyPublic(slug, 'user-b', { overwrite: true });
+
+      const mine = await service.getMine(copy.id, 'user-b');
+      expect(mine.isPublic).toBe(true);
+      expect(mine.slug).toBe(copy.slug);
+    });
+
+    it('clears the edited flag once the copy has been refreshed', async () => {
+      const { slug } = await publicar();
+      const copy = await service.copyPublic(slug, 'user-b');
+      await service.rename(copy.id, 'user-b', { title: 'O meu nome' });
+      await service.copyPublic(slug, 'user-b', { overwrite: true });
+
+      const erro = await service
+        .copyPublic(slug, 'user-b')
+        .catch((e: ConflictException) => e);
+
+      const corpo = (erro as ConflictException).getResponse() as {
+        existingCopy: { editedSinceCopy: boolean };
+      };
+      expect(corpo.existingCopy.editedSinceCopy).toBe(false);
+    });
+
+    /*
+     * The reason `copiedAt` is stamped from `updatedAt` rather than from the
+     * clock: a fresh copy must never announce that its owner edited it, or the
+     * dialog warns about destroying changes that do not exist.
+     */
+    it('does not call a copy edited the moment it is made', async () => {
+      const { slug } = await publicar();
+      await service.copyPublic(slug, 'user-b');
+
+      const erro = await service
+        .copyPublic(slug, 'user-b')
+        .catch((e: ConflictException) => e);
+
+      const corpo = (erro as ConflictException).getResponse() as {
+        existingCopy: { editedSinceCopy: boolean };
+      };
+      expect(corpo.existingCopy.editedSinceCopy).toBe(false);
+    });
+
+    it('creates normally when overwrite is asked for and there is nothing to overwrite', async () => {
+      const { slug } = await publicar();
+
+      const made = await service.copyPublic(slug, 'user-b', {
+        overwrite: true,
+      });
+
+      expect(made.overwritten).toBe(false);
     });
 
     it('lets two different readers each copy the same source', async () => {

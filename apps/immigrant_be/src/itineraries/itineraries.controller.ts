@@ -56,7 +56,11 @@ import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.dto';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
-import { CopyItineraryResponseDto } from './dto/copy-itinerary.dto';
+import {
+  CopyItineraryConflictDto,
+  CopyItineraryDto,
+  CopyItineraryResponseDto,
+} from './dto/copy-itinerary.dto';
 
 /**
  * Declaration order is routing order: `mine` and `stops` are registered before
@@ -146,13 +150,19 @@ export class ItinerariesController {
   @ApiBadRequestResponse({
     description: 'O roteiro não tem paradas para copiar',
   })
+  @ApiConflictResponse({
+    type: CopyItineraryConflictDto,
+    description:
+      'Já existe uma cópia. Nada foi escrito — reenviar com `overwrite: true` substitui-a.',
+  })
   @ApiNotFoundResponse({ description: 'Roteiro não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
   copy(
     @Param('slug') slug: string,
+    @Body() dto: CopyItineraryDto,
     @Session() session: UserSession,
   ): Promise<CopyItineraryResponseDto> {
-    return this.service.copyPublic(slug, session.user.id);
+    return this.service.copyPublic(slug, session.user.id, dto);
   }
 
   /*

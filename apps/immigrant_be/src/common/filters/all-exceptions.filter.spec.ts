@@ -6,6 +6,7 @@ jest.mock('@sentry/nestjs', () => ({
 }));
 
 import {
+  ConflictException,
   ArgumentsHost,
   BadRequestException,
   HttpException,
@@ -126,6 +127,48 @@ describe('AllExceptionsFilter', () => {
    * The passthrough is keyed on the Terminus shape, so an unrelated 503 must
    * still be serialised like any other error instead of leaking its body.
    */
+  /*
+   * Some 4xx bodies are a question rather than a sentence — the copy conflict
+   * carries the copy that is in the way, and a dialog is built from it. The
+   * filter keeps whatever the thrower attached beyond Nest's own keys.
+   */
+  it('keeps the detail a client error was thrown with', () => {
+    const { host, status, json } = buildHost();
+
+    filter.catch(
+      new ConflictException({
+        message: 'Já tens uma cópia deste roteiro',
+        existingCopy: { id: 'itin-1', editedSinceCopy: true },
+      }),
+      host,
+    );
+
+    expect(status).toHaveBeenCalledWith(HttpStatus.CONFLICT);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 409,
+        message: 'Já tens uma cópia deste roteiro',
+        existingCopy: { id: 'itin-1', editedSinceCopy: true },
+      }),
+    );
+  });
+
+  it('leaves an ordinary error thrown from a string exactly as it was', () => {
+    // The overwhelming majority. Nothing about the shape they already answer
+    // with may change, which is what makes the branch above safe to add.
+    const { host, json } = buildHost();
+
+    filter.catch(new ConflictException('Este item já está no roteiro'), host);
+
+    const [body] = json.mock.calls[0] as [Record<string, unknown>];
+    expect(Object.keys(body).sort()).toEqual([
+      'message',
+      'statusCode',
+      'timestamp',
+    ]);
+    expect(body.message).toBe('Este item já está no roteiro');
+  });
+
   it('still flattens a service-unavailable error that is not a health payload', () => {
     const { host, json } = buildHost();
 
