@@ -29,6 +29,7 @@ import {
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -54,6 +55,7 @@ import {
 import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
 import { UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { UpdateItineraryVisibilityDto } from './dto/update-itinerary-visibility.dto';
+import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { CopyItineraryResponseDto } from './dto/copy-itinerary.dto';
 
 /**
@@ -151,6 +153,33 @@ export class ItinerariesController {
     @Session() session: UserSession,
   ): Promise<CopyItineraryResponseDto> {
     return this.service.copyPublic(slug, session.user.id);
+  }
+
+  /*
+   * No path segment at all, so it can only be reached by POST on the
+   * collection — `:id` never sees it. Declared here, with the other owner
+   * routes, rather than beside the anonymous block.
+   */
+  @Post()
+  @Roles(UserRole.USER)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Criar um roteiro vazio',
+    description:
+      'O primeiro roteiro de um país continua a nascer da primeira parada — um formulário à frente da coisa que a pessoa queria é um formulário que ela abandona. Esta rota é para o segundo, onde "guardar" deixou de ter resposta óbvia sobre onde.',
+  })
+  @ApiCreatedResponse({ type: MyItineraryResponseDto })
+  @ApiUnprocessableEntityResponse({
+    description: 'Limite de roteiros criados nesse país',
+  })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  create(
+    @Body() dto: CreateItineraryDto,
+    @Session() session: UserSession,
+  ): Promise<MyItineraryResponseDto> {
+    return this.service.create(session.user.id, dto);
   }
 
   @Get('mine')

@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Matches,
+} from 'class-validator';
 
 /**
  * One tap on a card, and the itinerary may not exist yet.
@@ -50,6 +57,25 @@ export class AddItineraryStopDto {
   @IsString()
   @Length(2, 120)
   defaultTitle: string;
+
+  /**
+   * Start a new itinerary for this stop instead of appending to the most
+   * recent one in the country.
+   *
+   * This is the picker's "new itinerary" arriving as one call, so a stop that
+   * turns out not to be addable cannot leave an empty itinerary behind. Sent
+   * with `itineraryId` it is a contradiction — one says where, the other says
+   * nowhere yet — and answers 400. `defaultTitle` names the new one, as it
+   * already does when the first stop creates it.
+   */
+  @ApiPropertyOptional({
+    description:
+      'Cria um roteiro novo para esta parada em vez de anexar ao mais recente do país.',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  startNew?: boolean;
 }
 
 export class AddItineraryStopResponseDto {

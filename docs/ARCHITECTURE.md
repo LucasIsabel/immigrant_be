@@ -551,6 +551,20 @@ City. Três decisões de modelagem carregam o porquê:
   verificado a cada instrução, então uma permutação completa dentro de uma
   transacção tropeçaria a meio caminho. A ordem é reescrita por inteiro ao
   reordenar.
+- **Até três roteiros *criados* por país, e o tecto é um guarda-corpo.** O
+  primeiro roteiro de um país continua a nascer da primeira parada — um
+  formulário à frente da coisa que a pessoa queria é um formulário que ela
+  abandona — e `POST /itineraries` existe para o segundo, onde "guardar" deixou
+  de ter resposta óbvia sobre onde. As **cópias não contam**: quem copiasse três
+  roteiros portugueses ficaria sem conseguir escrever um seu. A contagem é
+  derivada (`source_itinerary_id IS NULL`), nunca uma coluna, porque um contador
+  seria uma segunda verdade a manter em cada apagar e em cada conta em cascata.
+  A contagem e a inserção **não** são travadas uma contra a outra, e o tamanho
+  disso foi medido: duas abas a submeter a partir de um país já cheio recebem
+  ambas 422, mas seis pedidos disparados juntos a partir do zero passam todos.
+  Segura contra o engano, não contra a tentativa — e é assim que está
+  documentado, em vez de se fingir que é um controlo. O que mantém a listagem
+  pública honesta é a denúncia anónima, não este número.
 - **`sourceItineraryId` é um uuid solto, não uma relação.** Registado quando a
   linha nasceu como cópia de um roteiro público, e **nunca é dereferenciado**:
   a cópia tem as próprias paradas a apontar direto para `Place`/`Business` e
@@ -1476,8 +1490,9 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /itineraries/public`                                  | Itineraries                    | Público (`@AllowAnonymous`) — país filtra a coluna do roteiro, cidade sub-filtra pelas paradas; roteiro sem parada visível não lista |
 | `GET /itineraries/public/:slug`                            | Itineraries                    | Público (`@AllowAnonymous`) — paradas indisponíveis filtradas e renumeradas 1..n |
 | `POST /itineraries/public/:slug/report`                    | Itineraries                    | Público (`@AllowAnonymous`) — denúncia anónima; throttle 3/min, honeypot `website` (descarta em silêncio) |
-| `GET /itineraries/mine`                                    | Itineraries                    | Autenticado (role USER) — os meus roteiros, paginado, com `stopCount` e `unavailableStopCount` |
-| `POST /itineraries/stops`                                  | Itineraries                    | Autenticado (role USER) — adiciona parada; sem `itineraryId` usa o roteiro mais recente naquele país e cria um se não houver; 409 se o item já estiver lá |
+| `POST /itineraries`                                        | Itineraries                    | Autenticado (role USER) — cria um roteiro vazio; 422 ao terceiro criado nesse país |
+| `GET /itineraries/mine`                                    | Itineraries                    | Autenticado (role USER) — os meus roteiros, paginado, com `stopCount`, `unavailableStopCount` e `isCopy`; `?countryCode=PT` recorta |
+| `POST /itineraries/stops`                                  | Itineraries                    | Autenticado (role USER) — adiciona parada; sem `itineraryId` usa o roteiro mais recente naquele país e cria um se não houver; `startNew: true` força um novo (400 junto com `itineraryId`); 409 se o item já estiver lá |
 | `GET /itineraries/:id`                                     | Itineraries                    | Autenticado (role USER) — detalhe do próprio roteiro; 404 (não 403) se for de outra pessoa |
 | `PATCH /itineraries/:id`                                   | Itineraries                    | Autenticado (role USER) — renomeia; o slug **não** muda |
 | `PATCH /itineraries/:id/visibility`                        | Itineraries                    | Autenticado (role USER) — publica/despublica na hora, sem moderação |

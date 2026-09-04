@@ -71,6 +71,7 @@ describe('OpenAPI contract — Itineraries', () => {
       'GET /itineraries/{id}',
       'PATCH /itineraries/{id}',
       'PATCH /itineraries/{id}/visibility',
+      'POST /itineraries',
       'POST /itineraries/public/{slug}/copy',
       'POST /itineraries/public/{slug}/report',
       'POST /itineraries/stops',
@@ -99,6 +100,11 @@ describe('OpenAPI contract — Itineraries', () => {
     expect(indexOf('/itineraries/public')).toBeLessThan(
       indexOf('/itineraries/public/{slug}'),
     );
+
+    // The collection itself carries no segment, so `:id` can never swallow it
+    // — but if it ever moved below, POST and GET on `/itineraries` would be
+    // declared apart, which is the shape that hides a routing mistake.
+    expect(indexOf('/itineraries')).toBeLessThan(indexOf('/itineraries/{id}'));
     expect(indexOf('/itineraries/public')).toBeLessThan(
       indexOf('/itineraries/{id}'),
     );
