@@ -250,6 +250,63 @@ describe('PlacesAdminService', () => {
 
       expect(result.generationCostUsd).toBe(0.0002);
     });
+
+    /*
+     * The place whose text writing failed is the one that most needs editing,
+     * and it was the only one the screen could not edit: the repository ran
+     * `update` on a translation row that did not exist and the request became
+     * a 500. Sentry IMMIGRANT-BE-3, on the Larnaca ingestion.
+     */
+    it('writes the texts of a place that has none', async () => {
+      // The fixture already carries `translations: []`, which is the state
+      // that produced the failure in production.
+      await expect(
+        service.updatePlace(INGESTION_ID, PLACE_ID, {
+          translations: [
+            {
+              language: 'pt',
+              description: 'Uma descrição com mais de vinte caracteres.',
+            },
+          ],
+        }),
+      ).resolves.toBeDefined();
+
+      expect(repository.updatePlace).toHaveBeenCalled();
+    });
+
+    it('refuses to create a translation without a description, and says which', async () => {
+      await expect(
+        service.updatePlace(INGESTION_ID, PLACE_ID, {
+          translations: [{ language: 'en', tip: 'Go early.' }],
+        }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      // The point is the admin reading which language is missing instead of
+      // `Internal server error`.
+      await expect(
+        service.updatePlace(INGESTION_ID, PLACE_ID, {
+          translations: [{ language: 'en', tip: 'Go early.' }],
+        }),
+      ).rejects.toThrow(/en/);
+
+      expect(repository.updatePlace).not.toHaveBeenCalled();
+    });
+
+    it('lets a language the place already has be edited on its own', async () => {
+      repository.findPlaceInIngestion.mockResolvedValue(
+        place({
+          translations: [
+            { language: 'pt', description: 'Já existe.', tip: null },
+          ],
+        }) as never,
+      );
+
+      await expect(
+        service.updatePlace(INGESTION_ID, PLACE_ID, {
+          translations: [{ language: 'pt', tip: 'Vá cedo.' }],
+        }),
+      ).resolves.toBeDefined();
+    });
   });
 
   describe('rejectPlace', () => {

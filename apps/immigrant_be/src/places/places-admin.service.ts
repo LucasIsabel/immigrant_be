@@ -95,6 +95,27 @@ export class PlacesAdminService {
     }
 
     const { translations = [], ...fields } = dto;
+
+    /*
+     * A language this place has no row for can only be written with a
+     * description: the column is not nullable, and an empty one would put a
+     * blank place in the catalogue while looking answered.
+     *
+     * Said here rather than left to the database, so the admin reads which
+     * language is missing instead of the `Internal server error` that a raw
+     * Prisma failure becomes.
+     */
+    const known = new Set(place.translations.map((t) => t.language));
+    const uncreatable = translations
+      .filter((t) => !known.has(t.language) && t.description === undefined)
+      .map((t) => t.language);
+    if (uncreatable.length > 0) {
+      throw new UnprocessableEntityException(
+        `Este lugar ainda não tem texto em ${uncreatable.join(', ')}; ` +
+          'envie a descrição para criar a tradução',
+      );
+    }
+
     const updated = await this.repository.updatePlace(
       placeId,
       fields,

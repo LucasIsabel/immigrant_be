@@ -129,29 +129,62 @@ export class PlacesAdminRepository {
     });
   }
 
-  async updatePlace(
+  /**
+   * Writes the edits an admin made to a draft place.
+   *
+   * `upsert`, because a place whose text writing failed has no translation
+   * row at all, and `update` answered P2025 — a 500 — for the one place on
+   * the screen that most needed editing.
+   *
+   * All of it in one transaction. The loop used to write each language on its
+   * own, so a place holding `pt` but not `en` had the `pt` edit land and the
+   * request then fail: a partial save reported to the admin as no save.
+   */
+  updatePlace(
     placeId: string,
     data: { name?: string; isFree?: boolean; popularityScore?: number },
     translations: { language: string; description?: string; tip?: string }[],
   ) {
-    for (const translation of translations) {
-      await this.prisma.placeTranslation.update({
-        where: {
-          placeId_language: { placeId, language: translation.language },
-        },
-        data: {
-          ...(translation.description !== undefined && {
-            description: translation.description,
-          }),
-          ...(translation.tip !== undefined && { tip: translation.tip }),
-        },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      for (const translation of translations) {
+        if (translation.description === undefined) {
+          // Only reachable for a language that already has a row: the service
+          // refuses a request that would create one without a description,
+          // because the column is not nullable and an empty one would put a
+          // blank place in the catalogue.
+          await tx.placeTranslation.update({
+            where: {
+              placeId_language: { placeId, language: translation.language },
+            },
+            data: {
+              ...(translation.tip !== undefined && { tip: translation.tip }),
+            },
+          });
+          continue;
+        }
 
-    return this.prisma.place.update({
-      where: { id: placeId },
-      data,
-      select: ADMIN_PLACE,
+        await tx.placeTranslation.upsert({
+          where: {
+            placeId_language: { placeId, language: translation.language },
+          },
+          update: {
+            description: translation.description,
+            ...(translation.tip !== undefined && { tip: translation.tip }),
+          },
+          create: {
+            placeId,
+            language: translation.language,
+            description: translation.description,
+            tip: translation.tip ?? null,
+          },
+        });
+      }
+
+      return tx.place.update({
+        where: { id: placeId },
+        data,
+        select: ADMIN_PLACE,
+      });
     });
   }
 
