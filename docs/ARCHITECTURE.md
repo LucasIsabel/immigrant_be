@@ -84,6 +84,7 @@ immigrant_be/
 │   ├── ai/                     # AiRouterService (multi-provider) + GeminiBaseService
 │   ├── immigration/            # Regras de imigração puras (livre circulação UE/EEE/Suíça)
 │   ├── ingestion/              # Port de despacho da ingestão de lugares + adapter BullMQ
+│   ├── notifications/          # A única escrita de notificação: sino in-app + e-mail opcional
 │   └── email/                  # Envio de emails via Resend
 │   └── storage/                # StorageService (Cloudflare R2 via S3)
 │
@@ -111,6 +112,7 @@ immigrant_be/
 | `@app/immigration` | `libs/immigration/src` |
 | `@app/ingestion`  | `libs/ingestion/src`  |
 | `@app/email/*`    | `libs/email/src/*`    |
+| `@app/notifications/*` | `libs/notifications/src/*` |
 | `@app/storage/*`  | `libs/storage/src/*`  |
 
 ---
@@ -453,6 +455,11 @@ CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
   Enum CommunityEventStatus: DRAFT | PENDING_REVIEW | APPROVED | REJECTED | CANCELLED
   Enum CommunityEventCategory: CONCERT | FAIR | MEETUP | WORKSHOP | EXHIBITION | SPORTS | FOOD | OTHER
   `Events` já é a tabela de notificações do utilizador — daí `CommunityEvent`, e não `Event`.
+  Desde 2026-09-05 ela é também a **caixa de entrada**: ganhou `readAt` (nulo = por ler, e
+  é isso que o contador do sino conta) mais três índices — `(userId, status)` para o poll do
+  SSE, `(userId, createdAt desc)` para a listagem e `(userId, readAt)` para o contador.
+  O nome infeliz fica: renomear não é aditivo, e o código a correr ficaria sem tabela na
+  janela do deploy.
   Armazena: organizerId (FK), slug (único), title, description (Markdown, 20–8000, sem HTML),
             imageUrl (capa; obrigatório só para submeter), images (galeria ordenada, até 8 URLs),
             category, startsAt/endsAt (instantes UTC), timezone (IANA),
@@ -1145,11 +1152,18 @@ App Principal (API)                    Microservice
           /api/v1/system/sse               API faz poll + marca delivered
 ```
 
+Desde 2026-09-05 a API **também** escreve nessa tabela, por
+`NotificationsService.notify` (`@app/notifications`) — o worker deixou de ser o
+único emissor. É o que permite avisar alguém de uma aprovação sem depender de
+e-mail.
+
 - **Redis** como broker de mensagens
 - **Microservice** roda como app separado (porta 6000)
 - Comunicação via filas nomeadas
 - Eventos notificam o frontend via **Server-Sent Events (SSE)**
 - Ao concluir um job, o consumer grava um registro na tabela `events` (status `pending`). O endpoint `/system/sse` faz polling a cada 1s, consume o evento (marca `delivered`) e envia ao cliente. O frontend exibe toast com título e mensagem da tarefa concluída.
+- O consume é `orderBy: { createdAt: 'asc' }`. Sem isso, duas linhas pendentes chegavam na ordem que o planner escolhesse — e como o poll é de um em um segundo, a pessoa vê as duas aterrar.
+- `status` é o estado de **entrega** (`pending` → `delivered` quando o SSE despacha). `readAt` é o estado de **leitura**, e é coluna separada de propósito: uma notificação entregue a uma aba em segundo plano fica `delivered` **e** por ler, e as duas coisas são verdade ao mesmo tempo.
 
 ### Filas existentes
 
