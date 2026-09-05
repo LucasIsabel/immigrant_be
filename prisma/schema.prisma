@@ -511,21 +511,40 @@ enum NotificationStatus {
   failed
 }
 
+/// The SSE queue and the user's inbox, in one table.
+///
+/// It was the queue first, which is why it is called `events` next to
+/// `CommunityEvent`. Renaming it is not additive — the running code would be
+/// left without a table during the deploy window — so the name stays and this
+/// comment carries the meaning.
 model Events {
   id        String             @id @default(uuid()) @db.Uuid
   userId    String             @map("user_id") @db.Uuid
   user      Users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Discriminator the frontend renders from. Values live in
+  /// `libs/notifications/src/notification-types.ts`.
   type      String
+  /// Prose written by the workers (Portuguese, admin-facing). User-facing types
+  /// leave both null and carry facts in `payload`; the frontend translates.
   title     String?
   message   String?
   payload   Json?
+  /// Delivery state of the SSE transport — not whether anyone saw it.
   status    NotificationStatus @default(pending)
+  /// Read state of the inbox. Null is unread, and that is what the badge counts.
+  readAt    DateTime?          @map("read_at")
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  /// The SSE endpoint's once-a-second poll.
+  @@index([userId, status])
+  /// The inbox listing, newest first.
+  @@index([userId, createdAt(sort: Desc)])
+  /// The unread badge.
+  @@index([userId, readAt])
   @@map("events")
 }
 

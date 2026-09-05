@@ -1,8 +1,7 @@
 import { Global, Module } from '@nestjs/common';
-import { DatabaseModule } from '@app/database';
+import { NotificationsModule } from '@app/notifications';
 import { AI_ALERT_SINK } from '@app/ai';
 import { EventsAiAlertSink } from './ai-alert.sink';
-import { EventsRepository } from './events.repository';
 import { EventsService } from './events.service';
 
 /**
@@ -16,10 +15,9 @@ import { EventsService } from './events.service';
  */
 @Global()
 @Module({
-  imports: [DatabaseModule],
+  imports: [NotificationsModule],
   controllers: [],
   providers: [
-    EventsRepository,
     EventsService,
     // A implementação da porta que o `libs/ai` publica: é assim que o roteador
     // avisa sobre crédito esgotado sem conhecer o canal.

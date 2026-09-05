@@ -1,71 +1,31 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@app/database';
-import { EventsRepository, type CreateEventInput } from './events.repository';
-import { EventDto } from './dto/event.dto';
+import { Injectable } from '@nestjs/common';
+import { NotificationsService, type EmitEventInput } from '@app/notifications';
 
+export type CreateEventInput = EmitEventInput;
+
+/**
+ * The workers' way in to `@app/notifications`.
+ *
+ * Everything that used to live here — the write, and the one-row-per-admin
+ * fan-out with the reasoning behind it — moved into the library, because the
+ * API needs to notify people too and a service that only the microservice can
+ * reach cannot serve both. What is left is the name the five consumers already
+ * inject, so that move cost them nothing.
+ */
 @Injectable()
 export class EventsService {
-  private readonly logger = new Logger(EventsService.name);
-
-  constructor(
-    private readonly eventsRepository: EventsRepository,
-    private readonly prisma: PrismaService,
-  ) {}
-
-  async getEvents(userId: string): Promise<EventDto | null> {
-    return await this.eventsRepository.getEvents(userId);
-  }
+  constructor(private readonly notifications: NotificationsService) {}
 
   /**
    * Emits an event to be delivered via SSE to the user.
    * Called by queue consumers when a task completes.
    */
   async emit(input: CreateEventInput): Promise<void> {
-    await this.eventsRepository.createEvent(input);
+    await this.notifications.emit(input);
   }
 
-  /**
-   * Emite um aviso que não tem dono: falha de job de cron, crédito esgotado.
-   *
-   * Grava uma linha por admin em vez de uma linha sem `userId`. Parece
-   * desperdício e não é: a entrega marca o evento como `delivered`, então um
-   * único registro compartilhado chegaria **a um** admin — o primeiro cujo
-   * polling o pegasse — e sumiria para os outros. Justamente num alarme, que
-   * todos precisam ver.
-   *
-   * De brinde, dispensa migration: `Events.userId` continua obrigatório e o
-   * consumo do SSE segue exatamente como está.
-   */
+  /** Emits a notice that has no owner: a cron failure, exhausted credit. */
   async emitToAdmins(input: Omit<CreateEventInput, 'userId'>): Promise<void> {
-    const admins = await this.prisma.userRoles.findMany({
-      where: { role: { name: 'admin' } },
-      select: { userId: true },
-    });
-
-    const ids = [...new Set(admins.map((a) => a.userId))];
-
-    if (ids.length === 0) {
-      // Sem admin cadastrado o aviso não tem para onde ir. Fica no log, que é
-      // melhor que desaparecer sem deixar rastro.
-      this.logger.warn(
-        `Nenhum admin para receber "${input.type}": ${input.message ?? input.title ?? ''}`,
-      );
-      return;
-    }
-
-    await Promise.all(
-      ids.map((userId) =>
-        this.eventsRepository
-          .createEvent({ ...input, userId })
-          .catch((error: unknown) => {
-            // Um admin que falhe não pode impedir os outros de saber.
-            this.logger.warn(
-              `Não foi possível avisar o admin ${userId} sobre "${input.type}": ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            );
-          }),
-      ),
-    );
+    await this.notifications.emitToAdmins(input);
   }
 }

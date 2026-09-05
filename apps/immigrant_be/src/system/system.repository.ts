@@ -273,6 +273,10 @@ export class SystemRepository {
           userId,
           status: NotificationStatus.pending,
         },
+        // Without this, two pending rows arrive in whatever order the planner
+        // felt like. One poll per second means the user watches them land, so
+        // the order they happened in is the only one that reads as sensible.
+        orderBy: { createdAt: 'asc' },
       });
 
       if (!event) return null;
