@@ -16,6 +16,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ItinerariesService } from './itineraries.service';
+import type { NotificationsService } from '@app/notifications/notifications.service';
 import type { ItinerariesRepository } from './itineraries.repository';
 
 /**
@@ -279,6 +280,10 @@ function fakeRepository() {
         return structuredClone(row);
       },
     ),
+    findOwnerId: jest.fn(async (id: string) => {
+      const row = itineraries.get(id);
+      return row ? { userId: row.userId } : null;
+    }),
     findCopyOf: jest.fn(async (userId: string, sourceItineraryId: string) => {
       const row = [...itineraries.values()].find(
         (r) => r.userId === userId && r.sourceItineraryId === sourceItineraryId,
@@ -363,11 +368,16 @@ function fakeRepository() {
 
 describe('ItinerariesService', () => {
   let repo: ReturnType<typeof fakeRepository>;
+  let notifications: { notify: jest.Mock };
   let service: ItinerariesService;
 
   beforeEach(() => {
     repo = fakeRepository();
-    service = new ItinerariesService(repo as unknown as ItinerariesRepository);
+    notifications = { notify: jest.fn().mockResolvedValue(undefined) };
+    service = new ItinerariesService(
+      repo as unknown as ItinerariesRepository,
+      notifications as unknown as NotificationsService,
+    );
   });
 
   const add = (placeId: string, itineraryId?: string) =>
@@ -780,6 +790,54 @@ describe('ItinerariesService', () => {
         'Lugar place-3',
       ]);
       expect(mine.stops.map((stop) => stop.position)).toEqual([1, 2, 3]);
+    });
+
+    it('tells the author, with the source’s facts and not the copy’s', async () => {
+      const { itineraryId, slug } = await publicar();
+
+      await service.copyPublic(slug, 'user-b');
+
+      expect(notifications.notify).toHaveBeenCalledWith({
+        userId: 'user-a',
+        type: 'itinerary_copied',
+        payload: {
+          itineraryId,
+          title: 'Meu roteiro em Portugal',
+          slug,
+        },
+      });
+    });
+
+    it('carries no trace of who copied it', async () => {
+      // What the author gains is that their itinerary travelled — not a name
+      // to look up. Nothing in the payload should identify the reader.
+      const { slug } = await publicar();
+
+      await service.copyPublic(slug, 'user-b');
+
+      const [call] = notifications.notify.mock.calls;
+      expect(JSON.stringify(call[0])).not.toContain('user-b');
+    });
+
+    it('says nothing when the author copies their own itinerary', async () => {
+      // A duplicate they asked for is not an audience.
+      const { slug } = await publicar();
+
+      await service.copyPublic(slug, 'user-a');
+
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it('says nothing when an existing copy is overwritten', async () => {
+      // The same reader refreshing what they already took. Reporting it again
+      // would turn one person's habit into a stream of identical notices.
+      const { slug } = await publicar();
+      await service.copyPublic(slug, 'user-b');
+      notifications.notify.mockClear();
+
+      await service.copyPublic(slug, 'user-b', { overwrite: true });
+
+      expect(notifications.notify).not.toHaveBeenCalled();
     });
 
     it('gives the copy its own address, never the original’s', async () => {

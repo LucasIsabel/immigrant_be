@@ -5,11 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  EmailService,
-  buildApprovalEmail,
-  buildRejectionEmail,
-} from '@app/email';
+import { buildApprovalEmail, buildRejectionEmail } from '@app/email';
+import { NotificationsService } from '@app/notifications/notifications.service';
+import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { env } from '@app/config';
 import { BusinessPageStatus } from '../../../../generated/prisma';
 import { BusinessPagesRepository } from './business-pages.repository';
@@ -31,7 +29,7 @@ import {
 export class BusinessPagesService {
   constructor(
     private readonly repository: BusinessPagesRepository,
-    private readonly emailService: EmailService,
+    private readonly notifications: NotificationsService,
     private readonly qualificationService: PublisherQualificationService,
     private readonly storageService: StorageService,
     private readonly moderationService: BusinessPageModerationService,
@@ -318,17 +316,23 @@ export class BusinessPagesService {
     // Update qualification record (fire-and-forget errors)
     this.qualificationService.onPageApproved(id).catch(() => undefined);
 
-    try {
-      const pageUrl = `${env.FRONTEND_URL}/pg/${updated.businessType}/${updated.slug}`;
-      const { subject, html } = buildApprovalEmail(page.business.name, pageUrl);
-      await this.emailService.send({
-        to: page.business.user.email,
-        subject,
-        html,
-      });
-    } catch {
-      // email failure must not block approval
-    }
+    // The bell always hears about this; the e-mail only goes to someone who
+    // still wants e-mail. `notify` never throws, so approval is never held
+    // hostage to either channel.
+    await this.notifications.notify({
+      userId: page.business.userId,
+      type: USER_NOTIFICATION_TYPES.BUSINESS_PAGE_APPROVED,
+      payload: {
+        businessId: page.businessId,
+        businessName: page.business.name,
+        businessType: updated.businessType,
+        slug: updated.slug,
+      },
+      email: buildApprovalEmail(
+        page.business.name,
+        `${env.FRONTEND_URL}/pg/${updated.businessType}/${updated.slug}`,
+      ),
+    });
 
     return updated;
   }
@@ -358,22 +362,22 @@ export class BusinessPagesService {
     // Update qualification record (fire-and-forget errors)
     this.qualificationService.onPageRejected(id).catch(() => undefined);
 
-    try {
-      const dashboardUrl = `${env.FRONTEND_URL}/dashboard/meu-negocio/${page.businessId}/pagina-publica`;
-      const { subject, html } = buildRejectionEmail(
+    await this.notifications.notify({
+      userId: page.business.userId,
+      type: USER_NOTIFICATION_TYPES.BUSINESS_PAGE_REJECTED,
+      payload: {
+        businessId: page.businessId,
+        businessName: page.business.name,
+        isUpdate,
+        reason: dto.reason ?? null,
+      },
+      email: buildRejectionEmail(
         page.business.name,
         isUpdate,
-        dashboardUrl,
+        `${env.FRONTEND_URL}/dashboard/meu-negocio/${page.businessId}/pagina-publica`,
         dto.reason,
-      );
-      await this.emailService.send({
-        to: page.business.user.email,
-        subject,
-        html,
-      });
-    } catch {
-      // email failure must not block rejection
-    }
+      ),
+    });
 
     return updated;
   }

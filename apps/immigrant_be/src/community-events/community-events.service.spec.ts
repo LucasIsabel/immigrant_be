@@ -17,6 +17,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { StorageService } from '@app/storage';
+import { NotificationsService } from '@app/notifications/notifications.service';
 import { CommunityEventStatus } from '../../../../generated/prisma';
 import { FavouriteEventsWhen } from './dto/favourite-event.dto';
 import { CommunityEventsService } from './community-events.service';
@@ -132,6 +133,7 @@ describe('CommunityEventsService', () => {
   let service: CommunityEventsService;
   let repository: ReturnType<typeof buildRepository>;
   let storage: { uploadFileAtKey: jest.Mock; deleteFile: jest.Mock };
+  let notifications: { notify: jest.Mock };
 
   beforeEach(async () => {
     repository = buildRepository();
@@ -139,12 +141,14 @@ describe('CommunityEventsService', () => {
       uploadFileAtKey: jest.fn(),
       deleteFile: jest.fn().mockResolvedValue(undefined),
     };
+    notifications = { notify: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         CommunityEventsService,
         { provide: CommunityEventsRepository, useValue: repository },
         { provide: StorageService, useValue: storage },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -595,6 +599,69 @@ describe('CommunityEventsService', () => {
           status: 'REJECTED',
           rejectionReason: 'Denúncia válida',
           approvedAt: null,
+        }),
+      );
+    });
+
+    it('tells the organiser their event was approved', async () => {
+      // Until now this told nobody: the organiser found out by opening the
+      // dashboard and reading a badge, which means whenever they next looked.
+      repository.findById.mockResolvedValue(
+        eventWith({ status: 'PENDING_REVIEW' }),
+      );
+
+      await service.approve('event-1', 'admin-1');
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'community_event_approved',
+          payload: expect.objectContaining({ eventId: 'event-1' }),
+        }),
+      );
+    });
+
+    it('sends no e-mail with it', async () => {
+      // This notice never had an e-mail, and adding a channel is a decision
+      // about somebody's inbox — not a side effect of building a bell.
+      repository.findById.mockResolvedValue(
+        eventWith({ status: 'PENDING_REVIEW' }),
+      );
+
+      await service.approve('event-1', 'admin-1');
+
+      expect(notifications.notify.mock.calls[0][0]).not.toHaveProperty('email');
+    });
+
+    it('distinguishes a takedown from a refusal', async () => {
+      // `wasPublished` is the whole difference between "we turned it down" and
+      // "we pulled it off the agenda", and only the pre-update status knows.
+      repository.findById.mockResolvedValue(
+        eventWith({ status: 'APPROVED', approvedAt: new Date() }),
+      );
+
+      await service.reject('event-1', 'admin-1', { reason: 'Denúncia válida' });
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'community_event_rejected',
+          payload: expect.objectContaining({
+            wasPublished: true,
+            reason: 'Denúncia válida',
+          }),
+        }),
+      );
+    });
+
+    it('calls a refusal a refusal', async () => {
+      repository.findById.mockResolvedValue(
+        eventWith({ status: 'PENDING_REVIEW' }),
+      );
+
+      await service.reject('event-1', 'admin-1', { reason: 'Falta morada' });
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ wasPublished: false }),
         }),
       );
     });

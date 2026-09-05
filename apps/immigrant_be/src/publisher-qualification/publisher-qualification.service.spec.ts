@@ -9,14 +9,13 @@ jest.mock('@app/config', () => ({
 }));
 
 jest.mock('@app/email', () => ({
-  EmailService: jest.fn(),
   buildApprovalEmail: jest.fn().mockReturnValue({ subject: 's', html: 'h' }),
   EmailModule: jest.fn(),
 }));
 
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { EmailService } from '@app/email';
+import { NotificationsService } from '@app/notifications/notifications.service';
 import { PublisherQualificationService } from './publisher-qualification.service';
 import { PublisherQualificationRepository } from './publisher-qualification.repository';
 
@@ -73,8 +72,8 @@ const mockRepo = {
   approvePendingPage: jest.fn(),
 };
 
-const mockEmail = {
-  send: jest.fn(),
+const mockNotifications = {
+  notify: jest.fn(),
 };
 
 describe('PublisherQualificationService', () => {
@@ -86,7 +85,7 @@ describe('PublisherQualificationService', () => {
       providers: [
         PublisherQualificationService,
         { provide: PublisherQualificationRepository, useValue: mockRepo },
-        { provide: EmailService, useValue: mockEmail },
+        { provide: NotificationsService, useValue: mockNotifications },
       ],
     }).compile();
     service = module.get(PublisherQualificationService);
@@ -143,6 +142,47 @@ describe('PublisherQualificationService', () => {
       expect(mockRepo.update).toHaveBeenCalledWith(
         'biz-1',
         expect.objectContaining({ isQualified: true, qualifiedAt: NOW }),
+      );
+    });
+
+    it('announces an auto-approval as the same news as a manual one', async () => {
+      // To the person receiving it, automatic and manual approval are the same
+      // event. A second type would only mean two sentences to translate for
+      // one thing that happened.
+      const pending = {
+        ...mockBusiness,
+        businessPage: {
+          ...mockBusiness.businessPage,
+          status: 'PENDING_REVIEW',
+        },
+      };
+      const existing = { ...baseQual, totalApprovals: 2, business: pending };
+      mockRepo.findPageBusinessId.mockResolvedValue({ businessId: 'biz-1' });
+      mockRepo.findWithBusinessAndUser.mockResolvedValue(existing);
+      mockRepo.update.mockResolvedValue({ ...existing, isQualified: true });
+      mockRepo.approvePendingPage.mockResolvedValue({
+        businessId: 'biz-1',
+        business: {
+          name: 'Padaria Central',
+          userId: 'owner-1',
+          user: { email: 'owner@email.com' },
+        },
+      });
+
+      await service.onPageApproved('page-1');
+
+      expect(mockNotifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'owner-1',
+          type: 'business_page_approved',
+          payload: {
+            businessId: 'biz-1',
+            businessName: 'Padaria Central',
+            businessType: 'restaurante',
+            slug: 'padaria-central',
+          },
+          email: { subject: 's', html: 'h' },
+        }),
       );
     });
 

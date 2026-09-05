@@ -448,6 +448,21 @@ export class ItinerariesRepository {
     });
   }
 
+  /**
+   * Who owns an itinerary, and nothing else.
+   *
+   * A field on `itinerarySelect` would have been fewer lines, but that select
+   * feeds the public detail as well, and an owner's id is exactly the kind of
+   * thing that leaks by being available. One extra read on the copy path is
+   * cheaper than having to remember, at every mapper, not to pass it on.
+   */
+  findOwnerId(itineraryId: string): Promise<{ userId: string } | null> {
+    return this.prisma.itinerary.findUnique({
+      where: { id: itineraryId },
+      select: { userId: true },
+    });
+  }
+
   createReport(itineraryId: string, reason: string): Promise<{ id: string }> {
     return this.prisma.itineraryReport.create({
       data: { itineraryId, reason },

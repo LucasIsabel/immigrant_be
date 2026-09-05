@@ -65,18 +65,28 @@ export class NotificationsService {
   /**
    * Notifies the owner of something that changed, and optionally e-mails them.
    *
-   * Best-effort from the caller's point of view: whatever happened has already
-   * been committed by the time this runs, so a failure here loses the notice
-   * and not the approval — the same contract the inline e-mail had.
+   * Never throws. Whatever happened has already been committed by the time this
+   * runs, so there is nothing a caller could usefully do with the failure: a
+   * lost notice must not read to an admin like a failed approval. It is logged
+   * and swallowed, which is the same contract the inline e-mail had.
    */
   async notify<T extends UserNotificationType>(
     input: NotifyInput<T>,
   ): Promise<void> {
-    await this.write({
-      userId: input.userId,
-      type: input.type,
-      payload: input.payload as unknown as Record<string, unknown>,
-    });
+    try {
+      await this.write({
+        userId: input.userId,
+        type: input.type,
+        payload: input.payload as unknown as Record<string, unknown>,
+      });
+    } catch (error: unknown) {
+      // Error, not warn: a lost e-mail has a fallback, a lost notification is
+      // the only place the person would ever have heard about this.
+      this.logger.error(
+        `Could not notify ${input.userId} about "${input.type}": ${describe(error)}`,
+      );
+      return;
+    }
 
     if (!input.email) return;
 
