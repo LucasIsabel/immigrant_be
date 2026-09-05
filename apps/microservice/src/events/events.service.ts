@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationsService, type EmitEventInput } from '@app/notifications';
+import {
+  NotificationsService,
+  type EmitEventInput,
+} from '@app/notifications/notifications.service';
 
 export type CreateEventInput = EmitEventInput;
 
@@ -11,6 +14,11 @@ export type CreateEventInput = EmitEventInput;
  * API needs to notify people too and a service that only the microservice can
  * reach cannot serve both. What is left is the name the five consumers already
  * inject, so that move cost them nothing.
+ *
+ * The deep path, not the barrel: the barrel pulls in `NotificationsModule`, and
+ * with it `@app/email` and the environment parsing behind it. A worker that
+ * only wants to write a row should not fail to load because no mail server is
+ * configured.
  */
 @Injectable()
 export class EventsService {

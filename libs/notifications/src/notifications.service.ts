@@ -1,11 +1,27 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { EmailService } from '@app/email';
 import { NotificationStatus, Prisma } from 'generated/prisma';
 import type {
   NotificationPayloads,
   UserNotificationType,
 } from './notification-types';
+
+/**
+ * The mailer arrives through a token so that this file never imports
+ * `@app/email` — and that indirection is load-bearing, not taste.
+ *
+ * `@app/email` reaches `libs/config/env.ts`, which parses the whole environment
+ * at import time and throws when a variable is missing. The queue consumers
+ * import this service for `emit`, never for `notify`, and dragging an e-mail
+ * library behind them made three worker specs fail to even start on CI, where
+ * there is no `.env`. Sending mail is `notify`'s business; the workers should
+ * not have to know the word exists.
+ */
+export const NOTIFICATION_MAILER = 'NOTIFICATION_MAILER';
+
+export interface NotificationMailer {
+  send(params: { to: string; subject: string; html: string }): Promise<void>;
+}
 
 /** A row written with prose already in it — the workers' shape. */
 export interface EmitEventInput {
@@ -43,7 +59,7 @@ export class NotificationsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly email: EmailService,
+    @Inject(NOTIFICATION_MAILER) private readonly mailer: NotificationMailer,
   ) {}
 
   /**
@@ -74,7 +90,7 @@ export class NotificationsService {
     if (!user?.emailNotificationsEnabled || !user.email) return;
 
     try {
-      await this.email.send({
+      await this.mailer.send({
         to: user.email,
         subject: input.email.subject,
         html: input.email.html,

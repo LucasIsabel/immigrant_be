@@ -1,7 +1,9 @@
 export { NotificationsModule } from './notifications.module';
 export {
   NotificationsService,
+  NOTIFICATION_MAILER,
   type EmitEventInput,
+  type NotificationMailer,
   type NotifyInput,
 } from './notifications.service';
 export {

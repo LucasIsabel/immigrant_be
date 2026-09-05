@@ -3,15 +3,12 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
-jest.mock('@app/email', () => ({
-  EmailService: jest.fn(),
-  EmailModule: jest.fn(),
-}));
-
 import { PrismaService } from '@app/database';
-import { EmailService } from '@app/email';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationsService } from './notifications.service';
+import {
+  NOTIFICATION_MAILER,
+  NotificationsService,
+} from './notifications.service';
 import { USER_NOTIFICATION_TYPES } from './notification-types';
 
 const mockPrisma = {
@@ -52,7 +49,7 @@ describe('NotificationsService', () => {
       providers: [
         NotificationsService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: EmailService, useValue: mockEmail },
+        { provide: NOTIFICATION_MAILER, useValue: mockEmail },
       ],
     }).compile();
 
