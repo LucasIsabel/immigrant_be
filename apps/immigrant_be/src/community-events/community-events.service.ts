@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { StorageService } from '@app/storage';
+import { NotificationsService } from '@app/notifications/notifications.service';
+import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { CommunityEventStatus } from '../../../../generated/prisma';
 import {
   ALLOWED_IMAGE_MIMES,
@@ -64,6 +66,7 @@ export class CommunityEventsService {
   constructor(
     private readonly repository: CommunityEventsRepository,
     private readonly storageService: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ── Organizer ──────────────────────────────────────────────────────
@@ -567,16 +570,35 @@ export class CommunityEventsService {
       throw new ConflictException('Evento não está em análise');
     }
 
-    return this.toOwnerResponse(
-      await this.repository.update(id, {
-        status: 'APPROVED',
-        approvedAt: new Date(),
-        approvedById: adminId,
-        rejectedAt: null,
-        rejectedById: null,
-        rejectionReason: null,
-      }),
-    );
+    const approved = await this.repository.update(id, {
+      status: 'APPROVED',
+      approvedAt: new Date(),
+      approvedById: adminId,
+      rejectedAt: null,
+      rejectedById: null,
+      rejectionReason: null,
+    });
+
+    /*
+     * Until now moderating an event told nobody. The organiser found out by
+     * opening `/dashboard/events` and reading a badge — which means they found
+     * out whenever they next happened to look, and not when it happened.
+     *
+     * No e-mail here, deliberately: this notice never had one, and adding a
+     * channel is a decision about somebody's inbox, not a side effect of
+     * building a bell.
+     */
+    await this.notifications.notify({
+      userId: event.organizerId,
+      type: USER_NOTIFICATION_TYPES.COMMUNITY_EVENT_APPROVED,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        slug: event.slug,
+      },
+    });
+
+    return this.toOwnerResponse(approved);
   }
 
   /**
@@ -597,16 +619,32 @@ export class CommunityEventsService {
       throw new ConflictException('Evento não está em análise nem publicado');
     }
 
-    return this.toOwnerResponse(
-      await this.repository.update(id, {
-        status: 'REJECTED',
-        rejectedAt: new Date(),
-        rejectedById: adminId,
-        rejectionReason: dto.reason,
-        approvedAt: null,
-        approvedById: null,
-      }),
-    );
+    // Read before the update, because the update is what destroys the answer:
+    // `wasPublished` is the whole difference between "we turned it down" and
+    // "we took it off the agenda", and the organiser needs the right one.
+    const wasPublished = event.status === 'APPROVED';
+
+    const rejected = await this.repository.update(id, {
+      status: 'REJECTED',
+      rejectedAt: new Date(),
+      rejectedById: adminId,
+      rejectionReason: dto.reason,
+      approvedAt: null,
+      approvedById: null,
+    });
+
+    await this.notifications.notify({
+      userId: event.organizerId,
+      type: USER_NOTIFICATION_TYPES.COMMUNITY_EVENT_REJECTED,
+      payload: {
+        eventId: event.id,
+        title: event.title,
+        reason: dto.reason ?? null,
+        wasPublished,
+      },
+    });
+
+    return this.toOwnerResponse(rejected);
   }
 
   // ── Internals ──────────────────────────────────────────────────────

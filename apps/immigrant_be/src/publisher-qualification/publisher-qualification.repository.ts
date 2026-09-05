@@ -147,6 +147,9 @@ export class PublisherQualificationRepository {
         business: {
           select: {
             name: true,
+            // The owner, so the auto-approval can notify them. The e-mail alone
+            // is no longer enough: the bell is addressed by user id.
+            userId: true,
             user: { select: { email: true } },
           },
         },

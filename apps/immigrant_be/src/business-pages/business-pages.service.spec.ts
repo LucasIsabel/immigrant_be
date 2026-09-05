@@ -14,7 +14,6 @@ jest.mock('@app/config', () => ({
 }));
 
 jest.mock('@app/email', () => ({
-  EmailService: jest.fn(),
   buildApprovalEmail: jest.fn().mockReturnValue({ subject: 's', html: 'h' }),
   buildRejectionEmail: jest.fn().mockReturnValue({ subject: 's', html: 'h' }),
 }));
@@ -33,7 +32,8 @@ import {
 import { BusinessPageModerationService } from './business-page-moderation.service';
 import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
-import { buildRejectionEmail, EmailService } from '@app/email';
+import { buildRejectionEmail } from '@app/email';
+import { NotificationsService } from '@app/notifications/notifications.service';
 import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 import { StorageService } from '@app/storage';
 
@@ -104,8 +104,8 @@ const mockRepo = {
   updateBusinessTypeData: jest.fn(),
 };
 
-const mockEmail = {
-  send: jest.fn(),
+const mockNotifications = {
+  notify: jest.fn().mockResolvedValue(undefined),
 };
 
 const mockQualification = {
@@ -130,7 +130,7 @@ describe('BusinessPagesService', () => {
       providers: [
         BusinessPagesService,
         { provide: BusinessPagesRepository, useValue: mockRepo },
-        { provide: EmailService, useValue: mockEmail },
+        { provide: NotificationsService, useValue: mockNotifications },
         { provide: PublisherQualificationService, useValue: mockQualification },
         { provide: StorageService, useValue: mockStorage },
         { provide: BusinessPageModerationService, useValue: mockModeration },
@@ -821,7 +821,6 @@ describe('BusinessPagesService', () => {
       };
       mockRepo.findById.mockResolvedValue(page);
       mockRepo.approvePage.mockResolvedValue({ ...page, status: 'APPROVED' });
-      mockEmail.send.mockResolvedValue(undefined);
 
       const result = await service.approveBusinessPage('page-1', 'admin-1');
 
@@ -831,8 +830,16 @@ describe('BusinessPagesService', () => {
         true,
         'admin-1',
       );
-      expect(mockEmail.send).toHaveBeenCalledWith(
-        expect.objectContaining({ to: 'owner@email.com' }),
+      // The owner is addressed by id now, not by e-mail address: the bell is
+      // the channel that always fires, and the letter rides along for whoever
+      // still wants one. Which of the two goes out is `notify`'s decision.
+      expect(mockNotifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          type: 'business_page_approved',
+          payload: expect.objectContaining({ businessName: 'Padaria Central' }),
+          email: { subject: 's', html: 'h' },
+        }),
       );
       expect(result.status).toBe('APPROVED');
     });
@@ -885,7 +892,9 @@ describe('BusinessPagesService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('still approves and returns page even if email sending throws', async () => {
+    it('approves before it notifies, so the notice cannot undo the approval', async () => {
+      // The guarantee itself lives in `notify`, which swallows and logs — this
+      // asserts the call site does not put the approval behind it.
       const page = {
         ...mockPageWithBusiness,
         status: 'PENDING_REVIEW',
@@ -893,10 +902,10 @@ describe('BusinessPagesService', () => {
       };
       mockRepo.findById.mockResolvedValue(page);
       mockRepo.approvePage.mockResolvedValue({ ...page, status: 'APPROVED' });
-      mockEmail.send.mockRejectedValue(new Error('SMTP error'));
 
       const result = await service.approveBusinessPage('page-1', 'admin-1');
 
+      expect(mockRepo.approvePage).toHaveBeenCalled();
       expect(result.status).toBe('APPROVED');
     });
 
@@ -987,12 +996,15 @@ describe('BusinessPagesService', () => {
       };
       mockRepo.findById.mockResolvedValue(page);
       mockRepo.rejectPage.mockResolvedValue({ ...page, status: 'REJECTED' });
-      mockEmail.send.mockResolvedValue(undefined);
 
       await service.rejectBusinessPage('page-1', 'admin-1', {});
 
-      expect(mockEmail.send).toHaveBeenCalledWith(
-        expect.objectContaining({ to: 'owner@email.com' }),
+      expect(mockNotifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-1',
+          type: 'business_page_rejected',
+          email: { subject: 's', html: 'h' },
+        }),
       );
     });
 
@@ -1021,10 +1033,10 @@ describe('BusinessPagesService', () => {
       };
       mockRepo.findById.mockResolvedValue(page);
       mockRepo.rejectPage.mockResolvedValue({ ...page, status: 'REJECTED' });
-      mockEmail.send.mockRejectedValue(new Error('SMTP error'));
 
       const result = await service.rejectBusinessPage('page-1', 'admin-1', {});
 
+      expect(mockRepo.rejectPage).toHaveBeenCalled();
       expect(result.status).toBe('REJECTED');
     });
 
@@ -1037,12 +1049,15 @@ describe('BusinessPagesService', () => {
       };
       mockRepo.findById.mockResolvedValue(page);
       mockRepo.rejectPage.mockResolvedValue({ ...page, status: 'APPROVED' });
-      mockEmail.send.mockResolvedValue(undefined);
 
       await service.rejectBusinessPage('page-1', 'admin-1', {});
 
-      expect(mockEmail.send).toHaveBeenCalledWith(
-        expect.objectContaining({ to: 'owner@email.com' }),
+      // The distinction the owner needs: their live page is still up, and it
+      // was the change that was turned down.
+      expect(mockNotifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: expect.objectContaining({ isUpdate: true }),
+        }),
       );
       expect(mockedBuildRejectionEmail).toHaveBeenCalledWith(
         expect.any(String),

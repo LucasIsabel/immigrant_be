@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma';
 import { normalizeCity } from '../business/city-key';
+import { NotificationsService } from '@app/notifications/notifications.service';
+import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { buildItinerarySlugBase } from './itinerary-slug';
 import { MAX_CREATED_ITINERARIES_PER_COUNTRY } from './itineraries.constants';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
@@ -44,7 +46,10 @@ import {
 
 @Injectable()
 export class ItinerariesService {
-  constructor(private readonly repository: ItinerariesRepository) {}
+  constructor(
+    private readonly repository: ItinerariesRepository,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listMine(
     userId: string,
@@ -438,6 +443,8 @@ export class ItinerariesService {
         stops,
       });
 
+      await this.notifyAuthorOfCopy(source, userId);
+
       return {
         id: copy.id,
         slug: copy.slug,
@@ -461,6 +468,38 @@ export class ItinerariesService {
       }
       throw error;
     }
+  }
+
+  /**
+   * Tells the author somebody took a copy — once, and only when there is
+   * somebody else to tell.
+   *
+   * Two silences are deliberate. Copying your own itinerary notifies nobody:
+   * it is a duplicate you asked for, not an audience. And overwriting an
+   * existing copy notifies nobody either — it is the same reader refreshing
+   * what they already took, and reporting it again would turn one person's
+   * habit into a stream of notices that all say the same thing.
+   *
+   * The payload describes the **source**, never the copy, and carries no
+   * identity of whoever copied it: what the author gains is the knowledge that
+   * their itinerary travelled, not a name to look up.
+   */
+  private async notifyAuthorOfCopy(
+    source: ItineraryRow,
+    copierId: string,
+  ): Promise<void> {
+    const owner = await this.repository.findOwnerId(source.id);
+    if (!owner || owner.userId === copierId) return;
+
+    await this.notifications.notify({
+      userId: owner.userId,
+      type: USER_NOTIFICATION_TYPES.ITINERARY_COPIED,
+      payload: {
+        itineraryId: source.id,
+        title: source.title,
+        slug: source.slug,
+      },
+    });
   }
 
   /**

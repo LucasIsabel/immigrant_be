@@ -1,6 +1,8 @@
 // apps/immigrant_be/src/publisher-qualification/publisher-qualification.service.ts
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { EmailService, buildApprovalEmail } from '@app/email';
+import { buildApprovalEmail } from '@app/email';
+import { NotificationsService } from '@app/notifications/notifications.service';
+import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { env } from '@app/config';
 import { PublisherQualificationRepository } from './publisher-qualification.repository';
 import { ApplyOverrideDto } from './dto/apply-override.dto';
@@ -38,7 +40,7 @@ export class PublisherQualificationService {
 
   constructor(
     private readonly repository: PublisherQualificationRepository,
-    private readonly emailService: EmailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async onPageApproved(businessPageId: string): Promise<void> {
@@ -261,24 +263,22 @@ export class PublisherQualificationService {
     }
     if (!approved) return; // page was already processed (race condition)
 
-    try {
-      const pageUrl = `${env.FRONTEND_URL}/pg/${page.businessType}/${page.slug}`;
-      const { subject, html } = buildApprovalEmail(
+    // The same type a manual approval emits: to the person receiving it,
+    // automatic and manual approval are the same news, and a second type would
+    // only mean two sentences to translate for one event.
+    await this.notifications.notify({
+      userId: approved.business.userId,
+      type: USER_NOTIFICATION_TYPES.BUSINESS_PAGE_APPROVED,
+      payload: {
+        businessId: approved.businessId,
+        businessName: approved.business.name,
+        businessType: page.businessType,
+        slug: page.slug,
+      },
+      email: buildApprovalEmail(
         approved.business.name,
-        pageUrl,
-      );
-      await this.emailService.send({
-        to: approved.business.user.email,
-        subject,
-        html,
-      });
-    } catch (error) {
-      // email failure must not block auto-approval
-      this.logger.warn(
-        `Approval email failed for business page ${businessPageId}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
+        `${env.FRONTEND_URL}/pg/${page.businessType}/${page.slug}`,
+      ),
+    });
   }
 }

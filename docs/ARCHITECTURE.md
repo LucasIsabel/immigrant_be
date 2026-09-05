@@ -1063,6 +1063,30 @@ reprovação continua a ser juízo de conteúdo, com o preço que tem.
 | `buildApprovalEmail`      | Função            | Gera template HTML de aprovação de página (My City)      |
 | `buildRejectionEmail`     | Função            | Gera template HTML de reprovação de página (My City)     |
 
+### Quem manda e-mail, e quando — desde 2026-09-06
+
+Nenhum serviço chama o `EmailService` diretamente para avisar um utilizador. Os
+envios de moderação passam pelo `NotificationsService.notify` de
+`@app/notifications`, que grava sempre a notificação in-app e só depois decide
+sobre a carta:
+
+| Aviso | Sino | E-mail |
+| --- | --- | --- |
+| `business_page_approved` (moderação manual e auto-aprovação do publisher) | sempre | se `emailNotificationsEnabled` |
+| `business_page_rejected` | sempre | se `emailNotificationsEnabled` |
+| `community_event_approved` / `community_event_rejected` | sempre | nunca |
+| `itinerary_copied` | sempre | nunca |
+
+Duas coisas a reter. **`Users.emailNotificationsEnabled` passou a valer**: o
+interruptor existia no perfil, com endpoint por trás, e nenhum emissor o lia —
+quem o tinha desligado continuava a receber a carta de aprovação. Agora não.
+E **nenhum tipo novo ganhou e-mail**: acrescentar um canal é uma decisão sobre a
+caixa de entrada de alguém, não um efeito colateral de construir um sino.
+
+`notify` **nunca lança**. O que aconteceu já está gravado quando ele corre, por
+isso não há nada que o chamador possa fazer com a falha — e um aviso perdido não
+pode parecer ao admin uma aprovação falhada. Fica no log.
+
 ---
 
 ## 7. Armazenamento de Arquivos (Cloudflare R2)

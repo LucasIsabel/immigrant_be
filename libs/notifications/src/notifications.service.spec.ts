@@ -125,6 +125,26 @@ describe('NotificationsService', () => {
       expect(mockEmail.send).not.toHaveBeenCalled();
     });
 
+    it('does not fail the caller when the row cannot be written', async () => {
+      // The approval that triggered this is already committed and cannot be
+      // rolled back, so there is nothing a caller could do with the failure —
+      // and a lost notice must never read to an admin like a failed approval.
+      mockPrisma.events.create.mockRejectedValue(new Error('deadlock'));
+
+      await expect(service.notify({ ...approval })).resolves.toBeUndefined();
+    });
+
+    it('does not try to e-mail after failing to store the notice', async () => {
+      // A letter about something the bell will never show is worse than
+      // silence: it points at a page that has no record of what happened.
+      recipient(true);
+      mockPrisma.events.create.mockRejectedValue(new Error('deadlock'));
+
+      await service.notify({ ...approval, email: letter });
+
+      expect(mockEmail.send).not.toHaveBeenCalled();
+    });
+
     it('does not fail the caller when the mail server does', async () => {
       // Whatever happened is already committed; losing the letter must not
       // look to the caller like losing the approval.
