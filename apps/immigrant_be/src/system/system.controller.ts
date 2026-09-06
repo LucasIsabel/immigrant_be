@@ -22,7 +22,7 @@ import {
 } from '@nestjs/common';
 import { SuggestionsDto, SuggestionsResponseDto } from './dto/suggestions.dto';
 import { AllowAnonymous, type UserSession } from '@thallesp/nestjs-better-auth';
-import { map, defer, repeat, filter } from 'rxjs';
+import { map, defer, repeat, filter, interval, merge } from 'rxjs';
 import { EventsService } from './events.service';
 import { UserDetailsQueryDto } from '../users/dto/user-details-query.dto';
 import { VisaRecommendationResponseDto } from './dto/visa-recommendation-response.dto';
@@ -88,7 +88,7 @@ export class SystemController {
   notification(@Session() session: UserSession) {
     const userId = session?.user?.id;
 
-    return defer(() =>
+    const notifications = defer(() =>
       userId
         ? this.eventsService.getAndConsumeNextEvent(userId)
         : Promise.resolve(null),
@@ -102,6 +102,22 @@ export class SystemController {
         type: 'message' as const,
       })),
     );
+
+    /*
+     * A stream with nothing to say sends zero bytes, and an idle connection is
+     * one a proxy feels free to drop — Cloudflare does it at 100 seconds. The
+     * browser reconnects on its own, so nothing broke; it just meant a socket
+     * torn down and rebuilt every minute and a half, for nobody's benefit.
+     *
+     * The event is **named**, and that is what makes this free on the client:
+     * `EventSource.onmessage` only fires for events of type `message`, so the
+     * frontend never sees these and needs no change to ignore them.
+     */
+    const heartbeat = interval(25_000).pipe(
+      map(() => ({ data: '', type: 'heartbeat' as const })),
+    );
+
+    return merge(notifications, heartbeat);
   }
 
   // Nenhum recurso é criado aqui — é uma leitura que usa corpo para filtrar —,
