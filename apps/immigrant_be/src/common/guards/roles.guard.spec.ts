@@ -142,7 +142,11 @@ describe('RolesGuard', () => {
     expect(result).toBe(true);
     expect(prisma.users.findUnique).toHaveBeenCalledWith({
       where: { id: 'user-id' },
-      select: { userRoles: { select: { role: { select: { name: true } } } } },
+      select: {
+        banned: true,
+        banExpires: true,
+        userRoles: { select: { role: { select: { name: true } } } },
+      },
     });
   });
 
@@ -156,6 +160,62 @@ describe('RolesGuard', () => {
     const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
+  });
+
+  /*
+   * The lock behind the door. Sign-in refuses a banned account and banning
+   * deletes that person's sessions, so a live session with a ban in force means
+   * one was minted some other way — a ban written straight to the database, or
+   * a path added later that forgets to revoke. The check costs two columns on a
+   * query this guard already makes.
+   */
+  describe('a banned account', () => {
+    it('is refused even holding a valid session and the right role', async () => {
+      reflector.get.mockReturnValue([UserRole.ADMIN]);
+      prisma.users.findUnique.mockResolvedValue({
+        banned: true,
+        banExpires: null,
+        userRoles: [{ role: { name: 'admin' } }],
+      });
+
+      const context = createMockContext({ user: { id: 'user-id' } });
+
+      await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('is let back in once the ban has expired', async () => {
+      // Nothing sweeps the column, so it is still `true` here. Reading it alone
+      // is what made a temporary ban permanent.
+      reflector.get.mockReturnValue([UserRole.USER]);
+      prisma.users.findUnique.mockResolvedValue({
+        banned: true,
+        banExpires: new Date(Date.now() - 60_000),
+        userRoles: [{ role: { name: 'user' } }],
+      });
+
+      const context = createMockContext({ user: { id: 'user-id' } });
+
+      await expect(guard.canActivate(context)).resolves.toBe(true);
+    });
+
+    it('is refused before the role is even considered', async () => {
+      // The message must not tell a banned person which permissions they were
+      // short of; being suspended is the whole answer.
+      reflector.get.mockReturnValue([UserRole.ADMIN]);
+      prisma.users.findUnique.mockResolvedValue({
+        banned: true,
+        banExpires: null,
+        userRoles: [{ role: { name: 'user' } }],
+      });
+
+      const context = createMockContext({ user: { id: 'user-id' } });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Esta conta está suspensa.',
+      );
+    });
   });
 
   it('should throw ForbiddenException when user lacks the required role', async () => {

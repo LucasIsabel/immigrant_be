@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 
 import { PrismaClient } from '../../../generated/prisma';
 import { betterAuth } from 'better-auth';
+import { beforeSessionCreate } from './session-create';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { env } from './env';
 import { sendEmail } from '@app/email/send-email';
@@ -128,16 +129,7 @@ export const auth = betterAuth({
     },
     session: {
       create: {
-        before: async (session) => {
-          const userRoles = await prisma.userRoles.findMany({
-            where: { userId: session.userId },
-            select: { role: { select: { name: true } } },
-          });
-          const roleNames = userRoles.map((ur) => ur.role.name);
-          return {
-            data: { ...session, roles: JSON.stringify(roleNames) },
-          };
-        },
+        before: (session) => beforeSessionCreate(session, prisma),
       },
     },
   },

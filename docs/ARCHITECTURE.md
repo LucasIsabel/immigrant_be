@@ -182,6 +182,41 @@ Por isso:
   - `autoSignInAfterVerification: true` — ao clicar no link do email, usuário é logado automaticamente
   - Envio de email via **Resend** (`libs/config/src/email.ts`). Env vars: `RESEND_API_KEY`, `EMAIL_FROM`
 
+### Banimento — desde 2026-09-06
+
+Banir revoga as sessões e **fecha a porta**. Até esta data só fazia a primeira
+metade: `banUser` apagava as linhas de `Sessions` do utilizador
+(`users/user.service.ts`), a pessoa era expulsa na hora — e voltava a entrar a
+seguir, porque nada olhava para `banned` na criação de sessão. O ban durava o
+tempo de alguém carregar em "entrar".
+
+- **A porta é o `beforeSessionCreate`** (`libs/config/src/session-create.ts`),
+  chamado pelo `databaseHooks.session.create.before`. Recusar ali, e não num
+  guard, é o que faz disto um ban: nenhuma sessão chega a ser criada, portanto
+  não há janela em que uma conta banida segure um cookie válido. Foi extraído
+  para fora do literal de configuração do `betterAuth` porque lá dentro era um
+  ramo que nenhum teste alcançava — e este não é ramo para se descobrir em
+  produção.
+- **Recusa como `FORBIDDEN`**, não 500: um 500 leria-se à pessoa como "tenta
+  mais tarde" e a nós como avaria. Não é nem uma coisa nem outra, é uma decisão.
+- **A mensagem diz que a conta está suspensa e não diz porquê.** O motivo é uma
+  nota de um admin sobre uma pessoa, escrita para outros admins; o ecrã de
+  entrada não é onde deve ser lida em voz alta pela primeira vez.
+- **O `RolesGuard` verifica também**, ao custo de duas colunas numa consulta que
+  já fazia. Chegar lá com um ban em vigor significa que a sessão nasceu por
+  outro caminho — um `banned` escrito directamente na base, ou uma rota futura
+  que se esqueça de revogar. É a diferença entre um ban que se aguenta e um que
+  se aguenta até alguém escrever o próximo endpoint.
+- **`banExpires` passou a valer.** Era escrito e nunca lido, o que fazia um ban
+  de uma hora comportar-se como perpétuo. A regra vive num sítio só —
+  `isBanActive` em `libs/config/src/ban.ts` — precisamente para a porta e o
+  guard não poderem discordar sobre quem está banido, discordância que se leria
+  como um ban a funcionar só em algumas rotas.
+- **O prazo não é limpo da base.** A coluna `banned` fica `true` depois de
+  expirar e é a leitura que decide. Limpar exigiria um agendador que este
+  projeto não tem, e apagar o registo de que alguém foi banido é pior do que uma
+  coluna cuja leitura é condicional.
+
 ### Autorização (RBAC)
 
 - **RolesGuard** — guard global que verifica roles do usuário no banco
