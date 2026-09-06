@@ -73,6 +73,12 @@ export type ItineraryRow = Prisma.ItineraryGetPayload<{
   select: typeof itinerarySelect;
 }>;
 
+/** An itinerary in the report queue: the usual row plus why it is there. */
+export type ReportedItineraryRow = ItineraryRow & {
+  _count: { reports: number };
+  reports: { id: string; reason: string; createdAt: Date }[];
+};
+
 @Injectable()
 export class ItinerariesRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -461,6 +467,87 @@ export class ItinerariesRepository {
       where: { id: itineraryId },
       select: { userId: true },
     });
+  }
+
+  /**
+   * By id, with no owner in the query.
+   *
+   * Every other read here carries the owner precisely so a stranger's itinerary
+   * cannot come back — this one is for the admin queue, where the point is to
+   * reach somebody else's. Kept apart from `findOwned` and named plainly, so
+   * nothing reaches for it by accident.
+   */
+  findById(id: string): Promise<ItineraryRow | null> {
+    return this.prisma.itinerary.findUnique({
+      where: { id },
+      select: itinerarySelect,
+    });
+  }
+
+  /**
+   * The queue: public itineraries carrying at least one report nobody has
+   * answered, the most-reported first.
+   *
+   * `isPublic: true` is part of the query and not a filter afterwards. An
+   * itinerary that has already been taken down is not waiting for a decision —
+   * leaving it listed would grow a queue nobody can empty, which is the same
+   * disease as a bell that fires for everything.
+   */
+  async listReported(
+    page: number,
+    limit: number,
+  ): Promise<[ReportedItineraryRow[], number]> {
+    const where = {
+      isPublic: true,
+      reports: { some: { dismissedAt: null } },
+    } satisfies Prisma.ItineraryWhereInput;
+
+    return this.prisma.$transaction([
+      this.prisma.itinerary.findMany({
+        where,
+        select: {
+          ...itinerarySelect,
+          _count: { select: { reports: { where: { dismissedAt: null } } } },
+          reports: {
+            where: { dismissedAt: null },
+            select: { id: true, reason: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            // Enough to see whether the complaints agree with each other. The
+            // count beside them says how many there are in total.
+            take: 10,
+          },
+        },
+        orderBy: [{ reports: { _count: 'desc' } }, { createdAt: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.itinerary.count({ where }),
+    ]);
+  }
+
+  /** Takes it out of public view. The owner keeps it; nobody else sees it. */
+  unpublish(id: string): Promise<{ id: string } | null> {
+    return this.prisma.itinerary.update({
+      where: { id },
+      data: { isPublic: false },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * Marks every open report on one itinerary as answered.
+   *
+   * All of them together, because the decision is about the itinerary rather
+   * than about any one complaint: an admin who has looked and found nothing
+   * wrong has answered every report that was waiting, and answering them one at
+   * a time would leave the itinerary in the queue for the next identical one.
+   */
+  async dismissReports(id: string): Promise<number> {
+    const { count } = await this.prisma.itineraryReport.updateMany({
+      where: { itineraryId: id, dismissedAt: null },
+      data: { dismissedAt: new Date() },
+    });
+    return count;
   }
 
   createReport(itineraryId: string, reason: string): Promise<{ id: string }> {

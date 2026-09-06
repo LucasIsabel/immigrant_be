@@ -27,7 +27,17 @@ import type { ItinerariesRepository } from './itineraries.repository';
  * these cases is what the rows look like afterwards. This keeps positions in
  * memory so the order can be read back.
  */
+interface FakeReport {
+  id: string;
+  reason: string;
+  createdAt: Date;
+  dismissed: boolean;
+}
+
 function fakeRepository() {
+  /** Reports live beside the itineraries, so dismissing one really removes it. */
+  const reports = new Map<string, FakeReport[]>();
+
   type Stop = {
     id: string;
     position: number;
@@ -280,6 +290,43 @@ function fakeRepository() {
         return structuredClone(row);
       },
     ),
+    findById: jest.fn(async (id: string) => {
+      const row = itineraries.get(id);
+      return row ? structuredClone(row) : null;
+    }),
+    listReported: jest.fn(async (page: number, limit: number) => {
+      const rows = [...itineraries.values()].filter(
+        (r) =>
+          r.isPublic && (reports.get(r.id) ?? []).some((x) => !x.dismissed),
+      );
+      const comDenuncias = rows
+        .map((r) => ({
+          ...structuredClone(r),
+          _count: {
+            reports: (reports.get(r.id) ?? []).filter((x) => !x.dismissed)
+              .length,
+          },
+          reports: (reports.get(r.id) ?? [])
+            .filter((x) => !x.dismissed)
+            .map(({ id, reason, createdAt }) => ({ id, reason, createdAt })),
+        }))
+        .sort((a, b) => b._count.reports - a._count.reports);
+      return [
+        comDenuncias.slice((page - 1) * limit, page * limit),
+        rows.length,
+      ];
+    }),
+    unpublish: jest.fn(async (id: string) => {
+      const row = itineraries.get(id);
+      if (!row) return null;
+      row.isPublic = false;
+      return { id };
+    }),
+    dismissReports: jest.fn(async (id: string) => {
+      const abertas = (reports.get(id) ?? []).filter((x) => !x.dismissed);
+      for (const r of abertas) r.dismissed = true;
+      return abertas.length;
+    }),
     findOwnerId: jest.fn(async (id: string) => {
       const row = itineraries.get(id);
       return row ? { userId: row.userId } : null;
@@ -350,7 +397,18 @@ function fakeRepository() {
         return structuredClone(row);
       },
     ),
-    createReport: jest.fn(async () => ({ id: 'report-1' })),
+    createReport: jest.fn(async (itineraryId: string, reason: string) => {
+      const lista = reports.get(itineraryId) ?? [];
+      const row = {
+        id: `rep-${++sequence}`,
+        reason,
+        createdAt: new Date(),
+        dismissed: false,
+      };
+      lista.push(row);
+      reports.set(itineraryId, lista);
+      return { id: row.id };
+    }),
     reorderStops: jest.fn(async (itineraryId: string, ordered: string[]) => {
       const row = itineraries.get(itineraryId);
       if (!row) throw new Error('missing');
@@ -1174,6 +1232,136 @@ describe('ItinerariesService', () => {
    * own photos are what the business card already shows; there was nothing new
    * to decide, only a field nobody had filled in.
    */
+  /**
+   * Reports were written from the day the button shipped and never read once.
+   * The dialog said "received" and meant nothing: there was no queue, no count
+   * and no screen. These are the tests for the screen that makes it true.
+   */
+  describe('the report queue', () => {
+    const denunciado = async (motivo = 'O título é ofensivo.') => {
+      const { itineraryId } = await add('place-1');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+      const mine = await service.getMine(itineraryId, 'user-a');
+      await service.report(mine.slug, { reason: motivo });
+      return { itineraryId, slug: mine.slug };
+    };
+
+    it('lists what somebody complained about, with the words they used', async () => {
+      const { itineraryId } = await denunciado('Copiou o meu roteiro inteiro.');
+
+      const fila = await service.listReported({});
+
+      expect(fila.data).toHaveLength(1);
+      expect(fila.data[0].id).toBe(itineraryId);
+      expect(fila.data[0].reportCount).toBe(1);
+      expect(fila.data[0].reports[0].reason).toBe(
+        'Copiou o meu roteiro inteiro.',
+      );
+    });
+
+    it('leaves an itinerary nobody reported out of it', async () => {
+      const { itineraryId } = await add('place-1');
+      await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+
+      expect((await service.listReported({})).data).toHaveLength(0);
+    });
+
+    it('never shows who owns it', async () => {
+      // An admin table has no more business showing `userId` than any other
+      // screen: the queue reuses the owner's own summary precisely so a second
+      // mapper cannot quietly start leaking it.
+      await denunciado();
+
+      const fila = await service.listReported({});
+
+      expect(JSON.stringify(fila.data[0])).not.toContain('user-a');
+    });
+
+    describe('taking it down', () => {
+      it('removes it from public view, which is what takes it off the queue', async () => {
+        const { itineraryId } = await denunciado();
+
+        const depois = await service.unpublish(itineraryId);
+
+        expect(depois.isPublic).toBe(false);
+        expect((await service.listReported({})).data).toHaveLength(0);
+      });
+
+      it('leaves the reports open, so republishing brings it back', async () => {
+        // Taking something down does not settle the complaint. If the owner
+        // makes it public again it lands in front of an admin carrying the same
+        // reports, instead of returning quietly to a queue that has forgotten
+        // why it was ever there.
+        const { itineraryId } = await denunciado('Copiou o meu roteiro.');
+        await service.unpublish(itineraryId);
+
+        await service.setVisibility(itineraryId, 'user-a', { isPublic: true });
+
+        const fila = await service.listReported({});
+        expect(fila.data).toHaveLength(1);
+        expect(fila.data[0].reports[0].reason).toBe('Copiou o meu roteiro.');
+      });
+
+      it('does not touch a copy somebody already took', async () => {
+        // The whole reason this action is safe. A copy holds its own stops, so
+        // taking the original down is not reaching into anyone else's account.
+        const { itineraryId, slug } = await denunciado();
+        const copia = await service.copyPublic(slug, 'user-b');
+
+        await service.unpublish(itineraryId);
+
+        const guardada = await service.getMine(copia.id, 'user-b');
+        expect(guardada.stops).toHaveLength(1);
+        expect(guardada.title).toBe('Meu roteiro em Portugal');
+      });
+
+      it('answers 404 for an itinerary that does not exist', async () => {
+        await expect(service.unpublish('nao-existe')).rejects.toBeInstanceOf(
+          NotFoundException,
+        );
+      });
+    });
+
+    describe('saying the reports do not stand', () => {
+      it('leaves the itinerary public and takes it out of the queue', async () => {
+        // Without this the queue only grows: one report made in bad faith would
+        // keep a perfectly good itinerary listed forever, and a queue nobody
+        // can empty is one nobody reads.
+        const { itineraryId } = await denunciado();
+
+        expect(await service.dismissReports(itineraryId)).toEqual({
+          dismissed: 1,
+        });
+
+        const mine = await service.getMine(itineraryId, 'user-a');
+        expect(mine.isPublic).toBe(true);
+        expect((await service.listReported({})).data).toHaveLength(0);
+      });
+
+      it('brings it back when somebody reports it again', async () => {
+        // Dismissed means "these complaints did not stand", not "this itinerary
+        // is settled forever".
+        const { itineraryId, slug } = await denunciado();
+        await service.dismissReports(itineraryId);
+
+        await service.report(slug, { reason: 'Continua ofensivo.' });
+
+        const fila = await service.listReported({});
+        expect(fila.data).toHaveLength(1);
+        expect(fila.data[0].reportCount).toBe(1);
+      });
+
+      it('answers zero rather than failing when there is nothing open', async () => {
+        const { itineraryId } = await denunciado();
+        await service.dismissReports(itineraryId);
+
+        expect(await service.dismissReports(itineraryId)).toEqual({
+          dismissed: 0,
+        });
+      });
+    });
+  });
+
   describe('the photo a business stop carries', () => {
     const addBusiness = (businessId: string, photos: string[]) => {
       repo._businessPhotos.set(businessId, photos);

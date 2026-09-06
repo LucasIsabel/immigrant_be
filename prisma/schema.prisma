@@ -1335,8 +1335,16 @@ model ItineraryReport {
 
   reason String @db.VarChar(500)
 
+  /// Quando um admin decidiu que esta denúncia não procede.
+  ///
+  /// A linha fica: apagá-la levava o único traço de que alguém se queixou, e a
+  /// contagem de quantas vezes um roteiro já foi denunciado sem procedência é
+  /// exactamente o que distingue má-fé de padrão. Nula enquanto por decidir.
+  dismissedAt DateTime? @map("dismissed_at")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([itineraryId])
+  @@index([dismissedAt])
   @@map("itinerary_reports")
 }
