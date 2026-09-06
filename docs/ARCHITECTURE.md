@@ -1555,6 +1555,10 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `PUT /itineraries/:id/stops/order`                         | Itineraries                    | Autenticado (role USER) — permutação completa; 400 se o conjunto divergir |
 | `DELETE /itineraries/:id/stops/:stopId`                    | Itineraries                    | Autenticado (role USER) — remove uma parada |
 | `DELETE /itineraries/:id`                                  | Itineraries                    | Autenticado (role USER) — apaga o roteiro; as paradas caem em cascata |
+| `GET /notifications`                                       | Notifications                  | Autenticado (role USER) — a minha caixa de entrada, `createdAt desc`, paginado; lidas e por ler na mesma lista |
+| `GET /notifications/unread-count`                          | Notifications                  | Autenticado (role USER) — `{ count }` de `readAt IS NULL`; é o que o contador do sino mostra |
+| `POST /notifications/read-all`                             | Notifications                  | Autenticado (role USER) — marca as minhas por ler; devolve `{ updated }`; throttle 10/min |
+| `PATCH /notifications/:id/read`                            | Notifications                  | Autenticado (role USER) — idempotente (não reescreve o `readAt`); 404 se não for minha; throttle 60/min |
 
 **Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta o `AiRouterService`, monta o input a partir do conteúdo da página, achata o `typeData` com `flattenModerationContent` (cada folha nomeada pelo caminho JSON — `tours[2].description`), chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
@@ -1564,6 +1568,40 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 - **Grava nos dois desfechos**, não só no rebaixamento: uma página que passou também tem uma última análise, e guardá-la evita um ramo no código e uma pergunta sem resposta na tela.
 - **`model: null` quando ninguém respondeu.** O fallback de erro não é a opinião de um modelo; atribuir um nome ali seria pôr na boca de alguém uma frase que ele não disse. Quando o modelo respondeu e a resposta não deu parse, o nome dele **fica** — é assim que se descobre depois que um deles não sabe responder isto.
 - **Editar o conteúdo não limpa o registro.** Apagar apagaria o único traço de por que a página está na fila; o `analyzedAt` na tela deixa claro que a análise pode ser anterior à edição.
+
+### Notificações — a caixa de entrada e o heartbeat
+
+O módulo HTTP chama-se `NotificationsHttpModule` e o seu serviço
+`NotificationsInboxService` porque `@app/notifications` já publica um
+`NotificationsModule` e um `NotificationsService`: aquele **escreve**
+notificações, este **lê-as de volta**. Dois nomes iguais na mesma lista de
+imports é um bug à espera de quem acrescentar o terceiro.
+
+Três coisas que são fáceis de desfazer sem perceber:
+
+- **`unread-count` e `read-all` são declaradas antes de `:id/read`.** Ordem de
+  declaração é ordem de routing, e aqui a falha nem sequer seria um 404 honesto:
+  o `:id` leva `ParseUUIDPipe`, portanto o contador pediria a contagem e
+  receberia um 400 sobre um uuid malformado que nunca enviou. Há teste no
+  contract spec.
+- **`userId` e `status` não saem na resposta.** O `userId` é o próprio chamador;
+  o `status` é a contabilidade do transporte SSE — publicá-lo convida um cliente
+  a raciocinar sobre ele, e aí o mecanismo de entrega deixa de poder mudar.
+- **`markRead` usa `updateMany` com `{ id, userId, readAt: null }`.** O
+  `update` exige um `where` único e `id` sozinho é único, o que deixaria
+  qualquer pessoa marcar a linha de qualquer outra. O `readAt: null` no filtro é
+  o que torna a operação idempotente: marcar de novo não casa com nada e o
+  carimbo original sobrevive. A leitura a seguir é o que distingue "já estava
+  lida" de "não é tua" — o update sozinho devolve zero nos dois casos.
+
+**O heartbeat.** O `@Sse('/sse')` emite, além das notificações, um evento
+`heartbeat` a cada 25 s. Um stream sem nada a dizer manda zero bytes, e ligação
+ociosa é ligação que um proxy se sente à vontade para derrubar — a Cloudflare
+fá-lo aos 100 s. Nada estava partido: o `EventSource` reconecta sozinho. Era só
+um socket a ser destruído e reconstruído de minuto e meio a minuto e meio, para
+nada. O evento é **nomeado**, e é isso que o torna gratuito no cliente:
+`EventSource.onmessage` só dispara para eventos de tipo `message`, portanto o
+frontend nunca os vê e não precisou de mudar uma linha para os ignorar.
 
 ### Roteiros — o que as rotas do dono decidem
 

@@ -14,6 +14,7 @@ import { DatabaseModule } from '@app/database';
 import { BullMQConfigModule } from '@app/config/bull.module';
 import { EmailModule } from '@app/email';
 import { NotificationsModule } from '@app/notifications';
+import { NotificationsHttpModule } from './notifications/notifications.module';
 import { VisaStepsModule } from './visa-steps/visa-steps.module';
 import { ImmigrationVisaTypeModule } from './immigration-visa-type/immigration-visa-type.module';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -72,6 +73,7 @@ const bullBoardEnabled =
     BullMQConfigModule,
     EmailModule,
     NotificationsModule,
+    NotificationsHttpModule,
     HealthModule,
     RoleModule,
     BlogModule,
