@@ -277,7 +277,7 @@ export class PublisherQualificationService {
       },
       email: buildApprovalEmail(
         approved.business.name,
-        `${env.FRONTEND_URL}/pg/${page.businessType}/${page.slug}`,
+        `${env.FRONTEND_URL}/my-city/pg/${page.businessType}/${page.slug}`,
       ),
     });
   }

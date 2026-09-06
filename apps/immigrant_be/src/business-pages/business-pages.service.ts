@@ -328,9 +328,13 @@ export class BusinessPagesService {
         businessType: updated.businessType,
         slug: updated.slug,
       },
+      // `/my-city/pg/...`, which is where the page actually lives. This link
+      // said `/pg/...` for as long as the e-mail has existed, and that route
+      // has never existed: every approval so far pointed at a 404, on the one
+      // message whose whole purpose is "go and look at it".
       email: buildApprovalEmail(
         page.business.name,
-        `${env.FRONTEND_URL}/pg/${updated.businessType}/${updated.slug}`,
+        `${env.FRONTEND_URL}/my-city/pg/${updated.businessType}/${updated.slug}`,
       ),
     });
 
@@ -374,7 +378,10 @@ export class BusinessPagesService {
       email: buildRejectionEmail(
         page.business.name,
         isUpdate,
-        `${env.FRONTEND_URL}/dashboard/meu-negocio/${page.businessId}/pagina-publica`,
+        // The canonical route. The Portuguese one still resolves — `next.config.ts`
+        // keeps a redirect for saved links — but a link written today has no
+        // reason to spend a hop on it.
+        `${env.FRONTEND_URL}/dashboard/my-business/${page.businessId}/edit`,
         dto.reason,
       ),
     });
