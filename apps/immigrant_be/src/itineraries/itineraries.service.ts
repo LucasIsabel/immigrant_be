@@ -20,6 +20,11 @@ import {
 import { AddItineraryStopDto } from './dto/add-itinerary-stop.dto';
 import { AddItineraryStopResponseDto } from './dto/add-itinerary-stop.dto';
 import { ListMyItinerariesQueryDto } from './dto/list-my-itineraries-query.dto';
+import { ListReportedItinerariesQueryDto } from './dto/list-reported-itineraries-query.dto';
+import {
+  DismissReportsResponseDto,
+  PaginatedReportedItinerariesResponseDto,
+} from './dto/reported-itinerary.dto';
 import { ListPublicItinerariesQueryDto } from './dto/list-public-itineraries-query.dto';
 import {
   PaginatedPublicItinerariesResponseDto,
@@ -33,6 +38,7 @@ import {
 import {
   MyItineraryResponseDto,
   MyItineraryStopDto,
+  MyItinerarySummaryDto,
   PaginatedMyItinerariesResponseDto,
 } from './dto/itinerary-response.dto';
 import { ReorderItineraryStopsDto } from './dto/reorder-itinerary-stops.dto';
@@ -67,34 +73,104 @@ export class ItinerariesService {
     );
 
     return {
-      data: rows.map((row) => {
-        const stops = row.stops.map((stop) => this.toStop(stop));
-        return {
-          id: row.id,
-          slug: row.slug,
-          title: row.title,
-          countryCode: row.countryCode,
-          cities: [
-            ...new Set(stops.filter((s) => s.available).map((s) => s.city)),
-          ],
-          stopCount: stops.filter((s) => s.available).length,
-          unavailableStopCount: stops.filter((s) => !s.available).length,
-          // The same rule the public listing uses, off the stops this already
-          // walked to count them: no extra query, and an unavailable stop
-          // never lends its photo to a cover the owner cannot show.
-          coverImageUrl:
-            stops.find((s) => s.available && s.imageUrl)?.imageUrl ?? null,
-          isCopy: row.sourceItineraryId !== null,
-          copiedAt: row.copiedAt,
-          isPublic: row.isPublic,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-        };
-      }),
+      data: rows.map((row) => this.toSummary(row)),
       total,
       page,
       limit,
     };
+  }
+
+  /**
+   * The row as a list entry. Extracted so the admin report queue shows an
+   * itinerary the same way its owner sees it — a second mapper would be a
+   * second chance to leak `userId` into a response.
+   */
+  private toSummary(row: ItineraryRow): MyItinerarySummaryDto {
+    const stops = row.stops.map((stop) => this.toStop(stop));
+
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      countryCode: row.countryCode,
+      cities: [...new Set(stops.filter((s) => s.available).map((s) => s.city))],
+      stopCount: stops.filter((s) => s.available).length,
+      unavailableStopCount: stops.filter((s) => !s.available).length,
+      // The same rule the public listing uses, off the stops this already
+      // walked to count them: no extra query, and an unavailable stop never
+      // lends its photo to a cover the owner cannot show.
+      coverImageUrl:
+        stops.find((s) => s.available && s.imageUrl)?.imageUrl ?? null,
+      isCopy: row.sourceItineraryId !== null,
+      copiedAt: row.copiedAt,
+      isPublic: row.isPublic,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  // ── Admin: the report queue ────────────────────────────────────────────
+
+  /**
+   * Public itineraries carrying a report nobody has answered.
+   *
+   * Reports have been written since the feature shipped and never read once —
+   * the dialog said "received" and meant nothing. This is the screen that makes
+   * the button true.
+   */
+  async listReported(
+    query: ListReportedItinerariesQueryDto,
+  ): Promise<PaginatedReportedItinerariesResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const [rows, total] = await this.repository.listReported(page, limit);
+
+    return {
+      data: rows.map((row) => ({
+        ...this.toSummary(row),
+        reportCount: row._count.reports,
+        reports: row.reports,
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Takes an itinerary out of public view.
+   *
+   * The reports are deliberately **left open**. Taking something down does not
+   * settle the complaint, and the queue only lists public itineraries anyway,
+   * so this leaves it — which means that if the owner makes it public again it
+   * comes straight back in front of an admin, carrying the same reports, rather
+   * than returning quietly to a queue that has forgotten why it was there.
+   *
+   * Copies are untouched, and that is what makes this safe. A copy holds its
+   * own stops — `sourceItineraryId` carries no relation and nothing
+   * dereferences it — so somebody who saved this route keeps it whole.
+   */
+  async unpublish(id: string): Promise<MyItineraryResponseDto> {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('Roteiro não encontrado');
+
+    await this.repository.unpublish(id);
+
+    return this.toResponse({ ...row, isPublic: false });
+  }
+
+  /**
+   * Says the reports do not stand, and leaves the itinerary where it is.
+   *
+   * Without this the queue only grows: one report made in bad faith would keep
+   * a perfectly good itinerary listed forever, and a queue nobody can empty is
+   * one nobody reads.
+   */
+  async dismissReports(id: string): Promise<DismissReportsResponseDto> {
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('Roteiro não encontrado');
+
+    return { dismissed: await this.repository.dismissReports(id) };
   }
 
   async getMine(id: string, userId: string): Promise<MyItineraryResponseDto> {

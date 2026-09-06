@@ -18,6 +18,7 @@ jest.mock('@app/database', () => ({
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
+import { ItinerariesAdminController } from './itineraries-admin.controller';
 import { ItinerariesController } from './itineraries.controller';
 import { ItinerariesService } from './itineraries.service';
 
@@ -35,7 +36,7 @@ describe('OpenAPI contract — Itineraries', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [ItinerariesController],
+      controllers: [ItinerariesController, ItinerariesAdminController],
       providers: [{ provide: ItinerariesService, useValue: {} }],
     }).compile();
 
@@ -65,12 +66,15 @@ describe('OpenAPI contract — Itineraries', () => {
     expect(operations()).toEqual([
       'DELETE /itineraries/{id}',
       'DELETE /itineraries/{id}/stops/{stopId}',
+      'GET /admin/itineraries/reported',
       'GET /itineraries/mine',
       'GET /itineraries/public',
       'GET /itineraries/public/{slug}',
       'GET /itineraries/{id}',
       'PATCH /itineraries/{id}',
       'PATCH /itineraries/{id}/visibility',
+      'POST /admin/itineraries/{id}/dismiss-reports',
+      'POST /admin/itineraries/{id}/unpublish',
       'POST /itineraries',
       'POST /itineraries/public/{slug}/copy',
       'POST /itineraries/public/{slug}/report',
@@ -108,6 +112,29 @@ describe('OpenAPI contract — Itineraries', () => {
     expect(indexOf('/itineraries/public')).toBeLessThan(
       indexOf('/itineraries/{id}'),
     );
+  });
+
+  /*
+   * Reports were written from the day the button shipped and never read once:
+   * no queue, no count, no screen. These three routes are what makes the
+   * report dialog's "received" true, and they are the only place in this API
+   * that reaches an itinerary without its owner — so the contract is where the
+   * guard gets checked.
+   */
+  it('asks for an admin on every route that reaches somebody else’s itinerary', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, { security?: unknown[] }>
+    >;
+
+    const admin = Object.entries(paths)
+      .filter(([route]) => route.startsWith('/admin/'))
+      .flatMap(([, item]) => Object.values(item));
+
+    expect(admin).toHaveLength(3);
+    for (const operation of admin) {
+      expect(operation.security).toEqual([{ 'better-auth.session_token': [] }]);
+    }
   });
 
   /*

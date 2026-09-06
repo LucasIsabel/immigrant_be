@@ -1650,6 +1650,42 @@ nada. O evento é **nomeado**, e é isso que o torna gratuito no cliente:
 `EventSource.onmessage` só dispara para eventos de tipo `message`, portanto o
 frontend nunca os vê e não precisou de mudar uma linha para os ignorar.
 
+### Denúncias de roteiro — a fila do admin, desde 2026-09-06
+
+Desde que o botão de denunciar existe, o `createReport` escrevia uma linha e
+**nada, em lado nenhum, alguma vez a lia**. Não havia controller de admin, nem
+contagem, nem ecrã: o diálogo respondia "Recebido" e não era verdade. Três rotas
+em `ItinerariesAdminController` (`admin/itineraries`) passam a tornar aquele
+botão honesto.
+
+- **Controller próprio, e não ramos de admin nas rotas do dono.** O
+  `@Roles(ADMIN)` na classe é um facto único sobre o ficheiro inteiro, e o
+  `PATCH /itineraries/:id/visibility` continua a significar exactamente o que
+  diz — um dono a mudar de ideias — em vez de ganhar um desvio que é preciso ler
+  com atenção para se confiar nele.
+- **A fila só lista roteiros públicos** com pelo menos uma denúncia por
+  responder. Um roteiro já despublicado não está à espera de decisão nenhuma;
+  deixá-lo listado fazia crescer uma fila que ninguém consegue esvaziar, que é a
+  mesma doença de um sino que toca para tudo.
+- **Despublicar deixa as denúncias abertas**, de propósito. Derrubar não é
+  responder à queixa, e como a fila filtra por público o roteiro sai de lá na
+  mesma — mas se o dono voltar a publicá-lo reaparece à frente de um admin com
+  as mesmas denúncias, em vez de regressar em silêncio a uma fila que se
+  esqueceu do motivo.
+- **Ignorar existe porque sem isso a fila apodrece.** Uma denúncia de má-fé
+  manteria um roteiro legítimo listado para sempre. Marca as abertas daquele
+  roteiro de uma vez: a decisão é sobre o roteiro, não sobre cada queixa, e
+  respondê-las uma a uma deixava-o na fila para a seguinte igual.
+- **As linhas não são apagadas.** `dismissedAt` marca; apagar levava o único
+  traço de que alguém se queixou, e quantas vezes um roteiro já foi denunciado
+  *sem procedência* é o que distingue uma pessoa de má-fé de um padrão.
+- **As cópias não são afectadas** — e é isso que torna a acção segura. Uma cópia
+  tem paradas próprias, o `sourceItineraryId` não tem `@relation` e nada o
+  dereferencia. Há teste que despublica a origem e lê a cópia inteira.
+- **A fila reutiliza o sumário do dono** (`toSummary`) em vez de um mapeador
+  novo: um segundo mapeador seria uma segunda oportunidade para o `userId`
+  escapar para uma resposta. Há teste.
+
 ### Roteiros — o que as rotas do dono decidem
 
 O módulo `itineraries/` espelha `community-events/`, e três escolhas merecem
