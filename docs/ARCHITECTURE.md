@@ -1118,6 +1118,18 @@ quem o tinha desligado continuava a receber a carta de aprovação. Agora não.
 E **nenhum tipo novo ganhou e-mail**: acrescentar um canal é uma decisão sobre a
 caixa de entrada de alguém, não um efeito colateral de construir um sino.
 
+**As ligações dos e-mails apontam para rotas que existem** — verificado a
+2026-09-06, e duas não apontavam. A de aprovação dizia `/pg/:tipo/:slug`, rota
+que nunca existiu: a página pública vive em `/my-city/pg/:businessType/:key`, e
+o `next.config.ts` não tem redirect para um `/pg` solto. Todos os e-mails de
+aprovação alguma vez enviados apontaram para um 404 — na única mensagem cujo
+propósito inteiro é "vai lá ver". A de recusa estava certa por acaso: usava o
+caminho português `/dashboard/meu-negocio/:id/pagina-publica`, que o bloco de
+redirects legados ainda apanha. Passou a usar a rota canónica; o redirect fica
+para as ligações já enviadas. As restantes (`/reset-password`, `/verify-email`)
+foram conferidas contra a árvore de rotas e estão certas. Há teste a fixar as
+duas URL.
+
 `notify` **nunca lança**. O que aconteceu já está gravado quando ele corre, por
 isso não há nada que o chamador possa fazer com a falha — e um aviso perdido não
 pode parecer ao admin uma aprovação falhada. Fica no log.

@@ -32,7 +32,7 @@ import {
 import { BusinessPageModerationService } from './business-page-moderation.service';
 import { BusinessPagesService } from './business-pages.service';
 import { BusinessPagesRepository } from './business-pages.repository';
-import { buildRejectionEmail } from '@app/email';
+import { buildApprovalEmail, buildRejectionEmail } from '@app/email';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { PublisherQualificationService } from '../publisher-qualification/publisher-qualification.service';
 import { StorageService } from '@app/storage';
@@ -892,6 +892,28 @@ describe('BusinessPagesService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it('links to the page that exists, not the one that never did', async () => {
+      // `/pg/...` has no route on the frontend — the page lives at
+      // `/my-city/pg/...`. Every approval e-mail sent so far pointed at a 404,
+      // on the one message whose whole purpose is "go and look at it".
+      const page = {
+        ...mockPageWithBusiness,
+        status: 'PENDING_REVIEW',
+        approvedContent: null,
+        slug: 'padaria-central',
+        businessType: 'restaurante',
+      };
+      mockRepo.findById.mockResolvedValue(page);
+      mockRepo.approvePage.mockResolvedValue({ ...page, status: 'APPROVED' });
+
+      await service.approveBusinessPage('page-1', 'admin-1');
+
+      expect(jest.mocked(buildApprovalEmail)).toHaveBeenCalledWith(
+        expect.any(String),
+        'https://app.test/my-city/pg/restaurante/padaria-central',
+      );
+    });
+
     it('approves before it notifies, so the notice cannot undo the approval', async () => {
       // The guarantee itself lives in `notify`, which swallows and logs — this
       // asserts the call site does not put the approval behind it.
@@ -1062,7 +1084,7 @@ describe('BusinessPagesService', () => {
       expect(mockedBuildRejectionEmail).toHaveBeenCalledWith(
         expect.any(String),
         true,
-        expect.any(String),
+        'https://app.test/dashboard/my-business/biz-1/edit',
         undefined,
       );
     });
