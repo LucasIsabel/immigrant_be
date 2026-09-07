@@ -44,6 +44,7 @@ const mockRoleRepository = {
   update: jest.fn(),
   delete: jest.fn(),
   assignRole: jest.fn(),
+  syncSessionRoles: jest.fn(),
   revokeRole: jest.fn(),
   findUserRoles: jest.fn(),
   countUserRoles: jest.fn(),
@@ -292,6 +293,56 @@ describe('RoleService', () => {
 
       expect(result).toEqual([mockUserRole]);
       expect(repository.findUserRoles).toHaveBeenCalledWith('user-id-1');
+    });
+  });
+
+  /**
+   * The session carries a `roles` column, stamped once when it is created. The
+   * backend was never fooled — `RolesGuard` reads the roles fresh on every
+   * request — but the screen was: an admin lost the admin menu only at their
+   * next sign-in, with nothing telling them to sign in again.
+   */
+  describe('a role change reaching the screens already open', () => {
+    it('re-stamps the sessions after granting a role', async () => {
+      repository.findById.mockResolvedValue({ id: 'role-1', name: 'admin' });
+      repository.assignRole.mockResolvedValue({ id: 'ur-1' });
+
+      await service.assignRole('user-1', 'role-1');
+
+      expect(repository.syncSessionRoles).toHaveBeenCalledWith('user-1');
+    });
+
+    it('re-stamps them after revoking one, which matters more', async () => {
+      // An admin menu still on screen after the role is gone invites clicks
+      // that will now be refused, and the refusal is the first the person
+      // hears of it.
+      repository.countUserRoles.mockResolvedValue(2);
+      repository.revokeRole.mockResolvedValue({ id: 'ur-1' });
+
+      await service.revokeRole('user-1', 'role-1');
+
+      expect(repository.syncSessionRoles).toHaveBeenCalledWith('user-1');
+    });
+
+    it('does not re-stamp when the grant was refused', async () => {
+      // Nothing changed, so there is nothing to tell anybody about.
+      repository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.assignRole('user-1', 'role-1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(repository.syncSessionRoles).not.toHaveBeenCalled();
+    });
+
+    it('does not re-stamp when the last role was protected', async () => {
+      repository.countUserRoles.mockResolvedValue(1);
+
+      await expect(
+        service.revokeRole('user-1', 'role-1'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(repository.syncSessionRoles).not.toHaveBeenCalled();
     });
   });
 });
