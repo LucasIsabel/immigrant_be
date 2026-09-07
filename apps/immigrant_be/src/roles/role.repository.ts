@@ -55,6 +55,34 @@ export class RoleRepository {
     });
   }
 
+  /**
+   * Re-stamps the roles onto every live session this person holds.
+   *
+   * The session carries a `roles` column, written once by the
+   * `session.create.before` hook and never touched again — so granting or
+   * revoking a role changed the database and left every open tab believing
+   * what it believed at sign-in. The backend was never fooled (`RolesGuard`
+   * reads the roles fresh on every request), but the screen was: an admin lost
+   * the admin menu only when they next signed in, with nothing telling them.
+   *
+   * Rewriting the sessions is the smaller of the two honest fixes. The other is
+   * to stop storing roles on the session at all and read them per request,
+   * which is a change to how every page decides what to show.
+   */
+  async syncSessionRoles(userId: string): Promise<number> {
+    const userRoles = await this.prisma.userRoles.findMany({
+      where: { userId },
+      select: { role: { select: { name: true } } },
+    });
+
+    const { count } = await this.prisma.sessions.updateMany({
+      where: { userId },
+      data: { roles: JSON.stringify(userRoles.map((ur) => ur.role.name)) },
+    });
+
+    return count;
+  }
+
   async countUserRoles(userId: string) {
     return this.prisma.userRoles.count({ where: { userId } });
   }

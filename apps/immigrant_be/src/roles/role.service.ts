@@ -84,7 +84,12 @@ export class RoleService {
     }
 
     try {
-      return await this.roleRepository.assignRole(userId, roleId);
+      const assigned = await this.roleRepository.assignRole(userId, roleId);
+      // The screens this person already has open decide what to show from the
+      // roles stamped on their session. Without this the new role only reaches
+      // them at their next sign-in, and nothing tells them to sign in again.
+      await this.roleRepository.syncSessionRoles(userId);
+      return assigned;
     } catch (error: unknown) {
       if (
         error instanceof Error &&
@@ -114,7 +119,12 @@ export class RoleService {
     }
 
     try {
-      return await this.roleRepository.revokeRole(userId, roleId);
+      const revoked = await this.roleRepository.revokeRole(userId, roleId);
+      // Revoking matters more than granting: an admin menu that stays on screen
+      // after the role is gone invites clicks that will now be refused, and the
+      // refusal is the first the person hears of it.
+      await this.roleRepository.syncSessionRoles(userId);
+      return revoked;
     } catch (error: unknown) {
       if (
         error instanceof Error &&

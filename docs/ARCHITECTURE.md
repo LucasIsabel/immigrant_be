@@ -182,6 +182,28 @@ Por isso:
   - `autoSignInAfterVerification: true` — ao clicar no link do email, usuário é logado automaticamente
   - Envio de email via **Resend** (`libs/config/src/email.ts`). Env vars: `RESEND_API_KEY`, `EMAIL_FROM`
 
+### Mudar uma role chega aos ecrãs já abertos — desde 2026-09-07
+
+A sessão carrega uma coluna `roles`, carimbada uma vez pelo hook
+`session.create.before` e nunca mais tocada. Dar ou tirar uma role mudava a base
+de dados e deixava todos os separadores abertos a acreditar no que acreditavam
+ao entrar.
+
+- **O servidor nunca foi enganado.** O `RolesGuard` vai buscar as roles à base a
+  cada pedido (`roles.guard.ts`), portanto a autorização sempre esteve correcta.
+  Quem se enganava era o ecrã: um admin perdia o menu de admin só na sessão
+  seguinte, sem nada lho dizer.
+- **`syncSessionRoles` reescreve as sessões vivas** dessa pessoa depois de um
+  `assignRole` ou `revokeRole` — e só quando a operação passou; um pedido
+  recusado não mudou nada e não tem nada para anunciar.
+- **Tirar importa mais do que dar.** Um menu de admin que fica no ecrã depois de
+  a role desaparecer convida cliques que vão passar a ser recusados, e a recusa
+  é a primeira coisa que a pessoa ouve sobre o assunto.
+- **Fica até cinco minutos de atraso**, e isso é deliberado: o `cookieCache` do
+  better-auth serve a sessão a partir do cookie durante esse tempo. É outra
+  coisa do que "só ao voltar a entrar", mas não é instantâneo — e reduzir o
+  cache tem custo em todos os pedidos, não só nestes.
+
 ### Banimento — desde 2026-09-06
 
 Banir revoga as sessões e **fecha a porta**. Até esta data só fazia a primeira
