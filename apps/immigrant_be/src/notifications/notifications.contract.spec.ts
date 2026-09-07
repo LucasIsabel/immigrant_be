@@ -63,6 +63,7 @@ describe('OpenAPI contract — Notifications', () => {
 
   it('registers every operation of the inbox', () => {
     expect(operations()).toEqual([
+      'DELETE /notifications/read',
       'GET /notifications',
       'GET /notifications/unread-count',
       'PATCH /notifications/{id}/read',
@@ -87,6 +88,20 @@ describe('OpenAPI contract — Notifications', () => {
     expect(indexOf('/notifications/read-all')).toBeLessThan(
       indexOf('/notifications/{id}/read'),
     );
+  });
+
+  /*
+   * `read` is a literal segment on a route that also has `:id/read`, so it goes
+   * in the same declaration-order trap the count and read-all sit in — except
+   * this one is a DELETE, and Express matches per method, so `:id` never sees
+   * it. Pinned anyway: the day somebody adds `DELETE /notifications/:id`, this
+   * test is what says which of the two wins.
+   */
+  it('keeps clearing the read ones a route of its own', () => {
+    const paths = document.paths as Record<string, Record<string, unknown>>;
+
+    expect(paths['/notifications/read']).toHaveProperty('delete');
+    expect(paths['/notifications/{id}/read']).not.toHaveProperty('delete');
   });
 
   it('asks for the session on every route, since none of them is public', () => {

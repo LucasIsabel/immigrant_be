@@ -75,6 +75,21 @@ export class NotificationsRepository {
     });
   }
 
+  /**
+   * Throws away what this person has already read, and nothing else.
+   *
+   * `readAt: { not: null }` is the whole safety of it. An unread notice is
+   * something nobody has seen yet — deleting one by accident destroys
+   * information that never reached anybody, and there is no undo. Tidying up is
+   * not the same as discarding.
+   */
+  async deleteRead(userId: string): Promise<number> {
+    const { count } = await this.prisma.events.deleteMany({
+      where: { userId, readAt: { not: null } },
+    });
+    return count;
+  }
+
   async markAllRead(userId: string): Promise<number> {
     const { count } = await this.prisma.events.updateMany({
       where: { userId, readAt: null },

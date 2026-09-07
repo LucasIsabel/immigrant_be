@@ -5,6 +5,7 @@ import {
 } from './notifications.repository';
 import { ListNotificationsQueryDto } from './dto/list-notifications-query.dto';
 import {
+  ClearReadResponseDto,
   NotificationDto,
   PaginatedNotificationsResponseDto,
   ReadAllResponseDto,
@@ -35,6 +36,10 @@ export class NotificationsInboxService {
     const row = await this.repository.markRead(id, userId);
     if (!row) throw new NotFoundException('Notificação não encontrada');
     return toDto(row);
+  }
+
+  async clearRead(userId: string): Promise<ClearReadResponseDto> {
+    return { deleted: await this.repository.deleteRead(userId) };
   }
 
   async markAllRead(userId: string): Promise<ReadAllResponseDto> {

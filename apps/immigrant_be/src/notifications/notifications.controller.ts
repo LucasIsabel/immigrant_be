@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -25,6 +26,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { NotificationsInboxService } from './notifications.service';
 import { ListNotificationsQueryDto } from './dto/list-notifications-query.dto';
 import {
+  ClearReadResponseDto,
   NotificationDto,
   PaginatedNotificationsResponseDto,
   ReadAllResponseDto,
@@ -84,6 +86,21 @@ export class NotificationsController {
   @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
   readAll(@Session() session: UserSession): Promise<ReadAllResponseDto> {
     return this.service.markAllRead(session.user.id);
+  }
+
+  @Delete('read')
+  @Roles(UserRole.USER)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Apagar as minhas notificações já lidas',
+    description:
+      'Só as lidas. Uma notificação por ler é algo que ainda não chegou a ninguém, e apagá-la por engano não tem volta — arrumar não é descartar.',
+  })
+  @ApiOkResponse({ type: ClearReadResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  clearRead(@Session() session: UserSession): Promise<ClearReadResponseDto> {
+    return this.service.clearRead(session.user.id);
   }
 
   @Patch(':id/read')
