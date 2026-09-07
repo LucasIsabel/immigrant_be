@@ -1606,6 +1606,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /notifications/unread-count`                          | Notifications                  | Autenticado (role USER) — `{ count }` de `readAt IS NULL`; é o que o contador do sino mostra |
 | `POST /notifications/read-all`                             | Notifications                  | Autenticado (role USER) — marca as minhas por ler; devolve `{ updated }`; throttle 10/min |
 | `PATCH /notifications/:id/read`                            | Notifications                  | Autenticado (role USER) — idempotente (não reescreve o `readAt`); 404 se não for minha; throttle 60/min |
+| `DELETE /notifications/read`                               | Notifications                  | Autenticado (role USER) — apaga as **lidas**; devolve `{ deleted }`; throttle 10/min |
 
 **Business pages (admin) — moderação IA:** `BusinessPageModerationService` (`apps/immigrant_be/src/business-pages/business-page-moderation.service.ts`) injeta o `AiRouterService`, monta o input a partir do conteúdo da página, achata o `typeData` com `flattenModerationContent` (cada folha nomeada pelo caminho JSON — `tours[2].description`), chama a IA e valida a resposta com Zod. Prompt em `libs/ai/src/prompts/business-page-moderation.prompt.ts`; schemas em `libs/ai/src/schemas/business-page-moderation.schema.ts`.
 
@@ -1640,6 +1641,14 @@ Três coisas que são fáceis de desfazer sem perceber:
   o que torna a operação idempotente: marcar de novo não casa com nada e o
   carimbo original sobrevive. A leitura a seguir é o que distingue "já estava
   lida" de "não é tua" — o update sozinho devolve zero nos dois casos.
+
+**Apagar só apaga o que já foi lido.** O `DELETE /notifications/read` filtra por
+`readAt: { not: null }`, e essa condição é a segurança inteira da rota: uma
+notificação por ler é algo que ainda não chegou a ninguém, apagá-la por engano
+não tem volta, e arrumar não é o mesmo que descartar. Apaga a linha em vez de a
+esconder — estas linhas são avisos, não registo contável, e uma coluna de
+«escondida» faria a tabela crescer para sempre. O badge não se mexe com esta
+operação, por construção.
 
 **O heartbeat.** O `@Sse('/sse')` emite, além das notificações, um evento
 `heartbeat` a cada 25 s. Um stream sem nada a dizer manda zero bytes, e ligação

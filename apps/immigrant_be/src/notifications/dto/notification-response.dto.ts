@@ -61,6 +61,15 @@ export class UnreadCountResponseDto {
   count: number;
 }
 
+export class ClearReadResponseDto {
+  @ApiProperty({
+    example: 12,
+    description:
+      'Quantas foram apagadas. Zero é resposta — não havia nada de lido para limpar.',
+  })
+  deleted: number;
+}
+
 export class ReadAllResponseDto {
   @ApiProperty({
     example: 3,

@@ -39,11 +39,16 @@ function fakePrisma(seed: Row[]) {
   const rows = new Map(seed.map((row) => [row.id, { ...row }]));
 
   const matches = (row: Row, where: Record<string, unknown>) =>
-    Object.entries(where).every(([key, value]) =>
-      value === null
-        ? row[key as keyof Row] === null
-        : row[key as keyof Row] === value,
-    );
+    Object.entries(where).every(([key, value]) => {
+      const actual = row[key as keyof Row];
+      if (value === null) return actual === null;
+      // `{ not: null }` — the one operator this double needs to understand, and
+      // the one the delete depends on: it is what keeps unread rows.
+      if (value && typeof value === 'object' && 'not' in value) {
+        return actual !== (value as { not: unknown }).not;
+      }
+      return actual === value;
+    });
 
   const events = {
     findMany: jest.fn(
@@ -70,6 +75,13 @@ function fakePrisma(seed: Row[]) {
       async ({ where }: { where: Record<string, unknown> }) => {
         const found = [...rows.values()].find((row) => matches(row, where));
         return found ? { ...found } : null;
+      },
+    ),
+    deleteMany: jest.fn(
+      async ({ where }: { where: Record<string, unknown> }) => {
+        const hit = [...rows.values()].filter((row) => matches(row, where));
+        for (const row of hit) rows.delete(row.id);
+        return { count: hit.length };
       },
     ),
     updateMany: jest.fn(
@@ -197,6 +209,60 @@ describe('NotificationsInboxService', () => {
       expect(first.readAt).not.toBeNull();
       expect(again.readAt).toEqual(first.readAt);
       expect(prisma.snapshot()[0].readAt).toEqual(first.readAt);
+    });
+  });
+
+  describe('clearing what has been read', () => {
+    it('throws away the read ones and keeps the rest', async () => {
+      const { service, prisma } = build([
+        row({ id: '1', userId: 'user-a', readAt: new Date('2026-09-01') }),
+        row({ id: '2', userId: 'user-a', readAt: new Date('2026-09-02') }),
+        row({ id: '3', userId: 'user-a', readAt: null }),
+      ]);
+
+      expect(await service.clearRead('user-a')).toEqual({ deleted: 2 });
+
+      expect(prisma.snapshot().map((r) => r.id)).toEqual(['3']);
+    });
+
+    it('never touches an unread one', async () => {
+      // The whole safety of this. An unread notice is something nobody has seen
+      // yet: deleting it destroys information that never reached anybody, and
+      // there is no undo. Tidying up is not the same as discarding.
+      const { service, prisma } = build([
+        row({ id: '1', userId: 'user-a', readAt: null }),
+        row({ id: '2', userId: 'user-a', readAt: null }),
+      ]);
+
+      expect(await service.clearRead('user-a')).toEqual({ deleted: 0 });
+      expect(prisma.snapshot()).toHaveLength(2);
+    });
+
+    it('leaves the badge alone', async () => {
+      const { service } = build([
+        row({ id: '1', userId: 'user-a', readAt: new Date() }),
+        row({ id: '2', userId: 'user-a', readAt: null }),
+      ]);
+
+      await service.clearRead('user-a');
+
+      expect(await service.unreadCount('user-a')).toEqual({ count: 1 });
+    });
+
+    it('does not reach into anybody else’s inbox', async () => {
+      const { service, prisma } = build([
+        row({ id: 'a-1', userId: 'user-a', readAt: new Date() }),
+        row({ id: 'b-1', userId: 'user-b', readAt: new Date() }),
+      ]);
+
+      expect(await service.clearRead('user-a')).toEqual({ deleted: 1 });
+      expect(prisma.snapshot().map((r) => r.id)).toEqual(['b-1']);
+    });
+
+    it('answers zero rather than failing on an empty inbox', async () => {
+      const { service } = build([]);
+
+      expect(await service.clearRead('user-a')).toEqual({ deleted: 0 });
     });
   });
 
