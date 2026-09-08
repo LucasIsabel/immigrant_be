@@ -287,11 +287,25 @@ export class CommentsRepository {
    */
   async listInbox(
     userId: string,
-    options: { skip: number; take: number; status?: CommentStatus },
+    options: {
+      skip: number;
+      take: number;
+      status?: CommentStatus;
+      target?: CommentTarget;
+      targetId?: string;
+    },
   ): Promise<{ data: InboxCommentRow[]; total: number }> {
     const where: Prisma.CommentWhereInput = {
       deletedAt: null,
       ...(options.status ? { status: options.status } : {}),
+      /*
+       * Narrowing to one page is a filter on top of ownership, never instead of
+       * it: a `targetId` somebody else owns has to answer with nothing rather
+       * than with their queue.
+       */
+      ...(options.target && options.targetId
+        ? this.targetWhere(options.target, options.targetId)
+        : {}),
       OR: [
         { business: { userId } },
         { event: { organizerId: userId } },
@@ -383,11 +397,15 @@ export class CommentsRepository {
    * Its own query and not the inbox's `total`, because the badge is read on
    * every screen and the list is read on one.
    */
-  countPending(userId: string): Promise<number> {
+  countPending(
+    userId: string,
+    scope?: { target: CommentTarget; targetId: string },
+  ): Promise<number> {
     return this.prisma.comment.count({
       where: {
         status: CommentStatus.PENDING,
         deletedAt: null,
+        ...(scope ? this.targetWhere(scope.target, scope.targetId) : {}),
         OR: [
           { business: { userId } },
           { event: { organizerId: userId } },
@@ -403,12 +421,15 @@ export class CommentsRepository {
     take: number;
     status?: CommentStatus;
     target?: CommentTarget;
+    targetId?: string;
   }): Promise<{ data: InboxCommentRow[]; total: number }> {
     const where: Prisma.CommentWhereInput = {
       ...(options.status ? { status: options.status } : {}),
-      ...(options.target
-        ? { [`${targetField(options.target)}`]: { not: null } }
-        : {}),
+      ...(options.target && options.targetId
+        ? this.targetWhere(options.target, options.targetId)
+        : options.target
+          ? { [targetField(options.target)]: { not: null } }
+          : {}),
     };
 
     const [data, total] = await this.prisma.$transaction([

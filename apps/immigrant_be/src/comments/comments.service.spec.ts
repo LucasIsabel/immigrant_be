@@ -383,6 +383,42 @@ describe('CommentsService', () => {
      * the twenty rows of this page. Deriving one from the other would make the
      * badge lie from the second page onwards.
      */
+    /*
+     * The queue lives inside the business, so it has to be answerable about
+     * one. Narrowing is a filter on top of ownership and never instead of it —
+     * a targetId somebody else owns still answers with nothing.
+     */
+    it('narrows the queue and the badge to one page when asked', async () => {
+      repository.listInbox.mockResolvedValue({ data: [], total: 0 });
+      repository.countPending.mockResolvedValue(2);
+
+      await service.inbox(OWNER_ID, {
+        target: CommentTarget.BUSINESS,
+        targetId: BUSINESS_ID,
+      });
+
+      expect(repository.listInbox).toHaveBeenCalledWith(
+        OWNER_ID,
+        expect.objectContaining({
+          target: CommentTarget.BUSINESS,
+          targetId: BUSINESS_ID,
+        }),
+      );
+      expect(repository.countPending).toHaveBeenCalledWith(OWNER_ID, {
+        target: CommentTarget.BUSINESS,
+        targetId: BUSINESS_ID,
+      });
+    });
+
+    it('counts across everything the person owns when not narrowed', async () => {
+      repository.listInbox.mockResolvedValue({ data: [], total: 0 });
+      repository.countPending.mockResolvedValue(5);
+
+      await service.inbox(OWNER_ID, {});
+
+      expect(repository.countPending).toHaveBeenCalledWith(OWNER_ID, undefined);
+    });
+
     it('counts what is pending apart from the page it returns', async () => {
       repository.listInbox.mockResolvedValue({ data: [], total: 0 });
       repository.countPending.mockResolvedValue(7);
