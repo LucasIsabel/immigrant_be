@@ -167,6 +167,21 @@ export class PublicBusinessDetailResponseDto extends PublicBusinessResponseDto {
     description: 'Quantas avaliações visíveis entram na média.',
   })
   reviewCount: number;
+
+  @ApiProperty({
+    example: 37,
+    description:
+      'Quantas pessoas gostam deste negócio. Distinto da avaliação: gostar é ' +
+      'um gesto, avaliar é uma nota, e as estrelas continuam a sair das ' +
+      'avaliações.',
+  })
+  likesCount: number;
+
+  @ApiProperty({
+    example: false,
+    description: 'Se quem está a ler gosta deste negócio. `false` sem sessão.',
+  })
+  likedByMe: boolean;
 }
 
 export class PaginatedPublicBusinessesResponseDto {

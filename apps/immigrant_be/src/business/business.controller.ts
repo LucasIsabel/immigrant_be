@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Put,
@@ -30,6 +31,7 @@ import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessResponseDto } from './dto/business-response.dto';
 import { ToggleVisibilityDto } from './dto/toggle-visibility.dto';
+import { BusinessLikeResponseDto } from './dto/business-like.dto';
 
 @ApiTags('Business')
 @Controller('business')
@@ -136,5 +138,46 @@ export class BusinessController {
     @Session() session: UserSession,
   ) {
     return this.service.toggleVisibility(id, session.user.id, dto.isPublic);
+  }
+
+  @Put(':id/like')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Gostar de um negócio',
+    description:
+      'Idempotente: gostar duas vezes deixa uma linha só e responde sucesso ' +
+      'das duas vezes. Só um negócio que o leitor consegue mesmo ver.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do negócio' })
+  @ApiOkResponse({ type: BusinessLikeResponseDto })
+  @ApiNotFoundResponse({ description: 'Negócio não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  like(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Session() session: UserSession,
+  ): Promise<BusinessLikeResponseDto> {
+    return this.service.setLike(id, session.user.id, true);
+  }
+
+  @Delete(':id/like')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Deixar de gostar de um negócio',
+    description:
+      'Idempotente: deixar de gostar do que já não se gostava responde `false`.',
+  })
+  @ApiParam({ name: 'id', description: 'ID do negócio' })
+  @ApiOkResponse({ type: BusinessLikeResponseDto })
+  @ApiNotFoundResponse({ description: 'Negócio não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  unlike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Session() session: UserSession,
+  ): Promise<BusinessLikeResponseDto> {
+    return this.service.setLike(id, session.user.id, false);
   }
 }

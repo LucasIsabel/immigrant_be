@@ -140,18 +140,56 @@ export class BusinessService {
     return this.repository.findPublicCities({ country: query.country });
   }
 
-  async getPublicBusinessById(id: string) {
+  async getPublicBusinessById(id: string, viewerId?: string) {
     const business = await this.repository.findVisibleById(id);
     if (!business) {
       throw new NotFoundException('Negócio não encontrado');
     }
     /*
-     * The summary is fetched only after the business is known to be visible:
-     * asking for both up front would let a private id be probed for a review
-     * count, and would pay for an aggregate on every 404.
+     * The counts are fetched only after the business is known to be visible:
+     * asking for them up front would let a private id be probed for a review
+     * count, and would pay for the aggregates on every 404.
+     *
+     * Whether *this* reader likes it is a separate question, and only worth
+     * asking when there is a reader to ask about. Anonymous is `false`, not
+     * unknown — the heart has to be drawn either way.
      */
-    const rating = await this.repository.findRatingSummary(id);
-    return { ...business, ...rating };
+    const [rating, likesCount, likedByMe] = await Promise.all([
+      this.repository.findRatingSummary(id),
+      this.repository.countLikes(id),
+      viewerId
+        ? this.repository.isLikedBy(id, viewerId)
+        : Promise.resolve(false),
+    ]);
+
+    return { ...business, ...rating, likesCount, likedByMe };
+  }
+
+  /**
+   * Liking is not rating. The stars keep coming from `TourGuideReview`; this
+   * is the lighter gesture, and it is the only one somebody can make without
+   * having anything to say.
+   *
+   * Only a business a reader can actually see: liking something private would
+   * be a way to confirm that a private id exists.
+   */
+  async setLike(
+    id: string,
+    userId: string,
+    liked: boolean,
+  ): Promise<{ liked: boolean; likesCount: number }> {
+    const business = await this.repository.findVisibleById(id);
+    if (!business) {
+      throw new NotFoundException('Negócio não encontrado');
+    }
+
+    if (liked) {
+      await this.repository.likeBusiness(id, userId);
+    } else {
+      await this.repository.unlikeBusiness(id, userId);
+    }
+
+    return { liked, likesCount: await this.repository.countLikes(id) };
   }
 
   /**
