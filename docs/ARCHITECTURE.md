@@ -1876,6 +1876,49 @@ Um comentário `PENDING` ou `REJECTED` volta na listagem **para o próprio autor
 e para mais ninguém: sem isso, quem comentou com uma fotografia via o comentário
 desaparecer e voltava a escrevê-lo.
 
+### A fila do dono, e o aviso de que ela tem alguém à espera
+
+`GET /comments/inbox` atravessa negócios, eventos e roteiros de uma vez: a fila é
+**da pessoa** e não de uma página, porque quem tem dois negócios tem uma decisão a
+tomar e não duas listas a visitar. `pendingCount` vem à parte da página — o
+emblema diz quantos esperam ao todo, e a página só conhece as vinte linhas que
+carrega; derivar um do outro faria o emblema mentir a partir da segunda página.
+
+- **O dono não aprova o próprio comentário.** Uma fotografia posta por quem teria
+  de a libertar já não tem por quem esperar; mandá-la para a fila dele seria
+  pedir-lhe que se aprovasse a si mesmo.
+- **403, não 404, num comentário alheio.** O id veio da fila de alguém, portanto
+  negar que existe é uma mentira que a pessoa já consegue desmentir — ao contrário
+  do 404 do `DELETE`, onde o id pode ter sido adivinhado.
+- **O aviso vai ao sino e ao e-mail.** Uma fila que ninguém sabe que existe é uma
+  fila que ninguém esvazia. Só as fotografias lá chegam, então a mensagem é rara
+  o suficiente para valer a pena abrir. O template é
+  `libs/email/src/templates/comment-waiting.template.ts`.
+- **A resposta retida deve o aviso na mesma**, mas só quando fica pública: quem
+  escreveu a raiz é notificado no momento em que a resposta é libertada, e não
+  quando ela foi escrita.
+- **Ninguém é notificado de si próprio.** Um dono que responde na sua página não
+  notifica ninguém se estiver a responder-se a si; e quem responde nunca recebe o
+  aviso da própria resposta.
+- **O admin usa `REJECTED` com motivo**, e não uma coluna à parte de «escondido
+  por admin» — é reversível e o motivo fica, no molde do `hide` das avaliações.
+  `DELETE /admin/comments/:id` é hard delete e é a excepção, para conteúdo que
+  não pode ficar guardado.
+- **Controller de admin próprio**, e não ramos de admin nas rotas do dono: o
+  `@Roles(ADMIN)` na classe é um facto único sobre o ficheiro inteiro.
+
+Os quatro tipos novos de notificação são `comment_received` (para o dono),
+`comment_approved`/`comment_rejected` (para o autor) e `comment_replied` (para
+quem escreveu a raiz). O `targetPath` vai calculado deste lado, porque só este
+lado sabe qual das quatro formas o alvo tem; é `null` enquanto o alvo não tiver
+página pública própria — um negócio cuja página ainda não foi publicada — e o
+frontend cai para a fila.
+
+**A rota da fila está escrita nos dois lados.** `commentQueuePath()` em
+`comments.constants.ts` existe porque o e-mail precisa de um URL absoluto e só o
+backend o constrói; a página correspondente é do frontend (immigrant_fe#483). Se
+uma mudar, a outra tem de mudar com ela.
+
 ### Health
 
 | Rota                    | Checa              | Resposta                                                  |

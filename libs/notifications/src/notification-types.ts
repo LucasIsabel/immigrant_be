@@ -47,6 +47,12 @@ export const USER_NOTIFICATION_TYPES = {
   COMMUNITY_EVENT_APPROVED: 'community_event_approved',
   COMMUNITY_EVENT_REJECTED: 'community_event_rejected',
   ITINERARY_COPIED: 'itinerary_copied',
+  /** A comment with a photo is waiting for the owner of the page it landed on. */
+  COMMENT_RECEIVED: 'comment_received',
+  COMMENT_APPROVED: 'comment_approved',
+  COMMENT_REJECTED: 'comment_rejected',
+  /** Somebody answered a comment. Addressed to whoever wrote the one answered. */
+  COMMENT_REPLIED: 'comment_replied',
 } as const;
 
 export type UserNotificationType =
@@ -94,4 +100,42 @@ export interface NotificationPayloads {
     title: string;
     slug: string;
   };
+  [USER_NOTIFICATION_TYPES.COMMENT_RECEIVED]: CommentNotificationTarget & {
+    commentId: string;
+    /** Whoever wrote it, as their account names them right now. */
+    authorName: string;
+    /** The first words, so the queue is worth opening or is not. */
+    excerpt: string;
+  };
+  [USER_NOTIFICATION_TYPES.COMMENT_APPROVED]: CommentNotificationTarget & {
+    commentId: string;
+  };
+  [USER_NOTIFICATION_TYPES.COMMENT_REJECTED]: CommentNotificationTarget & {
+    commentId: string;
+    /** The owner's own words: the one field the frontend cannot translate. */
+    reason: string | null;
+  };
+  [USER_NOTIFICATION_TYPES.COMMENT_REPLIED]: CommentNotificationTarget & {
+    /** The reply. `parentId` is the comment of the person being notified. */
+    commentId: string;
+    parentId: string;
+    authorName: string;
+    excerpt: string;
+  };
+}
+
+/**
+ * What every comment notification says about where the comment lives.
+ *
+ * `targetPath` is the relative route on which the comment shows, built on this
+ * side because only this side knows which of four shapes the target has. It is
+ * `null` when the target has no public page of its own yet — a business whose
+ * page is not published — and the frontend falls back to the queue.
+ */
+export interface CommentNotificationTarget {
+  target: 'post' | 'business' | 'event' | 'itinerary';
+  targetId: string;
+  /** A photograph of the moment: renaming the target later does not rewrite this. */
+  targetTitle: string;
+  targetPath: string | null;
 }

@@ -21,6 +21,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
   ApiConsumes,
   ApiCookieAuth,
   ApiCreatedResponse,
@@ -41,7 +42,9 @@ import {
   PaginatedCommentsResponseDto,
 } from './dto/comment-response.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { PaginatedInboxResponseDto } from './dto/inbox-comment.dto';
 import { ListCommentsQueryDto } from './dto/list-comments-query.dto';
+import { InboxQueryDto, RejectCommentDto } from './dto/moderate-comment.dto';
 
 @ApiTags('Comments')
 @Controller('comments')
@@ -111,6 +114,70 @@ export class CommentsController {
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CommentDto> {
     return this.service.create(session.user.id, dto, file);
+  }
+
+  /*
+   * Declared before the routes that take an `:id`, because Nest matches in
+   * order and `inbox` would otherwise be handed to one of them as an id.
+   */
+  @Get('inbox')
+  @Roles(UserRole.USER)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Comentários à espera nas minhas páginas',
+    description:
+      'Atravessa negócios, eventos e roteiros de uma vez: a fila é da pessoa ' +
+      'e não de uma página. O que espera vem à frente.',
+  })
+  @ApiOkResponse({ type: PaginatedInboxResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  inbox(
+    @Query() query: InboxQueryDto,
+    @Session() session: UserSession,
+  ): Promise<PaginatedInboxResponseDto> {
+    return this.service.inbox(session.user.id, query);
+  }
+
+  @Post(':id/approve')
+  @Roles(UserRole.USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Libertar um comentário',
+    description: 'Fica público e quem o escreveu é avisado.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID do comentário' })
+  @ApiOkResponse({ type: CommentDto })
+  @ApiForbiddenResponse({ description: 'O comentário não é seu para moderar' })
+  @ApiNotFoundResponse({ description: 'Comentário não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Session() session: UserSession,
+  ): Promise<CommentDto> {
+    return this.service.approve(id, session.user.id, false);
+  }
+
+  @Post(':id/reject')
+  @Roles(UserRole.USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('better-auth.session_token')
+  @ApiOperation({
+    summary: 'Recusar um comentário',
+    description:
+      'Continua escondido. O motivo, se houver, vai inteiro para quem o escreveu.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID do comentário' })
+  @ApiOkResponse({ type: CommentDto })
+  @ApiForbiddenResponse({ description: 'O comentário não é seu para moderar' })
+  @ApiNotFoundResponse({ description: 'Comentário não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Autenticação necessária' })
+  reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectCommentDto,
+    @Session() session: UserSession,
+  ): Promise<CommentDto> {
+    return this.service.reject(id, session.user.id, false, dto.reason ?? null);
   }
 
   @Delete(':id')

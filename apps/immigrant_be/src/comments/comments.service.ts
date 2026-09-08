@@ -1,18 +1,32 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { buildCommentWaitingEmail } from '@app/email';
+import { NotificationsService } from '@app/notifications/notifications.service';
+import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { StorageService } from '@app/storage';
-import { CommentStatus } from '../../../../generated/prisma';
+import { env } from '@app/config';
+import {
+  type BusinessPageStatus,
+  CommentStatus,
+} from '../../../../generated/prisma';
 import {
   ALLOWED_COMMENT_IMAGE_MIMES,
+  COMMENT_EXCERPT_LENGTH,
+  commentQueuePath,
   MAX_COMMENT_IMAGE_SIZE,
   PHOTO_TARGETS,
 } from './comments.constants';
-import { CommentsRepository, type CommentRow } from './comments.repository';
+import {
+  CommentsRepository,
+  type CommentRow,
+  type InboxCommentRow,
+} from './comments.repository';
 import { CommentTarget } from './dto/comment-target';
 import type { CreateCommentDto } from './dto/create-comment.dto';
 import type { ListCommentsQueryDto } from './dto/list-comments-query.dto';
@@ -20,8 +34,32 @@ import type {
   CommentDto,
   PaginatedCommentsResponseDto,
 } from './dto/comment-response.dto';
+import type {
+  InboxCommentDto,
+  PaginatedInboxResponseDto,
+} from './dto/inbox-comment.dto';
+import type {
+  AdminCommentsQueryDto,
+  InboxQueryDto,
+} from './dto/moderate-comment.dto';
 
 const FALLBACK_AUTHOR_NAME = 'Utilizador';
+
+/** The part of a comment row that says which of the four targets it is on. */
+type TargetOfComment = {
+  postId: string | null;
+  businessId: string | null;
+  eventId: string | null;
+  itineraryId: string | null;
+  post: { title: string; slug: string } | null;
+  business: {
+    name: string;
+    businessType: string;
+    businessPage: { slug: string; status: BusinessPageStatus } | null;
+  } | null;
+  event: { title: string; slug: string } | null;
+  itinerary: { title: string; slug: string } | null;
+};
 
 @Injectable()
 export class CommentsService {
@@ -30,6 +68,7 @@ export class CommentsService {
   constructor(
     private readonly repository: CommentsRepository,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(
@@ -100,17 +139,165 @@ export class CommentsService {
     const id = randomUUID();
     const imageUrl = file ? await this.uploadPhoto(id, file) : null;
 
+    /*
+     * A photo posted by the very person who would have to release it has
+     * nobody left to wait for. Sending it to their own queue would be asking
+     * them to approve themselves.
+     */
+    const waits = Boolean(file) && target.ownerId !== authorId;
+
     const comment = await this.repository.create({
       id,
       authorId,
       body: dto.body,
       imageUrl,
       parentId: dto.parentId ?? null,
-      status: file ? CommentStatus.PENDING : CommentStatus.APPROVED,
+      status: waits ? CommentStatus.PENDING : CommentStatus.APPROVED,
       ...this.repository.targetColumn(dto.target, dto.targetId),
     });
 
+    if (waits && target.ownerId) {
+      await this.notifyOwnerOfWaitingComment(comment, dto, target.ownerId, {
+        title: target.title,
+      });
+    }
+
+    if (!waits && dto.parentId) {
+      await this.notifyRootAuthorOfReply(comment, dto, target, authorId);
+    }
+
     return this.toDto(comment, authorId);
+  }
+
+  /**
+   * Everything waiting on anything this person owns.
+   *
+   * `pendingCount` travels with the page rather than being counted from it:
+   * the badge has to say how many are waiting in total, and the page only
+   * knows about the twenty rows it carries.
+   */
+  async inbox(
+    userId: string,
+    query: InboxQueryDto,
+  ): Promise<PaginatedInboxResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const [{ data, total }, pendingCount] = await Promise.all([
+      this.repository.listInbox(userId, {
+        skip: (page - 1) * limit,
+        take: limit,
+        status: query.status,
+      }),
+      this.repository.countPending(userId),
+    ]);
+
+    return {
+      data: data.map((row) => this.toInboxDto(row, userId)),
+      total,
+      pendingCount,
+      page,
+      limit,
+    };
+  }
+
+  async adminList(
+    query: AdminCommentsQueryDto,
+  ): Promise<PaginatedInboxResponseDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const { data, total } = await this.repository.listForAdmin({
+      skip: (page - 1) * limit,
+      take: limit,
+      status: query.status,
+      target: query.target,
+    });
+
+    return {
+      data: data.map((row) => this.toInboxDto(row)),
+      total,
+      pendingCount: data.filter((row) => row.status === CommentStatus.PENDING)
+        .length,
+      page,
+      limit,
+    };
+  }
+
+  async approve(
+    id: string,
+    moderatorId: string,
+    isAdmin: boolean,
+  ): Promise<CommentDto> {
+    const comment = await this.requireModeratable(id, moderatorId, isAdmin);
+
+    const updated = await this.repository.setStatus(
+      id,
+      CommentStatus.APPROVED,
+      moderatorId,
+      null,
+    );
+
+    const where = this.describeTarget(comment);
+    await this.notifications.notify({
+      userId: comment.author.id,
+      type: USER_NOTIFICATION_TYPES.COMMENT_APPROVED,
+      payload: { commentId: id, ...where },
+    });
+
+    /*
+     * A reply held back for its photo still owes the person it answers a
+     * notice, and it only owes it once it is actually public.
+     */
+    if (comment.parentId) {
+      await this.notifyRootAuthorOfApprovedReply(
+        id,
+        comment.parentId,
+        comment.author,
+        updated.body,
+        where,
+      );
+    }
+
+    return this.toDto(updated, comment.author.id);
+  }
+
+  async reject(
+    id: string,
+    moderatorId: string,
+    isAdmin: boolean,
+    reason: string | null,
+  ): Promise<CommentDto> {
+    const comment = await this.requireModeratable(id, moderatorId, isAdmin);
+
+    const updated = await this.repository.setStatus(
+      id,
+      CommentStatus.REJECTED,
+      moderatorId,
+      reason,
+    );
+
+    await this.notifications.notify({
+      userId: comment.author.id,
+      type: USER_NOTIFICATION_TYPES.COMMENT_REJECTED,
+      payload: { commentId: id, ...this.describeTarget(comment), reason },
+    });
+
+    return this.toDto(updated, comment.author.id);
+  }
+
+  /** Hard delete, for what cannot stay stored at all. Admin only. */
+  async adminRemove(id: string): Promise<void> {
+    const comment = await this.repository.findForModeration(id);
+    if (!comment) {
+      throw new NotFoundException('Comentário não encontrado.');
+    }
+
+    if (comment.imageUrl) {
+      await this.deletePhoto(id, comment.imageUrl);
+    }
+
+    await this.repository.deleteById(id);
   }
 
   /**
@@ -139,6 +326,193 @@ export class CommentsService {
     }
 
     await this.repository.deleteById(id);
+  }
+
+  /**
+   * Who is allowed to decide about this comment, and 404 for everybody else.
+   *
+   * The owner travels with the row, so there is no second read for the two to
+   * disagree about. A blog comment has no owner — the newsroom is the admin —
+   * and that is why `ownerId` can be null here without meaning "anyone".
+   */
+  private async requireModeratable(
+    id: string,
+    moderatorId: string,
+    isAdmin: boolean,
+  ) {
+    const comment = await this.repository.findForModeration(id);
+    if (!comment) {
+      throw new NotFoundException('Comentário não encontrado.');
+    }
+
+    const ownerId =
+      comment.business?.userId ??
+      comment.event?.organizerId ??
+      comment.itinerary?.userId ??
+      null;
+
+    if (!isAdmin && ownerId !== moderatorId) {
+      // 403 and not 404: the id came from the person's own queue, so denying
+      // its existence would be a lie they can already disprove.
+      throw new ForbiddenException('Este comentário não é seu para moderar.');
+    }
+
+    return comment;
+  }
+
+  /** Where a comment landed, in the shape every comment notification shares. */
+  private describeTarget(comment: TargetOfComment) {
+    if (comment.businessId) {
+      return {
+        target: CommentTarget.BUSINESS,
+        targetId: comment.businessId,
+        targetTitle: comment.business?.name ?? '',
+        targetPath: comment.business
+          ? CommentsRepository.livePagePath(comment.business)
+          : null,
+      };
+    }
+    if (comment.eventId) {
+      return {
+        target: CommentTarget.EVENT,
+        targetId: comment.eventId,
+        targetTitle: comment.event?.title ?? '',
+        targetPath: comment.event ? `/events/${comment.event.slug}` : null,
+      };
+    }
+    if (comment.itineraryId) {
+      return {
+        target: CommentTarget.ITINERARY,
+        targetId: comment.itineraryId,
+        targetTitle: comment.itinerary?.title ?? '',
+        targetPath: comment.itinerary
+          ? `/itineraries/${comment.itinerary.slug}`
+          : null,
+      };
+    }
+    return {
+      target: CommentTarget.POST,
+      targetId: comment.postId ?? '',
+      targetTitle: comment.post?.title ?? '',
+      targetPath: comment.post ? `/blog/${comment.post.slug}` : null,
+    };
+  }
+
+  /**
+   * Tells the owner a photo is waiting, in the bell and by e-mail.
+   *
+   * By e-mail as well as in the bell because a queue nobody knows about is a
+   * queue nobody empties — and this one only ever fills with photos, so the
+   * message stays rare enough to be worth opening.
+   */
+  private async notifyOwnerOfWaitingComment(
+    comment: CommentRow,
+    dto: CreateCommentDto,
+    ownerId: string,
+    target: { title: string },
+  ): Promise<void> {
+    const authorName = comment.author.name?.trim() || FALLBACK_AUTHOR_NAME;
+    const excerpt = this.excerpt(comment.body);
+
+    await this.notifications.notify({
+      userId: ownerId,
+      type: USER_NOTIFICATION_TYPES.COMMENT_RECEIVED,
+      payload: {
+        commentId: comment.id,
+        target: dto.target,
+        targetId: dto.targetId,
+        targetTitle: target.title,
+        targetPath: null,
+        authorName,
+        excerpt,
+      },
+      email: buildCommentWaitingEmail(
+        target.title,
+        authorName,
+        excerpt,
+        `${env.FRONTEND_URL}${commentQueuePath(dto.target, dto.targetId)}`,
+      ),
+    });
+  }
+
+  /**
+   * Tells whoever wrote the root that somebody answered it.
+   *
+   * Not when they answered themselves: an owner replying to a thread would
+   * otherwise notify the person they are replying to *and* nobody would ever
+   * be told about their own reply, which is the wrong half of the pair.
+   */
+  private async notifyRootAuthorOfReply(
+    comment: CommentRow,
+    dto: CreateCommentDto,
+    target: { title: string; path: string | null },
+    authorId: string,
+  ): Promise<void> {
+    if (!dto.parentId) return;
+
+    const root = await this.repository.findRootAuthor(dto.parentId);
+    if (!root || root.authorId === authorId) return;
+
+    await this.notifications.notify({
+      userId: root.authorId,
+      type: USER_NOTIFICATION_TYPES.COMMENT_REPLIED,
+      payload: {
+        commentId: comment.id,
+        parentId: root.id,
+        target: dto.target,
+        targetId: dto.targetId,
+        targetTitle: target.title,
+        targetPath: target.path,
+        authorName: comment.author.name?.trim() || FALLBACK_AUTHOR_NAME,
+        excerpt: this.excerpt(comment.body),
+      },
+    });
+  }
+
+  /** The same notice, owed once a held-back reply finally becomes public. */
+  private async notifyRootAuthorOfApprovedReply(
+    commentId: string,
+    parentId: string,
+    author: { id: string; name: string | null },
+    body: string,
+    where: {
+      target: CommentTarget;
+      targetId: string;
+      targetTitle: string;
+      targetPath: string | null;
+    },
+  ): Promise<void> {
+    const root = await this.repository.findRootAuthor(parentId);
+    if (!root || root.authorId === author.id) return;
+
+    await this.notifications.notify({
+      userId: root.authorId,
+      type: USER_NOTIFICATION_TYPES.COMMENT_REPLIED,
+      payload: {
+        commentId,
+        parentId: root.id,
+        ...where,
+        authorName: author.name?.trim() || FALLBACK_AUTHOR_NAME,
+        excerpt: this.excerpt(body),
+      },
+    });
+  }
+
+  private excerpt(body: string): string {
+    return body.length > COMMENT_EXCERPT_LENGTH
+      ? `${body.slice(0, COMMENT_EXCERPT_LENGTH).trimEnd()}…`
+      : body;
+  }
+
+  private toInboxDto(row: InboxCommentRow, viewerId?: string): InboxCommentDto {
+    const where = this.describeTarget(row);
+    return {
+      ...this.toDto(row, viewerId),
+      target: where.target,
+      targetId: where.targetId,
+      targetTitle: where.targetTitle,
+      isReply: row.parentId !== null,
+    };
   }
 
   /**

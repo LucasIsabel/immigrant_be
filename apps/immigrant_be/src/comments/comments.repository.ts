@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
-import { CommentStatus, Prisma } from '../../../../generated/prisma';
+import {
+  type BusinessPageStatus,
+  CommentStatus,
+  Prisma,
+} from '../../../../generated/prisma';
 import { CommentTarget } from './dto/comment-target';
 
 /** The statuses in which a business page is live for a reader. */
-const LIVE_PAGE_STATUSES: Prisma.EnumBusinessPageStatusFilter['in'] = [
+const LIVE_PAGE_STATUSES: BusinessPageStatus[] = [
   'APPROVED',
   'APPROVED_WITH_PENDING',
 ];
@@ -25,12 +29,63 @@ export type CommentRow = Prisma.CommentGetPayload<{
 }>;
 
 /**
+ * A queued comment, with enough of its target to name the page it landed on.
+ * The queue is about the person, so it has to say *which* of their pages each
+ * row belongs to — a bare list of comments would be unreadable.
+ */
+const inboxSelect = {
+  ...commentSelect,
+  postId: true,
+  businessId: true,
+  eventId: true,
+  itineraryId: true,
+  business: {
+    select: {
+      name: true,
+      businessType: true,
+      businessPage: { select: { slug: true, status: true } },
+    },
+  },
+  event: { select: { title: true, slug: true } },
+  itinerary: { select: { title: true, slug: true } },
+  post: { select: { title: true, slug: true } },
+} satisfies Prisma.CommentSelect;
+
+export type InboxCommentRow = Prisma.CommentGetPayload<{
+  select: typeof inboxSelect;
+}>;
+
+/** The column that holds each target, for a `where` built from a name. */
+function targetField(target: CommentTarget): string {
+  switch (target) {
+    case CommentTarget.POST:
+      return 'postId';
+    case CommentTarget.BUSINESS:
+      return 'businessId';
+    case CommentTarget.EVENT:
+      return 'eventId';
+    case CommentTarget.ITINERARY:
+      return 'itineraryId';
+  }
+}
+
+/**
  * Who owns the thing being commented on, when there is one.
  *
  * `null` for a blog post: the newsroom is the owner, and the newsroom is the
  * admin. The distinction matters at moderation time and nowhere else.
  */
-export type CommentTargetOwner = { ownerId: string | null };
+export type CommentTargetOwner = {
+  ownerId: string | null;
+  /**
+   * What the target is called and where it lives, read once at write time.
+   * A notification is a photograph of the moment: renaming the target later
+   * does not rewrite the notice that announced a comment on it.
+   */
+  title: string;
+  /** `null` when the target has no public page of its own yet. */
+  path: string | null;
+};
 
 @Injectable()
 export class CommentsRepository {
@@ -89,9 +144,13 @@ export class CommentsRepository {
       case CommentTarget.POST: {
         const post = await this.prisma.blogPost.findFirst({
           where: { id: targetId, status: 'PUBLISHED' },
-          select: { id: true },
+          select: { title: true, slug: true },
         });
-        return post ? { ownerId: null } : null;
+        // The newsroom owns the blog, and the newsroom is the admin — there is
+        // no single person to hand the queue to.
+        return post
+          ? { ownerId: null, title: post.title, path: `/blog/${post.slug}` }
+          : null;
       }
       case CommentTarget.BUSINESS: {
         const business = await this.prisma.business.findFirst({
@@ -102,23 +161,52 @@ export class CommentsRepository {
               { businessPage: { status: { in: LIVE_PAGE_STATUSES } } },
             ],
           },
-          select: { userId: true },
+          select: {
+            userId: true,
+            name: true,
+            businessType: true,
+            businessPage: { select: { slug: true, status: true } },
+          },
         });
-        return business ? { ownerId: business.userId } : null;
+        if (!business) return null;
+
+        const page = business.businessPage;
+        const live =
+          page && LIVE_PAGE_STATUSES.includes(page.status) ? page.slug : null;
+
+        return {
+          ownerId: business.userId,
+          title: business.name,
+          path: live
+            ? `/my-city/pg/${business.businessType.toLowerCase()}/${live}`
+            : null,
+        };
       }
       case CommentTarget.EVENT: {
         const event = await this.prisma.communityEvent.findFirst({
           where: { id: targetId, status: 'APPROVED' },
-          select: { organizerId: true },
+          select: { organizerId: true, title: true, slug: true },
         });
-        return event ? { ownerId: event.organizerId } : null;
+        return event
+          ? {
+              ownerId: event.organizerId,
+              title: event.title,
+              path: `/events/${event.slug}`,
+            }
+          : null;
       }
       case CommentTarget.ITINERARY: {
         const itinerary = await this.prisma.itinerary.findFirst({
           where: { id: targetId, isPublic: true },
-          select: { userId: true },
+          select: { userId: true, title: true, slug: true },
         });
-        return itinerary ? { ownerId: itinerary.userId } : null;
+        return itinerary
+          ? {
+              ownerId: itinerary.userId,
+              title: itinerary.title,
+              path: `/itineraries/${itinerary.slug}`,
+            }
+          : null;
       }
     }
   }
@@ -187,6 +275,162 @@ export class CommentsRepository {
     ]);
 
     return { data, total };
+  }
+
+  /**
+   * Everything waiting on anything this person owns, newest last.
+   *
+   * One query across the four surfaces, because the queue is about the person
+   * and not about which of their pages a comment landed on. `PENDING` first:
+   * the queue exists to be emptied, and what has already been answered belongs
+   * below what has not.
+   */
+  async listInbox(
+    userId: string,
+    options: { skip: number; take: number; status?: CommentStatus },
+  ): Promise<{ data: InboxCommentRow[]; total: number }> {
+    const where: Prisma.CommentWhereInput = {
+      deletedAt: null,
+      ...(options.status ? { status: options.status } : {}),
+      OR: [
+        { business: { userId } },
+        { event: { organizerId: userId } },
+        { itinerary: { userId } },
+      ],
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.comment.findMany({
+        where,
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        skip: options.skip,
+        take: options.take,
+        select: inboxSelect,
+      }),
+      this.prisma.comment.count({ where }),
+    ]);
+
+    return { data, total };
+  }
+
+  /**
+   * A comment plus who is allowed to decide about it.
+   *
+   * The owner travels with the row rather than being looked up afterwards: a
+   * second read is a second chance for the two to disagree about which target
+   * the comment is on.
+   */
+  findForModeration(id: string) {
+    return this.prisma.comment.findUnique({
+      where: { id },
+      select: {
+        ...commentSelect,
+        postId: true,
+        businessId: true,
+        eventId: true,
+        itineraryId: true,
+        business: {
+          select: {
+            userId: true,
+            name: true,
+            businessType: true,
+            businessPage: { select: { slug: true, status: true } },
+          },
+        },
+        event: { select: { organizerId: true, title: true, slug: true } },
+        itinerary: { select: { userId: true, title: true, slug: true } },
+        post: { select: { title: true, slug: true } },
+      },
+    });
+  }
+
+  /**
+   * Where a business page lives publicly, or `null` while it is not published.
+   *
+   * Exported so the service can build the same path the listing read builds,
+   * from a row it already has, instead of asking for the business again.
+   */
+  static livePagePath(business: {
+    businessType: string;
+    businessPage: { slug: string; status: BusinessPageStatus } | null;
+  }): string | null {
+    const page = business.businessPage;
+    if (!page || !LIVE_PAGE_STATUSES.includes(page.status)) return null;
+    return `/my-city/pg/${business.businessType.toLowerCase()}/${page.slug}`;
+  }
+
+  setStatus(
+    id: string,
+    status: CommentStatus,
+    moderatedById: string,
+    moderationReason: string | null,
+  ): Promise<CommentRow> {
+    return this.prisma.comment.update({
+      where: { id },
+      data: {
+        status,
+        moderatedAt: new Date(),
+        moderatedById,
+        moderationReason,
+      },
+      select: commentSelect,
+    });
+  }
+
+  /**
+   * How many comments are waiting on this person's pages.
+   *
+   * Its own query and not the inbox's `total`, because the badge is read on
+   * every screen and the list is read on one.
+   */
+  countPending(userId: string): Promise<number> {
+    return this.prisma.comment.count({
+      where: {
+        status: CommentStatus.PENDING,
+        deletedAt: null,
+        OR: [
+          { business: { userId } },
+          { event: { organizerId: userId } },
+          { itinerary: { userId } },
+        ],
+      },
+    });
+  }
+
+  /** The admin's view: every surface, filterable, the blog included. */
+  async listForAdmin(options: {
+    skip: number;
+    take: number;
+    status?: CommentStatus;
+    target?: CommentTarget;
+  }): Promise<{ data: InboxCommentRow[]; total: number }> {
+    const where: Prisma.CommentWhereInput = {
+      ...(options.status ? { status: options.status } : {}),
+      ...(options.target
+        ? { [`${targetField(options.target)}`]: { not: null } }
+        : {}),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.comment.findMany({
+        where,
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        skip: options.skip,
+        take: options.take,
+        select: inboxSelect,
+      }),
+      this.prisma.comment.count({ where }),
+    ]);
+
+    return { data, total };
+  }
+
+  /** The root a reply hangs off, and who wrote it. */
+  findRootAuthor(id: string) {
+    return this.prisma.comment.findUnique({
+      where: { id },
+      select: { id: true, authorId: true, deletedAt: true },
+    });
   }
 
   create(data: Prisma.CommentUncheckedCreateInput): Promise<CommentRow> {
