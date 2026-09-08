@@ -219,20 +219,31 @@ export class CommentsService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
 
-    const { data, total } = await this.repository.listForAdmin({
-      skip: (page - 1) * limit,
-      take: limit,
-      status: query.status,
-      target: query.target,
-      targetId: query.targetId,
-      reported: query.reported,
-    });
+    /*
+     * The count is its own query, not a tally of the page. Counting the ten
+     * conversations in hand would make the badge say one thing on page one and
+     * another on page two — and, since the page holds roots, it would miss a
+     * reply that is the very thing waiting.
+     */
+    const [{ data, total }, pendingCount] = await Promise.all([
+      this.repository.listForAdmin({
+        skip: (page - 1) * limit,
+        take: limit,
+        status: query.status,
+        target: query.target,
+        targetId: query.targetId,
+        reported: query.reported,
+      }),
+      this.repository.countPendingForAdmin({
+        target: query.target,
+        targetId: query.targetId,
+      }),
+    ]);
 
     return {
       data: data.map((row) => this.toInboxDto(row)),
       total,
-      pendingCount: data.filter((row) => row.status === CommentStatus.PENDING)
-        .length,
+      pendingCount,
       page,
       limit,
     };

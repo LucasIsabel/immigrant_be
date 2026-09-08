@@ -66,6 +66,7 @@ const repository = {
   listInbox: jest.fn(),
   listForAdmin: jest.fn(),
   countPending: jest.fn(),
+  countPendingForAdmin: jest.fn(),
   findForModeration: jest.fn(),
   setStatus: jest.fn(),
   findRootAuthor: jest.fn(),
@@ -841,6 +842,69 @@ describe('CommentsService', () => {
   describe('the admin list', () => {
     beforeEach(() => {
       repository.listForAdmin.mockResolvedValue({ data: [], total: 0 });
+      repository.countPendingForAdmin.mockResolvedValue(0);
+    });
+
+    /*
+     * The same shape the owner's queue reads. Paging a flat list puts a reply
+     * on one page and the comment it answers on another.
+     */
+    it('nests the replies inside the conversation they belong to', async () => {
+      repository.listForAdmin.mockResolvedValue({
+        data: [
+          {
+            ...(row({ status: 'APPROVED' }) as object),
+            postId: POST_ID,
+            businessId: null,
+            eventId: null,
+            itineraryId: null,
+            post: { title: 'Como pedir o NIF', slug: 'como-pedir-o-nif' },
+            business: null,
+            event: null,
+            itinerary: null,
+            _count: { reports: 0 },
+            replies: [row({ id: 'r-1', body: 'Da redação: obrigado.' })],
+          },
+        ],
+        total: 1,
+      });
+
+      const page = await service.adminList({});
+
+      expect(page.data[0].replies).toHaveLength(1);
+      expect(page.data[0].replies?.[0].body).toBe('Da redação: obrigado.');
+    });
+
+    /*
+     * Counting the page would say one thing on page one and another on page
+     * two — and, since a page holds roots, it would miss a reply that is the
+     * very thing waiting.
+     */
+    it('counts what is waiting apart from the page it returns', async () => {
+      repository.listForAdmin.mockResolvedValue({ data: [], total: 40 });
+      repository.countPendingForAdmin.mockResolvedValue(7);
+
+      const page = await service.adminList({ page: 2, limit: 10 });
+
+      expect(page.pendingCount).toBe(7);
+      expect(page.total).toBe(40);
+    });
+
+    /*
+     * The badge answers "how much needs attention here". That does not change
+     * because the admin is currently filtering by status or by reported.
+     */
+    it('scopes the count by surface and by nothing else', async () => {
+      await service.adminList({
+        target: CommentTarget.POST,
+        status: 'REJECTED' as never,
+        reported: true,
+      });
+
+      expect(repository.countPendingForAdmin).toHaveBeenCalledWith({
+        target: CommentTarget.POST,
+        targetId: undefined,
+      });
     });
 
     it('narrows to what was reported when asked', async () => {

@@ -455,7 +455,13 @@ export class CommentsRepository {
     });
   }
 
-  /** The admin's view: every surface, filterable, the blog included. */
+  /**
+   * The admin's view: every surface, filterable, the blog included.
+   *
+   * A page of **conversations**, like the owner's queue. Both screens read the
+   * same shape, and the reason is the same on both: paging a flat list puts a
+   * reply on one page and the comment it answers on another.
+   */
   async listForAdmin(options: {
     skip: number;
     take: number;
@@ -463,25 +469,8 @@ export class CommentsRepository {
     target?: CommentTarget;
     targetId?: string;
     reported?: boolean;
-  }): Promise<{ data: InboxCommentRow[]; total: number }> {
-    const where: Prisma.CommentWhereInput = {
-      ...(options.status ? { status: options.status } : {}),
-      /*
-       * `reported=false` is not "everything" — it is what nobody has flagged.
-       * Treating it as no filter would make the parameter mean two things
-       * depending on which value it carried.
-       */
-      ...(options.reported === undefined
-        ? {}
-        : options.reported
-          ? { reports: { some: {} } }
-          : { reports: { none: {} } }),
-      ...(options.target && options.targetId
-        ? this.targetWhere(options.target, options.targetId)
-        : options.target
-          ? { [targetField(options.target)]: { not: null } }
-          : {}),
-    };
+  }): Promise<{ data: InboxRootRow[]; total: number }> {
+    const where = this.adminWhere(options);
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.comment.findMany({
@@ -489,12 +478,104 @@ export class CommentsRepository {
         orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         skip: options.skip,
         take: options.take,
-        select: inboxSelect,
+        select: {
+          ...inboxSelect,
+          replies: {
+            orderBy: { createdAt: 'asc' },
+            select: commentSelect,
+          },
+        },
       }),
       this.prisma.comment.count({ where }),
     ]);
 
     return { data, total };
+  }
+
+  /**
+   * How many comments are waiting on the surface being looked at.
+   *
+   * Its own query rather than a count of the page: the page holds ten
+   * conversations, and a number derived from it would say "3 waiting" on page
+   * one and something else on page two.
+   *
+   * Scoped by target and by nothing else. The badge answers "how much needs
+   * attention here", which does not change because the admin is currently
+   * filtering the list by status or by whether something was reported.
+   */
+  countPendingForAdmin(options: {
+    target?: CommentTarget;
+    targetId?: string;
+  }): Promise<number> {
+    return this.prisma.comment.count({
+      where: {
+        status: CommentStatus.PENDING,
+        deletedAt: null,
+        ...(options.target && options.targetId
+          ? this.targetWhere(options.target, options.targetId)
+          : options.target
+            ? { [targetField(options.target)]: { not: null } }
+            : {}),
+      },
+    });
+  }
+
+  /**
+   * The filters the admin list understands.
+   *
+   * Two of them ask about the **conversation** and not about the root: a
+   * published comment whose reply is waiting, or whose reply was reported, is
+   * a conversation an admin wants to see. Each goes into `AND` rather than at
+   * the top level, because two `OR` keys on one object would overwrite each
+   * other and silently drop a filter.
+   */
+  private adminWhere(options: {
+    status?: CommentStatus;
+    target?: CommentTarget;
+    targetId?: string;
+    reported?: boolean;
+  }): Prisma.CommentWhereInput {
+    const conversation: Prisma.CommentWhereInput[] = [];
+
+    if (options.status) {
+      conversation.push({
+        OR: [
+          { status: options.status },
+          { replies: { some: { status: options.status } } },
+        ],
+      });
+    }
+
+    /*
+     * `reported=false` is not "everything" — it is what nobody has flagged.
+     * Treating it as no filter would make the parameter mean two things
+     * depending on which value it carried.
+     */
+    if (options.reported !== undefined) {
+      conversation.push(
+        options.reported
+          ? {
+              OR: [
+                { reports: { some: {} } },
+                { replies: { some: { reports: { some: {} } } } },
+              ],
+            }
+          : {
+              reports: { none: {} },
+              replies: { none: { reports: { some: {} } } },
+            },
+      );
+    }
+
+    return {
+      parentId: null,
+      ...(options.target && options.targetId
+        ? this.targetWhere(options.target, options.targetId)
+        : options.target
+          ? { [targetField(options.target)]: { not: null } }
+          : {}),
+      ...(conversation.length > 0 ? { AND: conversation } : {}),
+    };
   }
 
   createReport(commentId: string, reason: string): Promise<{ id: string }> {
