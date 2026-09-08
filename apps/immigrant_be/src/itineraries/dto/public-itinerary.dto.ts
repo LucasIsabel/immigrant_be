@@ -80,6 +80,18 @@ export class PublicItineraryStopDto {
 }
 
 export class PublicItineraryResponseDto {
+  /*
+   * The id travels, the ownership does not.
+   *
+   * Comments name their target by id, like the other three surfaces, so
+   * without this the one thing missing on a public itinerary would be the
+   * ability to talk about it. It is not a secret — the owner reads it in their
+   * own dashboard and a copy carries it in `sourceItineraryId` — while
+   * `userId` and `isPublic` stay out, which is what `stripVisibility` was
+   * always about.
+   */
+  @ApiProperty() id: string;
+
   @ApiProperty() slug: string;
   @ApiProperty() title: string;
   @ApiProperty({ example: 'PT' }) countryCode: string;

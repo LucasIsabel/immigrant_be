@@ -794,6 +794,23 @@ describe('ItinerariesService', () => {
       ]);
     });
 
+    /*
+     * Comments name their target by id, like the other three surfaces do. The
+     * id is not a secret — the owner reads it in their own dashboard — while
+     * `userId` and `isPublic` stay out, which is what the stripping was always
+     * about.
+     */
+    it('carries the id, and still none of the ownership', async () => {
+      const itineraryId = await publicar();
+      const stored = repo._itineraries.get(itineraryId);
+
+      const detail = await service.getPublic(stored?.slug ?? '');
+
+      expect(detail.id).toBe(itineraryId);
+      expect(detail).not.toHaveProperty('userId');
+      expect(detail).not.toHaveProperty('isPublic');
+    });
+
     it('keeps a stop that has no coordinate, and says so with nulls', async () => {
       const itineraryId = await publicar();
       const stored = repo._itineraries.get(itineraryId);
