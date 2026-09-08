@@ -421,6 +421,7 @@ export class ItinerariesService {
     const itinerary = await this.mustBePublic(slug);
 
     return {
+      id: itinerary.id,
       slug: itinerary.slug,
       title: itinerary.title,
       countryCode: itinerary.countryCode,
