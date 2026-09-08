@@ -35,6 +35,7 @@ import { CommunityEventsModule } from './community-events/community-events.modul
 import { ItinerariesModule } from './itineraries/itineraries.module';
 import { BusinessPagesModule } from './business-pages/business-pages.module';
 import { TourGuideReviewsModule } from './tour-guide-reviews/tour-guide-reviews.module';
+import { CommentsModule } from './comments/comments.module';
 import { CountriesNowModule } from './countriesnow/countriesnow.module';
 import { QueuesModule } from './queues/queues.module';
 import { BlogPersonasModule } from './blog-personas/blog-personas.module';
@@ -91,6 +92,7 @@ const bullBoardEnabled =
     ItinerariesModule,
     BusinessPagesModule,
     TourGuideReviewsModule,
+    CommentsModule,
     CountriesNowModule,
     QueuesModule,
     BlogPersonasModule,
