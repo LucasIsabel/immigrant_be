@@ -59,7 +59,11 @@ export class CommentDto {
   @ApiPropertyOptional({
     type: () => CommentDto,
     isArray: true,
-    description: 'Só nos comentários de topo. Um nível, nunca dois.',
+    description:
+      'Só nos comentários de topo. Um nível, nunca dois. Da mais antiga para ' +
+      'a mais nova — a ordem em que uma conversa se lê. Na fila do dono vêm ' +
+      'todas, seja qual for o estado: é a página dele, e uma resposta que ' +
+      'recusou tem de continuar visível ou não há como voltar atrás.',
   })
   replies?: CommentDto[];
 }
