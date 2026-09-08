@@ -5,6 +5,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -28,6 +29,24 @@ export class RejectCommentDto {
 }
 
 export class InboxQueryDto {
+  @ApiPropertyOptional({
+    enum: CommentTarget,
+    description:
+      'Restringe a fila a um tipo de conteúdo. Vai a par com `targetId`.',
+  })
+  @IsOptional()
+  @IsEnum(CommentTarget)
+  target?: CommentTarget;
+
+  @ApiPropertyOptional({
+    description:
+      'Restringe a fila a **uma** página. A fila do dono vive dentro do ' +
+      'negócio, e quem tem dois negócios não quer as duas filas misturadas.',
+  })
+  @IsOptional()
+  @IsUUID()
+  targetId?: string;
+
   @ApiPropertyOptional({
     enum: CommentStatus,
     description:
@@ -53,9 +72,8 @@ export class InboxQueryDto {
   limit?: number = 20;
 }
 
-export class AdminCommentsQueryDto extends InboxQueryDto {
-  @ApiPropertyOptional({ enum: CommentTarget })
-  @IsOptional()
-  @IsEnum(CommentTarget)
-  target?: CommentTarget;
-}
+/**
+ * The admin's filters are the owner's filters. It stayed a subclass with an
+ * override of the same field, which said "these differ" while they did not.
+ */
+export class AdminCommentsQueryDto extends InboxQueryDto {}

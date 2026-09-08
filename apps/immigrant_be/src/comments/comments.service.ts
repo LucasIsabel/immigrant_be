@@ -183,13 +183,24 @@ export class CommentsService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
 
+    /*
+     * The badge counts the same slice the list shows. A queue that lives inside
+     * one business must not carry a number from the owner's other one.
+     */
+    const scope =
+      query.target && query.targetId
+        ? { target: query.target, targetId: query.targetId }
+        : undefined;
+
     const [{ data, total }, pendingCount] = await Promise.all([
       this.repository.listInbox(userId, {
         skip: (page - 1) * limit,
         take: limit,
         status: query.status,
+        target: query.target,
+        targetId: query.targetId,
       }),
-      this.repository.countPending(userId),
+      this.repository.countPending(userId, scope),
     ]);
 
     return {
@@ -212,6 +223,7 @@ export class CommentsService {
       take: limit,
       status: query.status,
       target: query.target,
+      targetId: query.targetId,
     });
 
     return {
