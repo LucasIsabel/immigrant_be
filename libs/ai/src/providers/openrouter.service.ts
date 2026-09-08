@@ -9,6 +9,7 @@ import {
   AiTextProvider,
   AiTextResult,
   AiUsage,
+  AiVisionProvider,
   InsufficientCreditsError,
   RateLimitedError,
 } from './ai-provider.types';
@@ -26,7 +27,9 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
  * trivially mockable in tests.
  */
 @Injectable()
-export class OpenRouterService implements AiTextProvider, AiImageProvider {
+export class OpenRouterService
+  implements AiTextProvider, AiImageProvider, AiVisionProvider
+{
   readonly name: AiProviderName = 'openrouter';
   private readonly apiKey: string;
 
@@ -103,12 +106,49 @@ export class OpenRouterService implements AiTextProvider, AiImageProvider {
   }
 
   async generateText(model: string, prompt: string): Promise<AiTextResult> {
+    return this.complete(model, prompt);
+  }
+
+  /**
+   * The same completion, with pictures attached for the model to look at.
+   *
+   * The images travel as URLs rather than base64: they already live in a
+   * public R2 bucket, so sending the bytes would double the upload for no
+   * gain and put the whole photo through the prompt budget.
+   */
+  async analyseImages(
+    model: string,
+    prompt: string,
+    imageUrls: string[],
+  ): Promise<AiTextResult> {
+    return this.complete(model, prompt, imageUrls);
+  }
+
+  private async complete(
+    model: string,
+    prompt: string,
+    imageUrls?: string[],
+  ): Promise<AiTextResult> {
+    // A bare string is what every text model expects; the parts array is the
+    // OpenAI-compatible shape, and only worth switching to when there is
+    // actually something to look at.
+    const content =
+      imageUrls && imageUrls.length > 0
+        ? [
+            { type: 'text', text: prompt },
+            ...imageUrls.map((url) => ({
+              type: 'image_url',
+              image_url: { url },
+            })),
+          ]
+        : prompt;
+
     const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: this.headers(),
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content }],
         // Asks OpenRouter to report what the call actually cost.
         usage: { include: true },
       }),

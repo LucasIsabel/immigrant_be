@@ -43,6 +43,15 @@ export const AI_SCENARIOS = [
   'visa_steps_translation',
   /** Content moderation of business pages. Classification, not prose. */
   'business_moderation',
+  /**
+   * Looking at the photos themselves.
+   *
+   * `business_moderation` is handed photo URLs and told to judge them, but an
+   * R2 key is `business/{uuid}.jpg` — a name that says nothing about the
+   * picture. The text was moderated and the images never were; only a human
+   * opening the review screen ever saw them.
+   */
+  'image_moderation',
 ] as const;
 
 export type AiScenario = (typeof AI_SCENARIOS)[number];
@@ -159,6 +168,23 @@ export class AiProviderError extends Error {
 export interface AiTextProvider {
   readonly name: AiProviderName;
   generateText(model: string, prompt: string): Promise<AiTextResult>;
+}
+
+/**
+ * A model that is shown pictures, rather than asked to draw them.
+ *
+ * Deliberately its own interface and not an optional argument on
+ * `generateText`: a provider without vision would have to ignore the images,
+ * and moderation that silently degrades to text-only is worse than moderation
+ * that fails loudly — it reports "low risk" on a photo nobody looked at.
+ */
+export interface AiVisionProvider {
+  readonly name: AiProviderName;
+  analyseImages(
+    model: string,
+    prompt: string,
+    imageUrls: string[],
+  ): Promise<AiTextResult>;
 }
 
 export interface AiImageProvider {

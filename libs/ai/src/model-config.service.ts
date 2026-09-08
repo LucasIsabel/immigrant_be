@@ -81,6 +81,21 @@ export const DEFAULT_MODEL_CHAINS: Record<
     primaryModel: 'google/gemini-3.1-flash-lite',
     fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
+  /*
+   * Free on purpose, and the whole chain with it.
+   *
+   * `nemotron-3.5-content-safety` is a 4B guardrail model built for exactly
+   * this — it takes text and images and classifies them — and costs nothing.
+   * Gemma follows as a general multimodal fallback.
+   *
+   * Nothing paid sits behind them: a photo check that quietly starts spending
+   * is worse than one that fails, because failing sends the page to a human,
+   * which is where it belonged anyway.
+   */
+  image_moderation: {
+    primaryModel: 'nvidia/nemotron-3.5-content-safety:free',
+    fallbackModels: ['google/gemma-4-31b-it:free'],
+  },
   blog_image: {
     primaryModel: 'bytedance-seed/seedream-5-0-lite',
     fallbackModels: [
