@@ -715,6 +715,60 @@ describe('CommunityEventsService', () => {
     });
   });
 
+  describe('the public detail', () => {
+    const publicRow = {
+      ...baseEvent,
+      organizer: { name: 'Marta Silva' },
+      business: null,
+      _count: { favourites: 24 },
+    };
+
+    beforeEach(() => {
+      repository.findApprovedBySlug.mockResolvedValue(publicRow);
+      repository.isFavourite.mockResolvedValue(false);
+    });
+
+    it('carries how many people kept the event', async () => {
+      const event = await service.getPublic('feira-20260912');
+
+      expect(event.favouritesCount).toBe(24);
+    });
+
+    /*
+     * `_count` is a shape of the row, not of the response. Left in, it would
+     * reach the reader as a second, differently-named copy of the same number.
+     */
+    it('does not leak the raw count shape into the response', async () => {
+      const event = await service.getPublic('feira-20260912');
+
+      expect(event).not.toHaveProperty('_count');
+    });
+
+    it('says the event is not kept when nobody is signed in', async () => {
+      const event = await service.getPublic('feira-20260912');
+
+      expect(event.isFavourite).toBe(false);
+      expect(repository.isFavourite).not.toHaveBeenCalled();
+    });
+
+    it('says the event is kept when this reader kept it', async () => {
+      repository.isFavourite.mockResolvedValue(true);
+
+      const event = await service.getPublic('feira-20260912', 'user-2');
+
+      expect(event.isFavourite).toBe(true);
+      expect(repository.isFavourite).toHaveBeenCalledWith('user-2', 'event-1');
+    });
+
+    it('does not admit that an unapproved event exists', async () => {
+      repository.findApprovedBySlug.mockResolvedValue(null);
+
+      await expect(service.getPublic('rascunho')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('favourites', () => {
     it('refuses to favourite an event the reader cannot see', async () => {
       repository.findApprovedById.mockResolvedValue(null);

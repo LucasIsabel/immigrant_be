@@ -57,7 +57,7 @@ import {
 } from './dto/community-event-response.dto';
 import {
   PaginatedPublicCommunityEventsResponseDto,
-  PublicCommunityEventDto,
+  PublicCommunityEventDetailDto,
 } from './dto/public-community-event.dto';
 import {
   UploadEventGalleryImageResponseDto,
@@ -93,10 +93,13 @@ export class CommunityEventsController {
   @AllowAnonymous()
   @ApiOperation({ summary: 'Detalhe público de um evento aprovado' })
   @ApiParam({ name: 'slug', description: 'Slug único do evento' })
-  @ApiOkResponse({ type: PublicCommunityEventDto })
+  @ApiOkResponse({ type: PublicCommunityEventDetailDto })
   @ApiNotFoundResponse({ description: 'Evento não encontrado' })
-  getPublic(@Param('slug') slug: string): Promise<PublicCommunityEventDto> {
-    return this.service.getPublic(slug);
+  getPublic(
+    @Param('slug') slug: string,
+    @Session() session?: UserSession,
+  ): Promise<PublicCommunityEventDetailDto> {
+    return this.service.getPublic(slug, session?.user?.id);
   }
 
   @Post('public/:slug/report')
