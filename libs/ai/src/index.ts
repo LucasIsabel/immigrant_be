@@ -109,6 +109,11 @@ export {
   type BusinessPageModerationResult,
 } from './schemas/business-page-moderation.schema';
 export { buildBusinessPageModerationPrompt } from './prompts/business-page-moderation.prompt';
+export { buildImageModerationPrompt } from './prompts/image-moderation.prompt';
+export {
+  imageModerationResultSchema,
+  type ImageModerationResult,
+} from './schemas/image-moderation.schema';
 export {
   VISUAL_MARKER_REGEX,
   contentHasVisualMarkers,

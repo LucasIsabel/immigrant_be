@@ -272,6 +272,41 @@ export class AiRouterService {
     };
   }
 
+  /**
+   * Shows the model pictures and validates what it says about them.
+   *
+   * There is no `gemini-direct` branch, and its absence is the design: that
+   * provider has no vision path, so a chain entry pointing at it throws
+   * instead of quietly answering from the text alone. A moderator that
+   * reports "low risk" on a photo nobody looked at is worse than one that
+   * fails — failing sends the page to a human, which is where it belonged.
+   */
+  async analyseImages<T>(
+    scenario: AiScenario,
+    prompt: string,
+    imageUrls: string[],
+    schema: z.ZodType<T>,
+    context: AiCallContext = {},
+  ): Promise<{ data: T | null; result: AiTextResult }> {
+    const result = await this.runChain(
+      scenario,
+      context,
+      (model, viaGeminiDirect) => {
+        if (viaGeminiDirect) {
+          throw new Error(
+            `${model} cannot be used for ${scenario}: gemini-direct has no vision path`,
+          );
+        }
+        return this.openRouter.analyseImages(model, prompt, imageUrls);
+      },
+    );
+
+    return {
+      data: parseJsonResponse(result.text, schema, result.model),
+      result,
+    };
+  }
+
   async generateImage(
     scenario: AiScenario,
     prompt: string,
