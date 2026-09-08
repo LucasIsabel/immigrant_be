@@ -519,6 +519,86 @@ describe('CommentsService', () => {
       });
     });
 
+    /*
+     * Taking down what is already published is the same operation as refusing
+     * what is waiting, and deliberately so. `REJECTED` keeps the row, the
+     * reason and who decided, and approving again puts it back — which is what
+     * a separate `hiddenAt` column would have bought, at the price of two
+     * mechanisms for one act and two states a reader has to reason about.
+     *
+     * Nothing in the moderation path looks at the current status, so this is
+     * true by construction rather than by a branch. These tests are what stops
+     * somebody adding that branch.
+     */
+    describe('taking down what is already published', () => {
+      beforeEach(() => {
+        repository.findForModeration.mockResolvedValue(
+          moderationRow({ status: 'APPROVED' }),
+        );
+        repository.setStatus.mockResolvedValue(row({ status: 'REJECTED' }));
+      });
+
+      it('takes down an approved comment, with the reason', async () => {
+        const comment = await service.reject(
+          COMMENT_ID,
+          OWNER_ID,
+          false,
+          'Ofensivo.',
+        );
+
+        expect(comment.status).toBe('REJECTED');
+        expect(repository.setStatus).toHaveBeenCalledWith(
+          COMMENT_ID,
+          'REJECTED',
+          OWNER_ID,
+          'Ofensivo.',
+        );
+      });
+
+      it('keeps who decided and why on the row', async () => {
+        await service.reject(COMMENT_ID, OWNER_ID, false, 'Ofensivo.');
+
+        const [, , moderatedBy, reason] = repository.setStatus.mock.calls[0];
+        expect(moderatedBy).toBe(OWNER_ID);
+        expect(reason).toBe('Ofensivo.');
+      });
+
+      it('tells the author it came down, and why', async () => {
+        await service.reject(COMMENT_ID, OWNER_ID, false, 'Ofensivo.');
+
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: AUTHOR_ID,
+            type: 'comment_rejected',
+            payload: expect.objectContaining({ reason: 'Ofensivo.' }),
+          }),
+        );
+      });
+
+      it('puts it back when approved again', async () => {
+        repository.findForModeration.mockResolvedValue(
+          moderationRow({ status: 'REJECTED' }),
+        );
+        repository.setStatus.mockResolvedValue(row({ status: 'APPROVED' }));
+
+        const comment = await service.approve(COMMENT_ID, OWNER_ID, false);
+
+        expect(comment.status).toBe('APPROVED');
+        expect(repository.setStatus).toHaveBeenCalledWith(
+          COMMENT_ID,
+          'APPROVED',
+          OWNER_ID,
+          null,
+        );
+      });
+
+      it('is still refused to somebody who does not own the page', async () => {
+        await expect(
+          service.reject(COMMENT_ID, 'a-stranger', false, 'Porque sim.'),
+        ).rejects.toThrow(ForbiddenException);
+      });
+    });
+
     describe('reject', () => {
       beforeEach(() => {
         repository.findForModeration.mockResolvedValue(
