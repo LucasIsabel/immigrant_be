@@ -100,6 +100,38 @@ describe('TourGuideReviewsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    /*
+     * The message says "business", not "guide". The module has always accepted
+     * any business type — only its wording said otherwise, and a restaurant
+     * owner reading "tour guide not found" would think they were on the wrong
+     * endpoint rather than that the id is wrong.
+     */
+    it('says business, not guide, when the target does not exist', async () => {
+      repository.findBusinessOwnerId.mockResolvedValue(null);
+
+      await expect(
+        service.createReview(BUSINESS_ID, VISITOR_ID, { rating: 5 }),
+      ).rejects.toThrow('Negócio não encontrado.');
+    });
+
+    /*
+     * No `businessType` filter stands between a restaurant and a rating: the
+     * repository only ever selects `Business.userId`. This pins that down, so
+     * adding a filter later has to fail a test first.
+     */
+    it('accepts a review on a business that is not a tour guide', async () => {
+      const result = await service.createReview(BUSINESS_ID, VISITOR_ID, {
+        rating: 4,
+      });
+
+      expect(result.businessId).toBe(BUSINESS_ID);
+      expect(repository.create).toHaveBeenCalledWith(
+        BUSINESS_ID,
+        VISITOR_ID,
+        expect.objectContaining({ rating: 4 }),
+      );
+    });
+
     it('still refuses a second review from the same person', async () => {
       repository.findByBusinessIdAndUserId.mockResolvedValue(
         reviewRow() as never,

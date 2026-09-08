@@ -436,6 +436,29 @@ export class BusinessRepository {
    * meaning one thing — whether the business appears in the directory — and
    * the listings below still honour it.
    */
+  /**
+   * Average and count of the visible reviews of one business.
+   *
+   * Reads `tour_guide_reviews` from here rather than through the reviews
+   * module: the public page needs the number in the same round-trip as the
+   * business itself, and a cross-module call for two aggregates would cost a
+   * second one. `hiddenAt: null` is the same filter the reviews list applies —
+   * a review an admin hid is out of the average as well as out of the list.
+   */
+  async findRatingSummary(
+    businessId: string,
+  ): Promise<{ averageRating: number; reviewCount: number }> {
+    const result = await this.prisma.tourGuideReview.aggregate({
+      where: { businessId, hiddenAt: null },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+    return {
+      averageRating: Math.round((result._avg.rating ?? 0) * 10) / 10,
+      reviewCount: result._count.id,
+    };
+  }
+
   findVisibleById(id: string) {
     return this.prisma.business.findFirst({
       where: {
