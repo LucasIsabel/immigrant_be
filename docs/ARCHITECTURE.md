@@ -1900,8 +1900,15 @@ carrega; derivar um do outro faria o emblema mentir a partir da segunda página.
 - **Ninguém é notificado de si próprio.** Um dono que responde na sua página não
   notifica ninguém se estiver a responder-se a si; e quem responde nunca recebe o
   aviso da própria resposta.
-- **O admin usa `REJECTED` com motivo**, e não uma coluna à parte de «escondido
-  por admin» — é reversível e o motivo fica, no molde do `hide` das avaliações.
+- **`REJECTED` é também como se derruba o que já está publicado.** Recusar não
+  olha para o estado actual, portanto o mesmo `POST /comments/:id/reject` serve
+  a fila e a página: um comentário de texto publica sozinho e o dono consegue
+  escondê-lo depois, com motivo, e voltar atrás aprovando-o de novo. Não há
+  coluna `hiddenAt` à parte — seria um segundo mecanismo para o mesmo acto e um
+  segundo estado para quem lê raciocinar. É verdade por construção e não por um
+  ramo no código; os testes de «taking down what is already published» existem
+  para impedir que alguém acrescente esse ramo.
+- **O admin usa a mesma rota**, no molde do `hide` das avaliações.
   `DELETE /admin/comments/:id` é hard delete e é a excepção, para conteúdo que
   não pode ficar guardado.
 - **Controller de admin próprio**, e não ramos de admin nas rotas do dono: o
