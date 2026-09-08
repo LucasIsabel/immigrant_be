@@ -1837,6 +1837,45 @@ que nenhuma resposta de sucesso é descrita por schema inline — o que compila,
 arranca e responde certo, e só falha dias depois no `pnpm generate:api` do
 frontend, sem tipo nenhum do outro lado.
 
+### Comentários — quem espera, e quem não espera
+
+`comments/` serve as quatro superfícies por uma rota só. `GET /comments` é
+anónima com sessão opcional, `POST /comments` é multipart, `DELETE /comments/:id`
+é do autor. O alvo vai no pedido (`target` + `targetId`) e não no caminho, porque
+o que muda entre superfícies é política e não forma.
+
+- **Só o comentário com fotografia espera pelo dono.** Texto publica na hora.
+  Uma fotografia errada fica na página de alguém a parecer que pertence ali, o
+  que o texto não faz; e uma fila que só enche com fotografias é uma fila que
+  alguém lê de facto. A alternativa — tudo `PENDING` — dava ao dono um poder de
+  montra sobre a conversa e uma fila que ninguém esvazia.
+- **O comentário espera inteiro.** O texto não aparece primeiro e ganha a
+  imagem depois: isso mudaria um comentário debaixo dos olhos de quem já o leu.
+- **A fotografia sobe antes da linha existir.** O id é sorteado antes do
+  `INSERT`, então a chave `comments/{id}/{uuid}.ext` é conhecida sem uma segunda
+  escrita, e um upload que falha não deixa nada para trás — em vez de um
+  comentário a apontar para um objecto que não está lá.
+- **Apagar tem duas formas, e o que decide são as respostas.** Sem nada por
+  baixo, a linha sai. Com respostas, fica a âncora sem corpo nem fotografia: as
+  respostas são de outras pessoas e não desaparecem porque o texto que as
+  motivou desapareceu.
+- **Apagar o objecto no R2 é best-effort e guardado por prefixo.** A chave é
+  reconstruída a partir da pasta do próprio comentário; um url guardado a
+  apontar para outro sítio não apaga nada. Perder um objecto é um ficheiro
+  esquecido, apagar o errado é a fotografia de outra pessoa.
+- **404, nunca 403, no comentário alheio.** A posse vai dentro da consulta
+  (`findFirst({ where: { id, authorId } })`), como nos roteiros.
+- **Alvo invisível responde 404.** Comentar num rascunho, num negócio privado ou
+  num evento em análise seria escrever onde ninguém lê — e confirmaria que um id
+  privado existe.
+- **A resposta herda o alvo do pai.** Uma resposta que nomeia outro alvo é
+  recusada com 400, tal como a resposta a uma resposta — que o *trigger* na base
+  também recusa, mas sem mensagem que alguém possa ler.
+
+Um comentário `PENDING` ou `REJECTED` volta na listagem **para o próprio autor**
+e para mais ninguém: sem isso, quem comentou com uma fotografia via o comentário
+desaparecer e voltava a escrevê-lo.
+
 ### Health
 
 | Rota                    | Checa              | Resposta                                                  |
