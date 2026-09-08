@@ -3,10 +3,16 @@ jest.mock('@app/database', () => ({
   DatabaseModule: jest.fn(),
 }));
 
-// O decorador é tudo o que este teste precisa da biblioteca de auth, e importá-la
-// a sério traz o ESM de criptografia do better-auth, que o jest não consegue ler.
+// Os decoradores são tudo o que este teste precisa da biblioteca de auth, e
+// importá-la a sério traz o ESM de criptografia do better-auth, que o jest não
+// consegue ler.
+//
+// O mock tem de listar **todos** os decoradores que o controller usa: um que
+// falte não é `undefined` no arranque do teste, é uma suíte inteira que não
+// corre, e a mensagem («Session is not a function») não aponta para aqui.
 jest.mock('@thallesp/nestjs-better-auth', () => ({
   AllowAnonymous: () => () => undefined,
+  Session: () => () => undefined,
 }));
 
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -58,7 +64,12 @@ describe('BusinessPublicController', () => {
     expect(service.getPublicBusinessById).not.toHaveBeenCalled();
   });
 
-  it('lets a well-formed id through', async () => {
+  /*
+   * A sessão é opcional nesta rota: ela existe só para dizer se quem lê já
+   * gosta do negócio. Sem ninguém autenticado o serviço tem de ser chamado na
+   * mesma, com `undefined` no lugar do leitor.
+   */
+  it('lets a well-formed id through, with no reader', async () => {
     const id = '8c1d84a5-2523-451f-9ad2-e819862ef7c0';
     service.getPublicBusinessById.mockResolvedValue({ id });
 
@@ -66,6 +77,6 @@ describe('BusinessPublicController', () => {
       .get(`/business/public/${id}`)
       .expect(200);
 
-    expect(service.getPublicBusinessById).toHaveBeenCalledWith(id);
+    expect(service.getPublicBusinessById).toHaveBeenCalledWith(id, undefined);
   });
 });
