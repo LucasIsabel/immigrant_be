@@ -13,7 +13,7 @@ import { BusinessCityDto } from './dto/business-city.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
 import {
   PaginatedPublicBusinessesResponseDto,
-  PublicBusinessResponseDto,
+  PublicBusinessDetailResponseDto,
 } from './dto/public-business-response.dto';
 
 @ApiTags('Business')
@@ -48,7 +48,7 @@ export class BusinessPublicController {
   @AllowAnonymous()
   @ApiOperation({ summary: 'Buscar negócio público por ID' })
   @ApiParam({ name: 'id', description: 'ID do negócio' })
-  @ApiOkResponse({ type: PublicBusinessResponseDto })
+  @ApiOkResponse({ type: PublicBusinessDetailResponseDto })
   @ApiNotFoundResponse({ description: 'Negócio não encontrado ou privado' })
   getPublicBusinessById(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.getPublicBusinessById(id);

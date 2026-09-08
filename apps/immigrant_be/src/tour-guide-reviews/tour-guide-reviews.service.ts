@@ -79,7 +79,7 @@ export class TourGuideReviewsService {
   ): Promise<TourGuideReviewDto> {
     const ownerId = await this.repository.findBusinessOwnerId(businessId);
     if (!ownerId) {
-      throw new NotFoundException('Guia turístico não encontrado.');
+      throw new NotFoundException('Negócio não encontrado.');
     }
     if (ownerId === userId) {
       throw new ForbiddenException(

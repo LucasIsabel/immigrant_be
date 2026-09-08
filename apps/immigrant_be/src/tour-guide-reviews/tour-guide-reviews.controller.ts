@@ -60,7 +60,7 @@ export class TourGuideReviewsController {
   @ApiParam({ name: 'businessId', description: 'UUID do negócio' })
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ type: TourGuideReviewDto })
-  @ApiNotFoundResponse({ description: 'Guia turístico não encontrado' })
+  @ApiNotFoundResponse({ description: 'Negócio não encontrado' })
   @ApiForbiddenResponse({ description: 'O dono não avalia o próprio negócio' })
   @ApiConflictResponse({ description: 'O utilizador já avaliou este guia' })
   createReview(

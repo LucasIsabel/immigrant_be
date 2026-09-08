@@ -145,7 +145,13 @@ export class BusinessService {
     if (!business) {
       throw new NotFoundException('Negócio não encontrado');
     }
-    return business;
+    /*
+     * The summary is fetched only after the business is known to be visible:
+     * asking for both up front would let a private id be probed for a review
+     * count, and would pay for an aggregate on every 404.
+     */
+    const rating = await this.repository.findRatingSummary(id);
+    return { ...business, ...rating };
   }
 
   /**

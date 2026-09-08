@@ -145,6 +145,30 @@ export class PublicBusinessResponseDto {
   updatedAt: Date;
 }
 
+/**
+ * The public business, plus the rating summary the page header shows.
+ *
+ * Separate from `PublicBusinessResponseDto` on purpose: the listing does not
+ * carry the summary, and declaring the fields on the shared class would make
+ * every card claim a rating it never received.
+ */
+export class PublicBusinessDetailResponseDto extends PublicBusinessResponseDto {
+  @ApiProperty({
+    example: 4.6,
+    description:
+      'Média das avaliações visíveis, de 0 a 5, arredondada a uma casa. ' +
+      'Zero quando ainda não há nenhuma — `reviewCount` é o que distingue ' +
+      '"ninguém avaliou" de "avaliaram mal".',
+  })
+  averageRating: number;
+
+  @ApiProperty({
+    example: 12,
+    description: 'Quantas avaliações visíveis entram na média.',
+  })
+  reviewCount: number;
+}
+
 export class PaginatedPublicBusinessesResponseDto {
   @ApiProperty({ type: [PublicBusinessResponseDto] })
   data: PublicBusinessResponseDto[];

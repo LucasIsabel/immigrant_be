@@ -41,6 +41,7 @@ const mockBusinessRepository = {
   toggleVisibility: jest.fn(),
   findPublic: jest.fn(),
   findVisibleById: jest.fn(),
+  findRatingSummary: jest.fn(),
 };
 
 describe('BusinessService', () => {
@@ -490,14 +491,51 @@ describe('BusinessService', () => {
   // ── getPublicBusinessById ──────────────────────────────────
 
   describe('getPublicBusinessById', () => {
+    beforeEach(() => {
+      repository.findRatingSummary.mockResolvedValue({
+        averageRating: 0,
+        reviewCount: 0,
+      });
+    });
+
     it('should return a public business by id', async () => {
       const publicBusiness = { ...mockBusiness, isPublic: true };
       repository.findVisibleById.mockResolvedValue(publicBusiness);
 
       const result = await service.getPublicBusinessById('business-id-1');
 
-      expect(result).toEqual(publicBusiness);
+      expect(result).toMatchObject(publicBusiness);
       expect(repository.findVisibleById).toHaveBeenCalledWith('business-id-1');
+    });
+
+    it('carries the rating summary of a business of any type', async () => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        businessType: 'RESTAURANT',
+        isPublic: true,
+      });
+      repository.findRatingSummary.mockResolvedValue({
+        averageRating: 4.6,
+        reviewCount: 12,
+      });
+
+      const result = await service.getPublicBusinessById('business-id-1');
+
+      expect(result).toMatchObject({ averageRating: 4.6, reviewCount: 12 });
+      expect(repository.findRatingSummary).toHaveBeenCalledWith(
+        'business-id-1',
+      );
+    });
+
+    it('reports a business nobody has reviewed as zero of zero', async () => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+      });
+
+      const result = await service.getPublicBusinessById('business-id-1');
+
+      expect(result).toMatchObject({ averageRating: 0, reviewCount: 0 });
     });
 
     it('should throw NotFoundException when business not found (repository returns null)', async () => {
@@ -506,6 +544,20 @@ describe('BusinessService', () => {
       await expect(
         service.getPublicBusinessById('non-existent'),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    /*
+     * A private id must not be probeable for a review count: the aggregate is
+     * only worth paying for once the business is known to be visible.
+     */
+    it('does not read the rating summary of a business it refuses', async () => {
+      repository.findVisibleById.mockResolvedValue(null);
+
+      await expect(
+        service.getPublicBusinessById('non-existent'),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.findRatingSummary).not.toHaveBeenCalled();
     });
   });
 
