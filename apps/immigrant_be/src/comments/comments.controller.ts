@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import {
   AllowAnonymous,
   Session,
@@ -44,6 +45,10 @@ import {
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { PaginatedInboxResponseDto } from './dto/inbox-comment.dto';
 import { ListCommentsQueryDto } from './dto/list-comments-query.dto';
+import {
+  ReportCommentDto,
+  ReportCommentResponseDto,
+} from './dto/report-comment.dto';
 import { InboxQueryDto, RejectCommentDto } from './dto/moderate-comment.dto';
 
 @ApiTags('Comments')
@@ -178,6 +183,32 @@ export class CommentsController {
     @Session() session: UserSession,
   ): Promise<CommentDto> {
     return this.service.reject(id, session.user.id, false, dto.reason ?? null);
+  }
+
+  /*
+   * Anonymous, like the review and event reports, and for the same reason:
+   * whoever is reading a business page is usually not signed in, and asking
+   * them to make an account before they can flag defamation is how the flag
+   * never arrives.
+   */
+  @Post(':id/report')
+  @AllowAnonymous()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Denunciar um comentário',
+    description:
+      'Só um comentário publicado. A resposta é a mesma para uma denúncia ' +
+      'real e para uma que caiu no honeypot.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID do comentário' })
+  @ApiCreatedResponse({ type: ReportCommentResponseDto })
+  @ApiNotFoundResponse({ description: 'Comentário não encontrado' })
+  reportComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReportCommentDto,
+  ): Promise<ReportCommentResponseDto> {
+    return this.service.report(id, dto);
   }
 
   @Delete(':id')

@@ -1921,6 +1921,19 @@ lado sabe qual das quatro formas o alvo tem; é `null` enquanto o alvo não tive
 página pública própria — um negócio cuja página ainda não foi publicada — e o
 frontend cai para a fila.
 
+**A denúncia é anónima**, no molde da das avaliações e da dos eventos, e pelo
+mesmo motivo: quem lê a página de um negócio não está autenticado, e exigir
+conta para sinalizar difamação é como a sinalização nunca chega. Honeypot mais
+`@Throttle` de 5/min carregam o abuso; um honeypot preenchido responde
+exactamente como uma denúncia real — dizer ao bot que foi apanhado é dizer-lhe
+como tentar outra vez — e nem chega à leitura que confirmaria que o comentário
+existe. Só um comentário **publicado** aceita denúncia: denunciar o que ninguém
+consegue ler não é nada, e responder de outra forma diria se existe um escondido.
+
+No `GET /admin/comments`, `reported=false` **não** é «tudo» — é o que ninguém
+sinalizou. Ausente devolve os dois. Colapsar os dois faria um parâmetro
+significar duas coisas conforme o valor.
+
 **A rota da fila está escrita nos dois lados.** `commentQueuePath()` em
 `comments.constants.ts` existe porque o e-mail precisa de um URL absoluto e só o
 backend o constrói; a página correspondente é do frontend (immigrant_fe#483). Se

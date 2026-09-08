@@ -22,6 +22,14 @@ export class InboxCommentDto extends CommentDto {
     description: 'Se é uma resposta a outro comentário.',
   })
   isReply: boolean;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Quantas denúncias este comentário acumulou. Zero é o caso comum; é o ' +
+      'número que distingue uma queixa de um padrão.',
+  })
+  reportCount: number;
 }
 
 export class PaginatedInboxResponseDto {

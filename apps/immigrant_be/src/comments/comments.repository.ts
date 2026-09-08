@@ -49,6 +49,7 @@ const inboxSelect = {
   event: { select: { title: true, slug: true } },
   itinerary: { select: { title: true, slug: true } },
   post: { select: { title: true, slug: true } },
+  _count: { select: { reports: true } },
 } satisfies Prisma.CommentSelect;
 
 export type InboxCommentRow = Prisma.CommentGetPayload<{
@@ -422,9 +423,20 @@ export class CommentsRepository {
     status?: CommentStatus;
     target?: CommentTarget;
     targetId?: string;
+    reported?: boolean;
   }): Promise<{ data: InboxCommentRow[]; total: number }> {
     const where: Prisma.CommentWhereInput = {
       ...(options.status ? { status: options.status } : {}),
+      /*
+       * `reported=false` is not "everything" — it is what nobody has flagged.
+       * Treating it as no filter would make the parameter mean two things
+       * depending on which value it carried.
+       */
+      ...(options.reported === undefined
+        ? {}
+        : options.reported
+          ? { reports: { some: {} } }
+          : { reports: { none: {} } }),
       ...(options.target && options.targetId
         ? this.targetWhere(options.target, options.targetId)
         : options.target
@@ -444,6 +456,21 @@ export class CommentsRepository {
     ]);
 
     return { data, total };
+  }
+
+  createReport(commentId: string, reason: string): Promise<{ id: string }> {
+    return this.prisma.commentReport.create({
+      data: { commentId, reason },
+      select: { id: true },
+    });
+  }
+
+  /** Only what is published: reporting a comment nobody can read is nothing. */
+  findReportableById(id: string): Promise<{ id: string } | null> {
+    return this.prisma.comment.findFirst({
+      where: { id, status: CommentStatus.APPROVED, deletedAt: null },
+      select: { id: true },
+    });
   }
 
   /** The root a reply hangs off, and who wrote it. */

@@ -42,6 +42,7 @@ import type {
   AdminCommentsQueryDto,
   InboxQueryDto,
 } from './dto/moderate-comment.dto';
+import type { ReportCommentDto } from './dto/report-comment.dto';
 
 const FALLBACK_AUTHOR_NAME = 'Utilizador';
 
@@ -224,6 +225,7 @@ export class CommentsService {
       status: query.status,
       target: query.target,
       targetId: query.targetId,
+      reported: query.reported,
     });
 
     return {
@@ -296,6 +298,36 @@ export class CommentsService {
     });
 
     return this.toDto(updated, comment.author.id);
+  }
+
+  /**
+   * Somebody flags a published comment, without signing in.
+   *
+   * Anonymous by design, in the mould of the review and event reports: whoever
+   * is reading a business page is usually not signed in, and asking them to
+   * make an account before they can flag defamation is how the flag never
+   * arrives. A honeypot and a tight throttle carry the abuse load.
+   *
+   * A filled honeypot answers exactly like a real report. Telling a bot it was
+   * caught is telling it how to try again.
+   */
+  async report(
+    id: string,
+    dto: ReportCommentDto,
+  ): Promise<{ received: boolean }> {
+    if (dto.website) {
+      return { received: true };
+    }
+
+    // Only what is published: reporting a comment nobody can read is nothing,
+    // and answering differently would say whether a hidden one exists.
+    const comment = await this.repository.findReportableById(id);
+    if (!comment) {
+      throw new NotFoundException('Comentário não encontrado.');
+    }
+
+    await this.repository.createReport(id, dto.reason);
+    return { received: true };
   }
 
   /** Hard delete, for what cannot stay stored at all. Admin only. */
@@ -524,6 +556,7 @@ export class CommentsService {
       targetId: where.targetId,
       targetTitle: where.targetTitle,
       isReply: row.parentId !== null,
+      reportCount: row._count.reports,
     };
   }
 
