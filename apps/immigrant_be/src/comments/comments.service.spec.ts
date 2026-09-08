@@ -69,6 +69,8 @@ const repository = {
   findForModeration: jest.fn(),
   setStatus: jest.fn(),
   findRootAuthor: jest.fn(),
+  createReport: jest.fn(),
+  findReportableById: jest.fn(),
 };
 
 const storage = {
@@ -317,6 +319,7 @@ describe('CommentsService', () => {
       },
       event: null,
       itinerary: null,
+      _count: { reports: 0 },
       ...overrides,
     });
 
@@ -743,6 +746,87 @@ describe('CommentsService', () => {
       );
       expect(repository.deleteById).not.toHaveBeenCalled();
       expect(repository.anonymise).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('report', () => {
+    beforeEach(() => {
+      repository.findReportableById.mockResolvedValue({ id: COMMENT_ID });
+    });
+
+    it('records a real report against the comment', async () => {
+      const answer = await service.report(COMMENT_ID, {
+        reason: 'A fotografia é de outro restaurante.',
+      });
+
+      expect(answer).toEqual({ received: true });
+      expect(repository.createReport).toHaveBeenCalledWith(
+        COMMENT_ID,
+        'A fotografia é de outro restaurante.',
+      );
+    });
+
+    /*
+     * Telling a bot it was caught is telling it how to try again, so a filled
+     * honeypot answers exactly like a real report — and never reaches the read
+     * that would confirm the comment exists.
+     */
+    it('drops a honeypot submission without saying so', async () => {
+      const answer = await service.report(COMMENT_ID, {
+        reason: 'qualquer coisa suficientemente longa',
+        website: 'http://spam.example',
+      });
+
+      expect(answer).toEqual({ received: true });
+      expect(repository.createReport).not.toHaveBeenCalled();
+      expect(repository.findReportableById).not.toHaveBeenCalled();
+    });
+
+    /*
+     * Reporting a comment nobody can read is nothing, and answering
+     * differently would say whether a hidden one exists.
+     */
+    it('does not admit that an unpublished comment exists', async () => {
+      repository.findReportableById.mockResolvedValue(null);
+
+      await expect(
+        service.report(COMMENT_ID, { reason: 'dez caracteres pelo menos' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.createReport).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the admin list', () => {
+    beforeEach(() => {
+      repository.listForAdmin.mockResolvedValue({ data: [], total: 0 });
+    });
+
+    it('narrows to what was reported when asked', async () => {
+      await service.adminList({ reported: true });
+
+      expect(repository.listForAdmin).toHaveBeenCalledWith(
+        expect.objectContaining({ reported: true }),
+      );
+    });
+
+    /*
+     * `reported=false` is not "everything" — it is what nobody has flagged.
+     * Collapsing the two would make one parameter mean two things.
+     */
+    it('keeps false meaning "nobody flagged it", not "no filter"', async () => {
+      await service.adminList({ reported: false });
+
+      expect(repository.listForAdmin).toHaveBeenCalledWith(
+        expect.objectContaining({ reported: false }),
+      );
+    });
+
+    it('asks for everything when the filter is absent', async () => {
+      await service.adminList({});
+
+      expect(repository.listForAdmin).toHaveBeenCalledWith(
+        expect.objectContaining({ reported: undefined }),
+      );
     });
   });
 

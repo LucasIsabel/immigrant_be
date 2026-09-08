@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -76,4 +77,14 @@ export class InboxQueryDto {
  * The admin's filters are the owner's filters. It stayed a subclass with an
  * override of the same field, which said "these differ" while they did not.
  */
-export class AdminCommentsQueryDto extends InboxQueryDto {}
+export class AdminCommentsQueryDto extends InboxQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Só os denunciados, ou só os que ninguém denunciou. Ausente devolve os ' +
+      'dois — `false` não é "tudo", é o que ninguém sinalizou.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  reported?: boolean;
+}

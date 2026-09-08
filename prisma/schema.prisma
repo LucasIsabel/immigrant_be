@@ -1409,8 +1409,9 @@ model Comment {
   /// outright instead.
   deletedAt DateTime? @map("deleted_at")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  reports   CommentReport[]
 
   @@index([postId, status, createdAt])
   @@index([businessId, status, createdAt])
@@ -1422,6 +1423,23 @@ model Comment {
 }
 
 /// A like on a business page, in the mould of `BlogPostLike`.
+/// An anonymous report against a published comment.
+///
+/// Anonymous on purpose, in the mould of `TourGuideReviewReport`: whoever is
+/// reading a business page is usually not signed in, and asking somebody to
+/// create an account before they can flag defamation is how the flag never
+/// arrives. A honeypot and a tight throttle carry the abuse load.
+model CommentReport {
+  id        String   @id @default(uuid()) @db.Uuid
+  commentId String   @map("comment_id") @db.Uuid
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reason    String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([commentId])
+  @@map("comment_reports")
+}
+
 model BusinessLike {
   id         String   @id @default(uuid()) @db.Uuid
   businessId String   @map("business_id") @db.Uuid
