@@ -437,6 +437,40 @@ export class BusinessRepository {
    * the listings below still honour it.
    */
   /**
+   * Both directions are idempotent, which is what makes the button safe to
+   * press twice on a connection that is not sure the first press arrived.
+   *
+   * `upsert` on the unique pair rather than a read followed by a write: two
+   * taps racing each other would both find nothing and both insert.
+   */
+  likeBusiness(businessId: string, userId: string): Promise<void> {
+    return this.prisma.businessLike
+      .upsert({
+        where: { businessId_userId: { businessId, userId } },
+        create: { businessId, userId },
+        update: {},
+      })
+      .then(() => undefined);
+  }
+
+  /** `deleteMany` and not `delete`: removing what is not there is not a fault. */
+  unlikeBusiness(businessId: string, userId: string): Promise<void> {
+    return this.prisma.businessLike
+      .deleteMany({ where: { businessId, userId } })
+      .then(() => undefined);
+  }
+
+  countLikes(businessId: string): Promise<number> {
+    return this.prisma.businessLike.count({ where: { businessId } });
+  }
+
+  isLikedBy(businessId: string, userId: string): Promise<boolean> {
+    return this.prisma.businessLike
+      .count({ where: { businessId, userId } })
+      .then((count) => count > 0);
+  }
+
+  /**
    * Average and count of the visible reviews of one business.
    *
    * Reads `tour_guide_reviews` from here rather than through the reviews

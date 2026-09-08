@@ -42,6 +42,10 @@ const mockBusinessRepository = {
   findPublic: jest.fn(),
   findVisibleById: jest.fn(),
   findRatingSummary: jest.fn(),
+  likeBusiness: jest.fn(),
+  unlikeBusiness: jest.fn(),
+  countLikes: jest.fn(),
+  isLikedBy: jest.fn(),
 };
 
 describe('BusinessService', () => {
@@ -496,6 +500,8 @@ describe('BusinessService', () => {
         averageRating: 0,
         reviewCount: 0,
       });
+      repository.countLikes.mockResolvedValue(0);
+      repository.isLikedBy.mockResolvedValue(false);
     });
 
     it('should return a public business by id', async () => {
@@ -558,6 +564,117 @@ describe('BusinessService', () => {
       ).rejects.toThrow(NotFoundException);
 
       expect(repository.findRatingSummary).not.toHaveBeenCalled();
+      expect(repository.countLikes).not.toHaveBeenCalled();
+    });
+
+    it('carries how many people like the business', async () => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+      });
+      repository.countLikes.mockResolvedValue(37);
+
+      const result = await service.getPublicBusinessById('business-id-1');
+
+      expect(result).toMatchObject({ likesCount: 37, likedByMe: false });
+    });
+
+    it('does not ask whether a reader who is not there likes it', async () => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+      });
+
+      const result = await service.getPublicBusinessById('business-id-1');
+
+      expect(result).toMatchObject({ likedByMe: false });
+      expect(repository.isLikedBy).not.toHaveBeenCalled();
+    });
+
+    it('says the business is liked when this reader likes it', async () => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+      });
+      repository.isLikedBy.mockResolvedValue(true);
+
+      const result = await service.getPublicBusinessById(
+        'business-id-1',
+        'user-id-2',
+      );
+
+      expect(result).toMatchObject({ likedByMe: true });
+      expect(repository.isLikedBy).toHaveBeenCalledWith(
+        'business-id-1',
+        'user-id-2',
+      );
+    });
+  });
+
+  // ── setLike ────────────────────────────────────────────────
+
+  describe('setLike', () => {
+    beforeEach(() => {
+      repository.findVisibleById.mockResolvedValue({
+        ...mockBusiness,
+        isPublic: true,
+      });
+      repository.countLikes.mockResolvedValue(1);
+    });
+
+    it('records the like and answers with the new count', async () => {
+      const result = await service.setLike('business-id-1', 'user-id-2', true);
+
+      expect(repository.likeBusiness).toHaveBeenCalledWith(
+        'business-id-1',
+        'user-id-2',
+      );
+      expect(result).toEqual({ liked: true, likesCount: 1 });
+    });
+
+    /*
+     * Both directions are idempotent, which is what makes the button safe to
+     * press twice on a connection unsure the first press arrived.
+     */
+    it('answers the same on a second like', async () => {
+      await service.setLike('business-id-1', 'user-id-2', true);
+      const second = await service.setLike('business-id-1', 'user-id-2', true);
+
+      expect(second).toEqual({ liked: true, likesCount: 1 });
+      expect(repository.likeBusiness).toHaveBeenCalledTimes(2);
+    });
+
+    it('removes the like and answers with the new count', async () => {
+      repository.countLikes.mockResolvedValue(0);
+
+      const result = await service.setLike('business-id-1', 'user-id-2', false);
+
+      expect(repository.unlikeBusiness).toHaveBeenCalledWith(
+        'business-id-1',
+        'user-id-2',
+      );
+      expect(result).toEqual({ liked: false, likesCount: 0 });
+    });
+
+    it('answers the same on unliking what was not liked', async () => {
+      repository.countLikes.mockResolvedValue(0);
+
+      const result = await service.setLike('business-id-1', 'user-id-2', false);
+
+      expect(result).toEqual({ liked: false, likesCount: 0 });
+    });
+
+    /*
+     * Liking something private would be a way to confirm that a private id
+     * exists.
+     */
+    it('refuses to like a business the reader cannot see', async () => {
+      repository.findVisibleById.mockResolvedValue(null);
+
+      await expect(
+        service.setLike('business-id-1', 'user-id-2', true),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.likeBusiness).not.toHaveBeenCalled();
     });
   });
 
