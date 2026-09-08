@@ -686,6 +686,68 @@ são distintos entre si, então paradas do outro tipo não colidem.
 
 Plano do épico: `plans/2026-09-03-epico-roteiros.md`.
 
+### Comentários, gostos e a fila do dono — desde 2026-09-08
+
+```
+Users ──┬── Comment (1:N, "AuthoredComments")
+        └── Comment (1:N, "ModeratedComments") — quem libertou ou recusou
+
+Comment ──┬── BlogPost      (N:1, opcional)
+          ├── Business      (N:1, opcional)
+          ├── CommunityEvent(N:1, opcional)
+          ├── Itinerary     (N:1, opcional)
+          └── Comment       (N:1, "CommentReplies") — a raiz de que isto é resposta
+
+Users ── BusinessLike (1:N) ── Business (N:1)
+```
+
+**Uma tabela `comments` para as quatro superfícies**, não quatro tabelas. O que as
+quatro partilham é o comportamento inteiro: um nível de respostas, o autor apaga o
+que é seu, um moderador liberta, foto opcional, um tipo de notificação. O que muda
+entre elas é *quem modera* e *se aceita foto* — política, que vive no serviço, não
+forma, que viveria no schema. Quatro tabelas obrigariam a uma camada genérica por
+cima de quatro delegates do Prisma, que é exactamente a generalização que o Prisma
+faz pior: não há interface comum entre delegates.
+
+Três decisões carregam o resto:
+
+- **Exactamente um alvo, garantido pela base.** Quatro FKs anuláveis e um CHECK
+  escrito à mão na migration, no molde de `itinerary_stops`:
+
+  ```sql
+  ALTER TABLE "comments" ADD CONSTRAINT "comments_exactly_one_target"
+    CHECK (num_nonnulls("post_id", "business_id", "event_id", "itinerary_id") = 1);
+  ```
+
+  O Prisma não exprime isto; sem o CHECK, uma linha com dois alvos ou nenhum
+  entraria em silêncio e toda leitura teria de a tratar.
+
+- **Um nível de respostas, garantido por trigger.** Uma resposta tem `parent_id`;
+  o pai tem de ter `parent_id IS NULL`. Um CHECK não lê outra linha, por isso a
+  regra é um `BEFORE INSERT OR UPDATE OF parent_id` que recusa a resposta cujo pai
+  já é resposta. O serviço devolve 400 legível antes disso — o trigger é a rede
+  por baixo de escritas que não passem pela API. O `prisma migrate` não o apaga:
+  o diff é contra a história de migrations, não contra a base.
+
+- **Apagar tem dois caminhos.** Resposta, ou raiz sem respostas: sai a linha e o
+  objecto no R2. Raiz com respostas: fica a **âncora** — `deleted_at = now()`,
+  `body = ''`, `image_url = NULL` — porque as respostas por baixo continuam a ser
+  de outras pessoas e não desaparecem com o texto que as motivou. `onDelete:
+  Cascade` no `parent` cobre a derrubada por admin, que é hard delete.
+
+`status` (`PENDING`/`APPROVED`/`REJECTED`) + `moderated_at`/`moderated_by`/
+`moderation_reason` é a máquina de estados da moderação. Não há coluna separada de
+"escondido por admin": o admin usa `REJECTED` com motivo, como o `hide` das
+avaliações. Quem moderou deduz-se de `moderated_by`.
+
+`BusinessLike` é cópia de `BlogPostLike` — `@@unique([businessId, userId])`,
+cascade dos dois lados — e existe porque gostar de um negócio é distinto de o
+avaliar: a avaliação continua a ser `TourGuideReview`, com nota de 1 a 5, e é dela
+que saem as estrelas. Nos eventos o gosto é o `EventFavourite` que já existe;
+dois corações na mesma página seria confuso.
+
+Plano do épico: `immigrant_fe/plans/2026-09-07-epico-comentarios-reviews.md`.
+
 ### Convenções do Schema
 
 - IDs: **UUID** com `@default(uuid())`
