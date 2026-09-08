@@ -548,7 +548,10 @@ export class CommentsService {
       : body;
   }
 
-  private toInboxDto(row: InboxCommentRow, viewerId?: string): InboxCommentDto {
+  private toInboxDto(
+    row: InboxCommentRow & { replies?: CommentRow[] },
+    viewerId?: string,
+  ): InboxCommentDto {
     const where = this.describeTarget(row);
     return {
       ...this.toDto(row, viewerId),
@@ -557,6 +560,7 @@ export class CommentsService {
       targetTitle: where.targetTitle,
       isReply: row.parentId !== null,
       reportCount: row._count.reports,
+      replies: (row.replies ?? []).map((reply) => this.toDto(reply, viewerId)),
     };
   }
 

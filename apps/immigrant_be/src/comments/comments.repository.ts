@@ -56,6 +56,9 @@ export type InboxCommentRow = Prisma.CommentGetPayload<{
   select: typeof inboxSelect;
 }>;
 
+/** A conversation: the root the queue pages over, with its replies inside. */
+export type InboxRootRow = InboxCommentRow & { replies: CommentRow[] };
+
 /** The column that holds each target, for a `where` built from a name. */
 function targetField(target: CommentTarget): string {
   switch (target) {
@@ -295,10 +298,31 @@ export class CommentsRepository {
       target?: CommentTarget;
       targetId?: string;
     },
-  ): Promise<{ data: InboxCommentRow[]; total: number }> {
+  ): Promise<{ data: InboxRootRow[]; total: number }> {
+    /*
+     * A page is a page of **conversations**, not of comments.
+     *
+     * Only roots are counted and paged; the replies travel nested inside them.
+     * Paging a flat list would sooner or later put a reply on one page and the
+     * comment it answers on another, which is the one arrangement that makes a
+     * reply unreadable.
+     */
     const where: Prisma.CommentWhereInput = {
+      parentId: null,
       deletedAt: null,
-      ...(options.status ? { status: options.status } : {}),
+      /*
+       * The status filter is about the conversation, not about the root. A
+       * published comment whose reply is waiting is a conversation that needs
+       * the owner, and asking for `PENDING` has to return it.
+       */
+      ...(options.status
+        ? {
+            OR: [
+              { status: options.status },
+              { replies: { some: { status: options.status } } },
+            ],
+          }
+        : {}),
       /*
        * Narrowing to one page is a filter on top of ownership, never instead of
        * it: a `targetId` somebody else owns has to answer with nothing rather
@@ -307,10 +331,14 @@ export class CommentsRepository {
       ...(options.target && options.targetId
         ? this.targetWhere(options.target, options.targetId)
         : {}),
-      OR: [
-        { business: { userId } },
-        { event: { organizerId: userId } },
-        { itinerary: { userId } },
+      AND: [
+        {
+          OR: [
+            { business: { userId } },
+            { event: { organizerId: userId } },
+            { itinerary: { userId } },
+          ],
+        },
       ],
     };
 
@@ -320,7 +348,18 @@ export class CommentsRepository {
         orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         skip: options.skip,
         take: options.take,
-        select: inboxSelect,
+        select: {
+          ...inboxSelect,
+          /*
+           * Every reply, whatever its state: this is the owner's own page, and
+           * a reply they refused has to stay visible or they cannot undo it.
+           * Oldest first, the order a conversation is read in.
+           */
+          replies: {
+            orderBy: { createdAt: 'asc' },
+            select: commentSelect,
+          },
+        },
       }),
       this.prisma.comment.count({ where }),
     ]);

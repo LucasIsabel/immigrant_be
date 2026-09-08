@@ -362,6 +362,48 @@ describe('CommentsService', () => {
       expect(notifications.notify).not.toHaveBeenCalled();
     });
 
+    /*
+     * A page is a page of conversations. Paging a flat list would sooner or
+     * later put a reply on one page and the comment it answers on another,
+     * which is the one arrangement that makes a reply unreadable.
+     */
+    it('nests the replies inside the conversation they belong to', async () => {
+      repository.listInbox.mockResolvedValue({
+        data: [
+          {
+            ...(moderationRow({ status: 'APPROVED' }) as object),
+            replies: [
+              row({
+                id: 'r-1',
+                body: 'Obrigado pelo aviso.',
+                parentId: COMMENT_ID,
+              }),
+            ],
+          },
+        ],
+        total: 1,
+      });
+      repository.countPending.mockResolvedValue(0);
+
+      const page = await service.inbox(OWNER_ID, {});
+
+      expect(page.total).toBe(1);
+      expect(page.data[0].replies).toHaveLength(1);
+      expect(page.data[0].replies?.[0].body).toBe('Obrigado pelo aviso.');
+    });
+
+    it('answers with an empty list of replies rather than nothing', async () => {
+      repository.listInbox.mockResolvedValue({
+        data: [{ ...(moderationRow() as object), replies: [] }],
+        total: 1,
+      });
+      repository.countPending.mockResolvedValue(0);
+
+      const page = await service.inbox(OWNER_ID, {});
+
+      expect(page.data[0].replies).toEqual([]);
+    });
+
     it('lists what is waiting, with the total that is waiting', async () => {
       repository.listInbox.mockResolvedValue({
         data: [moderationRow({ status: 'PENDING' })],
