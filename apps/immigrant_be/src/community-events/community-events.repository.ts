@@ -69,6 +69,20 @@ export type PublicCommunityEventRow = Prisma.CommunityEventGetPayload<{
 }>;
 
 /**
+ * The public row plus the favourites count. Only the detail asks for it: the
+ * agenda lists twenty events and would pay for twenty aggregates to draw a
+ * number no card shows.
+ */
+const publicDetailSelect = {
+  ...publicSelect,
+  _count: { select: { favourites: true } },
+} satisfies Prisma.CommunityEventSelect;
+
+export type PublicCommunityEventDetailRow = Prisma.CommunityEventGetPayload<{
+  select: typeof publicDetailSelect;
+}>;
+
+/**
  * The public shape plus the status, for the favourites list.
  *
  * The agenda never needs it — everything it lists is approved. A favourite
@@ -218,10 +232,12 @@ export class CommunityEventsRepository {
     };
   }
 
-  findApprovedBySlug(slug: string): Promise<PublicCommunityEventRow | null> {
+  findApprovedBySlug(
+    slug: string,
+  ): Promise<PublicCommunityEventDetailRow | null> {
     return this.prisma.communityEvent.findFirst({
       where: { slug, status: 'APPROVED' },
-      select: publicSelect,
+      select: publicDetailSelect,
     });
   }
 

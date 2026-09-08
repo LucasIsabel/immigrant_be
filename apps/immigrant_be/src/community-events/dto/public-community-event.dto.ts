@@ -99,6 +99,31 @@ export class PublicCommunityEventDto {
   venue?: CommunityEventVenueDto | null;
 }
 
+/**
+ * The public event, plus what the detail page needs to draw the heart.
+ *
+ * Separate from `PublicCommunityEventDto` because the agenda does not carry
+ * either field: a card that declared `isFavourite` it never received would be
+ * drawn un-kept for somebody who kept it.
+ */
+export class PublicCommunityEventDetailDto extends PublicCommunityEventDto {
+  @ApiProperty({
+    example: 24,
+    description:
+      'Quantas pessoas guardaram este evento. É o "gosto" dos eventos: ' +
+      '`EventFavourite` já existia, e dois corações na mesma página — um de ' +
+      'guardar e outro de gostar — seriam dois gestos para a mesma intenção.',
+  })
+  favouritesCount: number;
+
+  @ApiProperty({
+    example: false,
+    description:
+      'Se quem está a ler guardou este evento. Sempre `false` sem sessão.',
+  })
+  isFavourite: boolean;
+}
+
 export class PaginatedPublicCommunityEventsResponseDto {
   @ApiProperty({ type: [PublicCommunityEventDto] })
   data: PublicCommunityEventDto[];

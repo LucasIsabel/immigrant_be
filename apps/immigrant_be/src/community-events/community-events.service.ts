@@ -48,6 +48,7 @@ import {
 } from './dto/favourite-event.dto';
 import {
   PaginatedPublicCommunityEventsResponseDto,
+  PublicCommunityEventDetailDto,
   PublicCommunityEventDto,
 } from './dto/public-community-event.dto';
 import {
@@ -497,12 +498,30 @@ export class CommunityEventsService {
     };
   }
 
-  async getPublic(slug: string): Promise<PublicCommunityEventDto> {
+  async getPublic(
+    slug: string,
+    userId?: string,
+  ): Promise<PublicCommunityEventDetailDto> {
     const event = await this.repository.findApprovedBySlug(slug);
     if (!event) {
       throw new NotFoundException('Evento não encontrado');
     }
-    return this.toPublicResponse(event);
+    /*
+     * The count travels with the event; whether *this* reader kept it is a
+     * second question, and only worth asking when there is a reader to ask
+     * about. Anonymous is `false`, not unknown — the heart has to draw either
+     * way.
+     */
+    const isFavourite = userId
+      ? await this.repository.isFavourite(userId, event.id)
+      : false;
+
+    const { _count, ...row } = event;
+    return {
+      ...this.toPublicResponse(row),
+      favouritesCount: _count.favourites,
+      isFavourite,
+    };
   }
 
   /**
