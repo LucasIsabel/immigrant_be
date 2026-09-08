@@ -8,9 +8,25 @@ jest.mock('@app/storage', () => ({
   StorageModule: jest.fn(),
 }));
 
+jest.mock('@app/config', () => ({
+  env: { FRONTEND_URL: 'https://app.test' },
+  ConfigModule: jest.fn(),
+}));
+
+jest.mock('@app/email', () => ({
+  buildCommentWaitingEmail: jest
+    .fn()
+    .mockReturnValue({ subject: 's', html: 'h' }),
+}));
+
 import { Test } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { StorageService } from '@app/storage';
+import { NotificationsService } from '@app/notifications/notifications.service';
 import { CommentsService } from './comments.service';
 import { CommentsRepository } from './comments.repository';
 import { CommentTarget } from './dto/comment-target';
@@ -47,6 +63,12 @@ const repository = {
   findOwnedById: jest.fn(),
   deleteById: jest.fn(),
   anonymise: jest.fn(),
+  listInbox: jest.fn(),
+  listForAdmin: jest.fn(),
+  countPending: jest.fn(),
+  findForModeration: jest.fn(),
+  setStatus: jest.fn(),
+  findRootAuthor: jest.fn(),
 };
 
 const storage = {
@@ -54,13 +76,19 @@ const storage = {
   deleteFile: jest.fn(),
 };
 
+const notifications = { notify: jest.fn() };
+
 describe('CommentsService', () => {
   let service: CommentsService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    repository.findVisibleTarget.mockResolvedValue({ ownerId: OWNER_ID });
+    repository.findVisibleTarget.mockResolvedValue({
+      ownerId: OWNER_ID,
+      title: 'Tasca do Bairro',
+      path: '/my-city/pg/restaurant/tasca-do-bairro',
+    });
     repository.targetColumn.mockReturnValue({ businessId: BUSINESS_ID });
     repository.create.mockImplementation((data: { status: string }) =>
       Promise.resolve(row({ status: data.status })),
@@ -75,6 +103,7 @@ describe('CommentsService', () => {
         CommentsService,
         { provide: CommentsRepository, useValue: repository },
         { provide: StorageService, useValue: storage },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -261,6 +290,246 @@ describe('CommentsService', () => {
             parentId: PARENT_ID,
           }),
         ).rejects.toThrow(NotFoundException);
+      });
+    });
+  });
+
+  describe('the queue and its notices', () => {
+    const businessComment = {
+      target: CommentTarget.BUSINESS,
+      targetId: BUSINESS_ID,
+      body: 'O prato veio assim.',
+    };
+
+    const moderationRow = (overrides: Record<string, unknown> = {}) => ({
+      ...(row() as object),
+      parentId: null,
+      postId: null,
+      businessId: BUSINESS_ID,
+      eventId: null,
+      itineraryId: null,
+      post: null,
+      business: {
+        userId: OWNER_ID,
+        name: 'Tasca do Bairro',
+        businessType: 'RESTAURANT',
+        businessPage: { slug: 'tasca-do-bairro', status: 'APPROVED' },
+      },
+      event: null,
+      itinerary: null,
+      ...overrides,
+    });
+
+    /*
+     * A queue nobody knows about is a queue nobody empties — and this one only
+     * fills with photos, so the e-mail stays rare enough to be worth opening.
+     */
+    it('tells the owner, in the bell and by e-mail, that a photo is waiting', async () => {
+      await service.create(AUTHOR_ID, businessComment, photo());
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: OWNER_ID,
+          type: 'comment_received',
+          email: { subject: 's', html: 'h' },
+          payload: expect.objectContaining({
+            target: 'business',
+            targetId: BUSINESS_ID,
+            targetTitle: 'Tasca do Bairro',
+            authorName: 'Ana Costa',
+          }),
+        }),
+      );
+    });
+
+    it('says nothing to anybody when the comment is text only', async () => {
+      await service.create(AUTHOR_ID, businessComment);
+
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    /*
+     * A photo posted by the person who would have to release it has nobody
+     * left to wait for. Queueing it would be asking them to approve themselves.
+     */
+    it('publishes the owner’s own photo without a queue', async () => {
+      const comment = await service.create(OWNER_ID, businessComment, photo());
+
+      expect(comment.status).toBe('APPROVED');
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it('lists what is waiting, with the total that is waiting', async () => {
+      repository.listInbox.mockResolvedValue({
+        data: [moderationRow({ status: 'PENDING' })],
+        total: 1,
+      });
+      repository.countPending.mockResolvedValue(3);
+
+      const page = await service.inbox(OWNER_ID, {});
+
+      expect(page.total).toBe(1);
+      expect(page.pendingCount).toBe(3);
+      expect(page.data[0]).toMatchObject({
+        target: 'business',
+        targetId: BUSINESS_ID,
+        targetTitle: 'Tasca do Bairro',
+        isReply: false,
+      });
+    });
+
+    /*
+     * The badge counts every page the owner has, while the list carries only
+     * the twenty rows of this page. Deriving one from the other would make the
+     * badge lie from the second page onwards.
+     */
+    it('counts what is pending apart from the page it returns', async () => {
+      repository.listInbox.mockResolvedValue({ data: [], total: 0 });
+      repository.countPending.mockResolvedValue(7);
+
+      const page = await service.inbox(OWNER_ID, { page: 2, limit: 10 });
+
+      expect(page.pendingCount).toBe(7);
+      expect(repository.listInbox).toHaveBeenCalledWith(OWNER_ID, {
+        skip: 10,
+        take: 10,
+        status: undefined,
+      });
+    });
+
+    describe('approve', () => {
+      beforeEach(() => {
+        repository.findForModeration.mockResolvedValue(
+          moderationRow({ status: 'PENDING' }),
+        );
+        repository.setStatus.mockResolvedValue(row({ status: 'APPROVED' }));
+      });
+
+      it('releases the comment and tells whoever wrote it', async () => {
+        const comment = await service.approve(COMMENT_ID, OWNER_ID, false);
+
+        expect(repository.setStatus).toHaveBeenCalledWith(
+          COMMENT_ID,
+          'APPROVED',
+          OWNER_ID,
+          null,
+        );
+        expect(comment.status).toBe('APPROVED');
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: AUTHOR_ID,
+            type: 'comment_approved',
+            payload: expect.objectContaining({
+              commentId: COMMENT_ID,
+              targetPath: '/my-city/pg/restaurant/tasca-do-bairro',
+            }),
+          }),
+        );
+      });
+
+      /*
+       * A reply held back for its photo still owes the person it answers a
+       * notice — and only owes it once it is actually public.
+       */
+      it('tells the person answered, once a held-back reply goes public', async () => {
+        repository.findForModeration.mockResolvedValue(
+          moderationRow({ status: 'PENDING', parentId: PARENT_ID }),
+        );
+        repository.findRootAuthor.mockResolvedValue({
+          id: PARENT_ID,
+          authorId: OWNER_ID,
+          deletedAt: null,
+        });
+
+        await service.approve(COMMENT_ID, OWNER_ID, false);
+
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: OWNER_ID,
+            type: 'comment_replied',
+            payload: expect.objectContaining({ parentId: PARENT_ID }),
+          }),
+        );
+      });
+
+      /*
+       * 403 and not 404: the id came from somebody's own queue, so denying its
+       * existence would be a lie they can already disprove.
+       */
+      it('refuses somebody else’s comment', async () => {
+        await expect(
+          service.approve(COMMENT_ID, 'a-stranger', false),
+        ).rejects.toThrow(ForbiddenException);
+        expect(repository.setStatus).not.toHaveBeenCalled();
+      });
+
+      it('lets an admin decide about any of them', async () => {
+        await service.approve(COMMENT_ID, 'an-admin', true);
+
+        expect(repository.setStatus).toHaveBeenCalledWith(
+          COMMENT_ID,
+          'APPROVED',
+          'an-admin',
+          null,
+        );
+      });
+
+      it('answers 404 for a comment that does not exist', async () => {
+        repository.findForModeration.mockResolvedValue(null);
+
+        await expect(
+          service.approve(COMMENT_ID, OWNER_ID, false),
+        ).rejects.toThrow(NotFoundException);
+      });
+    });
+
+    describe('reject', () => {
+      beforeEach(() => {
+        repository.findForModeration.mockResolvedValue(
+          moderationRow({ status: 'PENDING' }),
+        );
+        repository.setStatus.mockResolvedValue(row({ status: 'REJECTED' }));
+      });
+
+      it('keeps it hidden and carries the reason to its author', async () => {
+        await service.reject(
+          COMMENT_ID,
+          OWNER_ID,
+          false,
+          'A foto não é do restaurante.',
+        );
+
+        expect(repository.setStatus).toHaveBeenCalledWith(
+          COMMENT_ID,
+          'REJECTED',
+          OWNER_ID,
+          'A foto não é do restaurante.',
+        );
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: AUTHOR_ID,
+            type: 'comment_rejected',
+            payload: expect.objectContaining({
+              reason: 'A foto não é do restaurante.',
+            }),
+          }),
+        );
+      });
+
+      it('accepts a refusal with no reason given', async () => {
+        await service.reject(COMMENT_ID, OWNER_ID, false, null);
+
+        expect(notifications.notify).toHaveBeenCalledWith(
+          expect.objectContaining({
+            payload: expect.objectContaining({ reason: null }),
+          }),
+        );
+      });
+
+      it('refuses somebody else’s comment', async () => {
+        await expect(
+          service.reject(COMMENT_ID, 'a-stranger', false, null),
+        ).rejects.toThrow(ForbiddenException);
       });
     });
   });
