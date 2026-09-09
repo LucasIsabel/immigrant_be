@@ -272,17 +272,27 @@ export class BusinessPageModerationService {
     let worst: BusinessPageModerationResult['riskLevel'] = 'low';
     let anyFailed = false;
 
-    // Sequential on purpose: the free tier is rate limited per minute, and a
-    // submit that waits a little longer is the trade the owner already made by
-    // uploading a photo for every dish.
-    for (const batch of analysed) {
-      const verdict = await this.analyseBatch(batch, pageId);
+    /*
+     * In parallel, and it matters. Measured against the real model, a call
+     * costs about eight seconds of overhead plus two per image, so a
+     * forty-photo menu is five batches: ninety seconds one after another,
+     * twenty when they go together. `Promise.all` keeps them in order, which
+     * is what the per-batch index mapping below relies on.
+     *
+     * Eight concurrent calls sit inside OpenRouter's free-tier ceiling of
+     * twenty a minute, and `MAX_IMAGE_BATCHES` is what keeps it there.
+     */
+    const verdicts = await Promise.all(
+      analysed.map((batch) => this.analyseBatch(batch, pageId)),
+    );
 
+    verdicts.forEach((verdict, batchIndex) => {
       if (!verdict) {
         anyFailed = true;
-        continue;
+        return;
       }
 
+      const batch = analysed[batchIndex];
       worst = worstRisk(worst, verdict.riskLevel);
       summaries.push(verdict.summary);
 
@@ -301,7 +311,7 @@ export class BusinessPageModerationService {
           reason: `Imagem: ${finding.reason}`,
         });
       }
-    }
+    });
 
     // Anything unread — a failed batch or a tail past the ceiling — means no
     // picture here can be called clean.
