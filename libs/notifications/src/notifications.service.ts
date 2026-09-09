@@ -1,4 +1,4 @@
-import { resolveLocale, type EmailLocale } from '@app/email';
+import { resolveLocale, type Locale } from '@app/config/locale';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { NotificationStatus, Prisma } from 'generated/prisma';
@@ -17,6 +17,10 @@ import type {
  * library behind them made three worker specs fail to even start on CI, where
  * there is no `.env`. Sending mail is `notify`'s business; the workers should
  * not have to know the word exists.
+ *
+ * The `Locale` above comes from `@app/config/locale` for the same reason: the
+ * type is about which language a person reads, not about e-mail, and reaching
+ * for it through the `@app/email` barrel brought the environment along with it.
  */
 export const NOTIFICATION_MAILER = 'NOTIFICATION_MAILER';
 
@@ -51,7 +55,7 @@ export interface NotifyInput<T extends UserNotificationType> {
    * approval e-mail went out in Portuguese to everyone. A function that cannot
    * be called without a locale is how that stops being possible to forget.
    */
-  email?: (locale: EmailLocale) => { subject: string; html: string };
+  email?: (locale: Locale) => { subject: string; html: string };
 }
 
 /**

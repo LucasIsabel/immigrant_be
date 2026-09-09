@@ -1,5 +1,5 @@
 import { wrapInBaseLayout, escapeHtml } from './base.template';
-import { type EmailLocale, resolveLocale } from './locale';
+import { type Locale, resolveLocale } from '@app/config/locale';
 
 /**
  * The first thing an owner hears back after handing over their page.
@@ -9,7 +9,7 @@ import { type EmailLocale, resolveLocale } from './locale';
  * not read — at the one moment the platform had their full attention.
  */
 const translations: Record<
-  EmailLocale,
+  Locale,
   {
     subject: string;
     heading: string;

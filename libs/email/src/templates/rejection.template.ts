@@ -1,5 +1,5 @@
 import { wrapInBaseLayout, escapeHtml } from './base.template';
-import { type EmailLocale, resolveLocale } from './locale';
+import { type Locale, resolveLocale } from '@app/config/locale';
 
 /**
  * The harder of the two, and the one where language matters most.
@@ -12,7 +12,7 @@ import { type EmailLocale, resolveLocale } from './locale';
  * their words, and translating somebody's words is not this template's job.
  */
 const translations: Record<
-  EmailLocale,
+  Locale,
   {
     subjectPage: string;
     subjectUpdate: string;
