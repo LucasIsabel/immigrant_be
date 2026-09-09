@@ -8,6 +8,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { OriginCountry } from '../common/decorators/origin-country.decorator';
 import { SystemService } from './system.service';
 import {
   Body,
@@ -62,13 +63,18 @@ export class SystemController {
   @AllowAnonymous()
   create(
     @Body() suggestionsDto: SuggestionsDto,
+    // Two letters from Cloudflare, and never the address they came from.
+    @OriginCountry() originCountry: string | null,
     @Query('language') language?: string,
   ) {
-    return this.systemService.createSuggestions({
-      steps: suggestionsDto.steps,
-      parameters: suggestionsDto,
-      language,
-    });
+    return this.systemService.createSuggestions(
+      {
+        steps: suggestionsDto.steps,
+        parameters: suggestionsDto,
+        language,
+      },
+      originCountry,
+    );
   }
 
   @Sse('/sse')

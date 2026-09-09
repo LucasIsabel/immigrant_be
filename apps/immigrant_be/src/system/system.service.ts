@@ -33,7 +33,53 @@ export class SystemService {
     return await this.countryService.findAll();
   }
 
-  async createSuggestions({
+  /**
+   * Answers the quiz, and records that it was answered.
+   *
+   * The two halves are separate because `resolveSuggestions` reuses a stored
+   * profile whenever the same answers come back — which is right for the
+   * answer and wrong for the count. Wrapping it means one recording point
+   * covering all three of its exits, instead of three that drift apart.
+   */
+  async createSuggestions(
+    input: SuggestionsDto & { parameters: SuggestionsDto; language?: string },
+    originCountry: string | null = null,
+  ): Promise<SuggestionsResponseDto> {
+    const response = await this.resolveSuggestions(input);
+
+    await this.recordSubmission({
+      suggestionId: response.suggestion_id || null,
+      originCountry,
+      language: input.language ?? 'en',
+    });
+
+    return response;
+  }
+
+  /**
+   * Analytics never costs somebody their quiz.
+   *
+   * The caller's `try/catch` turns anything thrown in here into a 500, and a
+   * person who answered nine questions is not losing the result because a
+   * counter failed. It warns and moves on.
+   */
+  private async recordSubmission(data: {
+    suggestionId: string | null;
+    originCountry: string | null;
+    language: string;
+  }): Promise<void> {
+    try {
+      await this.systemRepository.createQuizSubmission(data);
+    } catch (error) {
+      this.logger.warn(
+        `Could not record the quiz submission: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  private async resolveSuggestions({
     steps,
     parameters,
     language = 'en',

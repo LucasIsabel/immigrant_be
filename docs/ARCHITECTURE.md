@@ -851,6 +851,32 @@ esta mudança não o têm, e um booleano ausente é lido como "precisa de visto"
 
 ---
 
+### `quiz_submissions` — contar o quiz sem contar pessoas
+
+`suggestions` não consegue responder "quantos fizeram o quiz". `createSuggestions`
+reutiliza a linha quando os `parameters` são iguais, portanto a tabela guarda **perfis
+distintos**: duas pessoas que respondem o mesmo são uma linha só. Contar ali dá um número
+que parece certo e não é.
+
+Daí `quiz_submissions`: uma linha por `POST /system/suggestions`, com ligação anulável ao
+perfil que produziu (`ON DELETE SET NULL`), o idioma em que foi respondido, a data e o
+país. **O país vem do cabeçalho `CF-IPCountry` da Cloudflare e o endereço é descartado** —
+não há coluna de IP, nem hash de IP, nem `user_id`. Uma linha diz "alguém em Portugal
+respondeu isto naquele dia", e mais nada. Decisão de 2026-09-09: guardar o endereço seria
+dado pessoal com base legal, retenção e apagamento próprios, e o país responde à pergunta
+sem nada disso.
+
+Duas consequências para quem lê a tabela:
+
+- **As respostas não estão nela.** Estão em `suggestions.parameters`, alcançadas pelo
+  `suggestion_id`. Uma submissão cujo perfil falhou tem `suggestion_id` nulo e nenhuma
+  resposta recuperável — o registo é best-effort, e quem respondeu nove perguntas não perde
+  o resultado porque um contador falhou.
+- **O backfill da migration** criou uma linha por perfil já existente, todas sem país. São
+  um limite inferior, e a leitura admin mostra-as como desconhecidas em vez de as esconder.
+
+---
+
 ### Tabelas de IA
 
 | Tabela | Papel |
@@ -902,7 +928,11 @@ apps/immigrant_be/src/system/
 │   ├── generateSuggestions()         # Sugestões de país
 │   ├── generateVisaSuggestion()      # Recomendação de tipo de visto
 │   └── (herdados) generateEmbeddings(), normalizeEmbedding()
-└── system.service.ts          # Orquestração (chama Gemini + enriquece com dados)
+├── system.service.ts          # Orquestração (chama Gemini + enriquece com dados)
+│                              # regista a submissão do quiz (best-effort)
+├── quiz-admin.controller.ts   # Leitura admin de `quiz_submissions`
+├── quiz-analytics.service.ts  # Agrega: períodos, países, idiomas, respostas, dias
+└── quiz-submissions.repository.ts  # Contagens e lista; separado do SystemRepository
 
 apps/microservice/src/plan/
 └── gemini.service.ts          # Extends GeminiBaseService
@@ -1674,6 +1704,8 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /admin/events/:id`                                    | CommunityEvents (admin)        | ADMIN — detalhe com as denúncias |
 | `POST /admin/events/:id/approve`                           | CommunityEvents (admin)        | ADMIN — aprova; 409 se não estiver em análise |
 | `POST /admin/events/:id/reject`                            | CommunityEvents (admin)        | ADMIN — recusa (PENDING_REVIEW) ou derruba (APPROVED); `reason` obrigatório (3–500) |
+| `GET /admin/quiz/analytics`                                | System (admin)                 | ADMIN — números do quiz: `?period=7d\|30d\|90d\|all`; totais, países, idiomas, respostas por pergunta e linha do tempo |
+| `GET /admin/quiz/submissions`                              | System (admin)                 | ADMIN — submissões uma a uma, mais recente primeiro; `?page=&limit=&country=&language=`; `country=unknown` traz as sem país |
 | `GET /itineraries/public`                                  | Itineraries                    | Público (`@AllowAnonymous`) — país filtra a coluna do roteiro, cidade sub-filtra pelas paradas; roteiro sem parada visível não lista |
 | `GET /itineraries/public/:slug`                            | Itineraries                    | Público (`@AllowAnonymous`) — paradas indisponíveis filtradas e renumeradas 1..n |
 | `POST /itineraries/public/:slug/report`                    | Itineraries                    | Público (`@AllowAnonymous`) — denúncia anónima; throttle 3/min, honeypot `website` (descarta em silêncio) |
