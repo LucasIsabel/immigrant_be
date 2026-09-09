@@ -1,3 +1,4 @@
+import { resolveLocale, type EmailLocale } from '@app/email';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { NotificationStatus, Prisma } from 'generated/prisma';
@@ -41,7 +42,16 @@ export interface NotifyInput<T extends UserNotificationType> {
    * way: the bell is now the channel that always works, and e-mail is the one
    * they can switch off.
    */
-  email?: { subject: string; html: string };
+  /**
+   * Built here rather than by the caller, because only this service knows what
+   * language the reader is in.
+   *
+   * It used to take a finished `{ subject, html }`, which meant every caller
+   * had to look the language up for itself — and none of them did, so the
+   * approval e-mail went out in Portuguese to everyone. A function that cannot
+   * be called without a locale is how that stops being possible to forget.
+   */
+  email?: (locale: EmailLocale) => { subject: string; html: string };
 }
 
 /**
@@ -94,17 +104,15 @@ export class NotificationsService {
     // no emitter has ever read it. From here on it means what it says.
     const user = await this.prisma.users.findUnique({
       where: { id: input.userId },
-      select: { email: true, emailNotificationsEnabled: true },
+      select: { email: true, emailNotificationsEnabled: true, language: true },
     });
 
     if (!user?.emailNotificationsEnabled || !user.email) return;
 
     try {
-      await this.mailer.send({
-        to: user.email,
-        subject: input.email.subject,
-        html: input.email.html,
-      });
+      const { subject, html } = input.email(resolveLocale(user.language));
+
+      await this.mailer.send({ to: user.email, subject, html });
     } catch (error: unknown) {
       // The notification is already stored; a mail server having a bad day is
       // not a reason to fail the caller.

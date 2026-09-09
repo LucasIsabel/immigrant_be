@@ -275,10 +275,12 @@ export class PublisherQualificationService {
         businessType: page.businessType,
         slug: page.slug,
       },
-      email: buildApprovalEmail(
-        approved.business.name,
-        `${env.FRONTEND_URL}/my-city/pg/${page.businessType}/${page.slug}`,
-      ),
+      email: (locale) =>
+        buildApprovalEmail(
+          approved.business.name,
+          `${env.FRONTEND_URL}/my-city/pg/${page.businessType}/${page.slug}`,
+          locale,
+        ),
     });
   }
 }

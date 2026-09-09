@@ -335,7 +335,9 @@ describe('CommentsService', () => {
         expect.objectContaining({
           userId: OWNER_ID,
           type: 'comment_received',
-          email: { subject: 's', html: 'h' },
+          // A builder rather than a finished letter: only `notify` knows the
+          // language the owner reads, so it is the one that calls this.
+          email: expect.any(Function),
           payload: expect.objectContaining({
             target: 'business',
             targetId: BUSINESS_ID,
@@ -344,6 +346,15 @@ describe('CommentsService', () => {
           }),
         }),
       );
+
+      // And it produces a real letter when called, which is what the owner
+      // actually receives.
+      const sent = (
+        notifications.notify.mock.calls.at(-1)?.[0] as {
+          email: (locale: string) => { subject: string; html: string };
+        }
+      ).email('pt');
+      expect(sent).toEqual({ subject: 's', html: 'h' });
     });
 
     it('says nothing to anybody when the comment is text only', async () => {

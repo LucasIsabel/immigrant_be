@@ -61,10 +61,15 @@ describe('NotificationsService', () => {
       ids.map((userId) => ({ userId })),
     );
 
-  const recipient = (emailNotificationsEnabled: boolean, email = 'a@b.c') =>
+  const recipient = (
+    emailNotificationsEnabled: boolean,
+    email = 'a@b.c',
+    language = 'pt',
+  ) =>
     mockPrisma.users.findUnique.mockResolvedValue({
       email,
       emailNotificationsEnabled,
+      language,
     });
 
   describe('notify', () => {
@@ -99,7 +104,7 @@ describe('NotificationsService', () => {
     it('sends the e-mail when the recipient still wants e-mail', async () => {
       recipient(true, 'ana@exemplo.pt');
 
-      await service.notify({ ...approval, email: letter });
+      await service.notify({ ...approval, email: () => letter });
 
       expect(mockEmail.send).toHaveBeenCalledWith({
         to: 'ana@exemplo.pt',
@@ -112,7 +117,7 @@ describe('NotificationsService', () => {
       // This is the assertion that makes it mean something.
       recipient(false);
 
-      await service.notify({ ...approval, email: letter });
+      await service.notify({ ...approval, email: () => letter });
 
       expect(mockPrisma.events.create).toHaveBeenCalledTimes(1);
       expect(mockEmail.send).not.toHaveBeenCalled();
@@ -140,7 +145,7 @@ describe('NotificationsService', () => {
       recipient(true);
       mockPrisma.events.create.mockRejectedValue(new Error('deadlock'));
 
-      await service.notify({ ...approval, email: letter });
+      await service.notify({ ...approval, email: () => letter });
 
       expect(mockEmail.send).not.toHaveBeenCalled();
     });
@@ -152,7 +157,7 @@ describe('NotificationsService', () => {
       mockEmail.send.mockRejectedValue(new Error('smtp down'));
 
       await expect(
-        service.notify({ ...approval, email: letter }),
+        service.notify({ ...approval, email: () => letter }),
       ).resolves.toBeUndefined();
       expect(mockPrisma.events.create).toHaveBeenCalledTimes(1);
     });
@@ -215,5 +220,70 @@ describe('NotificationsService', () => {
       await expect(service.emitToAdmins(notice)).resolves.toBeUndefined();
       expect(mockPrisma.events.create).toHaveBeenCalledTimes(2);
     });
+  });
+});
+
+describe('NotificationsService — the language the reader is in', () => {
+  let service: NotificationsService;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    mockPrisma.events.create.mockResolvedValue({});
+    mockEmail.send.mockResolvedValue(undefined);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        NotificationsService,
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: NOTIFICATION_MAILER, useValue: mockEmail },
+      ],
+    }).compile();
+    service = module.get(NotificationsService);
+  });
+
+  const reader = (language: string) =>
+    mockPrisma.users.findUnique.mockResolvedValue({
+      email: 'a@b.c',
+      emailNotificationsEnabled: true,
+      language,
+    });
+
+  /**
+   * The whole reason the field became a function. When callers handed over a
+   * finished e-mail, none of them looked the language up, so approval went out
+   * in Portuguese to everyone regardless of what they signed up in.
+   */
+  it.each(['pt', 'en', 'es'])('builds the e-mail in %s', async (language) => {
+    reader(language);
+    const build = jest.fn().mockReturnValue({ subject: 's', html: 'h' });
+
+    await service.notify({ ...approval, email: build });
+
+    expect(build).toHaveBeenCalledWith(language);
+  });
+
+  /** The column is a plain string, so a bad row must not reach the template. */
+  it.each([['fr'], [''], ['PT-BR']])(
+    'falls back to the default for %s',
+    async (language) => {
+      reader(language);
+      const build = jest.fn().mockReturnValue({ subject: 's', html: 'h' });
+
+      await service.notify({ ...approval, email: build });
+
+      expect(build).toHaveBeenCalledWith('pt');
+    },
+  );
+
+  it('does not build anything when the reader switched e-mail off', async () => {
+    mockPrisma.users.findUnique.mockResolvedValue({
+      email: 'a@b.c',
+      emailNotificationsEnabled: false,
+      language: 'en',
+    });
+    const build = jest.fn();
+
+    await service.notify({ ...approval, email: build });
+
+    expect(build).not.toHaveBeenCalled();
   });
 });
