@@ -244,3 +244,32 @@ curl -s https://api.aloravia.com/api/v1/docs-json | python3 -c \
 ```
 
 Discordância entre os dois é produção quebrada, mesmo com rota pública em 200.
+
+## A ficha de um modelo não diz se ele serve (2026-09-09)
+
+A moderação de imagens foi mergeada (BE#316) com `nemotron-3.5-content-safety`
+como modelo principal. A ficha na OpenRouter dizia tudo o que era preciso:
+multimodal, `input_modalities: ['text','image']`, guardrail de content safety,
+gratuito. Tudo verdade, e mesmo assim inutilizável:
+
+- **uma imagem por chamada** — a segunda devolve
+  `502 Failed to apply prompt replacement for mm_items['image'][1]`;
+- **formato de saída próprio e fixo** (`User Safety: unsafe / Safety
+  Categories: …`), portanto ignora qualquer contrato de JSON.
+
+Os lotes de 8 falhariam todos e o `parseJsonResponse` devolveria `null` sempre.
+Como a moderação falha em segurança — rebaixa para revisão manual — **nada
+dava erro**: a fila de revisão é que nunca esvaziaria, e ninguém liga uma coisa
+à outra durante meses.
+
+**Regra:** antes de pôr um modelo numa cadeia, faça-lhe uma chamada real com o
+prompt real e o número de entradas que o código vai enviar. Confirme três
+coisas — o status, o formato da resposta contra o schema, e que ele
+**discrimina** (um modelo que responde «low» a tudo passa em qualquer teste de
+integração e não filtra nada).
+
+**E:** falha segura esconde-se. Sempre que o caminho de erro produzir o mesmo
+efeito visível que o caminho de sucesso lento (aqui, «vai para revisão
+humana»), o defeito não aparece sozinho — tem de haver um teste, uma métrica ou
+uma verificação manual que distinga «ninguém analisou» de «analisou e mandou
+rever».
