@@ -114,3 +114,35 @@ describe('ModelConfigService', () => {
     }
   });
 });
+
+describe('the image moderation chain', () => {
+  const chain = DEFAULT_MODEL_CHAINS.image_moderation;
+
+  /**
+   * The obvious pick did not work, and only a call against the real API
+   * showed it: `nemotron-3.5-content-safety` is a guardrail with a fixed
+   * output, so it ignores the JSON contract, and it takes one image per call
+   * — a second returns 502. Batching against it failed every time.
+   */
+  it('does not lead with the model that takes one image and ignores JSON', () => {
+    expect(chain.primaryModel).not.toContain('content-safety');
+    expect(chain.fallbackModels).not.toContainEqual(
+      expect.stringContaining('content-safety'),
+    );
+  });
+
+  /**
+   * A photo check that quietly starts spending is worse than one that fails:
+   * failing sends the page to a human, which is where it belonged.
+   */
+  it('costs nothing, all the way down', () => {
+    for (const model of [chain.primaryModel, ...chain.fallbackModels]) {
+      expect(model).toMatch(/:free$/);
+    }
+  });
+
+  it('keeps a fallback, because the primary is a preview model', () => {
+    expect(chain.primaryModel).toContain('preview');
+    expect(chain.fallbackModels.length).toBeGreaterThan(0);
+  });
+});

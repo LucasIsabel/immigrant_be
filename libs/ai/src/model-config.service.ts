@@ -82,18 +82,26 @@ export const DEFAULT_MODEL_CHAINS: Record<
     fallbackModels: ['deepseek/deepseek-v4-flash', 'minimax/minimax-m3:free'],
   },
   /*
-   * Free on purpose, and the whole chain with it.
+   * Free on purpose, and the whole chain with it. Nothing paid sits behind
+   * them: a photo check that quietly starts spending is worse than one that
+   * fails, because failing sends the page to a human, which is where it
+   * belonged anyway.
    *
-   * `nemotron-3.5-content-safety` is a 4B guardrail model built for exactly
-   * this — it takes text and images and classifies them — and costs nothing.
-   * Gemma follows as a general multimodal fallback.
+   * `nemotron-3.5-content-safety` was the obvious pick and does not work here,
+   * which only a call against the real API showed. It is a guardrail with a
+   * fixed output — `User Safety: unsafe / Safety Categories: …` — so it
+   * ignores the JSON contract entirely, and it takes **one** image per call:
+   * a second returns 502 (`Failed to apply prompt replacement for
+   * mm_items['image'][1]`). Batching against it would have failed every time.
    *
-   * Nothing paid sits behind them: a photo check that quietly starts spending
-   * is worse than one that fails, because failing sends the page to a human,
-   * which is where it belonged anyway.
+   * `dots-3-note-preview` was measured instead: 8 images in one call, valid
+   * JSON on the schema, and it tells a shop front from a screenshot rather
+   * than calling everything low. It is a preview model, so the Gemma tail
+   * matters — that one answers when the shared free pool is not rate-limiting
+   * it, which is often enough to be a fallback and not enough to lead.
    */
   image_moderation: {
-    primaryModel: 'nvidia/nemotron-3.5-content-safety:free',
+    primaryModel: 'dots-studio/dots-3-note-preview:free',
     fallbackModels: ['google/gemma-4-31b-it:free'],
   },
   blog_image: {
