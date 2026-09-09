@@ -45,6 +45,7 @@ docker compose up -d          # Postgres (pgvector) na 5434 + Redis na 6379
 pnpm install
 npx prisma migrate deploy
 pnpm seed:admin               # cria o usuário admin
+pnpm seed:local-demo          # opcional: 6 negócios cheios, só em base local
 pnpm start                    # sobe API e worker juntos
 ```
 
@@ -73,6 +74,7 @@ cookie de sessão entre subdomínios em produção).
 | `pnpm lint:ci` | ESLint em modo verificação (usado no CI) |
 | `pnpm build` | Build de produção |
 | `pnpm seed:admin` | Cria o usuário administrador |
+| `pnpm seed:local-demo` | Seis negócios completos para ver o produto cheio — um restaurante de 30 pratos, um guia de 29 passeios, e dois finos de cada. **Recusa-se a correr fora de uma base local:** publica seis negócios fictícios, e em produção isso não é dado de teste, é seis negócios falsos num diretório público. Fora do `pnpm seed` e do `prisma db seed` de propósito |
 
 ## Filas
 
