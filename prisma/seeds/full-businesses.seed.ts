@@ -241,6 +241,10 @@ const SPECS: SeedSpec[] = [
       languages: ['Português', 'Inglês', 'Espanhol', 'Francês'],
       meetingPoint:
         'Em frente à estação de São Bento, junto ao painel de azulejos da direita.',
+      meetingPointLat: 41.1456,
+      meetingPointLng: -8.6106,
+      meetingPointNote:
+        'Levo um chapéu azul e uma pasta com o mapa do Porto de 1892.',
       profileImage: photo('guia-perfil'),
       countryOfOrigin: 'Portugal',
       featured: true,

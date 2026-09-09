@@ -526,6 +526,12 @@ export const FULL_TOURS: SeedTour[] = [
     ...(badgeLabel ? { badgeLabel: badgeLabel as string } : {}),
     stopCount: 4 + (i % 7),
     maxParticipants: maxParticipants as number,
+    // The form offers these two and the back-end schema does not name them.
+    // They survive anyway: `validateTypeData` throws on a bad shape but
+    // discards Zod's parsed output, so the original object is what gets saved.
+    // Seeding them is how that stops being a deduction.
+    included: ['Guia licenciado', 'Seguro de responsabilidade civil', 'Água'],
+    notIncluded: ['Transporte', 'Refeições', 'Entradas em monumentos'],
   }),
 );
 
