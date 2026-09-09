@@ -360,15 +360,20 @@ async function seedOne(spec: SeedSpec, hashedPassword: string) {
     });
   }
 
+  // Built first and cast once: `spec.business` is a loose record so the seed
+  // can hold six different shapes in one array, and spreading it straight into
+  // Prisma's input type does not typecheck.
+  const businessData = {
+    ...spec.business,
+    userId: user.id,
+    businessType: spec.businessType,
+    cityKey: cityKey(spec.business.city as string),
+    typeData: spec.typeData,
+    isPublic: true,
+  };
+
   const business = await prisma.business.create({
-    data: {
-      userId: user.id,
-      businessType: spec.businessType,
-      cityKey: cityKey(spec.business.city as string),
-      typeData: spec.typeData as never,
-      isPublic: true,
-      ...(spec.business as never),
-    },
+    data: businessData as Parameters<typeof prisma.business.create>[0]['data'],
   });
 
   // Approved, not draft: a page waiting for review is invisible, and invisible
