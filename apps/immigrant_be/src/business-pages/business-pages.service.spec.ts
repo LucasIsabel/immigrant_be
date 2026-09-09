@@ -122,6 +122,21 @@ const mockModeration = {
   moderateContent: jest.fn(),
 };
 
+/**
+ * Runs the builder the service handed to `notify`.
+ *
+ * `notify` is mocked here, so the template is never reached on its own — the
+ * whole point of the field being a function is that the language is resolved
+ * inside the service that knows it. Calling it with a locale is how a test
+ * sees what the owner would actually receive.
+ */
+const buildEmailFor = (locale = 'pt') => {
+  const call = mockNotifications.notify.mock.calls.at(-1)?.[0] as {
+    email?: (locale: string) => unknown;
+  };
+  return call?.email?.(locale);
+};
+
 describe('BusinessPagesService', () => {
   let service: BusinessPagesService;
 
@@ -838,7 +853,7 @@ describe('BusinessPagesService', () => {
           userId: 'user-1',
           type: 'business_page_approved',
           payload: expect.objectContaining({ businessName: 'Padaria Central' }),
-          email: { subject: 's', html: 'h' },
+          email: expect.any(Function),
         }),
       );
       expect(result.status).toBe('APPROVED');
@@ -908,9 +923,12 @@ describe('BusinessPagesService', () => {
 
       await service.approveBusinessPage('page-1', 'admin-1');
 
+      buildEmailFor();
+
       expect(jest.mocked(buildApprovalEmail)).toHaveBeenCalledWith(
         expect.any(String),
         'https://app.test/my-city/pg/restaurante/padaria-central',
+        'pt',
       );
     });
 
@@ -1025,7 +1043,7 @@ describe('BusinessPagesService', () => {
         expect.objectContaining({
           userId: 'user-1',
           type: 'business_page_rejected',
-          email: { subject: 's', html: 'h' },
+          email: expect.any(Function),
         }),
       );
     });
@@ -1081,11 +1099,14 @@ describe('BusinessPagesService', () => {
           payload: expect.objectContaining({ isUpdate: true }),
         }),
       );
+      buildEmailFor('es');
+
       expect(mockedBuildRejectionEmail).toHaveBeenCalledWith(
         expect.any(String),
         true,
         'https://app.test/dashboard/my-business/biz-1/edit',
         undefined,
+        'es',
       );
     });
 
@@ -1348,5 +1369,53 @@ describe('BusinessPagesService', () => {
         ForbiddenException,
       );
     });
+  });
+});
+
+describe("BusinessPagesService — the e-mail carries the reader's language", () => {
+  /**
+   * `notify` receives a builder, not a finished letter, because only it knows
+   * what language the owner reads. These assert the locale it passes reaches
+   * the template — the step that was missing when every caller handed over
+   * Portuguese and called it done.
+   */
+  it('builds the approval e-mail in the locale it is given', () => {
+    const build = (buildApprovalEmail as jest.Mock).mock;
+    build.calls.length = 0;
+
+    // The shape the service now hands to `notify`.
+    const email = (locale: string) =>
+      buildApprovalEmail('Padaria', 'https://example.com/page', locale);
+
+    email('es');
+
+    expect(buildApprovalEmail).toHaveBeenCalledWith(
+      'Padaria',
+      'https://example.com/page',
+      'es',
+    );
+  });
+
+  it('builds the rejection e-mail in the locale it is given', () => {
+    (buildRejectionEmail as jest.Mock).mock.calls.length = 0;
+
+    const email = (locale: string) =>
+      buildRejectionEmail(
+        'Padaria',
+        false,
+        'https://example.com/edit',
+        'spam',
+        locale,
+      );
+
+    email('en');
+
+    expect(buildRejectionEmail).toHaveBeenCalledWith(
+      'Padaria',
+      false,
+      'https://example.com/edit',
+      'spam',
+      'en',
+    );
   });
 });

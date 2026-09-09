@@ -181,7 +181,7 @@ describe('PublisherQualificationService', () => {
             businessType: 'restaurante',
             slug: 'padaria-central',
           },
-          email: { subject: 's', html: 'h' },
+          email: expect.any(Function),
         }),
       );
     });

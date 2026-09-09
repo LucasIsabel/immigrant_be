@@ -1,3 +1,4 @@
+import { resolveLocale, type Locale } from '@app/config/locale';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { NotificationStatus, Prisma } from 'generated/prisma';
@@ -16,6 +17,10 @@ import type {
  * library behind them made three worker specs fail to even start on CI, where
  * there is no `.env`. Sending mail is `notify`'s business; the workers should
  * not have to know the word exists.
+ *
+ * The `Locale` above comes from `@app/config/locale` for the same reason: the
+ * type is about which language a person reads, not about e-mail, and reaching
+ * for it through the `@app/email` barrel brought the environment along with it.
  */
 export const NOTIFICATION_MAILER = 'NOTIFICATION_MAILER';
 
@@ -41,7 +46,16 @@ export interface NotifyInput<T extends UserNotificationType> {
    * way: the bell is now the channel that always works, and e-mail is the one
    * they can switch off.
    */
-  email?: { subject: string; html: string };
+  /**
+   * Built here rather than by the caller, because only this service knows what
+   * language the reader is in.
+   *
+   * It used to take a finished `{ subject, html }`, which meant every caller
+   * had to look the language up for itself — and none of them did, so the
+   * approval e-mail went out in Portuguese to everyone. A function that cannot
+   * be called without a locale is how that stops being possible to forget.
+   */
+  email?: (locale: Locale) => { subject: string; html: string };
 }
 
 /**
@@ -94,17 +108,15 @@ export class NotificationsService {
     // no emitter has ever read it. From here on it means what it says.
     const user = await this.prisma.users.findUnique({
       where: { id: input.userId },
-      select: { email: true, emailNotificationsEnabled: true },
+      select: { email: true, emailNotificationsEnabled: true, language: true },
     });
 
     if (!user?.emailNotificationsEnabled || !user.email) return;
 
     try {
-      await this.mailer.send({
-        to: user.email,
-        subject: input.email.subject,
-        html: input.email.html,
-      });
+      const { subject, html } = input.email(resolveLocale(user.language));
+
+      await this.mailer.send({ to: user.email, subject, html });
     } catch (error: unknown) {
       // The notification is already stored; a mail server having a bad day is
       // not a reason to fail the caller.

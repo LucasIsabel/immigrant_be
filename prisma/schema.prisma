@@ -22,6 +22,19 @@ model Users {
   image                           String?
   bio                             String?                  @db.Text
   emailNotificationsEnabled       Boolean                  @default(true) @map("email_notifications_enabled")
+  /// The language this person reads, for anything sent outside a request.
+  ///
+  /// An e-mail has no browser and no `Accept-Language` to consult: by the time
+  /// an admin approves a page, the owner is not on the site. Without this there
+  /// was nothing to choose a language *with*, so verification went out in
+  /// hardcoded English and approval and rejection in hardcoded Portuguese —
+  /// neither of which is a choice, and one of them is wrong for almost every
+  /// reader.
+  ///
+  /// Defaults to `pt`, the locale the unprefixed URLs serve. Kept as a plain
+  /// string rather than an enum so a fourth language does not need a migration
+  /// to stop e-mail going out; an unrecognised value falls back on read.
+  language                        String                   @default("pt")
   isActive                        Boolean                  @default(true) @map("is_active")
   banned                          Boolean                  @default(false)
   banReason                       String?                  @map("ban_reason")
