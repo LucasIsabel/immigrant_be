@@ -21,6 +21,58 @@ import { FULL_ITINERARY, FULL_MENU, FULL_TOURS } from './full-businesses.data';
  * duplicate them.
  */
 
+/**
+ * Refuses to run anywhere but a local database.
+ *
+ * This seed writes six fictional owners with published pages. In production
+ * that is not test data, it is six fake businesses in a public directory, and
+ * nothing downstream would tell them apart from real ones.
+ *
+ * The check is on the database the process is actually pointed at, not on a
+ * script name or an environment variable someone forgot to set: `NODE_ENV`
+ * is unset far more often than it is wrong, and a seed guarded only by its own
+ * name is guarded by whoever is typing.
+ *
+ * It runs after `generated/prisma` has loaded `.env`, so `DATABASE_URL` here is
+ * the one Prisma is about to connect with — including when it came from a file
+ * rather than the shell. Checking the effective target is the whole point;
+ * checking what the caller happened to type would miss the case that matters.
+ *
+ * There is no override flag on purpose. If this ever needs to run against a
+ * remote database, that is a decision worth making in a diff.
+ */
+const LOCAL_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  'host.docker.internal',
+]);
+
+function assertLocalDatabase(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('This seed never runs with NODE_ENV=production.');
+  }
+
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL is not set — refusing to guess.');
+  }
+
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new Error('DATABASE_URL is not a URL this seed can check.');
+  }
+
+  if (!LOCAL_HOSTS.has(host)) {
+    throw new Error(
+      `Refusing to seed: ${host} is not a local database. This seed publishes ` +
+        'six fictional businesses and belongs on a machine you can throw away.',
+    );
+  }
+}
+
 const prisma = new PrismaClient();
 
 const PASSWORD = 'Seed12345!';
@@ -410,6 +462,8 @@ async function seedOne(spec: SeedSpec, hashedPassword: string) {
 }
 
 async function main() {
+  assertLocalDatabase();
+
   const hashedPassword = await bcrypt.hash(PASSWORD, 10);
 
   console.log(`\nA semear ${SPECS.length} negócios completos…\n`);

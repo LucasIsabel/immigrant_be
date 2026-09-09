@@ -23,7 +23,7 @@
     "places:rank-correlation": "tsx scripts/rank-correlation.ts",
     "places:backfill-images": "tsx scripts/backfill-place-images.ts",
     "openapi:dump": "nest build && node dist/apps/immigrant_be/main",
-    "seed:full-businesses": "tsx prisma/seeds/full-businesses.seed.ts"
+    "seed:local-demo": "tsx prisma/seeds/full-businesses.seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.998.0",
