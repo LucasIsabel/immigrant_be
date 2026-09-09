@@ -574,4 +574,18 @@ export class SystemRepository {
       },
     });
   }
+
+  /**
+   * One row per quiz answered, which `suggestions` deliberately is not.
+   *
+   * Plain Prisma rather than the raw SQL its neighbours use: this table has no
+   * `vector` column, so there is nothing here that the client cannot express.
+   */
+  async createQuizSubmission(data: {
+    suggestionId: string | null;
+    originCountry: string | null;
+    language: string;
+  }) {
+    return this.prisma.quizSubmission.create({ data });
+  }
 }

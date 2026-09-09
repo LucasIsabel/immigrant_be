@@ -37,6 +37,7 @@ const mockSystemRepository = {
   getSuggestionAccordingToLanguage: jest.fn(),
   createVisaTypeRecommendation: jest.fn(),
   getBestVisaTypeRecommendation: jest.fn(),
+  createQuizSubmission: jest.fn(),
 };
 
 const makeSteps = () => [
@@ -571,5 +572,116 @@ describe('SystemService - createSuggestions', () => {
 
       expect(result.suggestions[0].freedom_of_movement).toBe(false);
     });
+  });
+});
+
+describe('SystemService — recording the submission', () => {
+  let service: SystemService;
+  let repository: typeof mockSystemRepository;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SystemService,
+        { provide: SystemRepository, useValue: mockSystemRepository },
+        { provide: GeminiService, useValue: mockGeminiService },
+        { provide: CountryService, useValue: mockCountryService },
+      ],
+    }).compile();
+    service = module.get(SystemService);
+    repository = module.get(SystemRepository);
+  });
+
+  /**
+   * `resolveSuggestions` reuses a stored profile when the same answers come
+   * back, so counting off `suggestions` would miss every repeat. The recording
+   * has to happen on that path too, or the number is wrong exactly when the
+   * quiz is popular.
+   */
+  it('records a submission when the profile was already known', async () => {
+    repository.getRawSuggestionsWithParameters.mockResolvedValue({
+      id: 'cached',
+    });
+    repository.getSuggestionAccordingToLanguage.mockResolvedValue({
+      suggestions: [],
+      suggestion_id: 'cached',
+    });
+
+    await service.createSuggestions(
+      {
+        steps: makeSteps() as any,
+        parameters: makeParameters(),
+        language: 'pt',
+      },
+      'PT',
+    );
+
+    expect(repository.createQuizSubmission).toHaveBeenCalledWith({
+      suggestionId: 'cached',
+      originCountry: 'PT',
+      language: 'pt',
+    });
+  });
+
+  it('records one for a profile nobody had answered before', async () => {
+    repository.getRawSuggestionsWithParameters.mockResolvedValue(null);
+    mockGeminiService.generateSuggestions.mockResolvedValue({
+      suggestions: [],
+    });
+    mockGeminiService.generateEmbeddings.mockResolvedValue([]);
+    repository.createSuggestions.mockResolvedValue({ suggestion_id: 'fresh' });
+
+    await service.createSuggestions(
+      { steps: makeSteps() as any, parameters: makeParameters() },
+      'BR',
+    );
+
+    expect(repository.createQuizSubmission).toHaveBeenCalledWith({
+      suggestionId: 'fresh',
+      originCountry: 'BR',
+      language: 'en',
+    });
+  });
+
+  it('keeps the country null when the header was not usable', async () => {
+    repository.getRawSuggestionsWithParameters.mockResolvedValue({
+      id: 'cached',
+    });
+    repository.getSuggestionAccordingToLanguage.mockResolvedValue({
+      suggestions: [],
+      suggestion_id: 'cached',
+    });
+
+    await service.createSuggestions({
+      steps: makeSteps() as any,
+      parameters: makeParameters(),
+    });
+
+    expect(repository.createQuizSubmission).toHaveBeenCalledWith(
+      expect.objectContaining({ originCountry: null }),
+    );
+  });
+
+  /**
+   * Somebody answered nine questions. They are not losing the result because a
+   * counter failed.
+   */
+  it('still answers the quiz when the counter blows up', async () => {
+    repository.getRawSuggestionsWithParameters.mockResolvedValue({
+      id: 'cached',
+    });
+    repository.getSuggestionAccordingToLanguage.mockResolvedValue({
+      suggestions: [],
+      suggestion_id: 'cached',
+    });
+    repository.createQuizSubmission.mockRejectedValue(new Error('table gone'));
+
+    const result = await service.createSuggestions(
+      { steps: makeSteps() as any, parameters: makeParameters() },
+      'PT',
+    );
+
+    expect(result.suggestion_id).toBe('cached');
   });
 });

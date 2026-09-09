@@ -476,8 +476,37 @@ model Suggestions {
   updated_at           DateTime               @updatedAt @map("updated_at")
   plans                Plans[]
   suggestion_languages Suggestion_languages[]
+  quiz_submissions     QuizSubmission[]
 
   @@map("suggestions")
+}
+
+/// One row per quiz submission, which `Suggestions` cannot be.
+///
+/// `createSuggestions` looks for a row with the same `parameters` and reuses it
+/// when it finds one, so `suggestions` counts *distinct profiles*, not answers
+/// given: two people who answer identically are one row. Counting submissions
+/// off it would be wrong by construction, and a country column on it would
+/// record only whoever answered first.
+///
+/// No `user_id` and no IP. The country is derived from Cloudflare's
+/// `CF-IPCountry` at request time and the address is discarded, so a row here
+/// says "someone in Portugal answered this on that day" and nothing more.
+model QuizSubmission {
+  id            String       @id @default(uuid()) @db.Uuid
+  suggestionId  String?      @map("suggestion_id") @db.Uuid
+  suggestion    Suggestions? @relation(fields: [suggestionId], references: [id], onDelete: SetNull)
+  /// ISO 3166-1 alpha-2, or null when the request carried no usable header —
+  /// local development, or anything that reached the origin without passing
+  /// through Cloudflare. Never guessed.
+  originCountry String?      @map("origin_country") @db.VarChar(2)
+  language      String       @default("en")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([suggestionId])
+  @@index([originCountry])
+  @@map("quiz_submissions")
 }
 
 model Suggestion_languages {
