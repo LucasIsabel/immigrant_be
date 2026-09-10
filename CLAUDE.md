@@ -30,6 +30,37 @@
 •⁠ ⁠Ask yourself: "Would a staff engineer approve this?"
 •⁠ ⁠Run tests, check logs, demonstrate correctness
 
+### 4.1 O PR só sobe depois dos unitários **e** do E2E
+
+- **Nenhum PR é aberto antes de os testes unitários passarem e o E2E ter sido
+  corrido.** A ordem é essa: unitários verdes → E2E local → só então `gh pr
+  create`. Abrir primeiro e verificar depois é o que transforma o PR num pedido
+  para outra pessoa descobrir se aquilo funciona.
+- **O E2E corre em ambiente local, com Playwright.** Backend e frontend de pé na
+  máquina, e o percurso exercitado no browser como um utilizador o faria — não
+  em mocks, não por `curl` só, não por dedução a partir do código.
+- Vale para os dois repos. Uma mudança só de backend é na mesma verificada pela
+  ponta que a consome; foi assim que se apanhou o campo que o better-auth
+  descartava em silêncio (BE#328).
+- **O resultado entra no corpo do PR**: o que foi percorrido, e o que se
+  observou. Uma tabela de "fiz X, aconteceu Y" vale mais do que a palavra
+  "testado".
+- **Se o E2E não for possível** — ambiente em falta, dependência externa fora do
+  ar, percurso que exige dados de produção — dizê-lo **antes de abrir o PR**, e
+  esperar pela decisão do Lucas em vez de abrir na mesma. Não verificar é
+  aceitável quando é dito e aceite; fingir que se verificou não é.
+- Montar o estado que o percurso precisa (por SQL, por seed) faz parte do E2E, e
+  limpar o que ele deixou para trás — utilizadores de teste, linhas alteradas —
+  também.
+
+**Portas do ambiente local:** backend em **3000**, frontend em **3002**. A
+**3001 não se usa e não se mata** — pertence ao projeto `folclore_game`. Como o
+`CORS_ORIGINS` do backend não inclui a 3002, subir o BE com o override apenas
+para a sessão de teste:
+`CORS_ORIGINS="http://localhost:3000,http://localhost:3001,http://localhost:3002" npx nest start immigrant_be`.
+Para não enviar e-mail real durante o E2E, subir com `RESEND_API_KEY` inválida —
+o envio falha, é registado, e o resto do fluxo corre igual.
+
 ### 5. Demand Elegance (Balanced)
 
 •⁠ ⁠For non-trivial changes: pause and ask "is there a more elegant way?"
