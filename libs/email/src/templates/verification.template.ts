@@ -1,6 +1,5 @@
+import { type Locale, resolveLocale } from '@app/config/locale';
 import { wrapInBaseLayout } from './base.template';
-
-type Locale = 'en' | 'pt' | 'es';
 
 const translations: Record<
   Locale,
@@ -58,11 +57,11 @@ const translations: Record<
 };
 
 export function buildVerificationEmail(
-  locale: Locale = 'en',
+  locale: string | null | undefined,
   url: string,
   userName?: string,
 ): { subject: string; html: string } {
-  const t = translations[locale] ?? translations.en;
+  const t = translations[resolveLocale(locale)];
   const name = userName ?? 'there';
   const greeting = t.greeting.replace('{name}', name);
 
