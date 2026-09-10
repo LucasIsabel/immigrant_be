@@ -9,6 +9,7 @@ import { sendEmail } from '@app/email/send-email';
 import { buildResetPasswordEmail } from '@app/email/templates/reset-password.template';
 import { buildVerificationEmail } from '@app/email/templates/verification.template';
 import { extractResetTokenFromBetterAuthUrl } from './auth-reset-token.util';
+import { localeOf } from './locale';
 
 const prisma = new PrismaClient();
 
@@ -53,7 +54,7 @@ export const auth = betterAuth({
       resetUrl.searchParams.set('token', resetToken);
 
       const { subject, html } = buildResetPasswordEmail(
-        'en',
+        localeOf(user),
         resetUrl.toString(),
         user.name,
       );
@@ -76,7 +77,7 @@ export const auth = betterAuth({
         `${env.FRONTEND_URL}/verify-email?verified=true`,
       );
       const { subject, html } = buildVerificationEmail(
-        'en',
+        localeOf(user),
         verificationUrl.toString(),
         user.name,
       );
@@ -93,6 +94,33 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
+  },
+  user: {
+    additionalFields: {
+      /**
+       * The language this person reads, sent by the front-end at sign-up and
+       * whenever they switch it.
+       *
+       * Declaring it is not decoration: better-auth's adapter walks only the
+       * declared schema and drops any key it does not know, going in and
+       * coming out. Undeclared, a `language` in the sign-up body vanishes with
+       * no error — which is how this column sat at its default for everyone
+       * while the templates were already translated.
+       *
+       * No `defaultValue`, so the column's own `DEFAULT 'pt'` is the single
+       * place that decides when nothing is sent. And no `transform`, though
+       * normalising here would read better: a function in this position makes
+       * the inferred type of `auth` reach for `@better-auth/core/db`, which
+       * pnpm does not hoist and TypeScript cannot name (TS2742). Every reader
+       * already passes the value through `resolveLocale`, so a forged request
+       * can leave an odd string in the column but cannot reach a template with
+       * it.
+       */
+      language: {
+        type: 'string',
+        required: false,
+      },
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

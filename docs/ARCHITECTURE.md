@@ -181,6 +181,16 @@ Por isso:
   - `sendOnSignUp: true` / `sendOnSignIn: true` — email de verificação enviado no cadastro e reenviado ao tentar login sem verificar
   - `autoSignInAfterVerification: true` — ao clicar no link do email, usuário é logado automaticamente
   - Envio de email via **Resend** (`libs/config/src/email.ts`). Env vars: `RESEND_API_KEY`, `EMAIL_FROM`
+- **Idioma de quem lê**: `user.additionalFields.language` (`libs/config/src/auth.ts`).
+  O front-end envia o locale corrente no signup e sempre que a pessoa troca de
+  idioma; o valor é normalizado por `resolveLocale` à entrada, e o `DEFAULT 'pt'`
+  da coluna decide quando não vem nada. Declarar o campo é **obrigatório**: o
+  adapter do better-auth percorre só o schema declarado e descarta em silêncio
+  qualquer chave que não conheça — foi assim que a coluna ficou no default para
+  toda a gente enquanto os templates já estavam traduzidos. Os hooks de
+  verificação e de recuperação de palavra-passe passaram a usar `localeOf(user)`
+  em vez de `'en'` fixo (o `user` que recebem é tipado como o `User` base, mas
+  traz o campo em runtime).
 
 ### Mudar uma role chega aos ecrãs já abertos — desde 2026-09-07
 

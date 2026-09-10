@@ -26,3 +26,20 @@ export function resolveLocale(value: string | null | undefined): Locale {
   const code = value.trim().toLowerCase().slice(0, 2);
   return KNOWN.includes(code) ? (code as Locale) : DEFAULT_LOCALE;
 }
+
+/**
+ * The locale of a better-auth user, read from an object that does not admit it.
+ *
+ * `sendVerificationEmail` and `sendResetPassword` type their `user` as the base
+ * `User`, not as the one carrying the declared additional fields — so
+ * `language` is there at runtime and invisible to the compiler. Reading it
+ * through `in` keeps that honest, instead of casting the whole object into a
+ * shape better-auth never promised.
+ */
+export function localeOf(user: object): Locale {
+  return resolveLocale(
+    'language' in user
+      ? ((user as { language?: unknown }).language as string | null)
+      : null,
+  );
+}

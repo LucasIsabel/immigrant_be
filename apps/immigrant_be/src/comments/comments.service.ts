@@ -481,14 +481,13 @@ export class CommentsService {
         authorName,
         excerpt,
       },
-      // Still Portuguese only inside; the signature now carries the locale, so
-      // translating that template is a change to one file rather than four.
-      email: () =>
+      email: (locale) =>
         buildCommentWaitingEmail(
           target.title,
           authorName,
           excerpt,
           `${env.FRONTEND_URL}${commentQueuePath(dto.target, dto.targetId)}`,
+          locale,
         ),
     });
   }
