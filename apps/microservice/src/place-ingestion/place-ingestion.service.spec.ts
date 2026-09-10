@@ -142,6 +142,10 @@ class FakeRepository {
     .fn()
     .mockImplementation(() => Promise.resolve(this.placesWithoutTexts.size));
 
+  countTextFailures = jest
+    .fn()
+    .mockImplementation(() => Promise.resolve(this.failures.length));
+
   markReadyIfDone = jest.fn().mockImplementation(() => {
     if (this.status !== 'PROCESSING') return Promise.resolve(false);
     this.status = 'READY_FOR_REVIEW';
@@ -488,6 +492,16 @@ describe('PlaceIngestionService', () => {
 
       expect(becameReady).toBe(true);
       expect(repository.failures).toEqual(['place-3']);
+    });
+
+    it('can say how many places came out with no text', async () => {
+      // The number the admin is told when the city is announced ready. It was
+      // recorded from the first day and read by nobody, which is how a place
+      // with no description sat in a city that called itself reviewable.
+      await service.ingestCity(INGESTION_ID);
+      await service.abandonPlaceTexts(INGESTION_ID, 'place-3');
+
+      await expect(service.countTextFailures(INGESTION_ID)).resolves.toBe(1);
     });
   });
 });

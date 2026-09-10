@@ -261,6 +261,11 @@ export class PlaceIngestionService {
     return this.repository.markReadyIfDone(ingestionId);
   }
 
+  /** How many places of this city came out with no text. */
+  countTextFailures(ingestionId: string): Promise<number> {
+    return this.repository.countTextFailures(ingestionId);
+  }
+
   /** A text that exhausted its attempts. Settles the place so the city can end. */
   async abandonPlaceTexts(
     ingestionId: string,

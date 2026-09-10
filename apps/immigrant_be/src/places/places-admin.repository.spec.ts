@@ -15,6 +15,7 @@ const prisma = {
     findMany: jest.fn(),
     count: jest.fn(),
   },
+  $executeRaw: jest.fn(),
 };
 
 describe('PlacesAdminRepository.list', () => {
@@ -189,5 +190,41 @@ describe('PlacesAdminRepository.updatePlace', () => {
       { data: Record<string, unknown> },
     ];
     expect(args.data).toEqual({ tip: 'Vá cedo.' });
+  });
+});
+
+describe('PlacesAdminRepository.clearTextFailure', () => {
+  let repository: PlacesAdminRepository;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.$executeRaw.mockResolvedValue(1);
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PlacesAdminRepository,
+        { provide: PrismaService, useValue: prisma },
+      ],
+    }).compile();
+
+    repository = moduleRef.get(PlacesAdminRepository);
+  });
+
+  it('sends both ids to the statement as parameters', async () => {
+    await repository.clearTextFailure('ingestion-1', 'place-1');
+
+    // A tagged template: the strings come first, the interpolated values after.
+    const values = prisma.$executeRaw.mock.calls[0].slice(1);
+    expect(values).toEqual(['place-1', 'ingestion-1']);
+  });
+
+  it('removes the id rather than rewriting the whole array', async () => {
+    // Rewriting would race the worker, which appends to the same array from a
+    // different process; `-` is one atomic statement.
+    await repository.clearTextFailure('ingestion-1', 'place-1');
+
+    const sql = (prisma.$executeRaw.mock.calls[0][0] as string[]).join('?');
+    expect(sql).toContain("(stats->'textFailures') - ");
+    expect(sql).toContain("stats ? 'textFailures'");
   });
 });

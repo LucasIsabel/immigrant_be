@@ -222,6 +222,28 @@ export class PlacesAdminRepository {
   }
 
   /**
+   * Forget that a place's text gave up.
+   *
+   * `textFailures` is what tells "gave up" from "still being written" on the
+   * review screen, so re-queuing the job has to take the id out — otherwise the
+   * card would announce a failure while the job is in fact running. `-` removes
+   * every matching element, which also collapses the duplicates a second
+   * failure used to append, and the `?` guard keeps `jsonb_set` off a null
+   * `stats`.
+   */
+  clearTextFailure(ingestionId: string, placeId: string) {
+    return this.prisma.$executeRaw`
+      UPDATE city_ingestions
+      SET stats = jsonb_set(
+        stats,
+        '{textFailures}',
+        (stats->'textFailures') - ${placeId}::text
+      )
+      WHERE id = ${ingestionId}::uuid AND stats ? 'textFailures'
+    `;
+  }
+
+  /**
    * Drafts that do not yet carry all three translations.
    *
    * They are what blocks the city from being approved: publishing a place with

@@ -104,12 +104,22 @@ export class PlaceIngestionConsumer extends WorkerHost {
 
   private async announceReady(ingestionId: string): Promise<void> {
     // Only one of the parallel text jobs wins the compare-and-set, so this
-    // fires exactly once per city.
+    // fires exactly once per city — and it is the single moment an admin is
+    // told anything, so a place that came out with no text has to be in the
+    // sentence. Saying only "ready" is what let one sit unnoticed.
+    const withoutText = await this.ingestion.countTextFailures(ingestionId);
+
     await this.events.emitToAdmins({
       type: EVENT_TYPES.CITY_INGESTION_READY,
       title: 'Cidade pronta para revisão',
-      message: 'Os lugares de uma cidade terminaram de ser gerados.',
-      payload: { ingestionId },
+      message: withoutText
+        ? `Os lugares de uma cidade terminaram de ser gerados — ${
+            withoutText === 1
+              ? '1 lugar ficou'
+              : `${withoutText} lugares ficaram`
+          } sem texto.`
+        : 'Os lugares de uma cidade terminaram de ser gerados.',
+      payload: { ingestionId, textFailures: withoutText },
     });
   }
 
