@@ -2,6 +2,7 @@ import {
   buildPlaceWritingPrompt,
   type PlaceFacts,
 } from './place-writing.prompt';
+import { PLACE_TEXT_LIMITS } from '../schemas/place-texts.schema';
 
 const fatos = (over: Partial<PlaceFacts> = {}): PlaceFacts => ({
   name: 'Torre de Belém',
@@ -60,5 +61,36 @@ describe('buildPlaceWritingPrompt', () => {
     const p = buildPlaceWritingPrompt(fatos());
     expect(p).toContain('Portuguese (pt-BR), English and Spanish');
     expect(p).toContain('Do not translate the Portuguese');
+  });
+
+  describe('os limites que o schema impõe', () => {
+    /*
+     * O schema recusava descrição acima de 400 caracteres e o prompt não dizia
+     * número nenhum. Um modelo obediente escrevia "uma ou duas frases" longas,
+     * acertava em tudo, e era recusado sempre — a explicação mais provável para
+     * um lugar ter falhado nove tentativas seguidas (immigrant_be#330).
+     */
+    it('diz ao modelo os números que o schema vai cobrar', () => {
+      const p = buildPlaceWritingPrompt(fatos());
+
+      expect(p).toContain(String(PLACE_TEXT_LIMITS.descriptionMin));
+      expect(p).toContain(String(PLACE_TEXT_LIMITS.descriptionMax));
+      expect(p).toContain(String(PLACE_TEXT_LIMITS.tipMax));
+    });
+
+    it('avisa que a chave da dica tem de existir mesmo quando é nula', () => {
+      // `tip` ausente é recusada pelo schema; `null` é aceite. A diferença não
+      // é adivinhável a partir de "ou null".
+      expect(buildPlaceWritingPrompt(fatos())).toContain(
+        'omitting it is not the same as null',
+      );
+    });
+
+    it('pede as chaves exactas, e sem cerca de código à volta', () => {
+      const p = buildPlaceWritingPrompt(fatos());
+
+      expect(p).toContain('keys exactly pt, en and es');
+      expect(p).toContain('no code fence');
+    });
   });
 });

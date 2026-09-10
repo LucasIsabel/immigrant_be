@@ -224,10 +224,15 @@ export class PlaceIngestionService {
     );
 
     if (!data) {
-      // Unparsable output. Retrying is the remedy — same contract the blog
-      // pipeline uses.
+      /*
+       * Every model in the chain answered, and none of them usably — the router
+       * tries them all now, so this is no longer "the primary had a bad
+       * moment". Retrying is still the remedy, but the message carries the last
+       * model so the Sentry event says who to stop trusting, instead of 31
+       * events that only name the place.
+       */
       throw new RetryableIngestionError(
-        `Model returned no usable JSON for place ${placeId}`,
+        `Model returned no usable JSON for place ${placeId} (last tried: ${result.model})`,
       );
     }
 

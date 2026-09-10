@@ -892,7 +892,7 @@ Duas consequências para quem lê a tabela:
 | Tabela | Papel |
 | --- | --- |
 | `ai_model_configs` | Um registro por cenário: modelo primário + cadeia de fallback ordenada. Editável pelo painel, então trocar de modelo não é deploy. |
-| `ai_usage_logs` | Uma linha por chamada de modelo, incluindo as que falharam (`error_kind`). Existe desde o dia um porque imagem domina o custo de um post e o cron gera em loop — sem isso não há como distinguir fatura surpresa de uso normal. |
+| `ai_usage_logs` | Uma linha por chamada de modelo, incluindo as que falharam (`error_kind`). Existe desde o dia um porque imagem domina o custo de um post e o cron gera em loop — sem isso não há como distinguir fatura surpresa de uso normal. Uma resposta que chegou e não serviu grava `error_kind = 'unusable_response'` **com** tokens e custo: foi paga. Antes de #330 entrava sem `error_kind`, arquivada como sucesso, e o painel de custo não a conseguia contar. |
 
 ---
 
@@ -1014,6 +1014,16 @@ apps/microservice/src/ai-blog/
   mesmo modelo; com a cadeia isso viraria até nove imagens pagas por marcador. Tentar modelos
   diferentes também cobre mais tipos de falha do que insistir no mesmo. A capa, que não tinha
   retry nenhum, ganhou o mesmo comportamento de graça.
+- **Resposta que não dá parse também é elo falhado — desde 2026-09-10 (#330).** O texto fazia
+  o laço que a linha acima recusa para imagem: o `generateJson` corria a cadeia e só **depois**
+  interpretava, portanto um HTTP 200 com JSON inútil contava como sucesso, os fallbacks nunca
+  eram consultados e as três tentativas do BullMQ voltavam ao mesmo modelo com o mesmo prompt.
+  Foi o `IMMIGRANT-BE-1`: 31 eventos em 12 lugares, um deles 9 em 9. Agora o parse corre
+  **dentro** do `attempt`; uma resposta inútil lança `UnusableResponseError` (motivo:
+  `empty` | `invalid_json` | `schema_mismatch`, e o detalhe do campo que partiu) e a cadeia
+  segue para o modelo seguinte. O contrato `{ data: T | null; result }` mantém-se: `null` só
+  quando **todos** os elos responderam inutilmente, com o `result` do último — os chamadores
+  não mudaram. Falha de transporte em todos os elos continua a lançar `Every model failed`.
 - **As rotas de IA do app da API passam pelo router desde #151.** Quiz
   (`quiz_suggestions`), recomendação de visto (`visa_recommendation`), tradução de steps
   (`visa_steps_translation`) e moderação (`business_moderation`) chamavam o Gemini cru e
@@ -1763,7 +1773,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 
 - **Só o mais recente, não a série.** A trilha de *chamadas* já vive no `AiUsageLog` (agora com `entityId` da página — antes nem o log de custo sabia de que página se tratava). Uma tabela de histórico foi considerada e recusada: `BusinessPageReview` já existe neste domínio para histórico e nenhum código a consulta; uma segunda ao lado dela seria o mesmo erro. Se a sequência "rebaixada → editada → liberada" virar necessidade real, a tabela nasce nesse dia e a coluna vira o cache do último.
 - **Grava nos dois desfechos**, não só no rebaixamento: uma página que passou também tem uma última análise, e guardá-la evita um ramo no código e uma pergunta sem resposta na tela.
-- **`model: null` quando ninguém respondeu.** O fallback de erro não é a opinião de um modelo; atribuir um nome ali seria pôr na boca de alguém uma frase que ele não disse. Quando o modelo respondeu e a resposta não deu parse, o nome dele **fica** — é assim que se descobre depois que um deles não sabe responder isto.
+- **`model: null` quando ninguém respondeu.** O fallback de erro não é a opinião de um modelo; atribuir um nome ali seria pôr na boca de alguém uma frase que ele não disse. Quando o modelo respondeu e a resposta não deu parse, o nome dele **fica** — é assim que se descobre depois que um deles não sabe responder isto. Desde #330 a cadeia tenta os outros antes de desistir, portanto o nome que fica é o do **último** elo que respondeu inutilmente, não o do primário.
 - **Editar o conteúdo não limpa o registro.** Apagar apagaria o único traço de por que a página está na fila; o `analyzedAt` na tela deixa claro que a análise pode ser anterior à edição.
 
 ### Notificações — a caixa de entrada e o heartbeat

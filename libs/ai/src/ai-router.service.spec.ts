@@ -290,12 +290,20 @@ describe('AiRouterService', () => {
       expect(data).toEqual({ title: 'Hello' });
     });
 
-    it('returns null data when the answer does not match the schema', async () => {
+    it('asks the next model when the first one answers junk', async () => {
+      // The bug this replaced: parsing happened after the chain, so an answer
+      // that did not parse counted as a success and no fallback was ever
+      // consulted. Three BullMQ retries then went back to the same model.
       const { z } = await import('zod');
-      mockOpenRouter.generateText.mockResolvedValue({
-        ...textResult('anthropic/claude-sonnet-5', 'openrouter'),
-        text: '{"unexpected":1}',
-      });
+      mockOpenRouter.generateText
+        .mockResolvedValueOnce({
+          ...textResult('anthropic/claude-sonnet-5', 'openrouter'),
+          text: '{"unexpected":1}',
+        })
+        .mockResolvedValueOnce({
+          ...textResult('moonshotai/kimi-k2.5', 'openrouter'),
+          text: '{"title":"Hello"}',
+        });
 
       const { data, result } = await service.generateJson(
         'blog_writing_opinion',
@@ -303,9 +311,87 @@ describe('AiRouterService', () => {
         z.object({ title: z.string() }),
       );
 
+      expect(data).toEqual({ title: 'Hello' });
+      expect(result.model).toBe('moonshotai/kimi-k2.5');
+      expect(mockOpenRouter.generateText).toHaveBeenCalledTimes(2);
+    });
+
+    it('books the junk answer as a failure that still cost money', async () => {
+      // It used to be written with no error kind at all: a paid call that
+      // produced nothing, filed under successes, invisible on the bill.
+      const { z } = await import('zod');
+      mockOpenRouter.generateText
+        .mockResolvedValueOnce({
+          ...textResult('anthropic/claude-sonnet-5', 'openrouter'),
+          text: 'not json at all',
+        })
+        .mockResolvedValueOnce({
+          ...textResult('moonshotai/kimi-k2.5', 'openrouter'),
+          text: '{"title":"Hello"}',
+        });
+
+      await service.generateJson(
+        'blog_writing_opinion',
+        'prompt',
+        z.object({ title: z.string() }),
+      );
+
+      expect(mockPrisma.aiUsageLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            model: 'anthropic/claude-sonnet-5',
+            errorKind: 'unusable_response',
+            costUsd: 0.001,
+            inputTokens: 10,
+            outputTokens: 20,
+          }),
+        }),
+      );
+    });
+
+    it('returns null only once every model has answered unusably', async () => {
+      const { z } = await import('zod');
+      mockOpenRouter.generateText.mockResolvedValue({
+        ...textResult('anthropic/claude-sonnet-5', 'openrouter'),
+        text: '{"unexpected":1}',
+      });
+      mockGeminiDirect.generateText.mockResolvedValue({
+        ...textResult('gemini-2.5-flash-lite', 'gemini-direct'),
+        text: '{"unexpected":1}',
+      });
+
+      const { data } = await service.generateJson(
+        'blog_writing_opinion',
+        'prompt',
+        z.object({ title: z.string() }),
+      );
+
       expect(data).toBeNull();
-      // The call still happened and still cost money — the caller needs both.
-      expect(result.model).toBe('anthropic/claude-sonnet-5');
+      // Every link was tried before giving up, which is the difference.
+      expect(mockOpenRouter.generateText).toHaveBeenCalledTimes(2);
+      expect(mockGeminiDirect.generateText).toHaveBeenCalledTimes(1);
+    });
+
+    it('hands back a result even when nothing parsed', async () => {
+      // Seven callers read `result.model`; a null answer must not cost them
+      // that, or a failure becomes a crash somewhere else.
+      const { z } = await import('zod');
+      mockOpenRouter.generateText.mockResolvedValue({
+        ...textResult('anthropic/claude-sonnet-5', 'openrouter'),
+        text: '{"unexpected":1}',
+      });
+      mockGeminiDirect.generateText.mockResolvedValue({
+        ...textResult('gemini-2.5-flash-lite', 'gemini-direct'),
+        text: '{"unexpected":1}',
+      });
+
+      const { result } = await service.generateJson(
+        'blog_writing_opinion',
+        'prompt',
+        z.object({ title: z.string() }),
+      );
+
+      expect(result.model).toBe('gemini-2.5-flash-lite');
     });
   });
 

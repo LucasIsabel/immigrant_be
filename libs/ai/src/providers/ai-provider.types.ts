@@ -165,6 +165,34 @@ export class AiProviderError extends Error {
   }
 }
 
+/**
+ * The model answered, and the answer is unusable.
+ *
+ * A link of the chain that fails this way is still a failed link — that is the
+ * whole point of the class existing. Before it, parsing happened after the
+ * chain had already returned, so an answer that did not parse counted as
+ * success: the fallback models were never asked, and three BullMQ attempts all
+ * went back to the model that had just failed. `ARCHITECTURE.md` had said the
+ * opposite for images ("o retry é a cadeia, não um laço"); the text path was
+ * doing the loop.
+ *
+ * Carries the usage because the call cost money whether or not the answer was
+ * any good, and the audit row has to say so.
+ */
+export class UnusableResponseError extends Error {
+  constructor(
+    readonly provider: AiProviderName,
+    readonly model: string,
+    readonly reason: 'empty' | 'invalid_json' | 'schema_mismatch',
+    /** Which field broke, or what the parser choked on. */
+    readonly detail: string,
+    readonly usage?: AiUsage,
+  ) {
+    super(`${model} returned an unusable answer (${reason}): ${detail}`);
+    this.name = 'UnusableResponseError';
+  }
+}
+
 export interface AiTextProvider {
   readonly name: AiProviderName;
   generateText(model: string, prompt: string): Promise<AiTextResult>;
