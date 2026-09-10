@@ -143,6 +143,7 @@ describe('OpenAPI contract — Places Admin', () => {
         'CityIngestionDetailResponseDto',
         'PaginatedCityIngestionsResponseDto',
         'AdminPlaceResponseDto',
+        'ReviewPlaceResponseDto',
         'IngestionStatsDto',
         'IngestionConflictDto',
         'PlaceRejectionDto',
@@ -151,6 +152,26 @@ describe('OpenAPI contract — Places Admin', () => {
         'PaginatedCatalogPlacesResponseDto',
         'UpdateCatalogPlaceDto',
       ]),
+    );
+  });
+
+  it('gives the review screen the place shape that carries the text status', () => {
+    // The detail is the only response that says where a text stands, and the
+    // frontend can only tell "failed" from "still writing" if this `$ref`
+    // points at the richer DTO rather than at the plain admin one.
+    const detail = document.components?.schemas?.[
+      'CityIngestionDetailResponseDto'
+    ] as { properties?: Record<string, { items?: { $ref?: string } }> };
+
+    expect(detail.properties?.places?.items?.$ref).toBe(
+      '#/components/schemas/ReviewPlaceResponseDto',
+    );
+
+    const review = document.components?.schemas?.['ReviewPlaceResponseDto'] as {
+      properties?: Record<string, { enum?: string[] }>;
+    };
+    expect(review.properties?.textsStatus?.enum).toEqual(
+      expect.arrayContaining(['WRITTEN', 'PENDING', 'FAILED', 'INCOMPLETE']),
     );
   });
 

@@ -243,6 +243,22 @@ export class PlaceIngestionRepository {
    * failing at the same moment cannot lose one another's entry. Read-modify-
    * write would, and this list is what decides whether the city is finished.
    */
+  /**
+   * How many places of this city came out with no text.
+   *
+   * Read straight from the same array `recordTextFailure` writes, so the number
+   * the admin is told matches what the review screen will show them.
+   */
+  async countTextFailures(ingestionId: string): Promise<number> {
+    const stats = await this.prisma.cityIngestion.findUnique({
+      where: { id: ingestionId },
+      select: { stats: true },
+    });
+    const failures = (stats?.stats as { textFailures?: string[] } | null)
+      ?.textFailures;
+    return failures?.length ?? 0;
+  }
+
   recordTextFailure(ingestionId: string, placeId: string) {
     return this.prisma.$executeRaw`
       UPDATE city_ingestions

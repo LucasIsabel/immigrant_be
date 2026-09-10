@@ -229,7 +229,37 @@ export class AdminPlaceResponseDto {
   translations: PlaceTranslationDto[];
 }
 
+export const PLACE_TEXTS_STATUS = [
+  'WRITTEN',
+  'PENDING',
+  'FAILED',
+  'INCOMPLETE',
+] as const;
+
+export type PlaceTextsStatus = (typeof PLACE_TEXTS_STATUS)[number];
+
+/**
+ * A place as the review screen judges it: the admin view plus where its text
+ * stands.
+ *
+ * The distinction the screen could not make before is `PENDING` against
+ * `FAILED`. Both look like a place with no description, and showing the same
+ * warning for a job still running and a job that gave up trains the reviewer to
+ * ignore it — which is how a city reached "ready for review" carrying a place
+ * nobody could review.
+ */
+export class ReviewPlaceResponseDto extends AdminPlaceResponseDto {
+  @ApiProperty({
+    enum: PLACE_TEXTS_STATUS,
+    description:
+      'WRITTEN: all three languages. FAILED: the writing job gave up. ' +
+      'PENDING: no text yet and a job is still due. INCOMPLETE: some ' +
+      'languages, not all.',
+  })
+  textsStatus: PlaceTextsStatus;
+}
+
 export class CityIngestionDetailResponseDto extends CityIngestionResponseDto {
-  @ApiProperty({ type: [AdminPlaceResponseDto] })
-  places: AdminPlaceResponseDto[];
+  @ApiProperty({ type: [ReviewPlaceResponseDto] })
+  places: ReviewPlaceResponseDto[];
 }

@@ -1444,6 +1444,29 @@ em `stats.textFailures` (via `jsonb ||`, atômico) e sai da contagem de
 pendentes: uma descrição que nunca veio não pode prender os outros nove lugares
 em `PROCESSING`.
 
+**Chega pronta, e diz o que ficou por fazer — decisão de 2026-09-10 (#270).**
+A convergência acima estava certa e a promessa que a acompanhava não tinha sido
+cumprida: `stats.textFailures` era escrito pelo worker e **lido por ninguém**,
+portanto a cidade chegava a `READY_FOR_REVIEW` com um lugar sem texto e nada no
+ecrã o dizia. Bloquear o estado foi considerado e recusado — prenderia sete
+lugares bons por causa de um, sem avisar ninguém (o aviso só sai ao ficar
+pronta) e sem caminho de saída, já que `POST :id/retry` só aceita `FAILED`. A
+correcção é tornar o sinal real, não mudar o estado:
+
+- **`textsStatus` por lugar** no detalhe (`ReviewPlaceResponseDto`), derivado das
+  linhas de tradução **e** do conjunto de falhas: `WRITTEN` (as três línguas),
+  `FAILED` (desistiu e nada aterrou desde então), `PENDING` (nada ainda, job por
+  correr) e `INCOMPLETE` (uma ou duas). A distinção que faltava é `PENDING`
+  contra `FAILED`: mostrar o mesmo aviso para um job a correr e para um job que
+  desistiu ensina o revisor a ignorá-lo.
+- **`textFailures` é conjunto, não registo.** O invariante é «desistiu, e nada o
+  consertou desde então»: acrescenta na desistência final, e `clearTextFailure`
+  remove no `retry-texts` (antes de despachar) e no `updatePlace` que deixa o
+  lugar com as três línguas.
+- **O aviso de "pronta" carrega a contagem**, porque é o único momento em que
+  alguém é avisado de alguma coisa.
+- O `approve` continua a ser a barreira real: 422 listando os incompletos.
+
 **Quantos lugares por cidade.** `PLACES_PER_CITY = 30`. O piloto rodou com 10 e
 mostrou que era pouco: o Porto oferece **174 candidatos** com wikidata e nome.
 Pegar todos foi considerado e recusado — a cauda é dólmen e aldeia, o custo de

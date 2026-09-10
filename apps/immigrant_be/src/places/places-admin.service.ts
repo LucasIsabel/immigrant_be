@@ -14,6 +14,9 @@ import {
 import {
   AdminPlaceResponseDto,
   CityIngestionResponseDto,
+  type IngestionStatsDto,
+  type PlaceTextsStatus,
+  type ReviewPlaceResponseDto,
 } from './dto/city-ingestion-response.dto';
 import { CreateCityIngestionDto } from './dto/create-city-ingestion.dto';
 import { ListCityIngestionsQueryDto } from './dto/list-city-ingestions-query.dto';
@@ -73,9 +76,24 @@ export class PlacesAdminService {
     const ingestion = await this.repository.findDetail(id);
     if (!ingestion) throw new NotFoundException('Ingestão não encontrada');
 
+    /*
+     * The worker has been recording abandoned texts in `stats.textFailures`
+     * since the pipeline was written, and nothing ever read them. That is the
+     * whole of this bug: a city could reach "ready for review" holding a place
+     * with no description, and the screen had no way to say so.
+     */
+    const failures = new Set(
+      (ingestion.stats as IngestionStatsDto | null)?.textFailures ?? [],
+    );
+
     return {
       ...toResponse(ingestion),
-      places: ingestion.places.map(toPlaceResponse),
+      places: ingestion.places.map(
+        (place): ReviewPlaceResponseDto => ({
+          ...toPlaceResponse(place),
+          textsStatus: textsStatusOf(place, failures),
+        }),
+      ),
     };
   }
 
@@ -121,6 +139,14 @@ export class PlacesAdminService {
       fields,
       translations,
     );
+
+    // Typing the description by hand is as good a remedy as a retry, so the
+    // record of the failure has to go with it. Left behind, the ingestion list
+    // would keep counting a place that is finished.
+    if (hasEveryLanguage(updated.translations)) {
+      await this.repository.clearTextFailure(ingestionId, placeId);
+    }
+
     return toPlaceResponse(updated);
   }
 
@@ -138,6 +164,12 @@ export class PlacesAdminService {
 
   async retryPlaceTexts(ingestionId: string, placeId: string): Promise<void> {
     await this.findInIngestion(ingestionId, placeId);
+
+    // Cleared before the job is queued, not after: between the two the place
+    // reads as `PENDING`, which is true. The other order would show a failure
+    // for a job already running, and the worker records a fresh failure of its
+    // own if this attempt gives up too.
+    await this.repository.clearTextFailure(ingestionId, placeId);
     await this.dispatcher.dispatchPlaceTexts([{ placeId, ingestionId }]);
   }
 
@@ -243,6 +275,27 @@ function toResponse(ingestion: CityIngestion): CityIngestionResponseDto {
 type PlaceFromDatabase = Omit<AdminPlaceResponseDto, 'generationCostUsd'> & {
   generationCostUsd: { toNumber(): number } | null;
 };
+
+function hasEveryLanguage(translations: { language: string }[]): boolean {
+  const present = new Set(translations.map((t) => t.language));
+  return REQUIRED_LANGUAGES.every((language) => present.has(language));
+}
+
+/**
+ * Where a place's text stands, by the same rule `approve` enforces.
+ *
+ * Derived from the translation rows and not from `textFailures` alone: the
+ * failure list says the job gave up, the rows say whether anything has landed
+ * since — by a retry, or by an admin typing it in.
+ */
+function textsStatusOf(
+  place: PlaceFromDatabase,
+  failures: Set<string>,
+): PlaceTextsStatus {
+  if (hasEveryLanguage(place.translations)) return 'WRITTEN';
+  if (failures.has(place.id)) return 'FAILED';
+  return place.translations.length === 0 ? 'PENDING' : 'INCOMPLETE';
+}
 
 function toPlaceResponse(place: PlaceFromDatabase): AdminPlaceResponseDto {
   return {

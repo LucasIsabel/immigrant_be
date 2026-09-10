@@ -93,6 +93,7 @@ describe('PlacesAdminService', () => {
         .fn()
         .mockResolvedValue(place({ reviewStatus: 'REJECTED' })),
       recordPlaceRejection: jest.fn().mockResolvedValue(1),
+      clearTextFailure: jest.fn().mockResolvedValue(1),
       findDraftsMissingTexts: jest.fn().mockResolvedValue([]),
       approve: jest.fn().mockResolvedValue({
         ingestion: ingestion({ status: 'APPROVED' }),
@@ -349,6 +350,133 @@ describe('PlacesAdminService', () => {
         ConflictException,
       );
       expect(dispatcher.dispatchCity).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getIngestion — where each text stands', () => {
+    const withTexts = (languages: string[]) =>
+      languages.map((language) => ({ language, description: 'x' }));
+
+    const detail = (places: unknown[], textFailures?: string[]) =>
+      ingestion({
+        places,
+        ...(textFailures ? { stats: { textFailures } } : {}),
+      });
+
+    it('calls a place written when all three languages are there', async () => {
+      repository.findDetail.mockResolvedValue(
+        detail([
+          place({ translations: withTexts(['pt', 'en', 'es']) }),
+        ]) as never,
+      );
+
+      const { places } = await service.getIngestion(INGESTION_ID);
+
+      expect(places[0].textsStatus).toBe('WRITTEN');
+    });
+
+    it('calls it failed when the worker gave up on it', async () => {
+      // The whole point of the fix: this is what the screen could not say.
+      repository.findDetail.mockResolvedValue(
+        detail([place({ translations: [] })], [PLACE_ID]) as never,
+      );
+
+      const { places } = await service.getIngestion(INGESTION_ID);
+
+      expect(places[0].textsStatus).toBe('FAILED');
+    });
+
+    it('calls it pending when no text has landed and nobody gave up', async () => {
+      repository.findDetail.mockResolvedValue(
+        detail([place({ translations: [] })]) as never,
+      );
+
+      const { places } = await service.getIngestion(INGESTION_ID);
+
+      expect(places[0].textsStatus).toBe('PENDING');
+    });
+
+    it('calls it incomplete when only some languages landed', async () => {
+      repository.findDetail.mockResolvedValue(
+        detail([place({ translations: withTexts(['pt']) })]) as never,
+      );
+
+      const { places } = await service.getIngestion(INGESTION_ID);
+
+      expect(places[0].textsStatus).toBe('INCOMPLETE');
+    });
+
+    it('trusts the rows over the failure list once a retry has landed', async () => {
+      // Recorded as failed, but the text is there now. The list is a record of
+      // what happened, not of what is true.
+      repository.findDetail.mockResolvedValue(
+        detail(
+          [place({ translations: withTexts(['pt', 'en', 'es']) })],
+          [PLACE_ID],
+        ) as never,
+      );
+
+      const { places } = await service.getIngestion(INGESTION_ID);
+
+      expect(places[0].textsStatus).toBe('WRITTEN');
+    });
+
+    it('refuses an ingestion that does not exist', async () => {
+      repository.findDetail.mockResolvedValue(null as never);
+
+      await expect(service.getIngestion(INGESTION_ID)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('forgetting a failure', () => {
+    it('clears the record before queueing the retry, not after', async () => {
+      // Between the two the place reads as PENDING, which is true. The other
+      // order would show a failure for a job already running.
+      await service.retryPlaceTexts(INGESTION_ID, PLACE_ID);
+
+      expect(repository.clearTextFailure).toHaveBeenCalledWith(
+        INGESTION_ID,
+        PLACE_ID,
+      );
+      expect(
+        repository.clearTextFailure.mock.invocationCallOrder[0],
+      ).toBeLessThan(dispatcher.dispatchPlaceTexts.mock.invocationCallOrder[0]);
+    });
+
+    it('clears it when an admin types the last language in by hand', async () => {
+      repository.updatePlace.mockResolvedValue(
+        place({
+          translations: [
+            { language: 'pt', description: 'x' },
+            { language: 'en', description: 'x' },
+            { language: 'es', description: 'x' },
+          ],
+        }) as never,
+      );
+
+      await service.updatePlace(INGESTION_ID, PLACE_ID, {});
+
+      expect(repository.clearTextFailure).toHaveBeenCalledWith(
+        INGESTION_ID,
+        PLACE_ID,
+      );
+    });
+
+    it('leaves it alone while a language is still missing', async () => {
+      repository.updatePlace.mockResolvedValue(
+        place({
+          translations: [
+            { language: 'pt', description: 'x' },
+            { language: 'en', description: 'x' },
+          ],
+        }) as never,
+      );
+
+      await service.updatePlace(INGESTION_ID, PLACE_ID, {});
+
+      expect(repository.clearTextFailure).not.toHaveBeenCalled();
     });
   });
 });
