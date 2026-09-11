@@ -179,6 +179,36 @@ describe('PlacesAdminService', () => {
       expect(dispatcher.dispatchCity).not.toHaveBeenCalled();
     });
 
+    it('asks about the city in its state, and carries the state to the row', async () => {
+      await service.createIngestion(
+        { countryCode: 'BR', city: 'Campo Grande', state: 'Alagoas' },
+        ADMIN_ID,
+      );
+
+      expect(repository.findActiveForCity).toHaveBeenCalledWith(
+        'BR',
+        'Campo Grande',
+        'Alagoas',
+      );
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'Alagoas' }),
+      );
+    });
+
+    it('names the state in the conflict, so the admin knows which city it was', async () => {
+      repository.findActiveForCity.mockResolvedValue({
+        id: 'outra',
+        status: 'PROCESSING',
+      } as never);
+
+      await expect(
+        service.createIngestion(
+          { countryCode: 'BR', city: 'Campo Grande', state: 'Alagoas' },
+          ADMIN_ID,
+        ),
+      ).rejects.toThrow('Campo Grande, Alagoas');
+    });
+
     it('returns osmAreaId as a string, because BigInt does not serialise', async () => {
       // Without the conversion the route would 500 on the first resolved city.
       repository.create.mockResolvedValue(

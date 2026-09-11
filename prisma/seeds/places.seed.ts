@@ -36,9 +36,12 @@ export async function seedPlaces() {
 
     const salvo = await prisma.place.upsert({
       where: {
-        countryCode_city_slug: {
+        // Curated places name no state, and "no state" is the empty key — see
+        // `Place.stateKey` for why it is not null.
+        countryCode_city_stateKey_slug: {
           countryCode: place.countryCode,
           city: place.city,
+          stateKey: '',
           slug: place.slug,
         },
       },

@@ -186,4 +186,53 @@ describe('PlacesRepository', () => {
       isActive: true,
     });
   });
+
+  describe('the state of a city', () => {
+    it('narrows the city by its state when one is sent', async () => {
+      await repository.findPublic({
+        countryCode: 'BR',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      });
+
+      expect(argsDaBusca().where).toMatchObject({ stateKey: 'alagoas' });
+    });
+
+    it('builds the filter it always built when no state is sent', async () => {
+      await repository.findPublic({ countryCode: 'BR', city: 'Campo Grande' });
+
+      expect('stateKey' in argsDaBusca().where).toBe(false);
+    });
+
+    it('answers one city per state, each with its own centre', async () => {
+      prisma.place.groupBy.mockResolvedValue([
+        {
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          _count: { _all: 2 },
+          _avg: { lat: -9.95, lng: -36.16 },
+        },
+        {
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Mato Grosso do Sul',
+          _count: { _all: 8 },
+          _avg: { lat: -20.46, lng: -54.62 },
+        },
+      ]);
+
+      const cities = await repository.findCities({ countryCode: 'BR' });
+
+      expect(prisma.place.groupBy.mock.calls[0][0].by).toEqual([
+        'countryCode',
+        'city',
+        'state',
+      ]);
+      expect(cities.map((c) => [c.state, c.lat])).toEqual([
+        ['Alagoas', -9.95],
+        ['Mato Grosso do Sul', -20.46],
+      ]);
+    });
+  });
 });

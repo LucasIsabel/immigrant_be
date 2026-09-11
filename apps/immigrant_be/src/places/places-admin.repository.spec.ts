@@ -13,6 +13,7 @@ import { PlacesAdminRepository } from './places-admin.repository';
 const prisma = {
   cityIngestion: {
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     count: jest.fn(),
   },
   $executeRaw: jest.fn(),
@@ -92,6 +93,77 @@ describe('PlacesAdminRepository.list', () => {
       where: Record<string, unknown>;
     };
     expect(countArgs.where).toEqual(whereOfTheQuery());
+  });
+});
+
+describe('PlacesAdminRepository and the state of a city', () => {
+  let repository: PlacesAdminRepository;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    prisma.cityIngestion.findMany.mockResolvedValue([]);
+    prisma.cityIngestion.findFirst.mockResolvedValue(null);
+    prisma.cityIngestion.count.mockResolvedValue(0);
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PlacesAdminRepository,
+        { provide: PrismaService, useValue: prisma },
+      ],
+    }).compile();
+
+    repository = moduleRef.get(PlacesAdminRepository);
+  });
+
+  const activeWhere = (call: number) =>
+    (
+      prisma.cityIngestion.findFirst.mock.calls[call][0] as {
+        where: Record<string, unknown>;
+      }
+    ).where;
+
+  it('looks for an active ingestion of the same city in the same state', async () => {
+    // Campo Grande in Mato Grosso do Sul and in Alagoas write their places
+    // under different keys: they compete for nothing, so neither blocks the
+    // other. The same triple still does.
+    await repository.findActiveForCity(
+      'BR',
+      'Campo Grande',
+      'Mato Grosso do Sul',
+    );
+    await repository.findActiveForCity('BR', 'Campo Grande', 'Alagoas');
+
+    expect(activeWhere(0)).toMatchObject({
+      countryCode: 'BR',
+      city: 'Campo Grande',
+      stateKey: 'mato grosso do sul',
+    });
+    expect(activeWhere(1)).toMatchObject({ stateKey: 'alagoas' });
+  });
+
+  it('compares a missing state as a missing state', async () => {
+    // `null` is `IS NULL` to Prisma: two stateless ingestions of one name
+    // still collide, exactly as they did before states existed.
+    await repository.findActiveForCity('PT', 'Lisbon');
+
+    expect(activeWhere(0)).toMatchObject({ stateKey: null });
+  });
+
+  it('narrows the list by state only alongside a city', async () => {
+    await repository.list({
+      city: 'Campo Grande',
+      state: 'Alagoas',
+      page: 1,
+      limit: 20,
+    });
+    await repository.list({ state: 'Alagoas', page: 1, limit: 20 });
+
+    const [withCity, withoutCity] =
+      prisma.cityIngestion.findMany.mock.calls.map(
+        ([args]: [{ where: Record<string, unknown> }]) => args.where,
+      );
+    expect(withCity).toMatchObject({ stateKey: 'alagoas' });
+    expect(withoutCity).toEqual({});
   });
 });
 

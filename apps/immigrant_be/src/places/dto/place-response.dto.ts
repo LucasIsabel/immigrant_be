@@ -45,6 +45,15 @@ export class PlaceResponseDto {
   })
   city: string;
 
+  @ApiPropertyOptional({
+    description:
+      'State of the city, when the place was ingested with one. Tells namesakes apart: Campo Grande is in Mato Grosso do Sul and in Alagoas.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
+
   @ApiProperty({ example: 38.6916 })
   lat: number;
 

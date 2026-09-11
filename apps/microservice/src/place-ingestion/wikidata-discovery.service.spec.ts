@@ -26,6 +26,7 @@ const entities = (
       p31?: string[];
       p17?: string[];
       p279?: string[];
+      p131?: string[];
       label?: string;
       sitelinks?: number;
       coord?: boolean;
@@ -42,6 +43,7 @@ const entities = (
         ...(r.p31 && { P31: claim(r.p31) }),
         ...(r.p17 && { P17: claim(r.p17) }),
         ...(r.p279 && { P279: claim(r.p279) }),
+        ...(r.p131 && { P131: claim(r.p131) }),
         ...(r.coord && { P625: [{ mainsnak: { datavalue: { value: {} } } }] }),
         ...(r.website && {
           P856: [{ mainsnak: { datavalue: { value: r.website } } }],
@@ -151,6 +153,99 @@ describe('WikidataDiscoveryService', () => {
         service.resolveCity('BR', 'Sao Paulo'),
       ).resolves.toMatchObject({
         wikidataId: 'Q174',
+      });
+    });
+
+    describe('with a state', () => {
+      /**
+       * Two real towns called Campo Grande in Brazil. The capital of Mato
+       * Grosso do Sul has far more sitelinks, so the tie-break alone could
+       * never reach the one in Alagoas.
+       */
+      const twoCampoGrandes = (
+        parents: { ms: string[]; al: string[] } = {
+          ms: ['Q43319'],
+          al: ['Q40885'],
+        },
+      ) =>
+        fetchMock
+          .mockResolvedValueOnce(
+            json({ search: [{ id: 'Q210945' }, { id: 'Q1804484' }] }),
+          )
+          .mockResolvedValueOnce(
+            entities({
+              Q210945: {
+                p17: ['Q155'],
+                label: 'Campo Grande',
+                coord: true,
+                sitelinks: 80,
+                p131: parents.ms,
+              },
+              Q1804484: {
+                p17: ['Q155'],
+                label: 'Campo Grande',
+                coord: true,
+                sitelinks: 12,
+                p131: parents.al,
+              },
+            }),
+          );
+
+      it('picks the namesake inside the state over the better-known one', async () => {
+        twoCampoGrandes().mockResolvedValueOnce(
+          entities({
+            Q43319: { label: 'Mato Grosso do Sul' },
+            Q40885: { label: 'Alagoas' },
+          }),
+        );
+
+        await expect(
+          service.resolveCity('BR', 'Campo Grande', 'Alagoas'),
+        ).resolves.toMatchObject({ wikidataId: 'Q1804484' });
+      });
+
+      it('keeps the sitelinks tie-break without a state, and asks nothing more', async () => {
+        twoCampoGrandes();
+
+        await expect(
+          service.resolveCity('BR', 'Campo Grande'),
+        ).resolves.toMatchObject({ wikidataId: 'Q210945' });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+
+      it('climbs a second hop when the state is not the direct parent', async () => {
+        // Elsewhere a county or a district sits between the town and its
+        // state; the second hop is read only because the first settled nothing.
+        twoCampoGrandes({ ms: ['QRegionMS'], al: ['QRegionAL'] })
+          .mockResolvedValueOnce(
+            entities({
+              QRegionMS: { label: 'Some region', p131: ['Q43319'] },
+              QRegionAL: { label: 'Other region', p131: ['Q40885'] },
+            }),
+          )
+          .mockResolvedValueOnce(
+            entities({
+              Q43319: { label: 'Mato Grosso do Sul' },
+              Q40885: { label: 'Alagoas' },
+            }),
+          );
+
+        await expect(
+          service.resolveCity('BR', 'Campo Grande', 'Alagoas'),
+        ).resolves.toMatchObject({ wikidataId: 'Q1804484' });
+      });
+
+      it('falls back to the tie-break when no candidate lies in the state', async () => {
+        twoCampoGrandes().mockResolvedValueOnce(
+          entities({
+            Q43319: { label: 'Mato Grosso do Sul' },
+            Q40885: { label: 'Alagoas' },
+          }),
+        );
+
+        await expect(
+          service.resolveCity('BR', 'Campo Grande', 'Paraná'),
+        ).resolves.toMatchObject({ wikidataId: 'Q210945' });
       });
     });
 

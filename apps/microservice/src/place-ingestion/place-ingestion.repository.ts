@@ -44,6 +44,15 @@ export type IngestionStats = {
   conflicts: Conflict[];
 };
 
+/** Which city the places belong to: the name alone does not say. */
+export interface CityLocation {
+  countryCode: string;
+  city: string;
+  state: string | null;
+  /** As the API folded it on the ingestion row; null when there is no state. */
+  stateKey: string | null;
+}
+
 export interface PersistResult {
   /** Id and slug together: the caller pairs the row with per-slug side data. */
   created: { id: string; slug: string }[];
@@ -91,15 +100,17 @@ export class PlaceIngestionRepository {
     });
   }
 
-  /** Cache the resolved area so a retry does not ask OpenStreetMap again. */
-  saveResolvedArea(
-    id: string,
-    osmAreaId: number,
-    osmMatchedName: string | null,
-  ) {
+  /**
+   * Keep the Wikidata entity the city resolved to.
+   *
+   * It is the only identity of the city anyone has verified — the name is
+   * what the admin asked for, this is what was found — and it used to reach
+   * the log and nothing else.
+   */
+  saveCityWikidataId(id: string, cityWikidataId: string) {
     return this.prisma.cityIngestion.update({
       where: { id },
-      data: { osmAreaId: BigInt(osmAreaId), osmMatchedName },
+      data: { cityWikidataId },
     });
   }
 
@@ -113,9 +124,15 @@ export class PlaceIngestionRepository {
   /**
    * Write the ranked places as drafts, without ever overwriting curated ones.
    *
-   * The unique key is `[countryCode, city, slug]`, so re-running a city lands
-   * on the same rows. That is what makes the job safe to retry — but it is also
-   * what would let a generated description replace a hand-written one.
+   * The unique key is `[countryCode, city, stateKey, slug]`, so re-running a
+   * city lands on the same rows — and Campo Grande in Alagoas never lands on
+   * the rows of Campo Grande in Mato Grosso do Sul. That is what makes the job
+   * safe to retry, but it is also what would let a generated description
+   * replace a hand-written one.
+   *
+   * The state key is the one the API folded when it created the ingestion,
+   * copied as it is; `''` stands for "no state", because the unique index
+   * would treat a NULL as different from every other NULL.
    *
    * So anything already in the table under a status other than DRAFT is left
    * exactly as it is and reported as a conflict. Two reasons:
@@ -130,15 +147,18 @@ export class PlaceIngestionRepository {
    */
   async persistDrafts(
     ingestionId: string,
-    countryCode: string,
-    city: string,
+    location: CityLocation,
     countryId: string | null,
     places: PlaceToPersist[],
   ): Promise<PersistResult> {
+    const { countryCode, city, state } = location;
+    const stateKey = location.stateKey ?? '';
+
     const existing = await this.prisma.place.findMany({
       where: {
         countryCode,
         city,
+        stateKey,
         slug: { in: places.map((place) => place.slug) },
         reviewStatus: { not: 'DRAFT' },
       },
@@ -164,6 +184,8 @@ export class PlaceIngestionRepository {
         ...place,
         countryCode,
         city,
+        state,
+        stateKey,
         countryId,
         ingestionId,
         reviewStatus: 'DRAFT' as const,
@@ -174,7 +196,12 @@ export class PlaceIngestionRepository {
 
       const saved = await this.prisma.place.upsert({
         where: {
-          countryCode_city_slug: { countryCode, city, slug: place.slug },
+          countryCode_city_stateKey_slug: {
+            countryCode,
+            city,
+            stateKey,
+            slug: place.slug,
+          },
         },
         create: data,
         update: data,

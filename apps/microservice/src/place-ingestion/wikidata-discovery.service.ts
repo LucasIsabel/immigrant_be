@@ -274,8 +274,18 @@ export class WikidataDiscoveryService {
    * has instead: the right country (P17), the exact English label, and a
    * coordinate (P625). Ties break on sitelink count — a real city has dozens,
    * a namesake village a handful.
+   *
+   * Except when the namesake is the one asked for. Campo Grande in Alagoas is
+   * a real town with fewer sitelinks than the capital of Mato Grosso do Sul,
+   * and by sitelinks alone it could never be reached. So with a state, the
+   * candidate that sits inside it wins; without one, or when none does, the
+   * tie-break stands as it was.
    */
-  async resolveCity(countryCode: string, city: string): Promise<ResolvedCity> {
+  async resolveCity(
+    countryCode: string,
+    city: string,
+    state?: string,
+  ): Promise<ResolvedCity> {
     const countryQid = COUNTRY_QID[countryCode.toUpperCase()];
     if (!countryQid) throw new CityNotResolvedError(countryCode, city);
 
@@ -310,7 +320,70 @@ export class WikidataDiscoveryService {
       .sort((a, b) => b.sitelinks - a.sitelinks);
 
     if (!candidates.length) throw new CityNotResolvedError(countryCode, city);
-    return { wikidataId: candidates[0].id, label: candidates[0].label };
+
+    // One candidate is the answer whatever its state says, so the extra
+    // requests are only paid for when there is a choice to make.
+    const inState =
+      state && candidates.length > 1
+        ? await this.candidateInState(candidates, entities, state)
+        : undefined;
+    if (state && candidates.length > 1 && !inState) {
+      this.logger.warn(
+        `No ${city} (${countryCode}) candidate lies in ${state}; keeping the best-known one`,
+      );
+    }
+
+    const chosen = inState ?? candidates[0];
+    return { wikidataId: chosen.id, label: chosen.label };
+  }
+
+  /**
+   * The first candidate whose P131 chain passes through the state, if any.
+   *
+   * A Brazilian municipality sits one hop below its state; elsewhere a county
+   * or a district can come in between, so a second hop is read — but only
+   * when the first did not settle it. Labels are folded like the city's, and
+   * every language counts: CountriesNow may name the state in English or in
+   * the local tongue. The candidates arrive ordered by sitelinks, so between
+   * two that both qualify the better-known still wins.
+   */
+  private async candidateInState<T extends { id: string }>(
+    candidates: T[],
+    entities: Record<string, Entity>,
+    state: string,
+  ): Promise<T | undefined> {
+    const wanted = foldAccents(state);
+    const isTheState = (entity: Entity | undefined) =>
+      Object.values(entity?.labels ?? {}).some(
+        (label) => foldAccents(label.value) === wanted,
+      );
+
+    const withParents = candidates.map((candidate) => ({
+      candidate,
+      parents: claimIds(entities[candidate.id], 'P131'),
+    }));
+    const firstHop = [...new Set(withParents.flatMap((c) => c.parents))];
+    if (!firstHop.length) return undefined;
+
+    const parents = await this.entities(firstHop, 'claims|labels');
+    const direct = withParents.find(({ parents: ids }) =>
+      ids.some((id) => isTheState(parents[id])),
+    );
+    if (direct) return direct.candidate;
+
+    const withGrandparents = withParents.map(({ candidate, parents: ids }) => ({
+      candidate,
+      grandparents: ids.flatMap((id) => claimIds(parents[id], 'P131')),
+    }));
+    const secondHop = [
+      ...new Set(withGrandparents.flatMap((c) => c.grandparents)),
+    ];
+    if (!secondHop.length) return undefined;
+
+    const grandparents = await this.entities(secondHop, 'labels');
+    return withGrandparents.find(({ grandparents: ids }) =>
+      ids.some((id) => isTheState(grandparents[id])),
+    )?.candidate;
   }
 
   /**

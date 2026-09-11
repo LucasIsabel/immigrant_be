@@ -7,8 +7,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   BadRequestException,
   ForbiddenException,
+  Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { CountriesNowService } from '../countriesnow/countriesnow.service';
 import { BusinessService } from './business.service';
 import { BusinessRepository } from './business.repository';
 
@@ -48,6 +51,10 @@ const mockBusinessRepository = {
   isLikedBy: jest.fn(),
 };
 
+const mockCountriesNow = {
+  getStates: jest.fn(),
+};
+
 describe('BusinessService', () => {
   let service: BusinessService;
   let repository: typeof mockBusinessRepository;
@@ -57,6 +64,7 @@ describe('BusinessService', () => {
       providers: [
         BusinessService,
         { provide: BusinessRepository, useValue: mockBusinessRepository },
+        { provide: CountriesNowService, useValue: mockCountriesNow },
       ],
     }).compile();
 
@@ -221,6 +229,154 @@ describe('BusinessService', () => {
         BadRequestException,
       );
       expect(repository.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── state ──────────────────────────────────────────────────
+
+  describe('the state, where the country has states', () => {
+    const inCampoGrande = {
+      businessType: 'RESTAURANT' as any,
+      name: 'Sabor do Pantanal',
+      city: 'Campo Grande',
+      country: 'Brazil',
+    };
+
+    beforeEach(() => {
+      mockCountriesNow.getStates.mockReset();
+    });
+
+    it('refuses a business that names no state in a country that has them', async () => {
+      // Campo Grande is in Mato Grosso do Sul and in Alagoas; the name alone
+      // files the business under both.
+      mockCountriesNow.getStates.mockResolvedValue([
+        { name: 'Alagoas' },
+        { name: 'Mato Grosso do Sul' },
+      ]);
+
+      await expect(service.create('user-id-1', inCampoGrande)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockCountriesNow.getStates).toHaveBeenCalledWith('Brazil');
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts a business without a state where the country has none', async () => {
+      mockCountriesNow.getStates.mockResolvedValue([]);
+      repository.create.mockResolvedValue(mockBusiness);
+
+      await expect(
+        service.create('user-id-1', { ...inCampoGrande, country: 'Monaco' }),
+      ).resolves.toEqual(mockBusiness);
+    });
+
+    it('does not ask anybody when the state is there', async () => {
+      repository.create.mockResolvedValue(mockBusiness);
+
+      await service.create('user-id-1', {
+        ...inCampoGrande,
+        state: 'Mato Grosso do Sul',
+      });
+
+      expect(mockCountriesNow.getStates).not.toHaveBeenCalled();
+      expect(repository.create).toHaveBeenCalled();
+    });
+
+    it('lets the business through, with a warning, when CountriesNow cannot be reached', async () => {
+      // Fail open: their outage must not become a registration nobody can make.
+      mockCountriesNow.getStates.mockRejectedValue(
+        new ServiceUnavailableException('States upstream unreachable'),
+      );
+      const warn = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => undefined);
+      repository.create.mockResolvedValue(mockBusiness);
+
+      await expect(service.create('user-id-1', inCampoGrande)).resolves.toEqual(
+        mockBusiness,
+      );
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('States upstream unreachable'),
+      );
+
+      warn.mockRestore();
+    });
+
+    it('asks again when a draft moves the business to another city', async () => {
+      mockCountriesNow.getStates.mockResolvedValue([{ name: 'Alagoas' }]);
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        country: 'Brazil',
+        state: null,
+      });
+
+      await expect(
+        service.update('business-id-1', 'user-id-1', { city: 'Campo Grande' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.saveDraft).not.toHaveBeenCalled();
+    });
+
+    it('keeps the state the business already has when a draft only renames the city', async () => {
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        country: 'Brazil',
+        state: 'Mato Grosso do Sul',
+      });
+      repository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', { city: 'Dourados' });
+
+      expect(mockCountriesNow.getStates).not.toHaveBeenCalled();
+      expect(repository.saveDraft).toHaveBeenCalled();
+    });
+
+    it('does not stop an edit that resends the location unchanged', async () => {
+      // The form resends every field. A business registered before states
+      // were asked for must still be able to fix its phone number.
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        city: 'Campo Grande',
+        country: 'Brazil',
+        state: null,
+      });
+      repository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', {
+        city: 'Campo Grande',
+        country: 'Brazil',
+        phone: '+55 67 3000-0000',
+      });
+
+      expect(mockCountriesNow.getStates).not.toHaveBeenCalled();
+      expect(repository.saveDraft).toHaveBeenCalled();
+    });
+
+    it('does not ask when a draft leaves the location alone', async () => {
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        country: 'Brazil',
+        state: null,
+      });
+      repository.saveDraft.mockResolvedValue(mockBusiness);
+
+      await service.update('business-id-1', 'user-id-1', { name: 'Outro' });
+
+      expect(mockCountriesNow.getStates).not.toHaveBeenCalled();
+    });
+
+    it('refuses to publish a draft that moves the business without a state', async () => {
+      mockCountriesNow.getStates.mockResolvedValue([{ name: 'Alagoas' }]);
+      repository.findByIdAndUserId.mockResolvedValue({
+        ...mockBusiness,
+        country: 'Brazil',
+        state: null,
+        draftData: { city: 'Campo Grande' },
+      });
+
+      await expect(
+        service.publishDraft('business-id-1', 'user-id-1'),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.applyDraftAndClearDraft).not.toHaveBeenCalled();
     });
   });
 

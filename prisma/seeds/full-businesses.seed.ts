@@ -87,6 +87,10 @@ const cityKey = (city: string) =>
     .replace(/\s+/g, ' ')
     .toLowerCase();
 
+/** `normalizeState`: the same fold, and null — never "" — for no state. */
+const stateKey = (state: unknown) =>
+  typeof state === 'string' && state.trim() ? cityKey(state) : null;
+
 const photo = (seed: string) => `https://picsum.photos/seed/${seed}/1200/800`;
 
 const OPEN_ALL_WEEK = {
@@ -420,6 +424,7 @@ async function seedOne(spec: SeedSpec, hashedPassword: string) {
     userId: user.id,
     businessType: spec.businessType,
     cityKey: cityKey(spec.business.city as string),
+    stateKey: stateKey(spec.business.state),
     typeData: spec.typeData,
     isPublic: true,
   };

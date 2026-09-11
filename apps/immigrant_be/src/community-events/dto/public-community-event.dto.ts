@@ -60,6 +60,14 @@ export class PublicCommunityEventDto {
   @ApiProperty({ example: 'Lisbon' })
   city: string;
 
+  @ApiPropertyOptional({
+    description: 'State of the city, when the organizer named one.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
+
   @ApiProperty()
   venueName: string;
 

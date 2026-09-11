@@ -106,6 +106,7 @@ class FakeRepository {
 
   markStep = jest.fn().mockResolvedValue(undefined);
   markFailed = jest.fn().mockResolvedValue(undefined);
+  saveCityWikidataId = jest.fn().mockResolvedValue(undefined);
   findCountryIdByName = jest.fn().mockResolvedValue({ id: 'country-1' });
 
   saveStats = jest.fn().mockImplementation((_id: string, stats: unknown) => {
@@ -249,6 +250,45 @@ describe('PlaceIngestionService', () => {
       ]);
     });
 
+    it('keeps the entity the city resolved to', async () => {
+      // It used to reach the log and nothing else.
+      await service.ingestCity(INGESTION_ID);
+
+      expect(repository.saveCityWikidataId).toHaveBeenCalledWith(
+        INGESTION_ID,
+        'Q597',
+      );
+    });
+
+    it('resolves the city in its state and files the places under it', async () => {
+      repository.findIngestion.mockResolvedValue({
+        id: INGESTION_ID,
+        countryCode: 'BR',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+        stateKey: 'alagoas',
+      });
+
+      await service.ingestCity(INGESTION_ID);
+
+      expect(discovery.resolveCity).toHaveBeenCalledWith(
+        'BR',
+        'Campo Grande',
+        'Alagoas',
+      );
+      expect(repository.persistDrafts).toHaveBeenCalledWith(
+        INGESTION_ID,
+        {
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          stateKey: 'alagoas',
+        },
+        'country-1',
+        expect.any(Array),
+      );
+    });
+
     it('fails for good when the city is not on Wikidata — never guesses', async () => {
       // A retry will not create the entity. The admin sees the real reason.
       discovery.resolveCity.mockRejectedValue(
@@ -308,7 +348,7 @@ describe('PlaceIngestionService', () => {
   describe('ranking', () => {
     /** Persisted places, whatever the fake repository was told to create. */
     const persisted = () =>
-      repository.persistDrafts.mock.calls[0][4] as {
+      repository.persistDrafts.mock.calls[0][3] as {
         slug: string;
         wikidataId: string;
         popularityScore: number;
@@ -430,6 +470,31 @@ describe('PlaceIngestionService', () => {
         imageLicense: 'CC BY-SA 4.0',
         imageAuthor: 'Alvesgaspar',
       });
+    });
+
+    it('puts the state in the key only when the place has one', async () => {
+      // Two Campo Grandes must not overwrite each other's `catedral`; a place
+      // with no state keeps the shape its stored URL already has.
+      repository.findPlace.mockResolvedValueOnce({
+        id: 'place-1',
+        slug: 'catedral',
+        name: 'Catedral',
+        category: 'LANDMARK',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+        countryCode: 'BR',
+        isFree: false,
+        wikidataId: 'Q1',
+        wikipediaMonthlyViews: 100,
+      });
+
+      await service.writePlaceImage('place-1', 'Catedral.jpg');
+
+      expect(storage.uploadFileAtKey).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        'places/br/alagoas/campo-grande/catedral.jpg',
+        'image/jpeg',
+      );
     });
 
     it('gives up for good when Commons cannot resolve the file', async () => {

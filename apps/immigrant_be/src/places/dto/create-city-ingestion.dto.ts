@@ -25,6 +25,16 @@ export class CreateCityIngestionDto {
 
   @ApiPropertyOptional({
     description:
+      'State of the city, as CountriesNow spells it. Tells namesakes apart — Campo Grande in Mato Grosso do Sul and Campo Grande in Alagoas are two ingestions that may run side by side — and steers the Wikidata resolution towards the right one.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  state?: string;
+
+  @ApiPropertyOptional({
+    description:
       'Manual unblock: the OSM area id, for when automatic resolution failed. Skipping resolution is what rescues a city OpenStreetMap cannot find by name.',
     example: 3605400893,
   })

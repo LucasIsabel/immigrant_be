@@ -41,10 +41,12 @@ export class PlacesAdminService {
     const active = await this.repository.findActiveForCity(
       dto.countryCode,
       dto.city,
+      dto.state,
     );
     if (active) {
+      const place = dto.state ? `${dto.city}, ${dto.state}` : dto.city;
       throw new ConflictException(
-        `Já existe uma ingestão ${active.status} para ${dto.city} (${dto.countryCode})`,
+        `Já existe uma ingestão ${active.status} para ${place} (${dto.countryCode})`,
       );
     }
 
@@ -66,6 +68,7 @@ export class PlacesAdminService {
       // explain it. Same treatment the catalogue already applies.
       countryCode: query.countryCode?.toUpperCase(),
       city: query.city,
+      state: query.state,
       page,
       limit,
     });
@@ -261,6 +264,8 @@ function toResponse(ingestion: CityIngestion): CityIngestionResponseDto {
     id: ingestion.id,
     countryCode: ingestion.countryCode,
     city: ingestion.city,
+    state: ingestion.state,
+    cityWikidataId: ingestion.cityWikidataId,
     status: ingestion.status,
     step: ingestion.step,
     errorMessage: ingestion.errorMessage,

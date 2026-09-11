@@ -86,6 +86,16 @@ export class CreateCommunityEventDto {
   @Length(1, 100)
   city: string;
 
+  @ApiPropertyOptional({
+    description:
+      'State of the city, where the country has them. Tells namesakes apart: a host business in Campo Grande, Mato Grosso do Sul is refused for an event in Campo Grande, Alagoas.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  state?: string;
+
   @ApiProperty({ example: 'Mercado de Campo de Ourique' })
   @IsString()
   @Length(2, 120)

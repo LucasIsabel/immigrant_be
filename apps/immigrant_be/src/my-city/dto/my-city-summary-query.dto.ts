@@ -40,6 +40,15 @@ export class MyCitySummaryQueryDto {
   city?: string;
 
   @ApiPropertyOptional({
+    example: 'Mato Grosso do Sul',
+    description:
+      'State of the city, to tell namesakes apart. Read only together with `city`; without it every count answers exactly as before.',
+  })
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @ApiPropertyOptional({
     example: 41.1579,
     description: 'Latitude of the city centre, for the nearby reach',
   })

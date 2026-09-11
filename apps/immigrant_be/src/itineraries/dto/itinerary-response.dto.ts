@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ItineraryCityDto } from './itinerary-city.dto';
 
 export class MyItinerarySummaryDto {
   @ApiProperty() id: string;
@@ -12,6 +13,13 @@ export class MyItinerarySummaryDto {
     example: ['Lagos', 'Cascais'],
   })
   cities: string[];
+
+  @ApiProperty({
+    description:
+      'The same cities with their state, in the same order — so two cities that share a name stay two.',
+    type: [ItineraryCityDto],
+  })
+  cityStates: ItineraryCityDto[];
 
   @ApiProperty({
     description: 'Stops a visitor would see — the unavailable ones excluded.',
@@ -86,6 +94,13 @@ export class MyItineraryStopDto {
   lng?: number | null;
 
   @ApiProperty() city: string;
+
+  @ApiPropertyOptional({
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
 
   @ApiProperty({
     description:

@@ -27,6 +27,7 @@ export class PlacesCatalogAdminService {
     const { data, total } = await this.repository.listCatalog({
       countryCode: query.countryCode?.toUpperCase(),
       city: query.city,
+      state: query.state,
       category: query.category,
       reviewStatus: query.reviewStatus,
       isActive:

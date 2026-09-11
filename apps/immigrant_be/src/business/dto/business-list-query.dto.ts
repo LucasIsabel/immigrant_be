@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { BusinessType } from '../../../../../generated/prisma';
@@ -26,6 +27,16 @@ export class BusinessListQueryDto {
   @IsString()
   @IsOptional()
   city?: string;
+
+  @ApiPropertyOptional({
+    example: 'Mato Grosso do Sul',
+    description:
+      'State of the city, to tell namesakes apart — Campo Grande is in Mato Grosso do Sul and in Alagoas. Read only together with `city`; without it the city filter answers exactly as before.',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(120)
+  state?: string;
 
   @ApiPropertyOptional({ enum: BusinessType, example: BusinessType.RESTAURANT })
   @IsEnum(BusinessType)

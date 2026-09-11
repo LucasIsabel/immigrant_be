@@ -37,6 +37,16 @@ export class ListPublicItinerariesQueryDto {
   @Length(1, 100)
   city?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'State of the city, to tell namesakes apart. Read only together with `city`, and by the same stop that answers for the city.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  state?: string;
+
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)

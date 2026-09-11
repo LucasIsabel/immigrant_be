@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CommunityEventStatus, Prisma } from '../../../../generated/prisma';
 import { boundingBox } from '../business/bounding-box';
+import { stateFilterKey } from '../business/city-key';
 import { CommunityEventWhen } from './dto/list-public-community-events-query.dto';
 
 /** What the owner and the admin see: every column plus the report tally. */
@@ -36,6 +37,7 @@ const publicSelect = {
   timezone: true,
   countryCode: true,
   city: true,
+  state: true,
   venueName: true,
   venueAddress: true,
   lat: true,
@@ -101,6 +103,8 @@ export type FavouriteEventRow = Prisma.CommunityEventGetPayload<{
 export interface PublicEventFilters {
   countryCode?: string;
   city?: string;
+  /** Narrows the city to one of its namesakes. Ignored without `city`. */
+  state?: string;
   when: CommunityEventWhen;
   /** Origin and reach of a distance filter. All three, or none. */
   lat?: number;
@@ -259,12 +263,14 @@ export class CommunityEventsRepository {
     take: number,
   ): Promise<{ data: PublicCommunityEventRow[]; total: number }> {
     const now = new Date();
+    const stateKey = stateFilterKey(filters);
     const where: Prisma.CommunityEventWhereInput = {
       status: 'APPROVED',
       ...(filters.countryCode ? { countryCode: filters.countryCode } : {}),
       ...(filters.city
         ? { city: { equals: filters.city, mode: 'insensitive' } }
         : {}),
+      ...(stateKey ? { stateKey } : {}),
       OR: [{ endsAt: { gte: now } }, { endsAt: null, startsAt: { gte: now } }],
     };
 
@@ -405,16 +411,20 @@ export class CommunityEventsRepository {
     });
   }
 
-  findBusinessForEvent(
-    businessId: string,
-  ): Promise<{ id: string; isPublic: boolean; city: string } | null> {
+  findBusinessForEvent(businessId: string): Promise<{
+    id: string;
+    isPublic: boolean;
+    city: string;
+    stateKey: string | null;
+  } | null> {
     return this.prisma.business.findUnique({
       where: { id: businessId },
-      select: { id: true, isPublic: true, city: true },
+      select: { id: true, isPublic: true, city: true, stateKey: true },
     });
   }
 
   private buildPublicSql(filters: PublicEventFilters): Prisma.Sql {
+    const stateKey = stateFilterKey(filters);
     const localStart = Prisma.sql`((e.starts_at AT TIME ZONE 'UTC') AT TIME ZONE e.timezone)`;
     const localToday = Prisma.sql`(NOW() AT TIME ZONE e.timezone)::date`;
 
@@ -435,6 +445,7 @@ export class CommunityEventsRepository {
           : Prisma.empty
       }
       ${filters.city ? Prisma.sql`AND lower(e.city) = lower(${filters.city})` : Prisma.empty}
+      ${stateKey ? Prisma.sql`AND e.state_key = ${stateKey}` : Prisma.empty}
       ${this.withinRadius(filters)}
       ${window}
     `;
