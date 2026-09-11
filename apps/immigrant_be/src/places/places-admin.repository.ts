@@ -6,7 +6,11 @@ import {
   PlaceReviewStatus,
   Prisma,
 } from '../../../../generated/prisma';
-import { normalizeState, stateFilterKey } from '../business/city-key';
+import {
+  normalizeCity,
+  normalizeState,
+  stateFilterKey,
+} from '../business/city-key';
 
 /** States where the city is still in play — neither approved nor discarded. */
 const IN_FLIGHT: CityIngestionStatus[] = [
@@ -55,17 +59,20 @@ export class PlacesAdminRepository {
    * once the pipeline improves. What it cannot have is **two at once**, which
    * would compete for the same slugs.
    *
-   * And a city is `(country, name, state)`. Campo Grande in Mato Grosso do Sul
-   * and Campo Grande in Alagoas write their places under different keys, so
-   * they compete for nothing and may run side by side. A null state is a value
-   * here like any other: Prisma reads it as `IS NULL`, so two stateless
-   * ingestions of one name still collide, as they always did.
+   * And a city is `(country, cityKey, stateKey)`. Campo Grande in Mato Grosso
+   * do Sul and Campo Grande in Alagoas write their places under different
+   * keys, so they compete for nothing and may run side by side. A null state
+   * is a value here like any other: Prisma reads it as `IS NULL`, so two
+   * stateless ingestions of one name still collide, as they always did.
+   *
+   * The name is compared folded: "Povoa de Varzim" running blocks "Póvoa de
+   * Varzim", because the two are one city and would fill it twice.
    */
   findActiveForCity(countryCode: string, city: string, state?: string) {
     return this.prisma.cityIngestion.findFirst({
       where: {
         countryCode,
-        city,
+        cityKey: normalizeCity(city),
         stateKey: normalizeState(state),
         status: { in: IN_FLIGHT },
       },
@@ -84,8 +91,10 @@ export class PlacesAdminRepository {
       data: {
         countryCode: data.countryCode,
         city: data.city,
-        // Folded here, once, and read by the worker: the places it writes get
-        // this key, so the fold never has to be repeated in another app.
+        // Both keys are folded here, once, and read by the worker: the places
+        // it writes get them, so the fold never has to be repeated in another
+        // app.
+        cityKey: normalizeCity(data.city),
         state: data.state ?? null,
         stateKey: normalizeState(data.state),
         osmAreaId: data.osmAreaId ? BigInt(data.osmAreaId) : null,
@@ -106,13 +115,12 @@ export class PlacesAdminRepository {
     const where: Prisma.CityIngestionWhereInput = {
       ...(params.status && { status: params.status }),
       ...(params.countryCode && { countryCode: params.countryCode }),
-      // The city is stored as CountriesNow spelled it; `insensitive` stops
-      // "lisbon" from returning nothing. Equality and not `contains`: the list
-      // of cities is closed, so whoever filters picked one from it rather than
-      // typing a fragment of a name.
-      ...(params.city && {
-        city: { equals: params.city, mode: Prisma.QueryMode.insensitive },
-      }),
+      // The city is stored as CountriesNow spelled it, and its two catalogues
+      // disagree on accents, so the folded key is what is compared: "lisbon"
+      // and "Póvoa" find "Lisbon" and "Povoa". Equality and not `contains`:
+      // the list of cities is closed, so whoever filters picked one from it
+      // rather than typing a fragment of a name.
+      ...(params.city && { cityKey: normalizeCity(params.city) }),
       ...(stateKey && { stateKey }),
     };
     const [data, total] = await Promise.all([
@@ -356,7 +364,9 @@ export class PlacesAdminRepository {
     const stateKey = stateFilterKey(params);
     const where: Prisma.PlaceWhereInput = {
       ...(params.countryCode && { countryCode: params.countryCode }),
-      ...(params.city && { city: params.city }),
+      // Folded, like every other read of a place's city: the catalogue holds
+      // both spellings of a city and the admin picked one of them.
+      ...(params.city && { cityKey: normalizeCity(params.city) }),
       ...(stateKey && { stateKey }),
       ...(params.category && { category: params.category }),
       ...(params.reviewStatus && { reviewStatus: params.reviewStatus }),

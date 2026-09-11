@@ -1,4 +1,5 @@
 import { PrismaClient } from '../../generated/prisma';
+import { normalizeCity } from './city-key';
 import { PLACES } from './places.data';
 
 const prisma = new PrismaClient();
@@ -31,7 +32,12 @@ export async function seedPlaces() {
   }
 
   for (const place of PLACES) {
-    const { translations, countryName, ...dados } = place;
+    const { translations, countryName, ...fields } = place;
+    // The key every public read compares — see `Place.cityKey`.
+    const dados = {
+      ...fields,
+      cityKey: normalizeCity(place.city),
+    };
     const countryId = idPorNome.get(countryName) ?? null;
 
     const salvo = await prisma.place.upsert({

@@ -261,10 +261,13 @@ describe('PlaceIngestionService', () => {
     });
 
     it('resolves the city in its state and files the places under it', async () => {
+      // Both keys come from the ingestion row, as the API folded them: the
+      // worker copies them and never folds a name on its own.
       repository.findIngestion.mockResolvedValue({
         id: INGESTION_ID,
         countryCode: 'BR',
         city: 'Campo Grande',
+        cityKey: 'campo grande',
         state: 'Alagoas',
         stateKey: 'alagoas',
       });
@@ -281,6 +284,7 @@ describe('PlaceIngestionService', () => {
         {
           countryCode: 'BR',
           city: 'Campo Grande',
+          cityKey: 'campo grande',
           state: 'Alagoas',
           stateKey: 'alagoas',
         },

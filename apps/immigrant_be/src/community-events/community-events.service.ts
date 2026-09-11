@@ -12,7 +12,7 @@ import { StorageService } from '@app/storage';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { CommunityEventStatus } from '../../../../generated/prisma';
-import { normalizeCity, normalizeState } from '../business/city-key';
+import { cityIdentity, normalizeCity } from '../business/city-key';
 import {
   ALLOWED_IMAGE_MIMES,
   COMMUNITY_EVENT_TERMS_VERSION,
@@ -93,8 +93,11 @@ export class CommunityEventsService {
       );
     }
 
-    const stateKey = normalizeState(dto.state);
-    await this.assertBusinessUsable(dto.businessId, dto.city, stateKey);
+    const { cityKey, stateKey } = cityIdentity({
+      city: dto.city,
+      state: dto.state,
+    });
+    await this.assertBusinessUsable(dto.businessId, cityKey, stateKey);
 
     const slug = await this.buildUniqueSlug(dto.title, startsAt, dto.timezone);
 
@@ -109,6 +112,7 @@ export class CommunityEventsService {
       timezone: dto.timezone,
       countryCode: dto.countryCode,
       city: dto.city,
+      cityKey,
       state: dto.state ?? null,
       stateKey,
       venueName: dto.venueName,
@@ -205,7 +209,7 @@ export class CommunityEventsService {
       normalizeCity(dto.city) !== normalizeCity(event.city);
     const state =
       dto.state !== undefined ? dto.state : cityChanged ? null : event.state;
-    const stateKey = normalizeState(state);
+    const { cityKey, stateKey } = cityIdentity({ city, state });
     const businessId =
       dto.businessId === undefined ? event.businessId : dto.businessId;
     const isFree = dto.isFree ?? event.isFree;
@@ -221,7 +225,7 @@ export class CommunityEventsService {
     // event that already began would make a typo in its address unfixable.
     this.assertSchedule(startsAt, endsAt, dto.startsAt !== undefined);
     this.assertContact(contactEmail, contactPhone);
-    await this.assertBusinessUsable(businessId, city, stateKey);
+    await this.assertBusinessUsable(businessId, cityKey, stateKey);
 
     // The slug is the public URL. It is regenerated while the event has never
     // been public, and frozen once it has been approved — including on the
@@ -247,6 +251,7 @@ export class CommunityEventsService {
       timezone,
       countryCode: dto.countryCode ?? event.countryCode,
       city,
+      cityKey,
       state,
       stateKey,
       venueName: dto.venueName ?? event.venueName,
@@ -807,7 +812,7 @@ export class CommunityEventsService {
 
   private async assertBusinessUsable(
     businessId: string | null | undefined,
-    city: string,
+    cityKey: string,
     stateKey: string | null,
   ): Promise<void> {
     if (!businessId) return;
@@ -819,7 +824,10 @@ export class CommunityEventsService {
     if (!business.isPublic) {
       throw new BadRequestException('Negócio não está público');
     }
-    if (business.city.trim().toLowerCase() !== city.trim().toLowerCase()) {
+    // By the keys, as the directory finds the business: a restaurant stored in
+    // "Póvoa de Varzim" hosts an event typed as "Povoa de Varzim", and a
+    // comparison that only ignored case refused it.
+    if (business.cityKey !== cityKey) {
       throw new BadRequestException('Negócio não está na cidade do evento');
     }
     // Same name, another state: a restaurant in Campo Grande, Mato Grosso do

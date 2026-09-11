@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CommunityEventStatus, Prisma } from '../../../../generated/prisma';
 import { boundingBox } from '../business/bounding-box';
-import { stateFilterKey } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '../business/city-key';
 import { CommunityEventWhen } from './dto/list-public-community-events-query.dto';
 
 /** What the owner and the admin see: every column plus the report tally. */
@@ -267,9 +267,9 @@ export class CommunityEventsRepository {
     const where: Prisma.CommunityEventWhereInput = {
       status: 'APPROVED',
       ...(filters.countryCode ? { countryCode: filters.countryCode } : {}),
-      ...(filters.city
-        ? { city: { equals: filters.city, mode: 'insensitive' } }
-        : {}),
+      // By the folded key, as businesses are: "Póvoa de Varzim" and "Povoa de
+      // Varzim" are one city, and an organizer typed whichever they saw.
+      ...(filters.city ? { cityKey: normalizeCity(filters.city) } : {}),
       ...(stateKey ? { stateKey } : {}),
       OR: [{ endsAt: { gte: now } }, { endsAt: null, startsAt: { gte: now } }],
     };
@@ -411,15 +411,16 @@ export class CommunityEventsRepository {
     });
   }
 
+  /** The keys and not the name: the host is compared the way it is found. */
   findBusinessForEvent(businessId: string): Promise<{
     id: string;
     isPublic: boolean;
-    city: string;
+    cityKey: string;
     stateKey: string | null;
   } | null> {
     return this.prisma.business.findUnique({
       where: { id: businessId },
-      select: { id: true, isPublic: true, city: true, stateKey: true },
+      select: { id: true, isPublic: true, cityKey: true, stateKey: true },
     });
   }
 
@@ -444,7 +445,7 @@ export class CommunityEventsRepository {
           ? Prisma.sql`AND e.country_code = ${filters.countryCode}`
           : Prisma.empty
       }
-      ${filters.city ? Prisma.sql`AND lower(e.city) = lower(${filters.city})` : Prisma.empty}
+      ${filters.city ? Prisma.sql`AND e.city_key = ${normalizeCity(filters.city)}` : Prisma.empty}
       ${stateKey ? Prisma.sql`AND e.state_key = ${stateKey}` : Prisma.empty}
       ${this.withinRadius(filters)}
       ${window}

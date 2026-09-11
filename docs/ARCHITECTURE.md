@@ -314,6 +314,15 @@ Place ─────────── PlaceTranslation (1:N) — só descripti
   aditivo da mudança (migration própria, `20260911120100_places_unique_with_state`):
   todos os lugares existentes têm `''`, então a chave nova aceita exactamente as linhas
   que a antiga aceitava, e o índice novo nasce antes de o velho sair.
+  `city_key` (NOT NULL) — desde 2026-09-11 (BE#339): a cidade na forma em que é
+  **comparada**, `normalizeCity(city)`, como em `Business`. Toda leitura pública da cidade
+  de um lugar (`/places/public`, `/places/public/cities`, `/my-city/summary`, admin do
+  catálogo) compara esta coluna, e "Póvoa de Varzim" encontra os lugares guardados como
+  "Povoa de Varzim". A ingestão escreve-a copiando a `city_key` da `CityIngestion`; o seed,
+  com a dobra de `prisma/seeds/city-key.ts`. Índice `(country_code, city_key, is_active)`.
+  A unique continua por `city` cru: trocá-la não seria aditivo, e o risco que sobra (uma
+  ingestão da outra grafia duplicar slugs) fica coberto pela guarda da ingestão, que já
+  compara a chave.
 
 CityIngestion ─── Place (1:N) — uma tentativa de popular os lugares de uma cidade
   status: PROCESSING | FAILED | READY_FOR_REVIEW | APPROVED | REJECTED
@@ -330,10 +339,13 @@ CityIngestion ─── Place (1:N) — uma tentativa de popular os lugares de u
   `cityWikidataId` guarda o QID em que o worker resolveu a cidade — o nome é o que o admin
   pediu, o QID é o que se encontrou, e é a única identidade da cidade que alguém
   verificou. Antes ia só para o log.
-  `state`/`state_key`: a guarda "uma ingestão ativa por cidade" lê `(countryCode, city,
+  `state`/`state_key`: a guarda "uma ingestão ativa por cidade" lê `(countryCode, cityKey,
   stateKey)`, então Campo Grande/MS e Campo Grande/AL correm lado a lado, e a mesma tripla
-  continua a dar 409. O `state_key` é dobrado pela **API** ao criar a linha e copiado pelo
-  worker para os lugares: a dobra vive num só app, e o worker nunca a repete.
+  continua a dar 409. `city_key` e `state_key` são dobrados pela **API** ao criar a linha e
+  copiados pelo worker para os lugares: a dobra vive num só app, e o worker nunca a repete.
+  Desde 2026-09-11 (BE#339) a guarda e o filtro `city` da lista comparam `city_key`: uma
+  ingestão em curso de "Povoa de Varzim" bloqueia "Póvoa de Varzim" (as duas escreveriam na
+  mesma cidade), e a mensagem do 409 continua a nomear a grafia pedida.
   `stats` guarda os contadores da execução e a lista de conflitos com lugares já
   curados; essa lista é a métrica de redescoberta do piloto.
 
@@ -500,6 +512,24 @@ Business ─── Users (N:1) — negócio local de um imigrante
     por `normalizeCity` em `BusinessRepository`, num único ponto por onde passam todas
     as escritas ao vivo, e é **NOT NULL** — uma chave ausente esconderia o negócio da
     busca em silêncio, e é melhor que uma escrita esquecida estoure.
+    Desde 2026-09-11 (BE#339) lugares, eventos e ingestões comparam da mesma forma:
+    `Place`, `CommunityEvent` e `CityIngestion` ganharam `city_key` (migration
+    `20260911150000_places_events_city_key`: acrescenta a coluna, preenche-a com o mesmo
+    `translate` e só depois a põe NOT NULL, tudo aditivo). Antes "Póvoa de Varzim" encontrava
+    o negócio e não o lugar nem o evento guardados como "Povoa de Varzim". As listas de
+    cidades (`/places/public/cities`, `/business/public/cities`) agrupam por `(país,
+    city_key, state_key)` e fundem as grafias em `mergeCitySpellings`
+    (`business/city-groups.ts`): uma entrada por cidade, contagem somada, centro pesado pelas
+    linhas com coordenada e a grafia mais frequente (empate → a primeira por ordem
+    alfabética). Nenhum DTO mudou, e `city_key` não sai em resposta nenhuma.
+    A dobra SQL e a do Node divergem fora do Latin-1/Latin Extended-A (vietnamita, `ș`/`ț`
+    romenos, entrada já em NFD, NBSP nas pontas). `pnpm city-keys:backfill`
+    (`scripts/backfill-city-keys.ts`) recalcula com `cityIdentity` as chaves das cinco
+    tabelas que as têm e lista as divergências; com `--run` corrige-as. Corre a partir de
+    um checkout com o `DATABASE_URL` da base alvo — a imagem de produção não leva `scripts/`
+    nem as fontes de `apps/`. `business/city-key-backfill.spec.ts` garante que as três
+    migrations usam o mesmo mapa, que ele concorda com `normalizeCity` e que a cópia da dobra
+    em `prisma/seeds/city-key.ts` (os seeds correm na imagem, que não tem `apps/`) também.
   Identidade de cidade: `(country, city_key, state_key)` — desde 2026-09-11 (FE#455). O
     nome não identifica a cidade: no Brasil 252 nomes repetem-se entre estados (Campo
     Grande é a capital de Mato Grosso do Sul e é também um município de Alagoas; Belém está
@@ -607,6 +637,13 @@ CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
     Numa edição, uma cidade **diferente** sem estado limpa o estado antigo (guardá-lo
     arquivaria um evento de Maceió no estado da cidade anterior), e a mesma cidade
     reenviada mantém-no — um formulário que reenvia tudo não o apaga.
+  `city_key` (NOT NULL) — desde 2026-09-11 (BE#339): `normalizeCity(city)`, derivada pelo
+    serviço em cada `create` e `update` com `cityIdentity`. A agenda (`/events/public`, no
+    caminho tipado e no SQL de `today`/`weekend`) e a contagem do My City comparam-na, em vez
+    de `lower(city)`. O anfitrião também é comparado pelas chaves: um restaurante guardado em
+    "Póvoa de Varzim" é aceite num evento escrito "Povoa de Varzim" (a comparação antiga só
+    ignorava a caixa). Índice `(country_code, city_key, status, starts_at)`.
+    `EventInterest.city` continua cru: só é escrito, nunca filtrado.
   Desde 2026-09-05 ela é também a **caixa de entrada**: ganhou `readAt` (nulo = por ler, e
   é isso que o contador do sino conta) mais três índices — `(userId, status)` para o poll do
   SSE, `(userId, createdAt desc)` para a listagem e `(userId, readAt)` para o contador.
@@ -1177,6 +1214,14 @@ aba depois mostra. Como a lista de negócios funde a cidade exata com o que est�
 dentro do raio, a contagem faz o mesmo — num `OR` só, e não em duas consultas
 somadas, que contariam duas vezes tudo o que satisfaz as duas condições. Ver
 `my-city.repository.ts`.
+
+**As quatro abas comparam a cidade da mesma forma — desde 2026-09-11 (BE#339).**
+Os negócios já contavam por `city_key`; eventos e lugares comparavam o nome cru
+(`equals`/`insensitive` no caminho tipado, `lower(...)` no SQL do raio), que ignora
+a caixa mas não os acentos. Com "Povoa de Varzim" guardado num lugar e "Póvoa de
+Varzim" num negócio, as abas da mesma cidade discordavam conforme a grafia pedida.
+Agora as quatro contagens comparam `city_key = normalizeCity(city)`, nos dois
+caminhos.
 
 **O raio alcança os quatro, e nem sempre alcançou.** Ele nasceu dentro da lista
 de negócios — existe para trazer o restaurante de Gaia a quem navega o Porto — e

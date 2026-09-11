@@ -5,6 +5,7 @@ jest.mock('@app/database', () => ({
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
+import { Prisma } from '../../../../generated/prisma';
 import { MyCityRepository } from './my-city.repository';
 
 /**
@@ -344,6 +345,56 @@ describe('MyCityRepository', () => {
 
       expect(sqlOf(0)).toContain('e.state_key');
       expect(sqlOf(1)).toContain('p.state_key');
+    });
+  });
+
+  /*
+   * "Póvoa de Varzim" and "Povoa de Varzim" are one city. The businesses tab
+   * already counted it as one; events and places compared the raw name, so the
+   * tabs of one city disagreed with each other depending on the spelling.
+   */
+  describe('the spelling of the city', () => {
+    const whereOf = (mock: jest.Mock) =>
+      (mock.mock.calls[0][0] as { where: Record<string, unknown> }).where;
+
+    it('counts events and places by the folded key', async () => {
+      mockPrismaService.communityEvent.count.mockResolvedValue(0);
+      mockPrismaService.place.count.mockResolvedValue(0);
+      const inPovoa = { countryCode: 'PT', city: 'Póvoa de Varzim' };
+
+      await repository.countEvents(inPovoa);
+      await repository.countPlaces(inPovoa);
+
+      for (const mock of [
+        mockPrismaService.communityEvent.count,
+        mockPrismaService.place.count,
+      ]) {
+        expect(whereOf(mock)).toMatchObject({ cityKey: 'povoa de varzim' });
+        expect('city' in whereOf(mock)).toBe(false);
+      }
+    });
+
+    it('compares the key in the measured counts too', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValue([{ total: 0n }]);
+      const aroundPovoa = {
+        countryCode: 'PT',
+        city: 'Povoa de Varzim',
+        lat: 41.38,
+        lng: -8.76,
+        radius: 5,
+      };
+
+      await repository.countEvents(aroundPovoa);
+      await repository.countPlaces(aroundPovoa);
+
+      expect(sqlOf(0)).toContain('e.city_key');
+      expect(sqlOf(0)).not.toContain('lower(e.city)');
+      expect(sqlOf(1)).toContain('p.city_key');
+      expect(sqlOf(1)).not.toContain('lower(p.city)');
+      const values = (call: number) =>
+        (mockPrismaService.$queryRaw.mock.calls[call][0] as Prisma.Sql).values;
+      expect(values(0)).toContain('povoa de varzim');
+      expect(values(1)).toContain('povoa de varzim');
     });
   });
 });
