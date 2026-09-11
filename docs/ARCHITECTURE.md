@@ -43,7 +43,7 @@ immigrant_be/
 │   │   │   ├── app.module.ts   # Módulo raiz
 │   │   │   ├── common/         # Guards, filters, decorators compartilhados
 │   │   │   ├── countries/      # Módulo de países
-│   │   │   ├── countriesnow/   # Proxy público CountriesNow (países/estados/cidades/moeda)
+│   │   │   ├── countriesnow/   # Proxy público CountriesNow (países/estados/cidades/moeda) + busca de cidades com estado
 │   │   │   ├── places/        # Lugares turísticos (público) + API admin de ingestões
 │   │   │   ├── immigration-visa-type/  # Módulo de tipos de visto
 │   │   │   ├── users/          # Módulo de usuários
@@ -79,7 +79,7 @@ immigrant_be/
 │       └── test/
 │
 ├── libs/                       # Bibliotecas compartilhadas
-│   ├── config/                 # Configuração da app + setup do better-auth
+│   ├── config/                 # Configuração da app + setup do better-auth + cliente Redis avulso (`redis-client.ts`)
 │   ├── database/               # PrismaService (módulo global)
 │   ├── ai/                     # AiRouterService (multi-provider) + GeminiBaseService
 │   ├── immigration/            # Regras de imigração puras (livre circulação UE/EEE/Suíça)
@@ -524,6 +524,34 @@ Business ─── Users (N:1) — negócio local de um imigrante
     Buraco assumido: o centro de recuo da busca por raio continua agrupado só por
     `city_key`, e um negócio sem coordenada numa cidade homónima recua para a média das
     duas. Separar por estado tiraria o centro aos negócios antigos que não têm estado.
+  Busca no catálogo de cidades: `GET /countriesnow/cities/search?country=&q=&limit=` —
+    desde 2026-09-11 (FE#324). O seletor do My City alcançava as cidades com conteúdo e a
+    lista plana do CountriesNow, e a lista plana não é o universo do assistente: 832 nomes em
+    Portugal e 4 226 no Brasil só existem nas listas por estado, e uma cidade vazia com um
+    desses nomes — ou a homónima vazia de uma cidade com conteúdo — ficava inalcançável. O
+    universo do índice é **o do assistente**: as listas por estado quando o país tem estados, a
+    lista plana (com `state: null`) quando não tem. Os nomes que só a plana tem, num país com
+    estados, não são registáveis e ficam fora do índice — o FE continua a mostrá-los na cauda
+    plana, como hoje. O estado vai tal como `/states/q` o devolve, com acento: é a única
+    grafia a que o CountriesNow responde. `q` é dobrado com `normalizeCity` e pontuado igual →
+    prefixo → prefixo de palavra → substring; a resposta tem no máximo `limit` (≤ 50) linhas e
+    cresce com a consulta, não com o país.
+    O índice tem três camadas: `Map` no processo (24 h) → Redis
+    (`countriesnow:city-index:v1:<país dobrado>`, JSON agrupado `[{ state, cities }]`,
+    `EX 86400`) → construção (`/states/q` e um pedido por estado, 8 de cada vez, com uma
+    repetição por estado). **Tudo ou nada**: um estado que falha duas vezes falha a busca
+    (502/503) e nada fica guardado — meio índice em cache seria uma cidade que "não existe"
+    durante um dia. **Single-flight**: pedidos simultâneos para o mesmo país partilham uma
+    construção; sem isso, cada tecla digitada antes de a primeira acabar pediria todos os
+    estados outra vez. Só se guarda o índice de um país que o CountriesNow conhece, o que
+    impede um anónimo de encher a memória e o Redis com chaves inventadas. O Redis é
+    opcional (`COUNTRIES_NOW_REDIS` com `@Optional()`, cliente de
+    `createStandaloneRedisClient` em `libs/config`): em baixo, a leitura é um miss e a
+    escrita um warning — deixa de partilhar o índice, nunca impede uma busca. Custo medido
+    com dados reais: Portugal 20 KB, Índia 48 KB, Brasil e Alemanha 96 KB, EUA 256 KB por
+    chave (~14–17 bytes por cidade); construir leva 0,9–1,9 s por país, uma vez por dia. A
+    construção passa por `getCitiesInState`, e por isso aquece o mesmo cache de 24 h que o
+    passo de estado do assistente lê.
   Estado obrigatório no cadastro quando o país tem estados. `BusinessService` pergunta ao
     `CountriesNowService` (o mesmo cache de 24 h do proxy) se o país tem subdivisões — só
     quando o estado falta, então um formulário completo nunca espera por ele — e, se tem,
@@ -1706,6 +1734,7 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `GET /countriesnow/countries`                | CountriesNow              | Público (proxy CountriesNow + cache 24h)   |
 | `GET /countriesnow/states?country=`          | CountriesNow              | Público (estados por país; cache 24h)      |
 | `GET /countriesnow/cities?country=&state=`   | CountriesNow              | Público (cidades por estado; cache 24h)    |
+| `GET /countriesnow/cities/search?country=&q=&limit=` | CountriesNow      | Público (busca com estado; índice 24h no Redis) |
 | `GET /countriesnow/currency`                 | CountriesNow              | Público (moeda; fallback REST Countries)   |
 | `/immigration-visa-types`                    | ImmigrationVisaType       | Misto                                      |
 | `/visa-steps`                                | VisaSteps                 | Misto                                      |

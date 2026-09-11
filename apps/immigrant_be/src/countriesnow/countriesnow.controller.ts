@@ -1,16 +1,21 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import {
+  ApiBadGatewayResponse,
+  ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
+  ApiServiceUnavailableResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { CountriesNowService } from './countriesnow.service';
+import { CountriesNowCityMatchDto } from './dto/countries-now-city-match.dto';
 import { CountriesNowCountryDto } from './dto/countries-now-country.dto';
 import { CountriesNowCurrencyDto } from './dto/countries-now-currency.dto';
 import { CountriesNowStateDto } from './dto/countries-now-state.dto';
+import { SearchCountriesNowCitiesQueryDto } from './dto/search-countries-now-cities-query.dto';
 
 @ApiTags('CountriesNow')
 @Controller('countriesnow')
@@ -54,6 +59,36 @@ export class CountriesNowController {
     @Query('country') country: string,
   ): Promise<CountriesNowStateDto[]> {
     return this.countriesNowService.getStates(country);
+  }
+
+  @Get('cities/search')
+  @AllowAnonymous()
+  @ApiOperation({
+    summary: 'Search every city of a country, with its state',
+    description:
+      'Searches the cities the business wizard registers in — the per-state lists when the country has states, the flat list when it has none — accent- and case-insensitively. Ranked equal, prefix, word prefix, then substring. The index is built once per country and shared for 24h.',
+  })
+  @ApiOkResponse({
+    description: 'Matching cities, best match first',
+    type: [CountriesNowCityMatchDto],
+  })
+  @ApiBadRequestResponse({
+    description: 'country or q missing, or limit outside 1–50',
+  })
+  @ApiBadGatewayResponse({
+    description: 'CountriesNow answered with an error and no index is cached',
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'CountriesNow unreachable and no index is cached',
+  })
+  searchCities(
+    @Query() query: SearchCountriesNowCitiesQueryDto,
+  ): Promise<CountriesNowCityMatchDto[]> {
+    return this.countriesNowService.searchCities(
+      query.country,
+      query.q,
+      query.limit,
+    );
   }
 
   @Get('cities')
