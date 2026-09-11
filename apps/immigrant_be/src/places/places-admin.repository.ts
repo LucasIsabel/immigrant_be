@@ -6,6 +6,7 @@ import {
   PlaceReviewStatus,
   Prisma,
 } from '../../../../generated/prisma';
+import { normalizeState, stateFilterKey } from '../business/city-key';
 
 /** States where the city is still in play — neither approved nor discarded. */
 const IN_FLIGHT: CityIngestionStatus[] = [
@@ -18,6 +19,7 @@ const ADMIN_PLACE = {
   name: true,
   countryCode: true,
   city: true,
+  state: true,
   imageUrl: true,
   imageLicense: true,
   imageAuthor: true,
@@ -52,10 +54,21 @@ export class PlacesAdminRepository {
    * can be ingested many times over its life — approved, rejected, run again
    * once the pipeline improves. What it cannot have is **two at once**, which
    * would compete for the same slugs.
+   *
+   * And a city is `(country, name, state)`. Campo Grande in Mato Grosso do Sul
+   * and Campo Grande in Alagoas write their places under different keys, so
+   * they compete for nothing and may run side by side. A null state is a value
+   * here like any other: Prisma reads it as `IS NULL`, so two stateless
+   * ingestions of one name still collide, as they always did.
    */
-  findActiveForCity(countryCode: string, city: string) {
+  findActiveForCity(countryCode: string, city: string, state?: string) {
     return this.prisma.cityIngestion.findFirst({
-      where: { countryCode, city, status: { in: IN_FLIGHT } },
+      where: {
+        countryCode,
+        city,
+        stateKey: normalizeState(state),
+        status: { in: IN_FLIGHT },
+      },
       select: { id: true, status: true },
     });
   }
@@ -63,6 +76,7 @@ export class PlacesAdminRepository {
   create(data: {
     countryCode: string;
     city: string;
+    state?: string;
     osmAreaId?: number;
     requestedById?: string;
   }) {
@@ -70,6 +84,10 @@ export class PlacesAdminRepository {
       data: {
         countryCode: data.countryCode,
         city: data.city,
+        // Folded here, once, and read by the worker: the places it writes get
+        // this key, so the fold never has to be repeated in another app.
+        state: data.state ?? null,
+        stateKey: normalizeState(data.state),
         osmAreaId: data.osmAreaId ? BigInt(data.osmAreaId) : null,
         requestedById: data.requestedById,
       },
@@ -80,9 +98,11 @@ export class PlacesAdminRepository {
     status?: CityIngestionStatus;
     countryCode?: string;
     city?: string;
+    state?: string;
     page: number;
     limit: number;
   }) {
+    const stateKey = stateFilterKey(params);
     const where: Prisma.CityIngestionWhereInput = {
       ...(params.status && { status: params.status }),
       ...(params.countryCode && { countryCode: params.countryCode }),
@@ -93,6 +113,7 @@ export class PlacesAdminRepository {
       ...(params.city && {
         city: { equals: params.city, mode: Prisma.QueryMode.insensitive },
       }),
+      ...(stateKey && { stateKey }),
     };
     const [data, total] = await Promise.all([
       this.prisma.cityIngestion.findMany({
@@ -324,6 +345,7 @@ export class PlacesAdminRepository {
   async listCatalog(params: {
     countryCode?: string;
     city?: string;
+    state?: string;
     category?: PlaceCategory;
     reviewStatus?: PlaceReviewStatus;
     isActive?: boolean;
@@ -331,9 +353,11 @@ export class PlacesAdminRepository {
     page: number;
     limit: number;
   }) {
+    const stateKey = stateFilterKey(params);
     const where: Prisma.PlaceWhereInput = {
       ...(params.countryCode && { countryCode: params.countryCode }),
       ...(params.city && { city: params.city }),
+      ...(stateKey && { stateKey }),
       ...(params.category && { category: params.category }),
       ...(params.reviewStatus && { reviewStatus: params.reviewStatus }),
       ...(params.isActive !== undefined && { isActive: params.isActive }),

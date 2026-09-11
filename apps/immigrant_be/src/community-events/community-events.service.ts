@@ -12,6 +12,7 @@ import { StorageService } from '@app/storage';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { CommunityEventStatus } from '../../../../generated/prisma';
+import { normalizeCity, normalizeState } from '../business/city-key';
 import {
   ALLOWED_IMAGE_MIMES,
   COMMUNITY_EVENT_TERMS_VERSION,
@@ -92,7 +93,8 @@ export class CommunityEventsService {
       );
     }
 
-    await this.assertBusinessUsable(dto.businessId, dto.city);
+    const stateKey = normalizeState(dto.state);
+    await this.assertBusinessUsable(dto.businessId, dto.city, stateKey);
 
     const slug = await this.buildUniqueSlug(dto.title, startsAt, dto.timezone);
 
@@ -107,6 +109,8 @@ export class CommunityEventsService {
       timezone: dto.timezone,
       countryCode: dto.countryCode,
       city: dto.city,
+      state: dto.state ?? null,
+      stateKey,
       venueName: dto.venueName,
       venueAddress: dto.venueAddress,
       lat: dto.lat,
@@ -190,6 +194,18 @@ export class CommunityEventsService {
     const contactPhone =
       dto.contactPhone === undefined ? event.contactPhone : dto.contactPhone;
     const city = dto.city ?? event.city;
+    /*
+     * The state belongs to the city. A different city arrives with its own
+     * state or with none — keeping the old one would file an event in Lisbon
+     * under Alagoas — while the same city sent again keeps the state it had,
+     * so a form that resends every field does not erase it.
+     */
+    const cityChanged =
+      dto.city !== undefined &&
+      normalizeCity(dto.city) !== normalizeCity(event.city);
+    const state =
+      dto.state !== undefined ? dto.state : cityChanged ? null : event.state;
+    const stateKey = normalizeState(state);
     const businessId =
       dto.businessId === undefined ? event.businessId : dto.businessId;
     const isFree = dto.isFree ?? event.isFree;
@@ -205,7 +221,7 @@ export class CommunityEventsService {
     // event that already began would make a typo in its address unfixable.
     this.assertSchedule(startsAt, endsAt, dto.startsAt !== undefined);
     this.assertContact(contactEmail, contactPhone);
-    await this.assertBusinessUsable(businessId, city);
+    await this.assertBusinessUsable(businessId, city, stateKey);
 
     // The slug is the public URL. It is regenerated while the event has never
     // been public, and frozen once it has been approved — including on the
@@ -231,6 +247,8 @@ export class CommunityEventsService {
       timezone,
       countryCode: dto.countryCode ?? event.countryCode,
       city,
+      state,
+      stateKey,
       venueName: dto.venueName ?? event.venueName,
       venueAddress: dto.venueAddress ?? event.venueAddress,
       lat: dto.lat ?? event.lat,
@@ -412,6 +430,7 @@ export class CommunityEventsService {
     const filters = {
       countryCode: query.countryCode,
       city: query.city,
+      state: query.state,
       when,
       ...(hasReach
         ? { lat: query.lat, lng: query.lng, radius: query.radius }
@@ -789,6 +808,7 @@ export class CommunityEventsService {
   private async assertBusinessUsable(
     businessId: string | null | undefined,
     city: string,
+    stateKey: string | null,
   ): Promise<void> {
     if (!businessId) return;
 
@@ -800,6 +820,13 @@ export class CommunityEventsService {
       throw new BadRequestException('Negócio não está público');
     }
     if (business.city.trim().toLowerCase() !== city.trim().toLowerCase()) {
+      throw new BadRequestException('Negócio não está na cidade do evento');
+    }
+    // Same name, another state: a restaurant in Campo Grande, Mato Grosso do
+    // Sul, does not host an event in Campo Grande, Alagoas. Compared only when
+    // both sides say — a business or an event that never named its state is
+    // not refused for something nobody knows.
+    if (business.stateKey && stateKey && business.stateKey !== stateKey) {
       throw new BadRequestException('Negócio não está na cidade do evento');
     }
   }
@@ -854,6 +881,7 @@ export class CommunityEventsService {
       timezone: event.timezone,
       countryCode: event.countryCode,
       city: event.city,
+      state: event.state,
       venueName: event.venueName,
       venueAddress: event.venueAddress,
       lat: event.lat,

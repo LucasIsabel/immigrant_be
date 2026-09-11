@@ -34,6 +34,16 @@ export class PlacesListQueryDto {
   @IsOptional()
   city?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'State of the city, to tell namesakes apart. Read only together with `city`; without it the city filter answers exactly as before.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsString()
+  @Length(1, 120)
+  @IsOptional()
+  state?: string;
+
   @ApiPropertyOptional({ enum: PlaceCategory, example: PlaceCategory.MUSEUM })
   @IsEnum(PlaceCategory)
   @IsOptional()

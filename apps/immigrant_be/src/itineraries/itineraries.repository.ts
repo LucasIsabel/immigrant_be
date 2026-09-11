@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma, PlaceReviewStatus } from '../../../../generated/prisma';
-import { normalizeCity } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '../business/city-key';
 
 /**
  * What a stop needs to be rendered, from whichever side it points at.
@@ -15,6 +15,7 @@ const stopSelect = {
   id: true,
   position: true,
   city: true,
+  state: true,
   placeId: true,
   businessId: true,
   place: {
@@ -31,6 +32,7 @@ const stopSelect = {
       slug: true,
       countryCode: true,
       city: true,
+      state: true,
     },
   },
   business: {
@@ -193,6 +195,8 @@ export class ItinerariesRepository {
       businessId: string | null;
       city: string;
       cityKey: string;
+      state: string | null;
+      stateKey: string | null;
     }[];
   }): Promise<ItineraryRow> {
     const { stops, ...itinerary } = data;
@@ -262,6 +266,8 @@ export class ItinerariesRepository {
         businessId: string | null;
         city: string;
         cityKey: string;
+        state: string | null;
+        stateKey: string | null;
       }[];
     },
   ): Promise<ItineraryRow> {
@@ -313,14 +319,14 @@ export class ItinerariesRepository {
   findAddablePlace(id: string) {
     return this.prisma.place.findFirst({
       where: { id, isActive: true, reviewStatus: PlaceReviewStatus.APPROVED },
-      select: { id: true, city: true },
+      select: { id: true, city: true, state: true },
     });
   }
 
   findAddableBusiness(id: string) {
     return this.prisma.business.findFirst({
       where: { id, isPublic: true },
-      select: { id: true, city: true },
+      select: { id: true, city: true, state: true },
     });
   }
 
@@ -338,6 +344,8 @@ export class ItinerariesRepository {
     businessId: string | null;
     city: string;
     cityKey: string;
+    state: string | null;
+    stateKey: string | null;
   }): Promise<StopRow> {
     return this.prisma.$transaction(async (tx) => {
       const last = await tx.itineraryStop.aggregate({
@@ -404,7 +412,9 @@ export class ItinerariesRepository {
   private publicWhere(filters: {
     countryCode?: string;
     city?: string;
+    state?: string;
   }): Prisma.ItineraryWhereInput {
+    const stateKey = stateFilterKey(filters);
     return {
       isPublic: true,
       ...(filters.countryCode
@@ -423,13 +433,16 @@ export class ItinerariesRepository {
         some: {
           ...this.availableStop,
           ...(filters.city ? { cityKey: normalizeCity(filters.city) } : {}),
+          // The same stop answers for the state, or Campo Grande, Alagoas
+          // would be satisfied by a stop in the other Campo Grande.
+          ...(stateKey ? { stateKey } : {}),
         },
       },
     };
   }
 
   async listPublic(
-    filters: { countryCode?: string; city?: string },
+    filters: { countryCode?: string; city?: string; state?: string },
     skip: number,
     take: number,
   ): Promise<[ItineraryRow[], number]> {

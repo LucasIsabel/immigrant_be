@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ItineraryCityDto } from './itinerary-city.dto';
 
 export class PublicItinerarySummaryDto {
   @ApiProperty() slug: string;
@@ -11,6 +12,13 @@ export class PublicItinerarySummaryDto {
     example: ['Lagos', 'Cascais'],
   })
   cities: string[];
+
+  @ApiProperty({
+    description:
+      'The same cities with their state, in the same order — so two cities that share a name stay two.',
+    type: [ItineraryCityDto],
+  })
+  cityStates: ItineraryCityDto[];
 
   @ApiProperty({ description: 'Stops a visitor can actually see.', example: 6 })
   stopCount: number;
@@ -37,6 +45,16 @@ export class PaginatedPublicItinerariesResponseDto {
 export class PublicItineraryPlaceRefDto {
   @ApiProperty({ example: 'PT' }) countryCode: string;
   @ApiProperty({ example: 'Lisbon' }) city: string;
+
+  @ApiPropertyOptional({
+    description:
+      'State of the city. With the other three it is what identifies the place: one slug can exist in two cities that share a name.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
+
   @ApiProperty({ example: 'torre-de-belem' }) slug: string;
 }
 
@@ -55,6 +73,13 @@ export class PublicItineraryStopDto {
 
   @ApiProperty() name: string;
   @ApiProperty() city: string;
+
+  @ApiPropertyOptional({
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   imageUrl?: string | null;

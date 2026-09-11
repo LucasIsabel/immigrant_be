@@ -305,6 +305,15 @@ Place ─────────── PlaceTranslation (1:N) — só descripti
   de ser o do CountriesNow ("Lisbon", não "Lisboa"), senão a cidade escolhida
   no frontend nunca casa com os lugares. `name` não é traduzido de propósito:
   é o que está na placa e no mapa.
+  `state`/`state_key` dizem de qual das cidades homónimas se trata (ver `Business`).
+  Aqui `state_key` é **NOT NULL com default `''`**, e não anulável como nos outros
+  modelos, porque entra na unique `[countryCode, city, stateKey, slug]`: no Postgres
+  NULLs são distintos num índice único, e com a coluna anulável dois lugares sem estado
+  com o mesmo slug deixariam de colidir — o upsert da ingestão duplicaria em vez de
+  actualizar. Trocar a unique antiga `[countryCode, city, slug]` foi o único passo não
+  aditivo da mudança (migration própria, `20260911120100_places_unique_with_state`):
+  todos os lugares existentes têm `''`, então a chave nova aceita exactamente as linhas
+  que a antiga aceitava, e o índice novo nasce antes de o velho sair.
 
 CityIngestion ─── Place (1:N) — uma tentativa de popular os lugares de uma cidade
   status: PROCESSING | FAILED | READY_FOR_REVIEW | APPROVED | REJECTED
@@ -314,9 +323,17 @@ CityIngestion ─── Place (1:N) — uma tentativa de popular os lugares de u
   ou editar lugares individuais dentro dela.
   Não há model "PlaceCandidate": o `Place` em `reviewStatus: DRAFT` já é o
   candidato, e um segundo model seria código morto.
-  `osmAreaId`/`osmMatchedName` guardam o resultado da resolução de área no OSM,
-  para o retry não repetir a consulta — e porque o nome que o OSM usa ("Lisboa")
-  não é o da nossa lista de cidades ("Lisbon").
+  `osmAreaId`/`osmMatchedName` são **legado do piloto Overpass**: o worker resolve a
+  cidade no Wikidata e já não lê nem escreve essas colunas (o `saveResolvedArea`, que as
+  escrevia, não tinha chamador e foi removido). Ficam para as ingestões dessa época
+  continuarem a ler-se como liam.
+  `cityWikidataId` guarda o QID em que o worker resolveu a cidade — o nome é o que o admin
+  pediu, o QID é o que se encontrou, e é a única identidade da cidade que alguém
+  verificou. Antes ia só para o log.
+  `state`/`state_key`: a guarda "uma ingestão ativa por cidade" lê `(countryCode, city,
+  stateKey)`, então Campo Grande/MS e Campo Grande/AL correm lado a lado, e a mesma tripla
+  continua a dar 409. O `state_key` é dobrado pela **API** ao criar a linha e copiado pelo
+  worker para os lugares: a dobra vive num só app, e o worker nunca a repete.
   `stats` guarda os contadores da execução e a lista de conflitos com lugares já
   curados; essa lista é a métrica de redescoberta do piloto.
 
@@ -483,6 +500,39 @@ Business ─── Users (N:1) — negócio local de um imigrante
     por `normalizeCity` em `BusinessRepository`, num único ponto por onde passam todas
     as escritas ao vivo, e é **NOT NULL** — uma chave ausente esconderia o negócio da
     busca em silêncio, e é melhor que uma escrita esquecida estoure.
+  Identidade de cidade: `(country, city_key, state_key)` — desde 2026-09-11 (FE#455). O
+    nome não identifica a cidade: no Brasil 252 nomes repetem-se entre estados (Campo
+    Grande é a capital de Mato Grosso do Sul e é também um município de Alagoas; Belém está
+    no Pará, em Alagoas e na Paraíba), e dentro de um estado nenhum repete. Continuam a ser
+    strings, sem tabela `cities`: o catálogo do produto (CountriesNow) não oferece id mais
+    estável do que `(país, estado, nome)`, e uma tabela seria a mesma tripla com uma
+    indirecção a mais. `state_key` é `normalizeState(state)` — a mesma dobra de
+    `normalizeCity`, em `business/city-key.ts`, derivada no mesmo ponto único de escrita — e
+    é **anulável**: há países sem subdivisão e negócios anteriores à regra. A migration
+    `20260911120000_city_state_identity` preencheu-a a partir de `state` com o mesmo
+    `translate` da `city_key`, para SQL e TypeScript darem a mesma chave.
+    O estado é **desempate, nunca nível**. Os filtros por cidade (`/business/public` e o
+    raio, `/business/public/cities`, `/places/public`, `/places/public/cities`,
+    `/events/public`, `/itineraries/public`, `/my-city/summary`, admin de ingestões e de
+    catálogo) aceitam `state` opcional e só o comparam **junto com `city`** e **quando vem**
+    (`stateFilterKey`). Sem `state` a consulta é byte a byte a de antes, e os links já
+    partilhados continuam a resolver. As listas de cidades agrupam também pelo estado e
+    devolvem `state` (nulo quando não há): duas "Campo Grande" são duas entradas com dois
+    centros, e não um centro no meio do caminho. Nenhum campo existente mudou de tipo — só
+    se acrescentaram (`state`, `cityStates`, `cityWikidataId`), porque o FE em produção lê
+    as formas de hoje.
+    Buraco assumido: o centro de recuo da busca por raio continua agrupado só por
+    `city_key`, e um negócio sem coordenada numa cidade homónima recua para a média das
+    duas. Separar por estado tiraria o centro aos negócios antigos que não têm estado.
+  Estado obrigatório no cadastro quando o país tem estados. `BusinessService` pergunta ao
+    `CountriesNowService` (o mesmo cache de 24 h do proxy) se o país tem subdivisões — só
+    quando o estado falta, então um formulário completo nunca espera por ele — e, se tem,
+    responde 400 "Informe o estado do negócio…". Vale no create e em todo rascunho que mexa
+    em `city`, `state` ou `country`, ao salvar e de novo ao publicar (rascunhos antigos
+    continuam guardados). **Falha aberta**: se o CountriesNow não responder, o cadastro
+    passa e fica um warning no log. A queda de um terceiro não pode virar um cadastro que
+    ninguém consegue fazer, e um negócio sem estado continua a ser encontrado pela cidade,
+    como todos eram antes.
   Pré-filtro por caixa delimitadora antes do Haversine (`bounding-box.ts`), com índice
     `@@index([lat, lng])`. Sem ele o Postgres calculava a distância de todas as linhas
     públicas — `Seq Scan`, 52 ms com 200 mil negócios, e o bloco "por perto" dispara
@@ -522,6 +572,13 @@ CommunityEvent ─┬── Users (N:1, "OrganizedEvents") — quem publicou
   Enum CommunityEventStatus: DRAFT | PENDING_REVIEW | APPROVED | REJECTED | CANCELLED
   Enum CommunityEventCategory: CONCERT | FAIR | MEETUP | WORKSHOP | EXHIBITION | SPORTS | FOOD | OTHER
   `Events` já é a tabela de notificações do utilizador — daí `CommunityEvent`, e não `Event`.
+  `state`/`state_key` opcionais (FE#455): desempate entre cidades homónimas, nunca nível
+    obrigatório — um evento sem estado continua listado pela cidade. O anfitrião é
+    recusado ("Negócio não está na cidade do evento") quando os dois lados nomeiam um
+    estado e discordam; quem nunca nomeou o seu não é recusado por algo que ninguém sabe.
+    Numa edição, uma cidade **diferente** sem estado limpa o estado antigo (guardá-lo
+    arquivaria um evento de Maceió no estado da cidade anterior), e a mesma cidade
+    reenviada mantém-no — um formulário que reenvia tudo não o apaga.
   Desde 2026-09-05 ela é também a **caixa de entrada**: ganhou `readAt` (nulo = por ler, e
   é isso que o contador do sino conta) mais três índices — `(userId, status)` para o poll do
   SSE, `(userId, createdAt desc)` para a listagem e `(userId, readAt)` para o contador.
@@ -614,7 +671,13 @@ City. Três decisões de modelagem carregam o porquê:
   prendê-lo a uma cidade tornaria esse caso impossível. O filtro público por
   cidade responde "roteiros que passam por aqui" através de
   `ItineraryStop.cityKey`, desnormalizado do alvo no momento em que a parada
-  entra — uma coluna indexada em vez de um leque de junções.
+  entra — uma coluna indexada em vez de um leque de junções. Desde FE#455 a
+  parada copia também `state`/`stateKey` do alvo (o estado do negócio ou do
+  lugar), e o filtro por `state` é lido **pela mesma parada** que responde pela
+  cidade — senão Campo Grande/AL seria satisfeita por uma parada na outra Campo
+  Grande. As respostas mantêm `cities: string[]`, que o FE já lê, e ganham ao
+  lado `cityStates: { city, state }[]`. A migration preencheu o estado das
+  paradas já existentes a partir dos negócios para onde apontam.
 - **Tabela filha, não JSON.** O itinerário do guia turístico vive como JSON em
   `Business.typeData`, e a diferença é de natureza: aquele guarda conteúdo
   autoral do próprio negócio, que nasce e morre com ele, enquanto uma parada
@@ -1447,6 +1510,16 @@ classificação é do nosso lado, por tabela explícita classe → categoria com
 salto de `P279` e uma lista de exclusão medida; o descarte vai para
 `stats.droppedAsUnmapped`. Detalhes e métricas em `docs/DATA_SOURCES.md`.
 
+**Com estado, a cidade homónima certa (FE#455).** Pelo desempate de sitelinks,
+"Campo Grande" (BR) resolvia sempre a capital de Mato Grosso do Sul, e a de Alagoas
+era inalcançável. Quando a ingestão traz `state`, `resolveCity` prefere, entre os
+candidatos que já passam pelos filtros de sempre, o que tem na cadeia `P131` um
+rótulo (em qualquer língua) que dobra para o estado: um salto chega para um
+município brasileiro; o segundo só é pedido se o primeiro não decidir — noutros
+países um distrito ou condado fica no meio. Com um candidato só, nada é pedido. Sem
+estado, ou quando nenhum candidato está nele, fica o desempate por sitelinks, e o
+worker regista um warning. O QID escolhido vai para `city_ingestions.city_wikidata_id`.
+
 **Convergência.** Cada job de texto, ao terminar, chama `markReadyIfDone`, um
 `updateMany` com `status: PROCESSING` no `where` — compare-and-set, um só job
 vence e o aviso ao admin sai uma vez. Texto que falhou em definitivo é gravado
@@ -1498,7 +1571,7 @@ medidos no conjunto completo do Porto:
   duas linhas do SPARQL ("Liberty City", em Miami). A identidade é o QID; a
   descoberta colapsa por ele antes de qualquer outra coisa.
 - **Lugares diferentes com o mesmo nome** — `Forte de São João Baptista` são
-  dois fortes (Q10283826 e Q10284015). Como `[countryCode, city, slug]` é a
+  dois fortes (Q10283826 e Q10284015). Como `[countryCode, city, stateKey, slug]` é a
   chave única, colidir significa o segundo upsert sobrescrever o primeiro em
   silêncio. `uniqueSlugs` sufixa o perdedor com o **Wikidata id**, não um
   contador: o id é estável, enquanto um contador dependeria da ordenação e um
@@ -1511,7 +1584,9 @@ na mesma chamada `wbgetentities` que o ranqueamento já faz — zero requisiçõ
 extras. Por lugar criado com imagem: `imageinfo` do Commons (URL **nunca é
 montada na mão** — URLs montadas renderam dez HTTP 400 seguidos neste projeto),
 download com User-Agent identificado, upload em chave determinística
-(`places/{iso2}/{cidade}/{slug}.jpg`, re-run sobrescreve) e gravação de
+(`places/{iso2}/{cidade}/{slug}.jpg`, re-run sobrescreve; quando o lugar tem estado,
+`places/{iso2}/{estado}/{cidade}/{slug}.jpg`, para duas cidades homónimas não se
+sobrescreverem — sem estado fica a forma antiga, e os objetos já guardados mantêm a URL) e gravação de
 `imageUrl` + `imageLicense` + `imageAuthor` — licença CC exige o crédito onde a
 imagem aparece, e hospedar o arquivo não desobriga. Os jobs de imagem correm
 **fora da convergência**: cidade fica `READY` quando os textos terminam, imagem
@@ -1519,7 +1594,7 @@ que falhar em definitivo é logada e o card cai no tom da categoria. Lugares
 anteriores ao pipeline: `pnpm places:backfill-images` (relatório; `--run`
 enfileira).
 
-**O curado é intocável.** O upsert por `[countryCode, city, slug]` torna a
+**O curado é intocável.** O upsert por `[countryCode, city, stateKey, slug]` torna a
 ingestão idempotente, mas seria também o caminho para uma descrição gerada
 substituir uma escrita à mão. Lugar já existente com `reviewStatus != DRAFT`
 não é tocado e vira `stats.conflicts[]` — que é justamente a métrica de
@@ -1535,8 +1610,8 @@ frontend; schema inline não gera nada utilizável e um `$ref` dentro dele exigi
 
 | Rota | Resposta | Regra |
 | --- | --- | --- |
-| `POST /admin/places/ingestions` | `CityIngestionResponseDto` (202) | 409 se já houver ingestão `PROCESSING` ou `READY_FOR_REVIEW` da cidade |
-| `GET  /admin/places/ingestions` | `PaginatedCityIngestionsResponseDto` | filtro por `status`, paginação server-side |
+| `POST /admin/places/ingestions` | `CityIngestionResponseDto` (202) | `state` opcional; 409 se já houver ingestão `PROCESSING` ou `READY_FOR_REVIEW` da mesma `(countryCode, city, stateKey)` |
+| `GET  /admin/places/ingestions` | `PaginatedCityIngestionsResponseDto` | filtro por `status`, `countryCode`, `city` e `state` (só junto com `city`), paginação server-side |
 | `GET  /admin/places/ingestions/:id` | `CityIngestionDetailResponseDto` | lugares + traduções + proveniência + conflitos |
 | `PATCH …/:id/places/:placeId` | `AdminPlaceResponseDto` | 409 se o lugar não estiver em `DRAFT` |
 | `POST …/:id/places/:placeId/reject` | `AdminPlaceResponseDto` | o motivo vai para `stats.placeRejections[]` |

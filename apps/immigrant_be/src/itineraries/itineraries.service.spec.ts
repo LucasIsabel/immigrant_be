@@ -42,6 +42,7 @@ function fakeRepository() {
     id: string;
     position: number;
     city: string;
+    state?: string | null;
     placeId: string | null;
     businessId: string | null;
     place: {
@@ -198,10 +199,14 @@ function fakeRepository() {
       itineraries.delete(id);
     }),
     findAddablePlace: jest.fn(async (id: string) =>
-      id.startsWith('place') ? { id, city: 'Lagos' } : null,
+      id.startsWith('place')
+        ? { id, city: 'Lagos', state: null as string | null }
+        : null,
     ),
     findAddableBusiness: jest.fn(async (id: string) =>
-      id.startsWith('biz') ? { id, city: 'Cascais' } : null,
+      id.startsWith('biz')
+        ? { id, city: 'Cascais', state: null as string | null }
+        : null,
     ),
     addStop: jest.fn(
       async (data: {
@@ -209,6 +214,7 @@ function fakeRepository() {
         placeId: string | null;
         businessId: string | null;
         city: string;
+        state?: string | null;
       }) => {
         const row = itineraries.get(data.itineraryId);
         if (!row) throw new Error('missing');
@@ -233,6 +239,7 @@ function fakeRepository() {
           };
         }
         stop.city = data.city;
+        stop.state = data.state ?? null;
         row.stops.push(stop);
         row.updatedAt = laterThan(row.updatedAt);
         return structuredClone(stop);
@@ -445,6 +452,80 @@ describe('ItinerariesService', () => {
       countryCode: 'pt',
       defaultTitle: 'Meu roteiro em Portugal',
     });
+
+  describe('the state of a city', () => {
+    it('copies the state of the target onto the stop, with both keys', async () => {
+      repo.findAddableBusiness.mockResolvedValueOnce({
+        id: 'biz-al',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      });
+
+      await service.addStop('user-a', {
+        businessId: 'biz-al',
+        countryCode: 'BR',
+        defaultTitle: 'Roteiro no Brasil',
+      });
+
+      expect(repo.addStop).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city: 'Campo Grande',
+          cityKey: 'campo grande',
+          state: 'Alagoas',
+          stateKey: 'alagoas',
+        }),
+      );
+    });
+
+    it('keeps two cities that share a name apart, without touching `cities`', async () => {
+      // `cities` stays a list of names because the frontend parses it; the
+      // state rides beside it.
+      repo.findAddableBusiness
+        .mockResolvedValueOnce({
+          id: 'biz-ms',
+          city: 'Campo Grande',
+          state: 'Mato Grosso do Sul',
+        })
+        .mockResolvedValueOnce({
+          id: 'biz-al',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+        });
+
+      const first = await service.addStop('user-a', {
+        businessId: 'biz-ms',
+        countryCode: 'BR',
+        defaultTitle: 'Roteiro no Brasil',
+      });
+      await service.addStop('user-a', {
+        itineraryId: first.itineraryId,
+        businessId: 'biz-al',
+        countryCode: 'BR',
+        defaultTitle: 'Roteiro no Brasil',
+      });
+
+      const [summary] = (await service.listMine('user-a', {})).data;
+      expect(summary.cities).toEqual(['Campo Grande']);
+      expect(summary.cityStates).toEqual([
+        { city: 'Campo Grande', state: 'Mato Grosso do Sul' },
+        { city: 'Campo Grande', state: 'Alagoas' },
+      ]);
+    });
+
+    it('hands the state to the public filter alongside the city', async () => {
+      await service.listPublic({
+        countryCode: 'BR',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      });
+
+      expect(repo.listPublic).toHaveBeenCalledWith(
+        { countryCode: 'BR', city: 'Campo Grande', state: 'Alagoas' },
+        0,
+        20,
+      );
+    });
+  });
 
   describe('quick-add', () => {
     it('creates the itinerary on the first stop and appends afterwards', async () => {

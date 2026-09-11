@@ -280,4 +280,70 @@ describe('MyCityRepository', () => {
       expect(mockPrismaService.$queryRaw).not.toHaveBeenCalled();
     });
   });
+
+  describe('the state of the city', () => {
+    /**
+     * Campo Grande is two cities. A tab counting both over a list of one would
+     * be the defect these counts exist to avoid — and a request without a
+     * state has to count exactly what it counted before.
+     */
+    it('narrows the business count to the city in that state', async () => {
+      await repository.countBusinesses({
+        country: 'Brazil',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      });
+
+      expect(sqlOf(0)).toContain('b.state_key');
+    });
+
+    it('counts businesses as it always did when no state is sent', async () => {
+      await repository.countBusinesses({
+        country: 'Brazil',
+        city: 'Campo Grande',
+      });
+
+      expect(sqlOf(0)).not.toContain('state_key');
+    });
+
+    it('narrows the typed event and place counts', async () => {
+      mockPrismaService.communityEvent.count.mockResolvedValue(0);
+      mockPrismaService.place.count.mockResolvedValue(0);
+      const inAlagoas = {
+        countryCode: 'BR',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      };
+
+      await repository.countEvents(inAlagoas);
+      await repository.countPlaces(inAlagoas);
+
+      const whereOf = (mock: jest.Mock) =>
+        (mock.mock.calls[0][0] as { where: Record<string, unknown> }).where;
+      expect(whereOf(mockPrismaService.communityEvent.count)).toMatchObject({
+        stateKey: 'alagoas',
+      });
+      expect(whereOf(mockPrismaService.place.count)).toMatchObject({
+        stateKey: 'alagoas',
+      });
+    });
+
+    it('narrows the measured counts as well', async () => {
+      mockPrismaService.$queryRaw.mockResolvedValue([{ total: 0n }]);
+      const aroundAlagoas = {
+        countryCode: 'BR',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+        lat: -9.95,
+        lng: -36.16,
+        radius: 10,
+      };
+
+      await repository.countEvents(aroundAlagoas);
+      await repository.countPlaces(aroundAlagoas);
+
+      expect(sqlOf(0)).toContain('e.state_key');
+      expect(sqlOf(1)).toContain('p.state_key');
+    });
+  });
 });

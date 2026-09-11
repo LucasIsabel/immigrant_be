@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from '../business/bounding-box';
-import { normalizeCity } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '../business/city-key';
 
 interface CountArgs {
   country?: string;
   countryCode?: string;
   city?: string;
+  /** Which of the cities with that name. Ignored without `city`. */
+  state?: string;
   lat?: number;
   lng?: number;
   radius?: number;
@@ -43,6 +45,12 @@ export class MyCityRepository {
     const inCity: Prisma.Sql[] = [];
     if (args.city) {
       inCity.push(Prisma.sql`b.city_key = ${normalizeCity(args.city)}`);
+    }
+    // Part of the city clause, not a reach of its own: it narrows which city
+    // is meant, and the reach around the centre stays what it was.
+    const stateKey = stateFilterKey(args);
+    if (stateKey) {
+      inCity.push(Prisma.sql`b.state_key = ${stateKey}`);
     }
 
     /*
@@ -165,6 +173,7 @@ export class MyCityRepository {
   /** Approved events that have not finished yet, as the strip lists them. */
   async countEvents(args: CountArgs): Promise<number> {
     const reach = this.reachSql(args, 'e');
+    const stateKey = stateFilterKey(args);
 
     // No coordinates, no distance to measure: the typed query stays exactly as
     // it was, so a city view without GPS answers byte for byte what it did.
@@ -177,6 +186,7 @@ export class MyCityRepository {
           ...(args.city
             ? { city: { equals: args.city, mode: 'insensitive' as const } }
             : {}),
+          ...(stateKey ? { stateKey } : {}),
           OR: [
             { endsAt: { gte: now } },
             { endsAt: null, startsAt: { gte: now } },
@@ -196,6 +206,9 @@ export class MyCityRepository {
     if (args.city) {
       conditions.push(Prisma.sql`lower(e.city) = lower(${args.city})`);
     }
+    if (stateKey) {
+      conditions.push(Prisma.sql`e.state_key = ${stateKey}`);
+    }
 
     const [row] = await this.prisma.$queryRaw<{ total: bigint }[]>(
       Prisma.sql`SELECT COUNT(*)::bigint AS total
@@ -208,6 +221,7 @@ export class MyCityRepository {
   /** Places the public list would show — active ones, in this city. */
   async countPlaces(args: CountArgs): Promise<number> {
     const reach = this.reachSql(args, 'p');
+    const stateKey = stateFilterKey(args);
 
     if (!reach) {
       return this.prisma.place.count({
@@ -217,6 +231,7 @@ export class MyCityRepository {
           ...(args.city
             ? { city: { equals: args.city, mode: 'insensitive' as const } }
             : {}),
+          ...(stateKey ? { stateKey } : {}),
         },
       });
     }
@@ -227,6 +242,9 @@ export class MyCityRepository {
     }
     if (args.city) {
       conditions.push(Prisma.sql`lower(p.city) = lower(${args.city})`);
+    }
+    if (stateKey) {
+      conditions.push(Prisma.sql`p.state_key = ${stateKey}`);
     }
 
     const [row] = await this.prisma.$queryRaw<{ total: bigint }[]>(

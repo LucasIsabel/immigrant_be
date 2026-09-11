@@ -15,6 +15,15 @@ export class PlaceCityDto {
   city: string;
 
   @ApiProperty({
+    description:
+      'State of the city, or null when its places name none. Two entries share a city name only when this differs.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state: string | null;
+
+  @ApiProperty({
     description: 'Quantos lugares ativos a cidade tem',
     example: 10,
   })

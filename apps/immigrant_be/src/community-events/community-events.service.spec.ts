@@ -187,6 +187,52 @@ describe('CommunityEventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('refuses a host in the namesake city of another state', async () => {
+      // A restaurant in Campo Grande, Mato Grosso do Sul, is a thousand
+      // kilometres from an event in Campo Grande, Alagoas.
+      repository.findBusinessForEvent.mockResolvedValue({
+        id: 'biz-1',
+        isPublic: true,
+        city: 'Campo Grande',
+        stateKey: 'mato grosso do sul',
+      });
+
+      await expect(
+        service.create(
+          'user-1',
+          validCreateDto({
+            businessId: 'biz-1',
+            countryCode: 'BR',
+            city: 'Campo Grande',
+            state: 'Alagoas',
+          }),
+        ),
+      ).rejects.toThrow('Negócio não está na cidade do evento');
+    });
+
+    it('accepts a host that never named its state, and keeps the event state', async () => {
+      repository.findBusinessForEvent.mockResolvedValue({
+        id: 'biz-1',
+        isPublic: true,
+        city: 'Campo Grande',
+        stateKey: null,
+      });
+
+      await service.create(
+        'user-1',
+        validCreateDto({
+          businessId: 'biz-1',
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+        }),
+      );
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'Alagoas', stateKey: 'alagoas' }),
+      );
+    });
+
     it('refuses an event nobody can be contacted about', async () => {
       await expect(
         service.create(
@@ -269,6 +315,49 @@ describe('CommunityEventsService', () => {
   });
 
   describe('update', () => {
+    it('drops the old state when the event moves to another city', async () => {
+      // Keeping it would file an event in Maceió under whichever state the
+      // old city happened to be in — here the right one by luck, elsewhere not.
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          stateKey: 'alagoas',
+        }),
+      );
+
+      await service.update('event-1', 'user-1', { city: 'Maceió' });
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'event-1',
+        expect.objectContaining({
+          city: 'Maceió',
+          state: null,
+          stateKey: null,
+        }),
+      );
+    });
+
+    it('keeps the state when the same city is sent again', async () => {
+      // A form that resends every field must not erase what it never showed.
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          stateKey: 'alagoas',
+        }),
+      );
+
+      await service.update('event-1', 'user-1', { city: 'Campo Grande' });
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'event-1',
+        expect.objectContaining({ state: 'Alagoas', stateKey: 'alagoas' }),
+      );
+    });
+
     it('sends an approved event back to review', async () => {
       repository.findByIdAndOrganizer.mockResolvedValue(
         eventWith({

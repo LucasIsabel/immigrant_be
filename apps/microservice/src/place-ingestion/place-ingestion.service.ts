@@ -74,10 +74,11 @@ export class PlaceIngestionService {
       );
     }
 
-    const { countryCode, city } = ingestion;
+    const { countryCode, city, state, stateKey } = ingestion;
 
     await this.repository.markStep(ingestionId, 'resolve_city');
-    const cityRef = await this.resolveCity(countryCode, city);
+    const cityRef = await this.resolveCity(countryCode, city, state);
+    await this.repository.saveCityWikidataId(ingestionId, cityRef.wikidataId);
 
     await this.repository.markStep(ingestionId, 'discover');
     const discovered = await this.discover(cityRef.wikidataId);
@@ -88,8 +89,7 @@ export class PlaceIngestionService {
     const countryId = await this.resolveCountryId(countryCode);
     const { created, conflicts } = await this.repository.persistDrafts(
       ingestionId,
-      countryCode,
-      city,
+      { countryCode, city, state, stateKey },
       countryId,
       ranked.places,
     );
@@ -172,7 +172,13 @@ export class PlaceIngestionService {
     }
 
     const extension = info.mime === 'image/png' ? 'png' : 'jpg';
-    const key = `places/${place.countryCode.toLowerCase()}/${slugify(place.city)}/${place.slug}.${extension}`;
+    // The state enters the path only when there is one: two Campo Grandes
+    // must not overwrite each other's `catedral`, and every object stored
+    // before states existed keeps the key its URL already points at.
+    const cityPath = place.state
+      ? `${slugify(place.state)}/${slugify(place.city)}`
+      : slugify(place.city);
+    const key = `places/${place.countryCode.toLowerCase()}/${cityPath}/${place.slug}.${extension}`;
     const { url } = await this.storage.uploadFileAtKey(bytes, key, info.mime);
 
     await this.repository.savePlaceImage(placeId, {
@@ -288,11 +294,19 @@ export class PlaceIngestionService {
     await this.repository.markFailed(ingestionId, step, message);
   }
 
-  private async resolveCity(countryCode: string, city: string) {
+  private async resolveCity(
+    countryCode: string,
+    city: string,
+    state: string | null,
+  ) {
     try {
-      const resolved = await this.discovery.resolveCity(countryCode, city);
+      const resolved = await this.discovery.resolveCity(
+        countryCode,
+        city,
+        state ?? undefined,
+      );
       this.logger.log(
-        `${city} (${countryCode}) is ${resolved.wikidataId} "${resolved.label}"`,
+        `${city}${state ? `, ${state}` : ''} (${countryCode}) is ${resolved.wikidataId} "${resolved.label}"`,
       );
       return resolved;
     } catch (error) {

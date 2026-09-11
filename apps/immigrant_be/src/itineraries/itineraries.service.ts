@@ -6,7 +6,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma';
-import { normalizeCity } from '../business/city-key';
+import { cityIdentity } from '../business/city-key';
+import { ItineraryCityDto } from './dto/itinerary-city.dto';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { buildItinerarySlugBase } from './itinerary-slug';
@@ -94,6 +95,7 @@ export class ItinerariesService {
       title: row.title,
       countryCode: row.countryCode,
       cities: [...new Set(stops.filter((s) => s.available).map((s) => s.city))],
+      cityStates: citiesWalked(stops.filter((s) => s.available)),
       stopCount: stops.filter((s) => s.available).length,
       unavailableStopCount: stops.filter((s) => !s.available).length,
       // The same rule the public listing uses, off the stops this already
@@ -322,7 +324,8 @@ export class ItinerariesService {
       placeId: target.kind === 'place' ? target.id : null,
       businessId: target.kind === 'business' ? target.id : null,
       city: target.city,
-      cityKey: normalizeCity(target.city),
+      state: target.state,
+      ...cityIdentity(target),
     });
 
     return {
@@ -390,7 +393,7 @@ export class ItinerariesService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const [rows, total] = await this.repository.listPublic(
-      { countryCode: query.countryCode, city: query.city },
+      { countryCode: query.countryCode, city: query.city, state: query.state },
       (page - 1) * limit,
       limit,
     );
@@ -403,6 +406,7 @@ export class ItinerariesService {
           title: row.title,
           countryCode: row.countryCode,
           cities: [...new Set(stops.map((stop) => stop.city))],
+          cityStates: citiesWalked(stops),
           stopCount: stops.length,
           // The first stop with a photo, not the first stop: a cover that is
           // blank because stop one happens to have no picture says nothing
@@ -461,15 +465,15 @@ export class ItinerariesService {
         placeId: stop.placeId,
         businessId: stop.businessId,
         city: stop.city,
+        state: stop.state,
         /*
-         * Derived again rather than read across: `cityKey` is only ever
-         * compared against `normalizeCity(filter)` computed at query time, so
-         * a key written under an older normalisation is already unfindable.
-         * Re-deriving means the copy answers the city filter the way a stop
-         * added today would, instead of inheriting a key that no longer
-         * matches anything.
+         * Derived again rather than read across: the keys are only ever
+         * compared against a filter folded at query time, so a key written
+         * under an older normalisation is already unfindable. Re-deriving means
+         * the copy answers the city filter the way a stop added today would,
+         * instead of inheriting a key that no longer matches anything.
          */
-        cityKey: normalizeCity(stop.city),
+        ...cityIdentity(stop),
       }));
 
     /*
@@ -665,12 +669,14 @@ export class ItinerariesService {
             kind: 'place' as const,
             name: place.name,
             city: stop.city,
+            state: stop.state,
             imageUrl: place.imageUrl,
             lat: place.lat,
             lng: place.lng,
             placeRef: {
               countryCode: place.countryCode,
               city: place.city,
+              state: place.state,
               slug: place.slug,
             },
             businessPageSlug: null,
@@ -685,6 +691,7 @@ export class ItinerariesService {
           kind: 'business' as const,
           name: business.name,
           city: stop.city,
+          state: stop.state,
           imageUrl: this.stopPhoto(business.photos),
           lat: business.lat,
           lng: business.lng,
@@ -716,9 +723,12 @@ export class ItinerariesService {
     return itinerary;
   }
 
-  private async resolveTarget(
-    dto: AddItineraryStopDto,
-  ): Promise<{ kind: 'place' | 'business'; id: string; city: string }> {
+  private async resolveTarget(dto: AddItineraryStopDto): Promise<{
+    kind: 'place' | 'business';
+    id: string;
+    city: string;
+    state: string | null;
+  }> {
     const named = [dto.placeId, dto.businessId].filter(Boolean);
     if (named.length !== 1) {
       throw new BadRequestException(
@@ -731,7 +741,12 @@ export class ItinerariesService {
       if (!place) {
         throw new NotFoundException('Lugar não encontrado');
       }
-      return { kind: 'place', id: place.id, city: place.city };
+      return {
+        kind: 'place',
+        id: place.id,
+        city: place.city,
+        state: place.state,
+      };
     }
 
     const business = await this.repository.findAddableBusiness(
@@ -740,7 +755,12 @@ export class ItinerariesService {
     if (!business) {
       throw new NotFoundException('Negócio não encontrado');
     }
-    return { kind: 'business', id: business.id, city: business.city };
+    return {
+      kind: 'business',
+      id: business.id,
+      city: business.city,
+      state: business.state,
+    };
   }
 
   private async buildUniqueSlug(title: string): Promise<string> {
@@ -788,6 +808,7 @@ export class ItinerariesService {
         lat: stop.place.lat,
         lng: stop.place.lng,
         city: stop.city,
+        state: stop.state,
         available:
           stop.place.isActive && stop.place.reviewStatus === 'APPROVED',
       };
@@ -811,6 +832,7 @@ export class ItinerariesService {
       lat: business.lat,
       lng: business.lng,
       city: stop.city,
+      state: stop.state,
       available: business.isPublic,
     };
   }
@@ -829,4 +851,22 @@ export class ItinerariesService {
       updatedAt: row.updatedAt,
     };
   }
+}
+
+/**
+ * The cities walked, with their state, in walking order.
+ *
+ * Keyed by name **and** state: a route through both Campo Grandes passes
+ * through two cities, which is exactly what `cities`, a list of names, cannot
+ * say.
+ */
+function citiesWalked(
+  stops: { city: string; state?: string | null }[],
+): ItineraryCityDto[] {
+  const walked = new Map<string, ItineraryCityDto>();
+  for (const { city, state = null } of stops) {
+    const key = JSON.stringify([city, state]);
+    if (!walked.has(key)) walked.set(key, { city, state });
+  }
+  return [...walked.values()];
 }

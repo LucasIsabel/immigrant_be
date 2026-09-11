@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { featuredWhere } from '../common/featured/featured';
+import { stateFilterKey } from '../business/city-key';
 import {
   PlaceCitiesQueryDto,
   PlacesListQueryDto,
@@ -22,6 +23,12 @@ export class PlacesRepository {
     // diferentes entre a URL, o seed e o que o usuário digita.
     if (query.city) {
       where.city = { equals: query.city, mode: 'insensitive' };
+    }
+    // Which of two cities with that name, when the request says. Without a
+    // state the filter is the one it always was.
+    const stateKey = stateFilterKey(query);
+    if (stateKey) {
+      where.stateKey = stateKey;
     }
     if (query.category) {
       where.category = query.category;
@@ -67,6 +74,7 @@ export class PlacesRepository {
           countryCode: true,
           countryId: true,
           city: true,
+          state: true,
           lat: true,
           lng: true,
           imageUrl: true,
@@ -98,22 +106,26 @@ export class PlacesRepository {
    * O centro é a média das coordenadas dos lugares da cidade. Não existe model
    * City, então é daqui que sai o único centro confiável — e é por isso que
    * este endpoint existe separado da listagem.
+   *
+   * Grouped by the state as well: two cities that share a name are two
+   * entries with two centres, not one centre averaged between them.
    */
   async findCities(query: PlaceCitiesQueryDto) {
     const rows = await this.prisma.place.groupBy({
-      by: ['countryCode', 'city'],
+      by: ['countryCode', 'city', 'state'],
       where: {
         isActive: true,
         ...(query.countryCode ? { countryCode: query.countryCode } : {}),
       },
       _count: { _all: true },
       _avg: { lat: true, lng: true },
-      orderBy: [{ countryCode: 'asc' }, { city: 'asc' }],
+      orderBy: [{ countryCode: 'asc' }, { city: 'asc' }, { state: 'asc' }],
     });
 
     return rows.map((row) => ({
       countryCode: row.countryCode,
       city: row.city,
+      state: row.state,
       count: row._count._all,
       lat: row._avg.lat ?? 0,
       lng: row._avg.lng ?? 0,

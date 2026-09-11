@@ -40,6 +40,16 @@ export class ListPublicCommunityEventsQueryDto {
   city?: string;
 
   @ApiPropertyOptional({
+    description:
+      'State of the city, to tell namesakes apart. Read only together with `city`; without it the agenda answers exactly as before.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  state?: string;
+
+  @ApiPropertyOptional({
     enum: CommunityEventWhen,
     default: CommunityEventWhen.UPCOMING,
   })

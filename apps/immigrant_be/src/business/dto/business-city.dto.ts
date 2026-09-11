@@ -18,6 +18,15 @@ export class BusinessCityDto {
   @ApiProperty({ example: 'Matosinhos' })
   city: string;
 
+  @ApiProperty({
+    description:
+      'The state the businesses name, or null when they name none. Two entries share a city name only when this differs — Campo Grande in Mato Grosso do Sul and in Alagoas are two cities.',
+    example: 'Porto',
+    nullable: true,
+    type: String,
+  })
+  state: string | null;
+
   @ApiProperty({ description: 'How many listed businesses', example: 3 })
   count: number;
 

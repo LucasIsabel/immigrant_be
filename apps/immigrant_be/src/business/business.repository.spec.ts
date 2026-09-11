@@ -152,7 +152,7 @@ describe('BusinessRepository', () => {
 
       await repository.findPublicCities({ country: 'Portugal' });
 
-      expect(groupByArgs().by).toEqual(['country', 'city']);
+      expect(groupByArgs().by).toEqual(['country', 'city', 'state']);
       expect(groupByArgs().where).toMatchObject({
         isPublic: true,
         country: 'Portugal',
@@ -228,6 +228,140 @@ describe('BusinessRepository', () => {
       const rows = await repository.findPublicCities({});
 
       expect(rows[0]).toMatchObject({ lat: null, lng: null });
+    });
+
+    it('answers one entry per state, each with its own centre', async () => {
+      // Averaging the two Campo Grandes would put the centre a thousand
+      // kilometres from either of them.
+      mockPrismaService.business.groupBy.mockResolvedValue([
+        {
+          country: 'Brazil',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          _count: { _all: 1 },
+          _avg: { lat: -9.95, lng: -36.16 },
+        },
+        {
+          country: 'Brazil',
+          city: 'Campo Grande',
+          state: 'Mato Grosso do Sul',
+          _count: { _all: 4 },
+          _avg: { lat: -20.46, lng: -54.62 },
+        },
+      ]);
+
+      const rows = await repository.findPublicCities({ country: 'Brazil' });
+
+      expect(rows.map((row) => [row.city, row.state, row.lat])).toEqual([
+        ['Campo Grande', 'Alagoas', -9.95],
+        ['Campo Grande', 'Mato Grosso do Sul', -20.46],
+      ]);
+    });
+  });
+
+  describe('the state key', () => {
+    it('derives the key when a business is created with a state', async () => {
+      mockPrismaService.business.create.mockResolvedValue({});
+
+      await repository.create('user-1', {
+        city: 'Campo Grande',
+        state: 'Mato Grosso do Sul',
+      } as never);
+
+      const args = mockPrismaService.business.create.mock.calls[0][0] as {
+        data: Record<string, unknown>;
+      };
+      expect(args.data.stateKey).toBe('mato grosso do sul');
+      expect(args.data.state).toBe('Mato Grosso do Sul');
+    });
+
+    it('leaves the key alone when a write does not touch the state', async () => {
+      // A draft that only renames the city must not blank the state key.
+      mockPrismaService.business.update.mockResolvedValue({});
+
+      await repository.applyDraftAndClearDraft('b-1', {
+        city: 'Dourados',
+      } as never);
+
+      const args = mockPrismaService.business.update.mock.calls[0][0] as {
+        data: Record<string, unknown>;
+      };
+      expect('stateKey' in args.data).toBe(false);
+    });
+
+    const plainWhere = () =>
+      (
+        mockPrismaService.business.findMany.mock.calls[0][0] as {
+          where: Record<string, unknown>;
+        }
+      ).where;
+
+    it('narrows a city by its state when one is sent', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({
+        country: 'Brazil',
+        city: 'Campo Grande',
+        state: 'Alagoas',
+      } as never);
+
+      expect(plainWhere()).toMatchObject({
+        cityKey: 'campo grande',
+        stateKey: 'alagoas',
+      });
+    });
+
+    it('builds the query it always built when no state is sent', async () => {
+      // Every link shared before states existed carries a city and no state.
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({
+        country: 'Brazil',
+        city: 'Campo Grande',
+      } as never);
+
+      expect('stateKey' in plainWhere()).toBe(false);
+    });
+
+    it('does not read a state sent without a city', async () => {
+      mockPrismaService.business.findMany.mockResolvedValue([]);
+      mockPrismaService.business.count.mockResolvedValue(0);
+
+      await repository.findPublic({ state: 'Alagoas' } as never);
+
+      expect('stateKey' in plainWhere()).toBe(false);
+    });
+
+    const radiusSql = async (extra: Record<string, unknown>) => {
+      mockPrismaService.$queryRaw
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ count: BigInt(0) }]);
+
+      await repository.findPublic({
+        country: 'Brazil',
+        city: 'Campo Grande',
+        lat: -20.46,
+        lng: -54.62,
+        radius: 30,
+        ...extra,
+      } as never);
+
+      return (mockPrismaService.$queryRaw.mock.calls[0][0] as { sql: string })
+        .sql;
+    };
+
+    it('narrows the radius search by the state as well', async () => {
+      const sql = await radiusSql({ state: 'Mato Grosso do Sul' });
+
+      expect(sql).toContain('b.state_key =');
+    });
+
+    it('keeps the radius search as it was when no state is sent', async () => {
+      const sql = await radiusSql({});
+
+      expect(sql).not.toContain('state_key');
     });
   });
 

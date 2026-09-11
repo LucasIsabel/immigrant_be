@@ -730,6 +730,19 @@ model Business {
   cityKey      String       @map("city_key") @db.VarChar(100)
   country      String?      @db.VarChar(100)
   state        String?      @db.VarChar(120)
+  /// The state in the form it is **compared** in — the same fold as `cityKey`,
+  /// by `normalizeState`, derived in the same single write point.
+  ///
+  /// It exists because a city's name does not identify it. Brazil has 252 city
+  /// names shared between states — Campo Grande is the capital of Mato Grosso
+  /// do Sul and also a town in Alagoas — while inside one state no name
+  /// repeats. So a city is `(country, cityKey, stateKey)`: strings, no cities
+  /// table, and the state as the tiebreak.
+  ///
+  /// Nullable on purpose. Some countries have no subdivisions, and rows written
+  /// before the state was required have none; null means "not known", and a
+  /// filter that sends no state answers exactly as it did before the column.
+  stateKey     String?      @map("state_key") @db.VarChar(120)
   lat          Float?
   lng          Float?
   phone        String?      @db.VarChar(20)
@@ -774,6 +787,9 @@ model Business {
   @@index([businessType, isPublic])
   @@index([city, isPublic])
   @@index([cityKey, isPublic])
+  /// For the filter that names a state: `Campo Grande` alone is two cities, and
+  /// the state is what the query narrows by once the key has matched.
+  @@index([cityKey, stateKey, isPublic])
   /// Para o pré-filtro da busca por raio: sem ele o Postgres calculava
   /// Haversine em todas as linhas públicas — `Seq Scan`, 52 ms com 200 mil
   /// negócios. Ver `bounding-box.ts`.
@@ -983,6 +999,17 @@ model Place {
   countryId       String?       @map("country_id") @db.Uuid
   country         Country?      @relation(fields: [countryId], references: [id], onDelete: SetNull)
   city            String        @db.VarChar(100)
+  /// The state the city is in, as the ingestion was asked for it. Null for the
+  /// curated places and for countries without subdivisions.
+  state           String?       @db.VarChar(120)
+  /// `normalizeState(state)`, or an **empty string** when there is no state —
+  /// and the empty string is the point. The unique key below carries the state
+  /// so that Campo Grande in Mato Grosso do Sul and Campo Grande in Alagoas can
+  /// each hold a `catedral`. Postgres treats NULLs as distinct inside a unique
+  /// index, so with a nullable column two stateless places sharing a slug would
+  /// stop colliding, and the ingestion's upsert would duplicate a place where
+  /// it used to update it.
+  stateKey        String        @default("") @map("state_key") @db.VarChar(120)
   lat             Float
   lng             Float
   imageUrl        String?       @map("image_url") @db.VarChar(300)
@@ -1037,7 +1064,8 @@ model Place {
 
   itineraryStops ItineraryStop[]
 
-  @@unique([countryCode, city, slug])
+  /// A slug is unique inside one city, and a city is `(country, name, state)`.
+  @@unique([countryCode, city, stateKey, slug])
   @@index([countryCode, city, isActive])
   @@index([ingestionId, reviewStatus])
   @@map("places")
@@ -1083,18 +1111,33 @@ enum CityIngestionStatus {
 /// Não existe um model "PlaceCandidate" separado de propósito: o `Place` em
 /// DRAFT já é o candidato, e um segundo model seria código morto.
 model CityIngestion {
-  id           String              @id @default(uuid()) @db.Uuid
-  countryCode  String              @map("country_code") @db.VarChar(2)
-  city         String              @db.VarChar(100)
-  status       CityIngestionStatus @default(PROCESSING)
+  id             String              @id @default(uuid()) @db.Uuid
+  countryCode    String              @map("country_code") @db.VarChar(2)
+  city           String              @db.VarChar(100)
+  /// The state that tells this city from its namesakes (see `Business.stateKey`).
+  /// Null where the country has no subdivisions or nobody said which.
+  ///
+  /// The "one active ingestion per city" guard reads `(countryCode, city,
+  /// stateKey)`: Campo Grande in Mato Grosso do Sul and Campo Grande in Alagoas
+  /// are two cities and may run side by side. `stateKey` is derived by the API
+  /// when the row is created, and the worker copies it onto the places rather
+  /// than folding the name again on its own.
+  state          String?             @db.VarChar(120)
+  stateKey       String?             @map("state_key") @db.VarChar(120)
+  /// The Wikidata entity the worker resolved the city to. The name is what we
+  /// were asked; this is what we found, and the only identity of the city that
+  /// anyone has verified. It used to reach the log and nothing else.
+  cityWikidataId String?             @map("city_wikidata_id") @db.VarChar(20)
+  status         CityIngestionStatus @default(PROCESSING)
   /// Em que etapa está, ou em qual falhou: resolve_area | fetch_pois | rank |
   /// write_texts. Sem isto, uma ingestão FAILED não diz o que tentar de novo.
-  step         String?             @db.VarChar(30)
-  errorMessage String?             @map("error_message")
+  step           String?             @db.VarChar(30)
+  errorMessage   String?             @map("error_message")
 
-  /// Resultado da resolução de área no OSM, guardado para o retry não repetir a
-  /// consulta — e porque o nome que o OSM usa ("Lisboa") não é o que a nossa
-  /// lista de cidades usa ("Lisbon").
+  /// Legacy of the Overpass pilot. They cached the OSM area a city resolved to,
+  /// so a retry would not ask again. The pipeline resolves cities on Wikidata
+  /// now (`cityWikidataId`) and the worker neither reads nor writes these; they
+  /// stay so the ingestions of that era still read as they did.
   osmAreaId      BigInt? @map("osm_area_id")
   osmMatchedName String? @map("osm_matched_name") @db.VarChar(120)
 
@@ -1175,6 +1218,12 @@ model CommunityEvent {
   timezone        String                 @db.VarChar(64)
   countryCode     String                 @map("country_code") @db.VarChar(2)
   city            String                 @db.VarChar(100)
+  /// The state of the city, when the organizer said it. A tiebreak between
+  /// namesakes and never a level of its own (see `Business.stateKey`): an event
+  /// without one still lists under its city, and a host business is refused
+  /// only when both sides name a state and the two disagree.
+  state           String?                @db.VarChar(120)
+  stateKey        String?                @map("state_key") @db.VarChar(120)
   venueName       String                 @map("venue_name") @db.VarChar(120)
   venueAddress    String                 @map("venue_address") @db.VarChar(200)
   lat             Float
@@ -1358,8 +1407,13 @@ model ItineraryStop {
   /// Copiados do alvo no momento em que a parada entra, para o sub-filtro por
   /// cidade da página pública ser uma coluna indexada em vez de um leque de
   /// junções. `cityKey` usa a mesma normalização de `Business.cityKey`.
-  cityKey String @map("city_key") @db.VarChar(100)
-  city    String @db.VarChar(100)
+  cityKey  String  @map("city_key") @db.VarChar(100)
+  city     String  @db.VarChar(100)
+  /// Copied from the target with the city, for the same reason: a stop in Campo
+  /// Grande has to say which Campo Grande, and the filter reads it off this row.
+  /// Null when the target does not know its state.
+  state    String? @db.VarChar(120)
+  stateKey String? @map("state_key") @db.VarChar(120)
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -1369,6 +1423,7 @@ model ItineraryStop {
   @@unique([itineraryId, businessId])
   @@index([itineraryId, position])
   @@index([cityKey])
+  @@index([cityKey, stateKey])
   @@map("itinerary_stops")
 }
 

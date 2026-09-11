@@ -90,6 +90,24 @@ export class CityIngestionResponseDto {
   @ApiProperty({ example: 'Lisbon' })
   city: string;
 
+  @ApiPropertyOptional({
+    description:
+      'The state that tells this city from its namesakes. Null where the country has none or nobody said.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'The Wikidata entity the worker resolved the city to. Null until it has, and for ingestions older than the column.',
+    example: 'Q210945',
+    nullable: true,
+    type: String,
+  })
+  cityWikidataId?: string | null;
+
   @ApiProperty({ enum: CityIngestionStatus })
   status: CityIngestionStatus;
 
@@ -155,6 +173,14 @@ export class AdminPlaceResponseDto {
 
   @ApiProperty({ example: 'Lisbon' })
   city: string;
+
+  @ApiPropertyOptional({
+    description: 'State of the city, when the place was ingested with one.',
+    example: 'Mato Grosso do Sul',
+    nullable: true,
+    type: String,
+  })
+  state?: string | null;
 
   @ApiPropertyOptional({
     description: 'Card image. Null falls back to the category tone.',

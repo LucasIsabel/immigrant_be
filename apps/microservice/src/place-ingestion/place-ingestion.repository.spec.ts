@@ -30,6 +30,18 @@ const poi = (slug: string, name: string): PlaceToPersist => ({
   sourceUrl: 'https://www.wikidata.org/wiki/Q1',
 });
 
+const LISBON = {
+  countryCode: 'PT',
+  city: 'Lisbon',
+  state: null,
+  stateKey: null,
+};
+
+type UpsertArgs = {
+  where: { countryCode_city_stateKey_slug: Record<string, string> };
+  create: Record<string, unknown>;
+};
+
 describe('PlaceIngestionRepository', () => {
   let prisma: {
     place: { findMany: jest.Mock; upsert: jest.Mock };
@@ -60,8 +72,7 @@ describe('PlaceIngestionRepository', () => {
 
       const result = await repository.persistDrafts(
         'ingestion-1',
-        'PT',
-        'Lisbon',
+        LISBON,
         'country-1',
         [poi('torre-de-belem', 'Torre de Belém'), poi('mosteiro', 'Mosteiro')],
       );
@@ -82,7 +93,7 @@ describe('PlaceIngestionRepository', () => {
     });
 
     it('writes new places as invisible drafts', async () => {
-      await repository.persistDrafts('ingestion-1', 'PT', 'Lisbon', null, [
+      await repository.persistDrafts('ingestion-1', LISBON, null, [
         poi('mosteiro', 'Mosteiro'),
       ]);
 
@@ -91,6 +102,51 @@ describe('PlaceIngestionRepository', () => {
       ];
       expect(args.create.reviewStatus).toBe('DRAFT');
       expect(args.create.isActive).toBe(false);
+    });
+
+    it('files a city with no state under the empty key, so a re-run still lands on its rows', async () => {
+      // A NULL in the unique key would differ from every other NULL, and the
+      // upsert would duplicate a place where it used to update it.
+      await repository.persistDrafts('ingestion-1', LISBON, null, [
+        poi('mosteiro', 'Mosteiro'),
+      ]);
+
+      const [args] = prisma.place.upsert.mock.calls[0] as [UpsertArgs];
+      expect(args.where.countryCode_city_stateKey_slug).toEqual({
+        countryCode: 'PT',
+        city: 'Lisbon',
+        stateKey: '',
+        slug: 'mosteiro',
+      });
+    });
+
+    it('keeps the places of one Campo Grande apart from the other', async () => {
+      await repository.persistDrafts(
+        'ingestion-1',
+        {
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+          stateKey: 'alagoas',
+        },
+        null,
+        [poi('catedral', 'Catedral')],
+      );
+
+      const [args] = prisma.place.upsert.mock.calls[0] as [UpsertArgs];
+      expect(args.where.countryCode_city_stateKey_slug.stateKey).toBe(
+        'alagoas',
+      );
+      expect(args.create).toMatchObject({
+        state: 'Alagoas',
+        stateKey: 'alagoas',
+      });
+      // The curated-place guard reads the same city, not its namesake.
+      expect(prisma.place.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ stateKey: 'alagoas' }) as unknown,
+        }),
+      );
     });
   });
 });

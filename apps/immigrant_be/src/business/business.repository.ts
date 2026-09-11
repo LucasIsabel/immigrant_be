@@ -3,7 +3,7 @@ import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from './bounding-box';
 import { featuredSql, featuredWhere } from '../common/featured/featured';
-import { normalizeCity } from './city-key';
+import { normalizeCity, normalizeState, stateFilterKey } from './city-key';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
@@ -75,17 +75,28 @@ export class BusinessRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Derives `cityKey` whenever a write carries a city.
+   * Derives `cityKey` whenever a write carries a city, and `stateKey` whenever
+   * it carries a state.
    *
-   * Every live write to `city` goes through here, and that is the whole point:
-   * a row whose key does not match its name is a business the public search
-   * cannot find, and nothing on any screen would say so. Leaving each caller
-   * to remember is how that happens.
+   * Every live write to `city` and `state` goes through here, and that is the
+   * whole point: a row whose key does not match its name is a business the
+   * public search cannot find, and nothing on any screen would say so. Leaving
+   * each caller to remember is how that happens.
+   *
+   * The two are derived apart because a draft may change one without the
+   * other, and a key written for a field the write did not touch would blank
+   * the column.
    */
-  private withCityKey<T extends { city?: string }>(data: T): T {
-    return data.city === undefined
-      ? data
-      : { ...data, cityKey: normalizeCity(data.city) };
+  private withCityIdentity<T extends { city?: string; state?: string | null }>(
+    data: T,
+  ): T {
+    return {
+      ...data,
+      ...(data.city !== undefined && { cityKey: normalizeCity(data.city) }),
+      ...(data.state !== undefined && {
+        stateKey: normalizeState(data.state),
+      }),
+    };
   }
 
   create(userId: string, data: CreateBusinessDto) {
@@ -93,7 +104,7 @@ export class BusinessRepository {
       // `openingHours` é uma classe no DTO — para o swagger, e portanto para o
       // tipo gerado no frontend, dizerem a forma de verdade em vez de `object`.
       // O Prisma quer JSON puro, e a conversão é aqui, na borda.
-      data: { userId, ...this.withCityKey(data) } as never,
+      data: { userId, ...this.withCityIdentity(data) } as never,
     });
   }
 
@@ -117,7 +128,7 @@ export class BusinessRepository {
   update(id: string, data: UpdateBusinessDto) {
     return this.prisma.business.update({
       where: { id },
-      data: this.withCityKey(data) as never,
+      data: this.withCityIdentity(data) as never,
     });
   }
 
@@ -126,7 +137,7 @@ export class BusinessRepository {
     return this.prisma.business.update({
       where: { id },
       data: {
-        ...this.withCityKey(data),
+        ...this.withCityIdentity(data),
         draftData: Prisma.JsonNull,
       } as never,
     });
@@ -165,6 +176,7 @@ export class BusinessRepository {
     const {
       country,
       city,
+      state,
       businessType,
       search,
       page = 1,
@@ -182,6 +194,7 @@ export class BusinessRepository {
       return this.findPublicByRadius({
         country,
         city,
+        state,
         businessType,
         search,
         page,
@@ -192,6 +205,8 @@ export class BusinessRepository {
         featured,
       });
     }
+
+    const stateKey = stateFilterKey({ city, state });
 
     const where = {
       isPublic: true,
@@ -205,6 +220,9 @@ export class BusinessRepository {
       // catálogos de onde os nomes vêm discordam nos acentos, e uma igualdade
       // exata perde a cidade certa por causa de um til.
       ...(city && { cityKey: normalizeCity(city) }),
+      // Campo Grande is two cities; the state says which. Absent unless the
+      // request named one, so a link without it lists what it always listed.
+      ...(stateKey && { stateKey }),
       ...(businessType && { businessType }),
       ...(search && {
         name: { contains: search, mode: 'insensitive' as const },
@@ -237,10 +255,14 @@ export class BusinessRepository {
    * `findPublic`.
    *
    * Grouped by the country **name**: that is what `Business.country` holds.
+   *
+   * And by the state, because the name is not the city: Campo Grande in Mato
+   * Grosso do Sul and Campo Grande in Alagoas come back as two entries, each
+   * with its own centre, instead of one averaged somewhere between them.
    */
   async findPublicCities(params: { country?: string }) {
     const rows = await this.prisma.business.groupBy({
-      by: ['country', 'city'],
+      by: ['country', 'city', 'state'],
       where: {
         isPublic: true,
         // `country` is nullable on the model, and a row without one cannot be
@@ -254,7 +276,7 @@ export class BusinessRepository {
       // encontrar um negócio em Vila Nova de Gaia, a quatro quilómetros. A
       // média ignora linhas sem coordenada, e devolve null se nenhuma tiver.
       _avg: { lat: true, lng: true },
-      orderBy: [{ country: 'asc' }, { city: 'asc' }],
+      orderBy: [{ country: 'asc' }, { city: 'asc' }, { state: 'asc' }],
     });
 
     return rows
@@ -264,6 +286,7 @@ export class BusinessRepository {
       .map((row) => ({
         country: row.country,
         city: row.city,
+        state: row.state,
         count: row._count._all,
         lat: row._avg.lat,
         lng: row._avg.lng,
@@ -273,6 +296,7 @@ export class BusinessRepository {
   private async findPublicByRadius(params: {
     country?: string;
     city?: string;
+    state?: string;
     businessType?: BusinessType;
     search?: string;
     page: number;
@@ -285,6 +309,7 @@ export class BusinessRepository {
     const {
       country,
       city,
+      state,
       businessType,
       search,
       page,
@@ -295,6 +320,7 @@ export class BusinessRepository {
       featured,
     } = params;
     const offset = (page - 1) * limit;
+    const stateKey = stateFilterKey({ city, state });
 
     const conditions: Prisma.Sql[] = [Prisma.sql`b.is_public = true`];
 
@@ -376,6 +402,7 @@ export class BusinessRepository {
     if (country)
       conditions.push(Prisma.sql`lower(b.country) = ${country.toLowerCase()}`);
     if (city) conditions.push(Prisma.sql`b.city_key = ${normalizeCity(city)}`);
+    if (stateKey) conditions.push(Prisma.sql`b.state_key = ${stateKey}`);
     if (businessType)
       conditions.push(
         Prisma.sql`b.business_type = ${businessType}::"BusinessType"`,

@@ -1,12 +1,15 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { BusinessType } from '../../../../generated/prisma';
+import { CountriesNowService } from '../countriesnow/countriesnow.service';
 import { BusinessRepository } from './business.repository';
+import { normalizeCity, normalizeState } from './city-key';
 import { BusinessCitiesQueryDto } from './dto/business-cities-query.dto';
 import { validateOpeningHours } from './opening-hours.schema';
 
@@ -36,21 +39,56 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
 import { withFeaturedNow } from '../common/featured/with-featured-now';
 
+/**
+ * Whether a write moves the business to another city, state or country — only
+ * then is its state asked about.
+ *
+ * Compared by value, not by presence: the form resends every field on each
+ * save, and the owner of a business registered before states were asked for
+ * must not be stopped from fixing a phone number over a location nobody moved.
+ */
+function movesBusiness(
+  dto: UpdateBusinessDto,
+  current: { city: string; state: string | null; country: string | null },
+): boolean {
+  return (
+    (dto.city !== undefined &&
+      normalizeCity(dto.city) !== normalizeCity(current.city)) ||
+    (dto.state !== undefined &&
+      normalizeState(dto.state) !== normalizeState(current.state)) ||
+    (dto.country !== undefined &&
+      dto.country.trim().toLowerCase() !==
+        (current.country ?? '').trim().toLowerCase())
+  );
+}
+
 @Injectable()
 export class BusinessService {
-  constructor(private readonly repository: BusinessRepository) {}
+  private readonly logger = new Logger(BusinessService.name);
+
+  constructor(
+    private readonly repository: BusinessRepository,
+    private readonly countriesNow: CountriesNowService,
+  ) {}
 
   getMyBusinesses(userId: string) {
     return this.repository.findAllByUserId(userId);
   }
 
+  /**
+   * The content checks stay synchronous and run first: they throw before any
+   * promise exists, and they cost nothing. Only the state check has to ask a
+   * third party, so it is the one that waits.
+   */
   create(userId: string, dto: CreateBusinessDto) {
     this.validateTypeData(dto.businessType, dto.typeData);
     validateOpeningHours(dto.openingHours);
-    return this.repository.create(userId, {
-      ...dto,
-      typeData: this.assignItemIds(dto.businessType, dto.typeData),
-    });
+    return this.assertStateWhereRequired(dto.country, dto.state).then(() =>
+      this.repository.create(userId, {
+        ...dto,
+        typeData: this.assignItemIds(dto.businessType, dto.typeData),
+      }),
+    );
   }
 
   /**
@@ -71,6 +109,12 @@ export class BusinessService {
     // Validado ao salvar o rascunho e de novo ao publicar: o rascunho é JSON
     // cru na coluna, então nada garante que o que sai é o que entrou.
     validateOpeningHours(dto.openingHours);
+    if (movesBusiness(dto, existing)) {
+      await this.assertStateWhereRequired(
+        dto.country ?? existing.country,
+        dto.state !== undefined ? dto.state : existing.state,
+      );
+    }
     const draft = stripVisibility({
       ...dto,
       ...(dto.typeData
@@ -97,6 +141,14 @@ export class BusinessService {
       this.validateTypeData(typeToValidate, dto.typeData);
     }
     validateOpeningHours(dto.openingHours);
+    // Asked again on the way out, like the week: drafts saved before the rule
+    // are still stored, and publishing one is what moves the live business.
+    if (movesBusiness(dto, existing)) {
+      await this.assertStateWhereRequired(
+        dto.country ?? existing.country,
+        dto.state !== undefined ? dto.state : existing.state,
+      );
+    }
     const shouldClearTypeData =
       Boolean(dto.businessType) &&
       dto.businessType !== existing.businessType &&
@@ -251,6 +303,46 @@ export class BusinessService {
     }
 
     return data;
+  }
+
+  /**
+   * A business in a country that has states has to name its state.
+   *
+   * The name of a city does not identify it: Campo Grande is in Mato Grosso do
+   * Sul and in Alagoas, and a business filed under the name alone answers for
+   * both — or, once somebody picks one of the two, for neither.
+   *
+   * Whether the country has states is CountriesNow's answer, cached for a day,
+   * and the check fails **open**. When the catalogue cannot be reached the
+   * write goes through with a warning: refusing to list a restaurant because a
+   * third party is down would turn their outage into ours, and a business with
+   * no state is still found by its city, exactly as every business was before.
+   *
+   * Only asked when the state is missing, so a complete form never waits on it.
+   */
+  private async assertStateWhereRequired(
+    country: string | null | undefined,
+    state: string | null | undefined,
+  ): Promise<void> {
+    if (!country?.trim() || state?.trim()) return;
+
+    let states: unknown[];
+    try {
+      states = await this.countriesNow.getStates(country);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ask CountriesNow whether ${country} has states; accepting the business without one: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return;
+    }
+
+    if (states.length > 0) {
+      throw new BadRequestException(
+        'Informe o estado do negócio: neste país há cidades com o mesmo nome em estados diferentes',
+      );
+    }
   }
 
   private validateTypeData(businessType: BusinessType, typeData?: object) {

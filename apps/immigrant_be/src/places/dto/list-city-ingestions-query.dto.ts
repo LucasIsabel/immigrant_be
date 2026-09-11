@@ -24,6 +24,16 @@ export class ListCityIngestionsQueryDto {
   @Length(1, 100)
   city?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'State of the city, to tell namesakes apart. Read only together with `city`.',
+    example: 'Mato Grosso do Sul',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  state?: string;
+
   @ApiPropertyOptional({ enum: CityIngestionStatus })
   @IsOptional()
   @IsEnum(CityIngestionStatus)
