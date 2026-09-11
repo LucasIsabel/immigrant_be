@@ -152,7 +152,13 @@ describe('BusinessRepository', () => {
 
       await repository.findPublicCities({ country: 'Portugal' });
 
-      expect(groupByArgs().by).toEqual(['country', 'city', 'state']);
+      expect(groupByArgs().by).toEqual([
+        'country',
+        'cityKey',
+        'stateKey',
+        'city',
+        'state',
+      ]);
       expect(groupByArgs().where).toMatchObject({
         isPublic: true,
         country: 'Portugal',
@@ -174,14 +180,18 @@ describe('BusinessRepository', () => {
       mockPrismaService.business.groupBy.mockResolvedValue([
         {
           country: 'Portugal',
+          cityKey: 'matosinhos',
+          stateKey: null,
           city: 'Matosinhos',
-          _count: { _all: 3 },
+          _count: { _all: 3, lat: 3 },
           _avg: { lat: 41.18, lng: -8.69 },
         },
         {
           country: null,
+          cityKey: 'nowhere',
+          stateKey: null,
           city: 'Nowhere',
-          _count: { _all: 9 },
+          _count: { _all: 9, lat: 0 },
           _avg: { lat: null, lng: null },
         },
       ]);
@@ -236,16 +246,20 @@ describe('BusinessRepository', () => {
       mockPrismaService.business.groupBy.mockResolvedValue([
         {
           country: 'Brazil',
+          cityKey: 'campo grande',
+          stateKey: 'alagoas',
           city: 'Campo Grande',
           state: 'Alagoas',
-          _count: { _all: 1 },
+          _count: { _all: 1, lat: 1 },
           _avg: { lat: -9.95, lng: -36.16 },
         },
         {
           country: 'Brazil',
+          cityKey: 'campo grande',
+          stateKey: 'mato grosso do sul',
           city: 'Campo Grande',
           state: 'Mato Grosso do Sul',
-          _count: { _all: 4 },
+          _count: { _all: 4, lat: 4 },
           _avg: { lat: -20.46, lng: -54.62 },
         },
       ]);
@@ -255,6 +269,46 @@ describe('BusinessRepository', () => {
       expect(rows.map((row) => [row.city, row.state, row.lat])).toEqual([
         ['Campo Grande', 'Alagoas', -9.95],
         ['Campo Grande', 'Mato Grosso do Sul', -20.46],
+      ]);
+    });
+
+    it('answers one entry for the two spellings of one city', async () => {
+      // "Póvoa de Varzim" from the wizard and "Povoa de Varzim" from the flat
+      // catalogue were two options in the selector, each with part of the
+      // city's businesses.
+      mockPrismaService.business.groupBy.mockResolvedValue([
+        {
+          country: 'Portugal',
+          cityKey: 'povoa de varzim',
+          stateKey: 'porto',
+          city: 'Povoa de Varzim',
+          state: 'Porto',
+          _count: { _all: 1, lat: 0 },
+          _avg: { lat: null, lng: null },
+        },
+        {
+          country: 'Portugal',
+          cityKey: 'povoa de varzim',
+          stateKey: 'porto',
+          city: 'Póvoa de Varzim',
+          state: 'Porto',
+          _count: { _all: 2, lat: 2 },
+          _avg: { lat: 41.38, lng: -8.76 },
+        },
+      ]);
+
+      const rows = await repository.findPublicCities({ country: 'Portugal' });
+
+      // The business without a coordinate adds to the count, not the centre.
+      expect(rows).toEqual([
+        {
+          country: 'Portugal',
+          city: 'Póvoa de Varzim',
+          state: 'Porto',
+          count: 3,
+          lat: 41.38,
+          lng: -8.76,
+        },
       ]);
     });
   });

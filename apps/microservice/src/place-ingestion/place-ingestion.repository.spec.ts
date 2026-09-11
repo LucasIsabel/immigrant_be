@@ -33,6 +33,7 @@ const poi = (slug: string, name: string): PlaceToPersist => ({
 const LISBON = {
   countryCode: 'PT',
   city: 'Lisbon',
+  cityKey: 'lisbon',
   state: null,
   stateKey: null,
 };
@@ -126,6 +127,7 @@ describe('PlaceIngestionRepository', () => {
         {
           countryCode: 'BR',
           city: 'Campo Grande',
+          cityKey: 'campo grande',
           state: 'Alagoas',
           stateKey: 'alagoas',
         },
@@ -147,6 +149,29 @@ describe('PlaceIngestionRepository', () => {
           where: expect.objectContaining({ stateKey: 'alagoas' }) as unknown,
         }),
       );
+    });
+
+    it('copies the city key the API folded onto the place, on create and on update', async () => {
+      // Without it the place is written with no key and the NOT NULL column
+      // refuses it — or, worse, a re-run leaves an old key standing.
+      await repository.persistDrafts(
+        'ingestion-1',
+        { ...LISBON, city: 'Póvoa de Varzim', cityKey: 'povoa de varzim' },
+        null,
+        [poi('igreja-matriz', 'Igreja Matriz')],
+      );
+
+      const [args] = prisma.place.upsert.mock.calls[0] as [
+        {
+          create: Record<string, unknown>;
+          update: Record<string, unknown>;
+        },
+      ];
+      expect(args.create).toMatchObject({
+        city: 'Póvoa de Varzim',
+        cityKey: 'povoa de varzim',
+      });
+      expect(args.update).toMatchObject({ cityKey: 'povoa de varzim' });
     });
   });
 });

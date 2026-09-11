@@ -999,6 +999,14 @@ model Place {
   countryId       String?       @map("country_id") @db.Uuid
   country         Country?      @relation(fields: [countryId], references: [id], onDelete: SetNull)
   city            String        @db.VarChar(100)
+  /// The city in the form it is **compared** in — `normalizeCity(city)`, the
+  /// fold `Business.cityKey` uses. "Póvoa de Varzim" and "Povoa de Varzim" are
+  /// one city, and every public read of a place's city goes through this.
+  ///
+  /// NOT NULL for the reason it is on `Business`: a missing key would hide the
+  /// place from its own city without an error. The ingestion's worker copies it
+  /// from the `CityIngestion` row; the seed folds it itself.
+  cityKey         String        @map("city_key") @db.VarChar(100)
   /// The state the city is in, as the ingestion was asked for it. Null for the
   /// curated places and for countries without subdivisions.
   state           String?       @db.VarChar(120)
@@ -1067,6 +1075,8 @@ model Place {
   /// A slug is unique inside one city, and a city is `(country, name, state)`.
   @@unique([countryCode, city, stateKey, slug])
   @@index([countryCode, city, isActive])
+  /// Every public read of a place's city — the list, the counts, the cities.
+  @@index([countryCode, cityKey, isActive])
   @@index([ingestionId, reviewStatus])
   @@map("places")
 }
@@ -1114,6 +1124,10 @@ model CityIngestion {
   id             String              @id @default(uuid()) @db.Uuid
   countryCode    String              @map("country_code") @db.VarChar(2)
   city           String              @db.VarChar(100)
+  /// `normalizeCity(city)`, folded by the API when the row is created and
+  /// copied by the worker onto every place it writes, like `stateKey` below.
+  /// The admin filters and the "one active ingestion per city" guard read it.
+  cityKey        String              @map("city_key") @db.VarChar(100)
   /// The state that tells this city from its namesakes (see `Business.stateKey`).
   /// Null where the country has no subdivisions or nobody said which.
   ///
@@ -1158,6 +1172,8 @@ model CityIngestion {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([countryCode, city])
+  /// The active-ingestion guard and the admin filter, which compare the key.
+  @@index([countryCode, cityKey])
   @@index([status, createdAt])
   @@map("city_ingestions")
 }
@@ -1218,6 +1234,9 @@ model CommunityEvent {
   timezone        String                 @db.VarChar(64)
   countryCode     String                 @map("country_code") @db.VarChar(2)
   city            String                 @db.VarChar(100)
+  /// `normalizeCity(city)`, derived by the service on every write — the key the
+  /// agenda and the My City count compare, as `Business.cityKey` is.
+  cityKey         String                 @map("city_key") @db.VarChar(100)
   /// The state of the city, when the organizer said it. A tiebreak between
   /// namesakes and never a level of its own (see `Business.stateKey`): an event
   /// without one still lists under its city, and a host business is refused
@@ -1263,6 +1282,8 @@ model CommunityEvent {
   featuredUntil DateTime?    @map("featured_until")
 
   @@index([countryCode, city, status, startsAt])
+  /// The agenda and the My City count, which compare the key.
+  @@index([countryCode, cityKey, status, startsAt])
   @@index([organizerId])
   @@map("community_events")
 }

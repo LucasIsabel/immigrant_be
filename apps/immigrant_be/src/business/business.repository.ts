@@ -3,6 +3,7 @@ import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from './bounding-box';
 import { featuredSql, featuredWhere } from '../common/featured/featured';
+import { mergeCitySpellings } from './city-groups';
 import { normalizeCity, normalizeState, stateFilterKey } from './city-key';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -259,10 +260,14 @@ export class BusinessRepository {
    * And by the state, because the name is not the city: Campo Grande in Mato
    * Grosso do Sul and Campo Grande in Alagoas come back as two entries, each
    * with its own centre, instead of one averaged somewhere between them.
+   *
+   * And by the keys, so "Póvoa de Varzim" and "Povoa de Varzim" come back as
+   * one entry rather than two options splitting one city's businesses — see
+   * `mergeCitySpellings`.
    */
   async findPublicCities(params: { country?: string }) {
     const rows = await this.prisma.business.groupBy({
-      by: ['country', 'city', 'state'],
+      by: ['country', 'cityKey', 'stateKey', 'city', 'state'],
       where: {
         isPublic: true,
         // `country` is nullable on the model, and a row without one cannot be
@@ -271,7 +276,9 @@ export class BusinessRepository {
           ? { country: params.country }
           : { country: { not: null } }),
       },
-      _count: { _all: true },
+      // `lat` counts the rows that have a coordinate: the weight of each
+      // spelling's centre when the spellings are merged.
+      _count: { _all: true, lat: true },
       // O centro serve à busca por proximidade: escolher "Porto" tem de poder
       // encontrar um negócio em Vila Nova de Gaia, a quatro quilómetros. A
       // média ignora linhas sem coordenada, e devolve null se nenhuma tiver.
@@ -279,18 +286,23 @@ export class BusinessRepository {
       orderBy: [{ country: 'asc' }, { city: 'asc' }, { state: 'asc' }],
     });
 
-    return rows
-      .filter((row): row is typeof row & { country: string } =>
-        Boolean(row.country),
-      )
-      .map((row) => ({
-        country: row.country,
-        city: row.city,
-        state: row.state,
-        count: row._count._all,
-        lat: row._avg.lat,
-        lng: row._avg.lng,
-      }));
+    return mergeCitySpellings(
+      rows
+        .filter((row): row is typeof row & { country: string } =>
+          Boolean(row.country),
+        )
+        .map((row) => ({
+          country: row.country,
+          city: row.city,
+          state: row.state,
+          cityKey: row.cityKey,
+          stateKey: row.stateKey,
+          count: row._count._all,
+          located: row._count.lat,
+          lat: row._avg.lat,
+          lng: row._avg.lng,
+        })),
+    );
   }
 
   private async findPublicByRadius(params: {

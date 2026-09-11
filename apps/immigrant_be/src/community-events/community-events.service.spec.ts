@@ -179,7 +179,8 @@ describe('CommunityEventsService', () => {
       repository.findBusinessForEvent.mockResolvedValue({
         id: 'biz-1',
         isPublic: true,
-        city: 'Porto',
+        cityKey: 'porto',
+        stateKey: null,
       });
 
       await expect(
@@ -193,7 +194,7 @@ describe('CommunityEventsService', () => {
       repository.findBusinessForEvent.mockResolvedValue({
         id: 'biz-1',
         isPublic: true,
-        city: 'Campo Grande',
+        cityKey: 'campo grande',
         stateKey: 'mato grosso do sul',
       });
 
@@ -210,11 +211,52 @@ describe('CommunityEventsService', () => {
       ).rejects.toThrow('Negócio não está na cidade do evento');
     });
 
+    it('accepts a host stored with the accent for an event typed without it', async () => {
+      // The directory already found this restaurant under either spelling; a
+      // guard that only ignored case refused it as "another city".
+      repository.findBusinessForEvent.mockResolvedValue({
+        id: 'biz-1',
+        isPublic: true,
+        cityKey: 'povoa de varzim',
+        stateKey: 'porto',
+      });
+
+      await service.create(
+        'user-1',
+        validCreateDto({
+          businessId: 'biz-1',
+          city: 'Povoa de Varzim',
+          state: 'Porto',
+        }),
+      );
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city: 'Povoa de Varzim',
+          cityKey: 'povoa de varzim',
+        }),
+      );
+    });
+
+    it('writes the key the agenda compares, next to the name as typed', async () => {
+      await service.create(
+        'user-1',
+        validCreateDto({ city: '  Póvoa  de Varzim ' }),
+      );
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city: '  Póvoa  de Varzim ',
+          cityKey: 'povoa de varzim',
+        }),
+      );
+    });
+
     it('accepts a host that never named its state, and keeps the event state', async () => {
       repository.findBusinessForEvent.mockResolvedValue({
         id: 'biz-1',
         isPublic: true,
-        city: 'Campo Grande',
+        cityKey: 'campo grande',
         stateKey: null,
       });
 
@@ -333,10 +375,29 @@ describe('CommunityEventsService', () => {
         'event-1',
         expect.objectContaining({
           city: 'Maceió',
+          // The key follows the city, or the agenda would keep finding the
+          // event under the one it left.
+          cityKey: 'maceio',
           state: null,
           stateKey: null,
         }),
       );
+    });
+
+    it('refuses a host in another city on an edit too, whatever the spelling', async () => {
+      repository.findBusinessForEvent.mockResolvedValue({
+        id: 'biz-1',
+        isPublic: true,
+        cityKey: 'porto',
+        stateKey: null,
+      });
+
+      await expect(
+        service.update('event-1', 'user-1', {
+          businessId: 'biz-1',
+          city: 'Póvoa de Varzim',
+        }),
+      ).rejects.toThrow('Negócio não está na cidade do evento');
     });
 
     it('keeps the state when the same city is sent again', async () => {

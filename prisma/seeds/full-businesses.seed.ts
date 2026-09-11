@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 
 import { PrismaClient } from '../../generated/prisma';
+import { normalizeCity, normalizeState } from './city-key';
 import { FULL_ITINERARY, FULL_MENU, FULL_TOURS } from './full-businesses.data';
 
 /**
@@ -76,20 +77,6 @@ function assertLocalDatabase(): void {
 const prisma = new PrismaClient();
 
 const PASSWORD = 'Seed12345!';
-
-/** Same fold the repository applies, copied rather than imported: a seed that
- *  reaches into `apps/` drags the Nest module graph in with it. */
-const cityKey = (city: string) =>
-  city
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
-
-/** `normalizeState`: the same fold, and null — never "" — for no state. */
-const stateKey = (state: unknown) =>
-  typeof state === 'string' && state.trim() ? cityKey(state) : null;
 
 const photo = (seed: string) => `https://picsum.photos/seed/${seed}/1200/800`;
 
@@ -423,8 +410,8 @@ async function seedOne(spec: SeedSpec, hashedPassword: string) {
     ...spec.business,
     userId: user.id,
     businessType: spec.businessType,
-    cityKey: cityKey(spec.business.city as string),
-    stateKey: stateKey(spec.business.state),
+    cityKey: normalizeCity(spec.business.city as string),
+    stateKey: normalizeState(spec.business.state),
     typeData: spec.typeData,
     isPublic: true,
   };

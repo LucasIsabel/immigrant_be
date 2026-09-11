@@ -183,9 +183,7 @@ export class MyCityRepository {
         where: {
           status: 'APPROVED',
           ...(args.countryCode ? { countryCode: args.countryCode } : {}),
-          ...(args.city
-            ? { city: { equals: args.city, mode: 'insensitive' as const } }
-            : {}),
+          ...(args.city ? { cityKey: normalizeCity(args.city) } : {}),
           ...(stateKey ? { stateKey } : {}),
           OR: [
             { endsAt: { gte: now } },
@@ -204,7 +202,7 @@ export class MyCityRepository {
       conditions.push(Prisma.sql`e.country_code = ${args.countryCode}`);
     }
     if (args.city) {
-      conditions.push(Prisma.sql`lower(e.city) = lower(${args.city})`);
+      conditions.push(Prisma.sql`e.city_key = ${normalizeCity(args.city)}`);
     }
     if (stateKey) {
       conditions.push(Prisma.sql`e.state_key = ${stateKey}`);
@@ -228,9 +226,7 @@ export class MyCityRepository {
         where: {
           isActive: true,
           ...(args.countryCode ? { countryCode: args.countryCode } : {}),
-          ...(args.city
-            ? { city: { equals: args.city, mode: 'insensitive' as const } }
-            : {}),
+          ...(args.city ? { cityKey: normalizeCity(args.city) } : {}),
           ...(stateKey ? { stateKey } : {}),
         },
       });
@@ -241,7 +237,7 @@ export class MyCityRepository {
       conditions.push(Prisma.sql`p.country_code = ${args.countryCode}`);
     }
     if (args.city) {
-      conditions.push(Prisma.sql`lower(p.city) = lower(${args.city})`);
+      conditions.push(Prisma.sql`p.city_key = ${normalizeCity(args.city)}`);
     }
     if (stateKey) {
       conditions.push(Prisma.sql`p.state_key = ${stateKey}`);

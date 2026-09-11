@@ -74,7 +74,7 @@ export class PlaceIngestionService {
       );
     }
 
-    const { countryCode, city, state, stateKey } = ingestion;
+    const { countryCode, city, cityKey, state, stateKey } = ingestion;
 
     await this.repository.markStep(ingestionId, 'resolve_city');
     const cityRef = await this.resolveCity(countryCode, city, state);
@@ -89,7 +89,7 @@ export class PlaceIngestionService {
     const countryId = await this.resolveCountryId(countryCode);
     const { created, conflicts } = await this.repository.persistDrafts(
       ingestionId,
-      { countryCode, city, state, stateKey },
+      { countryCode, city, cityKey, state, stateKey },
       countryId,
       ranked.places,
     );

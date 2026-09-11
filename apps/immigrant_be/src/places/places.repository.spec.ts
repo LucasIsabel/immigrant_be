@@ -56,14 +56,17 @@ describe('PlacesRepository', () => {
     });
   });
 
-  it('compara a cidade ignorando caixa', async () => {
-    // O nome chega da URL e do seletor, e as grafias divergem.
-    await repository.findPublic({ countryCode: 'PT', city: 'lisbon' });
+  it('compares the city by its folded key, so either spelling finds it', async () => {
+    // The name reaches us from the URL and the selector, and the two
+    // catalogues behind them disagree on accents and case.
+    await repository.findPublic({ countryCode: 'PT', city: 'Póvoa de Varzim' });
+    const accented = argsDaBusca().where;
+    prisma.place.findMany.mockClear();
+    await repository.findPublic({ countryCode: 'PT', city: 'POVOA DE VARZIM' });
 
-    expect(argsDaBusca().where.city).toEqual({
-      equals: 'lisbon',
-      mode: 'insensitive',
-    });
+    expect(accented.cityKey).toBe('povoa de varzim');
+    expect(argsDaBusca().where.cityKey).toBe('povoa de varzim');
+    expect('city' in accented).toBe(false);
   });
 
   it('ordena por popularidade e desempata pelo nome', async () => {
@@ -208,6 +211,8 @@ describe('PlacesRepository', () => {
       prisma.place.groupBy.mockResolvedValue([
         {
           countryCode: 'BR',
+          cityKey: 'campo grande',
+          stateKey: 'alagoas',
           city: 'Campo Grande',
           state: 'Alagoas',
           _count: { _all: 2 },
@@ -215,6 +220,8 @@ describe('PlacesRepository', () => {
         },
         {
           countryCode: 'BR',
+          cityKey: 'campo grande',
+          stateKey: 'mato grosso do sul',
           city: 'Campo Grande',
           state: 'Mato Grosso do Sul',
           _count: { _all: 8 },
@@ -226,6 +233,8 @@ describe('PlacesRepository', () => {
 
       expect(prisma.place.groupBy.mock.calls[0][0].by).toEqual([
         'countryCode',
+        'cityKey',
+        'stateKey',
         'city',
         'state',
       ]);
@@ -233,6 +242,49 @@ describe('PlacesRepository', () => {
         ['Alagoas', -9.95],
         ['Mato Grosso do Sul', -20.46],
       ]);
+    });
+  });
+
+  describe('the spelling of a city', () => {
+    /*
+     * Places ingested before states existed carry the unaccented spelling of
+     * the flat catalogue; later ones, the accented spelling of the per-state
+     * list. Grouped by the stored name they were two options in the selector,
+     * each holding part of one city.
+     */
+    it('answers one entry for the two spellings of one city', async () => {
+      prisma.place.groupBy.mockResolvedValue([
+        {
+          countryCode: 'PT',
+          cityKey: 'povoa de varzim',
+          stateKey: '',
+          city: 'Povoa de Varzim',
+          state: null,
+          _count: { _all: 1 },
+          _avg: { lat: 41.4, lng: -8.8 },
+        },
+        {
+          countryCode: 'PT',
+          cityKey: 'povoa de varzim',
+          stateKey: '',
+          city: 'Póvoa de Varzim',
+          state: null,
+          _count: { _all: 3 },
+          _avg: { lat: 41.36, lng: -8.76 },
+        },
+      ]);
+
+      const cities = await repository.findCities({ countryCode: 'PT' });
+
+      expect(cities).toHaveLength(1);
+      expect(cities[0]).toMatchObject({
+        countryCode: 'PT',
+        city: 'Póvoa de Varzim',
+        state: null,
+        count: 4,
+      });
+      expect(cities[0].lat).toBeCloseTo(41.37);
+      expect(cities[0].lng).toBeCloseTo(-8.77);
     });
   });
 });

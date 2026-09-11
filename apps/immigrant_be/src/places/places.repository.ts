@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { featuredWhere } from '../common/featured/featured';
-import { stateFilterKey } from '../business/city-key';
+import { mergeCitySpellings } from '../business/city-groups';
+import { normalizeCity, stateFilterKey } from '../business/city-key';
 import {
   PlaceCitiesQueryDto,
   PlacesListQueryDto,
@@ -18,11 +19,11 @@ export class PlacesRepository {
       isActive: true,
     };
 
-    // A cidade chega do seletor do frontend, que lê do CountriesNow. A
-    // comparação ignora caixa porque o mesmo nome aparece com grafias
-    // diferentes entre a URL, o seed e o que o usuário digita.
+    // Compared by the folded key, as businesses are: the name reaches us from
+    // two catalogues that disagree on accents, and "Póvoa de Varzim" has to
+    // find the places stored as "Povoa de Varzim".
     if (query.city) {
-      where.city = { equals: query.city, mode: 'insensitive' };
+      where.cityKey = normalizeCity(query.city);
     }
     // Which of two cities with that name, when the request says. Without a
     // state the filter is the one it always was.
@@ -109,10 +110,14 @@ export class PlacesRepository {
    *
    * Grouped by the state as well: two cities that share a name are two
    * entries with two centres, not one centre averaged between them.
+   *
+   * And by the keys, so the spellings of one city come back as one entry —
+   * see `mergeCitySpellings`. The stored name is grouped too only so there is
+   * a spelling to show.
    */
   async findCities(query: PlaceCitiesQueryDto) {
     const rows = await this.prisma.place.groupBy({
-      by: ['countryCode', 'city', 'state'],
+      by: ['countryCode', 'cityKey', 'stateKey', 'city', 'state'],
       where: {
         isActive: true,
         ...(query.countryCode ? { countryCode: query.countryCode } : {}),
@@ -122,13 +127,28 @@ export class PlacesRepository {
       orderBy: [{ countryCode: 'asc' }, { city: 'asc' }, { state: 'asc' }],
     });
 
-    return rows.map((row) => ({
-      countryCode: row.countryCode,
-      city: row.city,
-      state: row.state,
-      count: row._count._all,
-      lat: row._avg.lat ?? 0,
-      lng: row._avg.lng ?? 0,
+    const cities = mergeCitySpellings(
+      rows.map((row) => ({
+        country: row.countryCode,
+        city: row.city,
+        state: row.state,
+        cityKey: row.cityKey,
+        stateKey: row.stateKey,
+        count: row._count._all,
+        // `lat` is required on a place, so every row of the group has one.
+        located: row._count._all,
+        lat: row._avg.lat,
+        lng: row._avg.lng,
+      })),
+    );
+
+    return cities.map((city) => ({
+      countryCode: city.country,
+      city: city.city,
+      state: city.state,
+      count: city.count,
+      lat: city.lat ?? 0,
+      lng: city.lng ?? 0,
     }));
   }
 }

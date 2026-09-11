@@ -58,14 +58,12 @@ describe('PlacesAdminRepository.list', () => {
     expect(whereOfTheQuery()).toEqual({ countryCode: 'PT' });
   });
 
-  it('compares the city without caring about case', async () => {
-    // The name comes from CountriesNow and is stored as it arrived; a caller
-    // can reach us in another case, and an exact match would return zero.
-    await repository.list({ city: 'Lisbon', page: 1, limit: 20 });
+  it('compares the city by its folded key, whatever its case and accents', async () => {
+    // The name comes from CountriesNow and is stored as it arrived; its two
+    // catalogues disagree on accents, and an exact match would return zero.
+    await repository.list({ city: 'Póvoa de Varzim', page: 1, limit: 20 });
 
-    expect(whereOfTheQuery()).toEqual({
-      city: { equals: 'Lisbon', mode: 'insensitive' },
-    });
+    expect(whereOfTheQuery()).toEqual({ cityKey: 'povoa de varzim' });
   });
 
   it('combines all three filters', async () => {
@@ -80,7 +78,7 @@ describe('PlacesAdminRepository.list', () => {
     expect(whereOfTheQuery()).toEqual({
       status: 'FAILED',
       countryCode: 'BR',
-      city: { equals: 'Rio de Janeiro', mode: 'insensitive' },
+      cityKey: 'rio de janeiro',
     });
   });
 
@@ -135,10 +133,19 @@ describe('PlacesAdminRepository and the state of a city', () => {
 
     expect(activeWhere(0)).toMatchObject({
       countryCode: 'BR',
-      city: 'Campo Grande',
+      cityKey: 'campo grande',
       stateKey: 'mato grosso do sul',
     });
     expect(activeWhere(1)).toMatchObject({ stateKey: 'alagoas' });
+  });
+
+  it('treats the two spellings of one city as one active ingestion', async () => {
+    // Both would write into one city; running them side by side is the race
+    // the guard exists to stop.
+    await repository.findActiveForCity('PT', 'Póvoa de Varzim');
+
+    expect(activeWhere(0)).toMatchObject({ cityKey: 'povoa de varzim' });
+    expect('city' in activeWhere(0)).toBe(false);
   });
 
   it('compares a missing state as a missing state', async () => {
@@ -298,5 +305,65 @@ describe('PlacesAdminRepository.clearTextFailure', () => {
     const sql = (prisma.$executeRaw.mock.calls[0][0] as string[]).join('?');
     expect(sql).toContain("(stats->'textFailures') - ");
     expect(sql).toContain("stats ? 'textFailures'");
+  });
+});
+
+describe('PlacesAdminRepository and the spelling of a city', () => {
+  let repository: PlacesAdminRepository;
+
+  const client = {
+    cityIngestion: { create: jest.fn() },
+    place: { findMany: jest.fn(), count: jest.fn() },
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    client.cityIngestion.create.mockResolvedValue({ id: 'ingestion-1' });
+    client.place.findMany.mockResolvedValue([]);
+    client.place.count.mockResolvedValue(0);
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PlacesAdminRepository,
+        { provide: PrismaService, useValue: client },
+      ],
+    }).compile();
+
+    repository = moduleRef.get(PlacesAdminRepository);
+  });
+
+  it('folds the city key when an ingestion is created, for the worker to copy', async () => {
+    await repository.create({
+      countryCode: 'PT',
+      city: 'Póvoa de Varzim',
+      state: 'Porto',
+    });
+
+    const [{ data }] = client.cityIngestion.create.mock.calls[0] as [
+      { data: Record<string, unknown> },
+    ];
+    expect(data).toMatchObject({
+      city: 'Póvoa de Varzim',
+      cityKey: 'povoa de varzim',
+      state: 'Porto',
+      stateKey: 'porto',
+    });
+  });
+
+  it('filters the live catalogue by the folded key', async () => {
+    // It used to compare the name exactly, so "Povoa" hid every place stored
+    // as "Póvoa" from the admin who picked it.
+    await repository.listCatalog({
+      countryCode: 'PT',
+      city: 'Povoa de Varzim',
+      page: 1,
+      limit: 20,
+    });
+
+    const [{ where }] = client.place.findMany.mock.calls[0] as [
+      { where: Record<string, unknown> },
+    ];
+    expect(where).toEqual({ countryCode: 'PT', cityKey: 'povoa de varzim' });
+    expect(client.place.count).toHaveBeenCalledWith({ where });
   });
 });

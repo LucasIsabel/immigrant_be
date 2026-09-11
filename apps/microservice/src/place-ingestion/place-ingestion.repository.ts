@@ -48,6 +48,11 @@ export type IngestionStats = {
 export interface CityLocation {
   countryCode: string;
   city: string;
+  /**
+   * As the API folded it on the ingestion row. Copied onto every place, so the
+   * fold lives in one app and the worker never repeats it.
+   */
+  cityKey: string;
   state: string | null;
   /** As the API folded it on the ingestion row; null when there is no state. */
   stateKey: string | null;
@@ -151,7 +156,7 @@ export class PlaceIngestionRepository {
     countryId: string | null,
     places: PlaceToPersist[],
   ): Promise<PersistResult> {
-    const { countryCode, city, state } = location;
+    const { countryCode, city, cityKey, state } = location;
     const stateKey = location.stateKey ?? '';
 
     const existing = await this.prisma.place.findMany({
@@ -184,6 +189,7 @@ export class PlaceIngestionRepository {
         ...place,
         countryCode,
         city,
+        cityKey,
         state,
         stateKey,
         countryId,
