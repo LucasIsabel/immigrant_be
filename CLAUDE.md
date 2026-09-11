@@ -36,19 +36,31 @@
   corrido.** A ordem é essa: unitários verdes → E2E local → só então `gh pr
   create`. Abrir primeiro e verificar depois é o que transforma o PR num pedido
   para outra pessoa descobrir se aquilo funciona.
-- **O E2E corre em ambiente local, com Playwright.** Backend e frontend de pé na
-  máquina, e o percurso exercitado no browser como um utilizador o faria — não
-  em mocks, não por `curl` só, não por dedução a partir do código.
+- **O E2E corre em ambiente local, conduzido pelo Playwright MCP.** Backend e
+  frontend de pé na máquina, e o percurso feito pelas ferramentas
+  `mcp__playwright__*` no browser como um utilizador o faria — navegar, clicar,
+  escrever tecla a tecla, ler o ecrã e a consola — e não em mocks, não por `curl`
+  só, não por dedução a partir do código.
+- **Um script Playwright headless complementa, não substitui.** Serve para
+  repetir um percurso longo ou medir; a garantia é a passagem pelo MCP. Foi pelo
+  MCP, escrevendo como uma pessoa escreve, que o repasse da FE#324 mostrou
+  cidades duplicadas por acento e um seletor que prendia o ecrã (FE#527,
+  FE#528) — o script, que preenchia o campo de uma vez e lia só as primeiras
+  opções, tinha passado.
 - Vale para os dois repos. Uma mudança só de backend é na mesma verificada pela
   ponta que a consome; foi assim que se apanhou o campo que o better-auth
   descartava em silêncio (BE#328).
-- **O resultado entra no corpo do PR**: o que foi percorrido, e o que se
+- **O resultado entra no corpo do PR**: o que foi percorrido pelo MCP, e o que se
   observou. Uma tabela de "fiz X, aconteceu Y" vale mais do que a palavra
   "testado".
-- **Se o E2E não for possível** — ambiente em falta, dependência externa fora do
-  ar, percurso que exige dados de produção — dizê-lo **antes de abrir o PR**, e
-  esperar pela decisão do Lucas em vez de abrir na mesma. Não verificar é
-  aceitável quando é dito e aceite; fingir que se verificou não é.
+- **Se o E2E não for possível** — ambiente em falta, o Playwright MCP
+  indisponível, dependência externa fora do ar, percurso que exige dados de
+  produção — dizê-lo **antes de abrir o PR**, e esperar pela decisão do Lucas em
+  vez de abrir na mesma. Cair para o script em silêncio conta como não
+  verificar. Não verificar é aceitável quando é dito e aceite; fingir que se
+  verificou não é.
+- Capturas e snapshots do MCP ficam fora do que se commita: no FE, em
+  `.playwright-mcp/`, que o git ignora — nunca na raiz do repo.
 - Montar o estado que o percurso precisa (por SQL, por seed) faz parte do E2E, e
   limpar o que ele deixou para trás — utilizadores de teste, linhas alteradas —
   também.
