@@ -3,6 +3,7 @@ import {
   NO_AI_TELLS_RULE,
   NO_DASH_RULE,
 } from './prose-rules';
+import { PLACE_TEXT_LIMITS } from '../schemas/place-texts.schema';
 
 /**
  * Os fatos que o modelo recebe. Não há campo livre de propósito: tudo aqui foi
@@ -60,8 +61,8 @@ ${fatos}
 
 ## Task
 For each of Portuguese (pt-BR), English and Spanish, write:
-- **description**: one or two sentences on what the place is and why someone would go.
-- **tip**: one practical line from someone who has been there, or null.
+- **description**: one or two sentences on what the place is and why someone would go. Between ${PLACE_TEXT_LIMITS.descriptionMin} and ${PLACE_TEXT_LIMITS.descriptionMax} characters. A longer answer is rejected, so keep it inside the limit rather than letting it run on.
+- **tip**: one practical line from someone who has been there, at most ${PLACE_TEXT_LIMITS.tipMax} characters, or null. The key must always be present; omitting it is not the same as null.
 
 ## Rules
 - **Never state a fact that is not above.** No opening hours, no ticket prices, no founding dates, no architect names, no visitor numbers, unless they appear in the facts.
@@ -73,5 +74,5 @@ ${NO_DASH_RULE}
 ${NO_AI_TELLS_RULE}
 ${HUMAN_CADENCE_RULE}
 
-Return JSON with keys pt, en and es, each an object with description and tip.`;
+Return JSON with keys exactly pt, en and es (use pt even though the variety is pt-BR), each an object with description and tip. Return the JSON on its own, with no prose around it and no code fence.`;
 }

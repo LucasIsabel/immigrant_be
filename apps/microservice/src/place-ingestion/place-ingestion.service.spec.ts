@@ -503,5 +503,20 @@ describe('PlaceIngestionService', () => {
 
       await expect(service.countTextFailures(INGESTION_ID)).resolves.toBe(1);
     });
+
+    it('names the model that failed when no answer could be used', async () => {
+      // This branch had no test at all, which is how 31 Sentry events managed
+      // to say a place had no usable JSON without ever saying who wrote it.
+      aiRouter.generateJson.mockResolvedValueOnce({
+        data: null,
+        result: { model: 'deepseek/deepseek-v4-flash', usage: {} },
+      });
+
+      await service.ingestCity(INGESTION_ID);
+
+      await expect(
+        service.writePlaceTexts('place-1', INGESTION_ID),
+      ).rejects.toThrow(/deepseek\/deepseek-v4-flash/);
+    });
   });
 });

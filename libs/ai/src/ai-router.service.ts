@@ -12,10 +12,11 @@ import {
   InsufficientCreditsError,
   isGeminiDirect,
   RateLimitedError,
+  UnusableResponseError,
   stripGeminiDirectPrefix,
 } from './providers/ai-provider.types';
 import { OpenRouterBreaker } from './openrouter-breaker.service';
-import { parseJsonResponse } from './utils/json-response.util';
+import { parseJsonResponseDetailed } from './utils/json-response.util';
 
 /** Only one wait per model, and never a long one — the chain is the real remedy. */
 const MAX_RATE_LIMIT_WAIT_MS = 5_000;
@@ -171,7 +172,9 @@ export class AiRouterService {
             ? 'insufficient_credits'
             : error instanceof RateLimitedError
               ? 'rate_limited'
-              : 'provider_error';
+              : error instanceof UnusableResponseError
+                ? 'unusable_response'
+                : 'provider_error';
 
         failures.push(
           `${entry}: ${error instanceof Error ? error.message : String(error)}`,
@@ -183,6 +186,15 @@ export class AiRouterService {
             model,
             provider: viaGeminiDirect ? 'gemini-direct' : 'openrouter',
             errorKind: kind,
+            // An unusable answer was still charged for. Booking it with no
+            // cost is how 31 failed calls looked like successes on the bill.
+            ...(error instanceof UnusableResponseError && error.usage
+              ? {
+                  inputTokens: error.usage.inputTokens,
+                  outputTokens: error.usage.outputTokens,
+                  costUsd: error.usage.costUsd,
+                }
+              : {}),
           },
           context,
         );
@@ -254,9 +266,15 @@ export class AiRouterService {
   /**
    * Text plus schema validation, which is what every caller actually wants.
    *
-   * Returns `null` when the model answered but the answer is unusable — the same
-   * contract `GeminiBaseService.parseJsonResponse` already established, so
-   * migrating a caller does not change how it handles failure.
+   * The parsing happens **inside** the link, not after the chain: an answer
+   * that does not parse fails its model and the next one is asked. It used to
+   * happen afterwards, which made an unusable answer a chain success — the
+   * fallbacks were never consulted, and the caller's BullMQ retries all went
+   * back to the model that had just failed. That is `IMMIGRANT-BE-1`: 31
+   * events, 12 places, one of them failing nine times in a row.
+   *
+   * Still returns `null` when every model answered unusably, because seven
+   * callers already treat `null` as "the model did not answer usefully".
    */
   async generateJson<T>(
     scenario: AiScenario,
@@ -264,12 +282,69 @@ export class AiRouterService {
     schema: z.ZodType<T>,
     context: AiCallContext = {},
   ): Promise<{ data: T | null; result: AiTextResult }> {
-    const result = await this.generateText(scenario, prompt, context);
+    return this.runParsedChain(scenario, context, schema, (model, direct) =>
+      direct
+        ? this.geminiDirect.generateText(model, prompt)
+        : this.openRouter.generateText(model, prompt),
+    );
+  }
 
-    return {
-      data: parseJsonResponse(result.text, schema, result.model),
-      result,
-    };
+  /**
+   * Walks the chain with the parser as part of each attempt.
+   *
+   * The `null` return is the reason this is not simply `runChain`: when every
+   * model answers unusably the callers want `null` and the last result, not the
+   * `Every model failed` throw a transport outage produces. Those are different
+   * failures and the callers already tell them apart.
+   */
+  private async runParsedChain<T>(
+    scenario: AiScenario,
+    context: AiCallContext,
+    schema: z.ZodType<T>,
+    call: (model: string, viaGeminiDirect: boolean) => Promise<AiTextResult>,
+  ): Promise<{ data: T | null; result: AiTextResult }> {
+    let lastUnusable: { result: AiTextResult } | null = null;
+
+    try {
+      const result = await this.runChain<AiTextResult & { parsed: T }>(
+        scenario,
+        context,
+        async (model, viaGeminiDirect) => {
+          const answer = await call(model, viaGeminiDirect);
+          const outcome = parseJsonResponseDetailed(
+            answer.text,
+            schema,
+            answer.model,
+          );
+
+          if (!outcome.ok) {
+            lastUnusable = { result: answer };
+            throw new UnusableResponseError(
+              answer.provider,
+              answer.model,
+              outcome.reason,
+              outcome.detail,
+              answer.usage,
+            );
+          }
+
+          return { ...answer, parsed: outcome.data };
+        },
+      );
+
+      return { data: result.parsed, result };
+    } catch (error) {
+      // Every link answered, and none of them usefully. The callers' `null`
+      // branch is the right place for that; a throw would turn a bad answer
+      // into an outage.
+      if (lastUnusable) {
+        return {
+          data: null,
+          result: (lastUnusable as { result: AiTextResult }).result,
+        };
+      }
+      throw error;
+    }
   }
 
   /**
@@ -288,23 +363,14 @@ export class AiRouterService {
     schema: z.ZodType<T>,
     context: AiCallContext = {},
   ): Promise<{ data: T | null; result: AiTextResult }> {
-    const result = await this.runChain(
-      scenario,
-      context,
-      (model, viaGeminiDirect) => {
-        if (viaGeminiDirect) {
-          throw new Error(
-            `${model} cannot be used for ${scenario}: gemini-direct has no vision path`,
-          );
-        }
-        return this.openRouter.analyseImages(model, prompt, imageUrls);
-      },
-    );
-
-    return {
-      data: parseJsonResponse(result.text, schema, result.model),
-      result,
-    };
+    return this.runParsedChain(scenario, context, schema, (model, direct) => {
+      if (direct) {
+        throw new Error(
+          `${model} cannot be used for ${scenario}: gemini-direct has no vision path`,
+        );
+      }
+      return this.openRouter.analyseImages(model, prompt, imageUrls);
+    });
   }
 
   async generateImage(
