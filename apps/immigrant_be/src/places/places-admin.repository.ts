@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import {
+  CityIngestionScope,
   CityIngestionStatus,
   PlaceCategory,
   PlaceReviewStatus,
@@ -52,28 +53,61 @@ export class PlacesAdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * One active ingestion per city.
+   * One active ingestion per reach.
    *
-   * Deliberately a service guard and not a database constraint: the same city
+   * Deliberately a service guard and not a database constraint: the same reach
    * can be ingested many times over its life — approved, rejected, run again
    * once the pipeline improves. What it cannot have is **two at once**, which
    * would compete for the same slugs.
    *
-   * And a city is `(country, cityKey, stateKey)`. Campo Grande in Mato Grosso
-   * do Sul and Campo Grande in Alagoas write their places under different
-   * keys, so they compete for nothing and may run side by side. A null state
-   * is a value here like any other: Prisma reads it as `IS NULL`, so two
-   * stateless ingestions of one name still collide, as they always did.
+   * A city is `(country, cityKey, stateKey)`. Campo Grande in Mato Grosso do
+   * Sul and Campo Grande in Alagoas write their places under different keys,
+   * so they compete for nothing and may run side by side. A null state is a
+   * value here like any other: Prisma reads it as `IS NULL`, so two stateless
+   * ingestions of one name still collide, as they always did. The name is
+   * compared folded: "Povoa de Varzim" running blocks "Póvoa de Varzim".
    *
-   * The name is compared folded: "Povoa de Varzim" running blocks "Póvoa de
-   * Varzim", because the two are one city and would fill it twice.
+   * A country sweep does not have a city, so it is compared by country and
+   * categories alone — and never against a city ingestion, which claims only
+   * the slugs of the city it names. Between two sweeps, **empty means all**:
+   * an empty set collides with everything, and two non-empty sets collide when
+   * they share a category. Portuguese beaches twice over is the same work
+   * twice; Portuguese beaches and Portuguese museums are not (#220).
+   *
+   * Known narrowness, accepted: two categories can claim the same Wikidata
+   * item — a beach that is also a nature reserve — so disjoint sweeps can
+   * still meet on one slug. The upsert on `[countryCode, city, stateKey, slug]`
+   * is what makes that harmless.
    */
-  findActiveForCity(countryCode: string, city: string, state?: string) {
+  findActiveOverlapping(params: {
+    countryCode: string;
+    scope: CityIngestionScope;
+    city?: string;
+    state?: string;
+    categories: PlaceCategory[];
+  }) {
+    const { countryCode, scope, categories } = params;
+    const forCity =
+      scope === CityIngestionScope.CITY && params.city
+        ? {
+            cityKey: normalizeCity(params.city),
+            stateKey: normalizeState(params.state),
+          }
+        : {};
+
     return this.prisma.cityIngestion.findFirst({
       where: {
         countryCode,
-        cityKey: normalizeCity(city),
-        stateKey: normalizeState(state),
+        scope,
+        ...forCity,
+        // Empty is "all", so it filters nothing and collides with everything.
+        // `hasSome: []` would answer false, hence the branch.
+        ...(categories.length && {
+          OR: [
+            { categories: { isEmpty: true } },
+            { categories: { hasSome: categories } },
+          ],
+        }),
         status: { in: IN_FLIGHT },
       },
       select: { id: true, status: true },
@@ -82,21 +116,31 @@ export class PlacesAdminRepository {
 
   create(data: {
     countryCode: string;
-    city: string;
+    scope?: CityIngestionScope;
+    categories?: PlaceCategory[];
+    city?: string;
     state?: string;
     osmAreaId?: number;
     requestedById?: string;
   }) {
+    const scope = data.scope ?? CityIngestionScope.CITY;
+    // The shape is decided here rather than spread in from the DTO: a `city`
+    // sent alongside COUNTRY would otherwise be written and quietly believed.
+    // A sweep has no city, so it has nothing to fold either.
+    const city = scope === CityIngestionScope.CITY ? (data.city ?? null) : null;
+
     return this.prisma.cityIngestion.create({
       data: {
         countryCode: data.countryCode,
-        city: data.city,
+        scope,
+        categories: data.categories ?? [],
+        city,
         // Both keys are folded here, once, and read by the worker: the places
         // it writes get them, so the fold never has to be repeated in another
         // app.
-        cityKey: normalizeCity(data.city),
-        state: data.state ?? null,
-        stateKey: normalizeState(data.state),
+        cityKey: city ? normalizeCity(city) : null,
+        state: city ? (data.state ?? null) : null,
+        stateKey: city ? normalizeState(data.state) : null,
         osmAreaId: data.osmAreaId ? BigInt(data.osmAreaId) : null,
         requestedById: data.requestedById,
       },
@@ -105,6 +149,7 @@ export class PlacesAdminRepository {
 
   async list(params: {
     status?: CityIngestionStatus;
+    scope?: CityIngestionScope;
     countryCode?: string;
     city?: string;
     state?: string;
@@ -114,6 +159,9 @@ export class PlacesAdminRepository {
     const stateKey = stateFilterKey(params);
     const where: Prisma.CityIngestionWhereInput = {
       ...(params.status && { status: params.status }),
+      // The list mixes city ingestions and country sweeps since #220, and the
+      // admin table has to be able to look at one kind at a time.
+      ...(params.scope && { scope: params.scope }),
       ...(params.countryCode && { countryCode: params.countryCode }),
       // The city is stored as CountriesNow spelled it, and its two catalogues
       // disagree on accents, so the folded key is what is compared: "lisbon"

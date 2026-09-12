@@ -1716,8 +1716,8 @@ frontend; schema inline não gera nada utilizável e um `$ref` dentro dele exigi
 
 | Rota | Resposta | Regra |
 | --- | --- | --- |
-| `POST /admin/places/ingestions` | `CityIngestionResponseDto` (202) | `state` opcional; 409 se já houver ingestão `PROCESSING` ou `READY_FOR_REVIEW` da mesma `(countryCode, city, stateKey)` |
-| `GET  /admin/places/ingestions` | `PaginatedCityIngestionsResponseDto` | filtro por `status`, `countryCode`, `city` e `state` (só junto com `city`), paginação server-side |
+| `POST /admin/places/ingestions` | `CityIngestionResponseDto` (202) | `scope` é `CITY` (omitido) ou `COUNTRY`; `city` só é obrigatória em `CITY` e dá **400** se vier com `COUNTRY`; `categories` vazio significa todas; `state` opcional; 409 quando já corre uma ingestão `PROCESSING`/`READY_FOR_REVIEW` com alcance que se cruza (ver abaixo) |
+| `GET  /admin/places/ingestions` | `PaginatedCityIngestionsResponseDto` | filtro por `status`, `scope`, `countryCode`, `city` e `state` (só junto com `city`), paginação server-side |
 | `GET  /admin/places/ingestions/:id` | `CityIngestionDetailResponseDto` | lugares + traduções + proveniência + conflitos |
 | `PATCH …/:id/places/:placeId` | `AdminPlaceResponseDto` | 409 se o lugar não estiver em `DRAFT` |
 | `POST …/:id/places/:placeId/reject` | `AdminPlaceResponseDto` | o motivo vai para `stats.placeRejections[]` |
@@ -1728,16 +1728,41 @@ frontend; schema inline não gera nada utilizável e um `$ref` dentro dele exigi
 
 Três decisões que não são óbvias no código:
 
-- **Uma ingestão ativa por cidade é guarda de serviço, não constraint.** A mesma
-  cidade pode ter várias ingestões ao longo do tempo — aprovada, recusada, uma
+- **Uma ingestão ativa por alcance é guarda de serviço, não constraint.** O mesmo
+  alcance pode ter várias ingestões ao longo do tempo — aprovada, recusada, uma
   nova depois de melhorar o pipeline. O que não pode é duas ao mesmo tempo,
-  disputando os mesmos slugs.
+  disputando os mesmos slugs. Desde a #220 o alcance tem duas formas, e a colisão
+  compara-as:
+
+  | A pedir | Já activa | Colide? |
+  | --- | --- | --- |
+  | PT/COUNTRY/[] | PT/CITY/Lisboa | não — a varredura não disputa os slugs de uma cidade nomeada |
+  | PT/COUNTRY/[BEACH] | PT/COUNTRY/[BEACH] | **sim** — o mesmo trabalho duas vezes |
+  | PT/COUNTRY/[BEACH] | PT/COUNTRY/[MUSEUM] | não — conjuntos disjuntos |
+  | PT/COUNTRY/[BEACH] | PT/COUNTRY/[] | **sim** — vazio é todas |
+  | PT/CITY/Lisboa | PT/CITY/Lisboa | **sim** — como sempre foi |
+  | BR/CITY/Campo Grande/MS | BR/CITY/Campo Grande/AL | não — como sempre foi |
+
+  Estreiteza conhecida e aceite: duas categorias podem reclamar o mesmo item do
+  Wikidata — uma praia que também é reserva natural — portanto varreduras
+  disjuntas ainda se podem cruzar num slug. Quem apara isso é o upsert por
+  `[countryCode, city, stateKey, slug]`, que já torna a persistência idempotente.
 - **O 422 no approve lista quem está incompleto.** Aprovar em silêncio publicaria
   um lugar sem descrição em espanhol, e ninguém descobriria até um usuário
   espanhol abrir o card vazio.
 - **`osmAreaId` é `BigInt` no banco e vai como string no JSON.** `JSON.stringify`
   lança em `BigInt`: sem a conversão a rota devolveria 500 na primeira cidade que
   resolvesse a área.
+
+**O worker ainda não corre varreduras (#220).** O âmbito `COUNTRY` está modelado
+— a coluna, a guarda, o DTO e o 409 —, mas `ingestCity` recusa-o logo à entrada
+com `PermanentIngestionError`, antes do primeiro `markStep`: a linha vai a
+`FAILED` com mensagem e os admins são notificados, em vez de ficar presa em
+`PROCESSING` durante três tentativas iguais. Correr a varredura exige cidade por
+lugar em `persistDrafts` (o `discoverInCountry` da #219 já a sabe achar) e um
+corte que não assuma uma cidade — é issue à parte. A UI de disparo, essa, é a
+FE#322; o formulário actual continua a exigir cidade, logo não consegue criar
+uma varredura.
 
 O motivo de uma recusa individual vai para `stats.placeRejections[]` (mesmo
 `jsonb ||` atômico do `textFailures`) em vez de uma coluna nova em `Place`: é

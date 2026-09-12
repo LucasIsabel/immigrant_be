@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -8,6 +9,7 @@ import {
 import { INGESTION_DISPATCHER, type IngestionDispatcher } from '@app/ingestion';
 import {
   CityIngestion,
+  CityIngestionScope,
   CityIngestionStatus,
   PlaceReviewStatus,
 } from '../../../../generated/prisma';
@@ -38,20 +40,43 @@ export class PlacesAdminService {
     dto: CreateCityIngestionDto,
     adminId: string,
   ): Promise<CityIngestionResponseDto> {
-    const active = await this.repository.findActiveForCity(
-      dto.countryCode,
-      dto.city,
-      dto.state,
-    );
+    const scope = dto.scope ?? CityIngestionScope.CITY;
+    const categories = dto.categories ?? [];
+
+    // `@ValidateIf` skips the validators when the scope is COUNTRY, but the
+    // field still arrives — so refusing it here is what keeps a city from
+    // being sent, ignored, and silently dropped (the lesson of BE#328).
+    if (scope === CityIngestionScope.COUNTRY && (dto.city || dto.state)) {
+      throw new BadRequestException(
+        'Uma varredura de país não leva cidade nem estado',
+      );
+    }
+
+    const active = await this.repository.findActiveOverlapping({
+      countryCode: dto.countryCode,
+      scope,
+      city: dto.city,
+      state: dto.state,
+      categories,
+    });
     if (active) {
-      const place = dto.state ? `${dto.city}, ${dto.state}` : dto.city;
+      const target =
+        scope === CityIngestionScope.COUNTRY
+          ? `todo o país (${dto.countryCode})`
+          : `${dto.state ? `${dto.city}, ${dto.state}` : dto.city} (${dto.countryCode})`;
+      const scoped = categories.length ? ` em ${categories.join(', ')}` : '';
       throw new ConflictException(
-        `Já existe uma ingestão ${active.status} para ${place} (${dto.countryCode})`,
+        `Já existe uma ingestão ${active.status} para ${target}${scoped}`,
       );
     }
 
     const ingestion = await this.repository.create({
-      ...dto,
+      countryCode: dto.countryCode,
+      scope,
+      categories,
+      city: dto.city,
+      state: dto.state,
+      osmAreaId: dto.osmAreaId,
       requestedById: adminId,
     });
     await this.dispatcher.dispatchCity(ingestion.id);
@@ -63,6 +88,7 @@ export class PlacesAdminService {
     const limit = query.limit ?? 20;
     const { data, total } = await this.repository.list({
       status: query.status,
+      scope: query.scope,
       // The ISO2 is stored upper-cased; a caller can send it in any case, and
       // a `pt` that fails to match `PT` would be an empty list with nothing to
       // explain it. Same treatment the catalogue already applies.
@@ -263,6 +289,8 @@ function toResponse(ingestion: CityIngestion): CityIngestionResponseDto {
   return {
     id: ingestion.id,
     countryCode: ingestion.countryCode,
+    scope: ingestion.scope,
+    categories: ingestion.categories,
     city: ingestion.city,
     state: ingestion.state,
     cityWikidataId: ingestion.cityWikidataId,

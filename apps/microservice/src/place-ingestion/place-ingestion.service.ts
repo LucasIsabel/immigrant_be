@@ -9,6 +9,7 @@ import {
   PermanentIngestionError,
   RetryableIngestionError,
 } from '@app/ingestion';
+import { CityIngestionScope } from '../../../../generated/prisma';
 import {
   CityNotResolvedError,
   type DiscoveredPlace,
@@ -74,7 +75,29 @@ export class PlaceIngestionService {
       );
     }
 
+    // The scope was modelled in #220; running the sweep — a city per place in
+    // `persistDrafts`, and a cut that does not assume one city — is its own
+    // issue. Permanent on purpose: three attempts at what does not exist yet
+    // are three identical failures and half an hour of backoff, and the row
+    // would sit in PROCESSING for all of it. Refused here, before the first
+    // `markStep`, it goes to FAILED with a message and the admins are told.
+    if (ingestion.scope === CityIngestionScope.COUNTRY) {
+      throw new PermanentIngestionError(
+        `Varredura por país (${ingestion.countryCode}) ainda não é executada pelo worker`,
+        'resolve_city',
+      );
+    }
+
     const { countryCode, city, cityKey, state, stateKey } = ingestion;
+    // The CHECK in the migration makes this unreachable through the API. It is
+    // here because the columns are nullable now, and a null that slipped in by
+    // another door would reach `persistDrafts` as a city named "null".
+    if (city === null || cityKey === null) {
+      throw new PermanentIngestionError(
+        `Ingestão ${ingestionId} é de cidade e não tem cidade`,
+        'resolve_city',
+      );
+    }
 
     await this.repository.markStep(ingestionId, 'resolve_city');
     const cityRef = await this.resolveCity(countryCode, city, state);

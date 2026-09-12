@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  CityIngestionScope,
   CityIngestionStatus,
   PlaceCategory,
   PlaceReviewStatus,
@@ -87,8 +88,24 @@ export class CityIngestionResponseDto {
   @ApiProperty({ example: 'PT' })
   countryCode: string;
 
-  @ApiProperty({ example: 'Lisbon' })
-  city: string;
+  @ApiProperty({ enum: CityIngestionScope })
+  scope: CityIngestionScope;
+
+  @ApiProperty({
+    enum: PlaceCategory,
+    isArray: true,
+    description: 'Empty means all of them.',
+  })
+  categories: PlaceCategory[];
+
+  @ApiPropertyOptional({
+    description:
+      'The city this covers. Null on a COUNTRY sweep, which has none — each place it finds carries its own city instead.',
+    example: 'Lisbon',
+    nullable: true,
+    type: String,
+  })
+  city?: string | null;
 
   @ApiPropertyOptional({
     description:

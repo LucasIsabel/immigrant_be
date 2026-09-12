@@ -1110,7 +1110,16 @@ enum CityIngestionStatus {
   REJECTED
 }
 
-/// Uma tentativa de popular os lugares de uma cidade.
+/// What an ingestion covers. `CITY` is the named city it was asked for;
+/// `COUNTRY` sweeps a whole country for one or more categories, and has no
+/// city of its own — each place it finds brings its own (see #220).
+enum CityIngestionScope {
+  CITY
+  COUNTRY
+}
+
+/// Uma tentativa de popular os lugares de uma cidade — ou, desde a #220, de
+/// um país inteiro numa ou mais categorias.
 ///
 /// A revisão é por CIDADE, não por lugar: com ~186 cidades e ~10 lugares cada,
 /// aprovar um por um seriam 1.800 decisões, e trabalho que ninguém faz vira
@@ -1123,11 +1132,23 @@ enum CityIngestionStatus {
 model CityIngestion {
   id             String              @id @default(uuid()) @db.Uuid
   countryCode    String              @map("country_code") @db.VarChar(2)
-  city           String              @db.VarChar(100)
+  /// Whether this covers one named city or a whole country. Defaults to `CITY`
+  /// because that is what every row written before #220 is.
+  scope          CityIngestionScope  @default(CITY)
+  /// Which categories to look for. **Empty means all of them**, which is the
+  /// behaviour every city ingestion has always had — so the default is the
+  /// past, spelled out.
+  categories     PlaceCategory[]     @default([])
+  /// The city this was asked for, when there is one. Null on a `COUNTRY`
+  /// sweep, where each place finds its own city instead (#219).
+  city           String?             @db.VarChar(100)
   /// `normalizeCity(city)`, folded by the API when the row is created and
   /// copied by the worker onto every place it writes, like `stateKey` below.
-  /// The admin filters and the "one active ingestion per city" guard read it.
-  cityKey        String              @map("city_key") @db.VarChar(100)
+  /// The admin filters and the overlap guard read it **when the scope is
+  /// `CITY`**. A country sweep has no city, so this and `city` are null
+  /// together — a CHECK holds the two to the same story, because they are one
+  /// fold of one another and would lie apart.
+  cityKey        String?             @map("city_key") @db.VarChar(100)
   /// The state that tells this city from its namesakes (see `Business.stateKey`).
   /// Null where the country has no subdivisions or nobody said which.
   ///

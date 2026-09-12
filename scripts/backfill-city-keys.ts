@@ -17,7 +17,7 @@
  * Needs DATABASE_URL. Run it from a checkout: the production image ships
  * neither `scripts/` nor the `apps/` sources this imports the fold from.
  */
-import { PrismaClient } from '../generated/prisma';
+import { CityIngestionScope, PrismaClient } from '../generated/prisma';
 import { cityIdentity } from '../apps/immigrant_be/src/business/city-key';
 
 interface KeyedRow {
@@ -75,7 +75,16 @@ function tables(prisma: PrismaClient): Table[] {
     },
     {
       name: 'city_ingestions',
-      read: () => prisma.cityIngestion.findMany({ select: SELECT }),
+      // Only the city ones: since #220 a country sweep has no city, and no key
+      // to reconcile. Narrowed rather than cast, so the filter and the type
+      // say the same thing.
+      read: async () =>
+        (
+          await prisma.cityIngestion.findMany({
+            where: { scope: CityIngestionScope.CITY },
+            select: SELECT,
+          })
+        ).filter((row): row is KeyedRow => row.city !== null),
       expected: (row) => cityIdentity(row),
       write: (id, keys) =>
         prisma.cityIngestion.update({ where: { id }, data: keys }),

@@ -9,6 +9,10 @@ jest.mock('@app/database', () => ({
 
 jest.mock('../../../../generated/prisma', () => ({
   PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM' },
+  // The factory replaces the module whole: without this the service imports
+  // `CityIngestionScope` as undefined and every test here dies on the scope
+  // check, not on what it meant to prove.
+  CityIngestionScope: { CITY: 'CITY', COUNTRY: 'COUNTRY' },
   CityIngestionStatus: {
     PROCESSING: 'PROCESSING',
     READY_FOR_REVIEW: 'READY_FOR_REVIEW',
@@ -291,6 +295,25 @@ describe('PlaceIngestionService', () => {
         'country-1',
         expect.any(Array),
       );
+    });
+
+    it('refuses a country sweep rather than half-running it', async () => {
+      // The scope was modelled in #220 and running it is another issue.
+      // Permanent, so the row reaches FAILED with a message instead of sitting
+      // in PROCESSING through three identical retries.
+      repository.findIngestion.mockResolvedValue({
+        id: INGESTION_ID,
+        countryCode: 'PT',
+        scope: 'COUNTRY',
+        city: null,
+        cityKey: null,
+      });
+
+      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
+        PermanentIngestionError,
+      );
+      expect(repository.markStep).not.toHaveBeenCalled();
+      expect(discovery.resolveCity).not.toHaveBeenCalled();
     });
 
     it('fails for good when the city is not on Wikidata — never guesses', async () => {

@@ -9,7 +9,10 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { CityIngestionStatus } from '../../../../../generated/prisma';
+import {
+  CityIngestionScope,
+  CityIngestionStatus,
+} from '../../../../../generated/prisma';
 
 export class ListCityIngestionsQueryDto {
   @ApiPropertyOptional({ description: 'ISO2 country code', example: 'PT' })
@@ -33,6 +36,15 @@ export class ListCityIngestionsQueryDto {
   @IsString()
   @Length(1, 120)
   state?: string;
+
+  @ApiPropertyOptional({
+    enum: CityIngestionScope,
+    description:
+      'Narrows to city ingestions or to country sweeps. The list mixes both since #220.',
+  })
+  @IsOptional()
+  @IsEnum(CityIngestionScope)
+  scope?: CityIngestionScope;
 
   @ApiPropertyOptional({ enum: CityIngestionStatus })
   @IsOptional()

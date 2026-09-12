@@ -27,7 +27,11 @@ jest.mock('../../../../generated/prisma', () => ({
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
   },
-  PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM' },
+  PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM', BEACH: 'BEACH' },
+  // Read at import time by the decorators of `CreateCityIngestionDto`: this
+  // factory replaces the module whole, so a missing enum is a suite that
+  // cannot even load.
+  CityIngestionScope: { CITY: 'CITY', COUNTRY: 'COUNTRY' },
 }));
 
 import { INestApplication } from '@nestjs/common';
@@ -124,6 +128,29 @@ describe('OpenAPI contract — Places Admin', () => {
       'POST /admin/places/{id}/activate',
       'POST /admin/places/{id}/deactivate',
     ]);
+  });
+
+  it('says in the contract that a sweep has no city', () => {
+    // The admin screens read `city`, and a country sweep has none (#220). The
+    // frontend learns it here, when it regenerates the client, instead of from
+    // a cell that renders empty and explains nothing.
+    const schemas = (document.components?.schemas ?? {}) as Record<
+      string,
+      { properties?: Record<string, unknown>; required?: string[] }
+    >;
+
+    expect(schemas.CreateCityIngestionDto.required ?? []).not.toContain('city');
+    expect(schemas.CreateCityIngestionDto.properties).toHaveProperty('scope');
+    expect(schemas.CreateCityIngestionDto.properties).toHaveProperty(
+      'categories',
+    );
+
+    expect(schemas.CityIngestionResponseDto.required ?? []).not.toContain(
+      'city',
+    );
+    expect(schemas.CityIngestionResponseDto.required ?? []).toEqual(
+      expect.arrayContaining(['scope', 'categories']),
+    );
   });
 
   it('points every success response with a body at a named schema', () => {
