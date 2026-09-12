@@ -7,13 +7,18 @@ jest.mock('@app/database', () => ({
 
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
-import { CityIngestionStatus } from '../../../../generated/prisma';
+import {
+  CityIngestionScope,
+  CityIngestionStatus,
+  PlaceCategory,
+} from '../../../../generated/prisma';
 import { PlacesAdminRepository } from './places-admin.repository';
 
 const prisma = {
   cityIngestion: {
     findMany: jest.fn(),
     findFirst: jest.fn(),
+    create: jest.fn(),
     count: jest.fn(),
   },
   $executeRaw: jest.fn(),
@@ -124,12 +129,15 @@ describe('PlacesAdminRepository and the state of a city', () => {
     // Campo Grande in Mato Grosso do Sul and in Alagoas write their places
     // under different keys: they compete for nothing, so neither blocks the
     // other. The same triple still does.
-    await repository.findActiveForCity(
-      'BR',
-      'Campo Grande',
-      'Mato Grosso do Sul',
-    );
-    await repository.findActiveForCity('BR', 'Campo Grande', 'Alagoas');
+    const inState = (state: string) => ({
+      countryCode: 'BR',
+      scope: CityIngestionScope.CITY,
+      city: 'Campo Grande',
+      state,
+      categories: [],
+    });
+    await repository.findActiveOverlapping(inState('Mato Grosso do Sul'));
+    await repository.findActiveOverlapping(inState('Alagoas'));
 
     expect(activeWhere(0)).toMatchObject({
       countryCode: 'BR',
@@ -142,7 +150,12 @@ describe('PlacesAdminRepository and the state of a city', () => {
   it('treats the two spellings of one city as one active ingestion', async () => {
     // Both would write into one city; running them side by side is the race
     // the guard exists to stop.
-    await repository.findActiveForCity('PT', 'Póvoa de Varzim');
+    await repository.findActiveOverlapping({
+      countryCode: 'PT',
+      scope: CityIngestionScope.CITY,
+      city: 'Póvoa de Varzim',
+      categories: [],
+    });
 
     expect(activeWhere(0)).toMatchObject({ cityKey: 'povoa de varzim' });
     expect('city' in activeWhere(0)).toBe(false);
@@ -151,9 +164,87 @@ describe('PlacesAdminRepository and the state of a city', () => {
   it('compares a missing state as a missing state', async () => {
     // `null` is `IS NULL` to Prisma: two stateless ingestions of one name
     // still collide, exactly as they did before states existed.
-    await repository.findActiveForCity('PT', 'Lisbon');
+    await repository.findActiveOverlapping({
+      countryCode: 'PT',
+      scope: CityIngestionScope.CITY,
+      city: 'Lisbon',
+      categories: [],
+    });
 
     expect(activeWhere(0)).toMatchObject({ stateKey: null });
+  });
+
+  it('asks nothing about a city when the scope is a country', async () => {
+    await repository.findActiveOverlapping({
+      countryCode: 'PT',
+      scope: CityIngestionScope.COUNTRY,
+      categories: [],
+    });
+
+    expect(activeWhere(0)).toMatchObject({
+      countryCode: 'PT',
+      scope: 'COUNTRY',
+    });
+    expect('cityKey' in activeWhere(0)).toBe(false);
+    expect('stateKey' in activeWhere(0)).toBe(false);
+  });
+
+  it('lets a sweep of everything collide with everything, by not filtering', async () => {
+    // Empty is "all categories": `hasSome: []` would answer false and let two
+    // full sweeps run side by side.
+    await repository.findActiveOverlapping({
+      countryCode: 'PT',
+      scope: CityIngestionScope.COUNTRY,
+      categories: [],
+    });
+
+    expect('OR' in activeWhere(0)).toBe(false);
+  });
+
+  it('collides with a sweep that shares a category, or that covers them all', async () => {
+    await repository.findActiveOverlapping({
+      countryCode: 'PT',
+      scope: CityIngestionScope.COUNTRY,
+      categories: [PlaceCategory.BEACH],
+    });
+
+    expect(activeWhere(0)).toMatchObject({
+      OR: [
+        { categories: { isEmpty: true } },
+        { categories: { hasSome: ['BEACH'] } },
+      ],
+    });
+  });
+
+  it('writes a sweep without a city, and folds the city when there is one', async () => {
+    prisma.cityIngestion.create.mockResolvedValue({});
+
+    await repository.create({
+      countryCode: 'PT',
+      scope: CityIngestionScope.COUNTRY,
+      categories: [PlaceCategory.BEACH],
+    });
+    await repository.create({ countryCode: 'PT', city: 'Póvoa de Varzim' });
+
+    const dataOf = (call: number) =>
+      (
+        prisma.cityIngestion.create.mock.calls[call][0] as {
+          data: Record<string, unknown>;
+        }
+      ).data;
+    expect(dataOf(0)).toMatchObject({
+      scope: 'COUNTRY',
+      city: null,
+      cityKey: null,
+      stateKey: null,
+      categories: ['BEACH'],
+    });
+    expect(dataOf(1)).toMatchObject({
+      scope: 'CITY',
+      city: 'Póvoa de Varzim',
+      cityKey: 'povoa de varzim',
+      categories: [],
+    });
   });
 
   it('narrows the list by state only alongside a city', async () => {

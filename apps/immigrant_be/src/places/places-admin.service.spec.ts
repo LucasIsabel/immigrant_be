@@ -16,15 +16,23 @@ jest.mock('../../../../generated/prisma', () => ({
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
   },
-  PlaceCategory: { LANDMARK: 'LANDMARK' },
+  PlaceCategory: { LANDMARK: 'LANDMARK', BEACH: 'BEACH' },
+  // The factory replaces the module whole: without the scope the service
+  // reads `CityIngestionScope.CITY` off undefined and every test here dies.
+  CityIngestionScope: { CITY: 'CITY', COUNTRY: 'COUNTRY' },
 }));
 
 import {
+  BadRequestException,
   ConflictException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type { IngestionDispatcher } from '@app/ingestion';
+import {
+  CityIngestionScope,
+  PlaceCategory,
+} from '../../../../generated/prisma';
 import { PlacesAdminRepository } from './places-admin.repository';
 import { PlacesAdminService } from './places-admin.service';
 
@@ -82,7 +90,7 @@ describe('PlacesAdminService', () => {
 
   beforeEach(() => {
     repository = {
-      findActiveForCity: jest.fn().mockResolvedValue(null),
+      findActiveOverlapping: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockImplementation(() => Promise.resolve(ingestion())),
       list: jest.fn(),
       findById: jest.fn().mockResolvedValue(ingestion()),
@@ -165,7 +173,7 @@ describe('PlacesAdminService', () => {
 
     it('refuses a second in-flight ingestion of the same city', async () => {
       // Two at once would compete for the same slugs.
-      repository.findActiveForCity.mockResolvedValue({
+      repository.findActiveOverlapping.mockResolvedValue({
         id: 'outra',
         status: 'PROCESSING',
       } as never);
@@ -185,10 +193,12 @@ describe('PlacesAdminService', () => {
         ADMIN_ID,
       );
 
-      expect(repository.findActiveForCity).toHaveBeenCalledWith(
-        'BR',
-        'Campo Grande',
-        'Alagoas',
+      expect(repository.findActiveOverlapping).toHaveBeenCalledWith(
+        expect.objectContaining({
+          countryCode: 'BR',
+          city: 'Campo Grande',
+          state: 'Alagoas',
+        }),
       );
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({ state: 'Alagoas' }),
@@ -196,7 +206,7 @@ describe('PlacesAdminService', () => {
     });
 
     it('names the state in the conflict, so the admin knows which city it was', async () => {
-      repository.findActiveForCity.mockResolvedValue({
+      repository.findActiveOverlapping.mockResolvedValue({
         id: 'outra',
         status: 'PROCESSING',
       } as never);
@@ -207,6 +217,52 @@ describe('PlacesAdminService', () => {
           ADMIN_ID,
         ),
       ).rejects.toThrow('Campo Grande, Alagoas');
+    });
+
+    it('refuses a country sweep that carries a city, instead of ignoring it', async () => {
+      // `@ValidateIf` skips the validators but the field still arrives, and a
+      // city quietly dropped is the failure mode of BE#328.
+      await expect(
+        service.createIngestion(
+          {
+            countryCode: 'PT',
+            scope: CityIngestionScope.COUNTRY,
+            city: 'Lisbon',
+          },
+          ADMIN_ID,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('names the country and the categories when a sweep is already running', async () => {
+      repository.findActiveOverlapping.mockResolvedValue({
+        id: 'outra',
+        status: 'PROCESSING',
+      } as never);
+
+      await expect(
+        service.createIngestion(
+          {
+            countryCode: 'PT',
+            scope: CityIngestionScope.COUNTRY,
+            categories: [PlaceCategory.BEACH],
+          },
+          ADMIN_ID,
+        ),
+      ).rejects.toThrow('todo o país (PT) em BEACH');
+    });
+
+    it('falls back to a city of every category when neither is said', async () => {
+      // What every ingestion written before #220 is.
+      await service.createIngestion(
+        { countryCode: 'PT', city: 'Lisbon' },
+        ADMIN_ID,
+      );
+
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ scope: 'CITY', categories: [] }),
+      );
     });
 
     it('returns osmAreaId as a string, because BigInt does not serialise', async () => {
