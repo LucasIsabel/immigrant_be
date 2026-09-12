@@ -1,0 +1,94 @@
+{
+  "head": {
+    "vars": [
+      "item",
+      "itemLabel",
+      "coord",
+      "article",
+      "admin",
+      "adminLabel"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q7237781"
+        },
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-8.656559347 41.086885559)"
+        },
+        "article": {
+          "type": "uri",
+          "value": "https://en.wikipedia.org/wiki/Praia_de_Valadares"
+        },
+        "itemLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Praia de Valadares"
+        },
+        "admin": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q18164933"
+        },
+        "adminLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Gulpilhares e Valadares"
+        }
+      },
+      {
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q7237787"
+        },
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-8.30277778 37.07416667)"
+        },
+        "article": {
+          "type": "uri",
+          "value": "https://en.wikipedia.org/wiki/Praia_do_Evaristo"
+        },
+        "itemLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Praia do Evaristo"
+        }
+      },
+      {
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q10352815"
+        },
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-16.76222222 32.71861111)"
+        },
+        "article": {
+          "type": "uri",
+          "value": "https://en.wikipedia.org/wiki/Praia_de_Machico"
+        },
+        "itemLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Machico beach"
+        },
+        "admin": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q693243"
+        },
+        "adminLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Machico"
+        }
+      }
+    ]
+  }
+}

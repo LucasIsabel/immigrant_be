@@ -1583,6 +1583,39 @@ classificação é do nosso lado, por tabela explícita classe → categoria com
 salto de `P279` e uma lista de exclusão medida; o descarte vai para
 `stats.droppedAsUnmapped`. Detalhes e métricas em `docs/DATA_SOURCES.md`.
 
+**Descoberta por país e categoria (#219).** A pergunta inversa — todas as praias
+de Portugal — vive atrás do mesmo serviço, em `discoverInCountry(país, categoria)`,
+e aqui o filtro de classe está **dentro** da query. O aviso do #163 não transita
+porque a âncora é outra: lá era uma cidade sem mais nada a estreitar, aqui o país,
+a coordenada e a exigência de artigo em inglês apertam juntos. O que **não** passa é
+juntar a categoria numa consulta só: as 41 classes de `LANDMARK` num único `VALUES`
+deram 504 em Portugal, no Brasil e na Itália; oito classes levaram 16,4 s em Portugal
+e falharam na Itália; uma classe responde em segundos. Por isso é **uma consulta por
+classe**, unidas por QID do nosso lado, e a classe que não responde fica em
+`classesFailed` — a varredura segue mais magra em vez de se perder. O mapa
+categoria → classes é **derivado** de `CATEGORY_BY_CLASS`, que continua a ser a única
+fonte de verdade, e `EXCLUDED_CLASSES` continua a vetar do nosso lado: o fecho
+`P279*` deixa entrar uma prisão que seja subclasse de castelo.
+
+**A cidade de cada lugar, quando não há uma dada (#219).** Numa varredura de país a
+cidade deixa de ser entrada e passa a ser resultado: `P131` quando o Wikidata o tem,
+senão o **município mais próximo** em 30 km (`wikibase:around`, ancorado em `Q15284`),
+limitado ao país por `P17` — sem isso uma praia do Algarve fica com um município
+espanhol. Ancorar em povoação (`Q486972`) foi medido e recusado: devolve aldeias que
+ninguém procura. Qual dos dois caminhos deu a cidade viaja no tipo devolvido, porque
+um `P131` e um palpite por distância não se revêem da mesma maneira — e o `P131` é o
+que o Wikidata disser, às vezes uma freguesia (Praia de Valadares vem sob Gulpilhares
+e Valadares). Um lugar sem cidade **fica na lista, contado**, nunca inventado. Medido:
+59 praias em Portugal, todas com cidade (30 por `P131`, 29 por proximidade, média
+4,9 km); 41 no Brasil (38 e 3). Ritmo de 600 ms entre chamadas e timeout de 60 s
+passaram a valer para **todo** o serviço, porque o 502-depois-de-cinco é propriedade
+do WDQS e os lotes de 50 do `wbgetentities` não tinham pausa nenhuma; um corpo
+truncado servido pela cache (200 com JSON cortado) passou a contar como falha
+retentável em vez de rebentar como erro de parsing. **Nada no pipeline chama isto
+ainda** — o consumidor é a #220, e é lá que se resolve um item que cai em duas
+categorias, porque este método responde "os itens desta classe", não "a classe deste
+item".
+
 **Com estado, a cidade homónima certa (FE#455).** Pelo desempate de sitelinks,
 "Campo Grande" (BR) resolvia sempre a capital de Mato Grosso do Sul, e a de Alagoas
 era inalcançável. Quando a ingestão traz `state`, `resolveCity` prefere, entre os
