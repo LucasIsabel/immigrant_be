@@ -23,6 +23,7 @@
     "places:rank-correlation": "tsx scripts/rank-correlation.ts",
     "places:backfill-images": "tsx scripts/backfill-place-images.ts",
     "city-keys:backfill": "tsx scripts/backfill-city-keys.ts",
+    "places:discover-country": "tsx scripts/wikidata-country-discovery.ts",
     "openapi:dump": "nest build && node dist/apps/immigrant_be/main",
     "seed:local-demo": "tsx prisma/seeds/full-businesses.seed.ts"
   },

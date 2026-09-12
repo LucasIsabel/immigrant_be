@@ -2,8 +2,11 @@ jest.mock('@app/config/env', () => ({
   env: { INGESTION_USER_AGENT: 'aloravia-test/1.0' },
 }));
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   CityNotResolvedError,
+  CountryNotSupportedError,
   WikidataDiscoveryService,
   WikidataUnavailableError,
 } from './wikidata-discovery.service';
@@ -59,7 +62,14 @@ const entities = (
 };
 
 const sparql = (
-  rows: { qid: string; label: string; article: string; point: string }[],
+  rows: {
+    qid: string;
+    label: string;
+    article: string;
+    point: string;
+    /** The P131 the sweep reads; absent is the half that needs a city found. */
+    admin?: { qid: string; label: string };
+  }[],
 ) =>
   json({
     results: {
@@ -68,19 +78,40 @@ const sparql = (
         itemLabel: { value: r.label },
         article: { value: `https://en.wikipedia.org/wiki/${r.article}` },
         coord: { value: `Point(${r.point})` },
+        ...(r.admin && {
+          admin: { value: `http://www.wikidata.org/entity/${r.admin.qid}` },
+          adminLabel: { value: r.admin.label },
+        }),
       })),
+    },
+  });
+
+/** A `wikibase:around` answer: the nearest municipality, or none at all. */
+const around = (city?: { qid: string; label: string; km: number }) =>
+  json({
+    results: {
+      bindings: city
+        ? [
+            {
+              city: { value: `http://www.wikidata.org/entity/${city.qid}` },
+              cityLabel: { value: city.label },
+              distance: { value: String(city.km) },
+            },
+          ]
+        : [],
     },
   });
 
 describe('WikidataDiscoveryService', () => {
   let service: WikidataDiscoveryService;
   let fetchMock: jest.Mock;
+  let waitSpy: jest.SpyInstance<Promise<void>, [number]>;
 
   beforeEach(() => {
     service = new WikidataDiscoveryService();
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
-    jest
+    waitSpy = jest
       .spyOn(
         service as unknown as { wait: (ms: number) => Promise<void> },
         'wait',
@@ -375,6 +406,306 @@ describe('WikidataDiscoveryService', () => {
 
       const { places } = await service.discover('Q597');
       expect(places[0].website).toBe('https://maat.pt');
+    });
+  });
+
+  describe('nearestMunicipality', () => {
+    it('asks for the nearest municipality of that country, within 30 km', async () => {
+      fetchMock.mockResolvedValueOnce(
+        around({ qid: 'Q379033', label: 'Albufeira', km: 3.9 }),
+      );
+
+      const near = await service.nearestMunicipality(37.08, -8.28, 'PT');
+
+      const query = decodeURIComponent(fetchMock.mock.calls[0][0] as string);
+      expect(query).toContain('Point(-8.28 37.08)');
+      expect(query).toContain('wikibase:radius "30"');
+      // The municipality, never the settlement: Q486972 answers with hamlets.
+      expect(query).toContain('wd:Q15284');
+      // Bounded by the country, or the Algarve borrows Spanish municipalities.
+      expect(query).toContain('wd:Q45');
+      expect(near).toEqual({
+        wikidataId: 'Q379033',
+        label: 'Albufeira',
+        distanceKm: 3.9,
+      });
+    });
+
+    it('answers null when nothing is in range, rather than reaching further', async () => {
+      fetchMock.mockResolvedValueOnce(around());
+
+      expect(await service.nearestMunicipality(0, 0, 'PT')).toBeNull();
+    });
+
+    it('refuses a country it cannot name on Wikidata', async () => {
+      await expect(
+        service.nearestMunicipality(37.08, -8.28, 'ZZ'),
+      ).rejects.toBeInstanceOf(CountryNotSupportedError);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('discoverInCountry', () => {
+    const beach = (
+      qid: string,
+      label: string,
+      point: string,
+      admin?: { qid: string; label: string },
+    ) => ({ qid, label, article: label.replace(/ /g, '_'), point, admin });
+
+    it('filters by class inside the query, one class per request', async () => {
+      fetchMock.mockResolvedValue(sparql([]));
+
+      await service.discoverInCountry('PT', 'BEACH');
+
+      const query = decodeURIComponent(fetchMock.mock.calls[0][0] as string);
+      expect(query).toContain('wd:Q40080');
+      expect(query).toContain('wd:Q45');
+      expect(query).toContain('wdt:P31/wdt:P279*');
+      // BEACH is one class, and no candidates means nothing else to ask.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('never bundles a category into one query — that is what timed out', async () => {
+      fetchMock.mockResolvedValue(sparql([]));
+
+      await service.discoverInCountry('PT', 'LANDMARK');
+
+      const queries = fetchMock.mock.calls.map((call) =>
+        decodeURIComponent(call[0] as string),
+      );
+      expect(queries.length).toBeGreaterThan(10);
+      for (const query of queries) {
+        expect(query).toMatch(/VALUES \?class \{ wd:Q\d+ \}/);
+      }
+      expect(queries.some((query) => query.includes('wd:Q23413'))).toBe(true);
+      expect(queries.some((query) => query.includes('wd:Q40080'))).toBe(false);
+    });
+
+    it('takes the city from P131, and asks nobody else', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([
+            beach('Q1', 'Machico beach', '-16.76 32.71', {
+              qid: 'Q693243',
+              label: 'Machico',
+            }),
+          ]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40080'] } }));
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places[0].city).toEqual({
+        wikidataId: 'Q693243',
+        label: 'Machico',
+        source: 'WIKIDATA_P131',
+      });
+      expect(result.fromP131).toBe(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to the nearest municipality, and says that is what it did', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([beach('Q1', 'Praia do Evaristo', '-8.28 37.08')]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40080'] } }))
+        .mockResolvedValueOnce(
+          around({ qid: 'Q379033', label: 'Albufeira', km: 3.9 }),
+        );
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places[0].city).toEqual({
+        wikidataId: 'Q379033',
+        label: 'Albufeira',
+        distanceKm: 3.9,
+        source: 'NEAREST_MUNICIPALITY',
+      });
+      expect(result.fromProximity).toBe(1);
+    });
+
+    it('keeps a place with no city at all, counted rather than invented', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([beach('Q1', 'Praia Perdida', '-30.0 -20.0')]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40080'] } }))
+        .mockResolvedValueOnce(around());
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places).toHaveLength(1);
+      expect(result.places[0].city).toBeUndefined();
+      expect(result.cityNotFound).toBe(1);
+    });
+
+    it('still vetoes what the subclass closure lets through', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([beach('Q1', 'Fortaleza prisão', '-9.1 38.7')]),
+        )
+        // A prison that is a subclass of castle arrives under LANDMARK.
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40357'] } }));
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places).toHaveLength(0);
+      expect(result.droppedAsExcluded).toBe(1);
+      // And no proximity call was spent on something already discarded.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('collapses an item that comes back twice', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([
+            beach('Q1', 'Praia da Rocha', '-8.53 37.11', {
+              qid: 'Q2',
+              label: 'Portimão',
+            }),
+            beach('Q1', 'Praia da Rocha', '-8.54 37.12', {
+              qid: 'Q2',
+              label: 'Portimão',
+            }),
+          ]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40080'] } }));
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.rawCount).toBe(1);
+      expect(result.places).toHaveLength(1);
+    });
+
+    it('loses one city to a 502, not the whole sweep', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([
+            beach('Q1', 'Machico beach', '-16.76 32.71', {
+              qid: 'Q693243',
+              label: 'Machico',
+            }),
+            beach('Q2', 'Praia do Evaristo', '-8.28 37.08'),
+          ]),
+        )
+        .mockResolvedValueOnce(
+          entities({ Q1: { p31: ['Q40080'] }, Q2: { p31: ['Q40080'] } }),
+        )
+        .mockResolvedValue(json({}, 502));
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places).toHaveLength(2);
+      expect(result.places[0].city?.source).toBe('WIKIDATA_P131');
+      expect(result.places[1].city).toBeUndefined();
+      expect(result.cityLookupFailed).toBe(1);
+    });
+
+    it('stops asking for cities after three refusals in a row', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([
+            beach('Q1', 'A', '-8.1 37.1'),
+            beach('Q2', 'B', '-8.2 37.2'),
+            beach('Q3', 'C', '-8.3 37.3'),
+            beach('Q4', 'D', '-8.4 37.4'),
+          ]),
+        )
+        .mockResolvedValueOnce(
+          entities({
+            Q1: { p31: ['Q40080'] },
+            Q2: { p31: ['Q40080'] },
+            Q3: { p31: ['Q40080'] },
+            Q4: { p31: ['Q40080'] },
+          }),
+        )
+        .mockResolvedValue(json({}, 502));
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      // The sweep, the entities, and three items times three attempts. The
+      // fourth item is counted without being asked.
+      expect(fetchMock).toHaveBeenCalledTimes(2 + 9);
+      expect(result.cityLookupFailed).toBe(4);
+    });
+
+    it('records a class that never answers and sweeps on with the rest', async () => {
+      fetchMock
+        .mockResolvedValueOnce(json({}, 502))
+        .mockResolvedValueOnce(json({}, 502))
+        .mockResolvedValueOnce(json({}, 502))
+        .mockResolvedValueOnce(
+          sparql([
+            beach('Q1', 'Miradouro da Graça', '-9.13 38.71', {
+              qid: 'Q597',
+              label: 'Lisbon',
+            }),
+          ]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q2416723'] } }));
+
+      const result = await service.discoverInCountry('PT', 'VIEWPOINT');
+
+      expect(result.classesFailed).toHaveLength(1);
+      expect(result.places).toHaveLength(1);
+    });
+
+    it('refuses a country it cannot name on Wikidata', async () => {
+      await expect(
+        service.discoverInCountry('ZZ', 'BEACH'),
+      ).rejects.toBeInstanceOf(CountryNotSupportedError);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('holds the calls apart, because WDQS answers 502 to a burst', async () => {
+      fetchMock
+        .mockResolvedValueOnce(
+          sparql([beach('Q1', 'Praia do Evaristo', '-8.28 37.08')]),
+        )
+        .mockResolvedValueOnce(entities({ Q1: { p31: ['Q40080'] } }))
+        .mockResolvedValueOnce(
+          around({ qid: 'Q379033', label: 'Albufeira', km: 3.9 }),
+        );
+
+      await service.discoverInCountry('PT', 'BEACH');
+
+      expect(waitSpy).toHaveBeenCalled();
+      for (const [ms] of waitSpy.mock.calls) {
+        expect(ms).toBeGreaterThan(0);
+        expect(ms).toBeLessThanOrEqual(600);
+      }
+    });
+
+    it('parses the shape WDQS really answers with', async () => {
+      const fixture = JSON.parse(
+        readFileSync(
+          join(__dirname, '__fixtures__', 'wdqs-beaches-pt.json'),
+          'utf8',
+        ),
+      ) as unknown;
+      fetchMock
+        .mockResolvedValueOnce(json(fixture))
+        .mockResolvedValueOnce(
+          entities({
+            Q7237781: { p31: ['Q40080'] },
+            Q7237787: { p31: ['Q40080'] },
+            Q10352815: { p31: ['Q40080'] },
+          }),
+        )
+        .mockResolvedValueOnce(
+          around({ qid: 'Q379033', label: 'Albufeira', km: 3.9 }),
+        );
+
+      const result = await service.discoverInCountry('PT', 'BEACH');
+
+      expect(result.places).toHaveLength(3);
+      expect(result.fromP131).toBe(2);
+      expect(result.fromProximity).toBe(1);
+      expect(result.places[0].name).toBe('Praia de Valadares');
+      expect(result.places[0].lat).toBeCloseTo(41.0869, 3);
+      expect(result.places[0].lng).toBeCloseTo(-8.6566, 3);
     });
   });
 
