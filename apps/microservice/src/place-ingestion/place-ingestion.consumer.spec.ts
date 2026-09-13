@@ -31,6 +31,7 @@ import {
   WRITE_PLACE_TEXTS,
 } from '@app/config/constants';
 import { PermanentIngestionError } from '@app/ingestion';
+import { Prisma } from '../../../../generated/prisma';
 import { PlaceIngestionConsumer } from './place-ingestion.consumer';
 import { PlaceIngestionService } from './place-ingestion.service';
 import { EventsService } from '../events/events.service';
@@ -45,6 +46,7 @@ function buildJob(overrides: Partial<Job> = {}): Job {
     data: { ingestionId: INGESTION_ID },
     attemptsMade: 3,
     opts: { attempts: 3 },
+    discard: jest.fn(),
     ...overrides,
   } as unknown as Job;
 }
@@ -102,7 +104,91 @@ describe('PlaceIngestionConsumer', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
+  describe('process', () => {
+    it('discards the job on attempt 1 when execution throws P2025', async () => {
+      const p2025 = prismaP2025();
+      ingestion.ingest.mockRejectedValue(p2025);
+      const discard = jest.fn();
+      const job = buildJob({
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+        discard,
+      });
+
+      await expect(consumer.process(job)).rejects.toThrow(p2025);
+      expect(discard).toHaveBeenCalledTimes(1);
+    });
+
+    it('discards the job on attempt 1 when execution throws a real PrismaClientKnownRequestError with P2025', async () => {
+      const realPrismaP2025 = new Prisma.PrismaClientKnownRequestError(
+        'No record was found for an update.',
+        { code: 'P2025', clientVersion: '6.18.0' },
+      );
+      ingestion.ingest.mockRejectedValue(realPrismaP2025);
+      const discard = jest.fn();
+      const job = buildJob({
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+        discard,
+      });
+
+      await expect(consumer.process(job)).rejects.toThrow(realPrismaP2025);
+      expect(discard).toHaveBeenCalledTimes(1);
+    });
+
+    it('discards the job on attempt 1 when execution throws PermanentIngestionError', async () => {
+      const permanent = new PermanentIngestionError(
+        'Not found',
+        'resolve_city',
+      );
+      ingestion.ingest.mockRejectedValue(permanent);
+      const discard = jest.fn();
+      const job = buildJob({
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+        discard,
+      });
+
+      await expect(consumer.process(job)).rejects.toThrow(permanent);
+      expect(discard).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not discard the job when execution throws a retryable error', async () => {
+      const retryable = new Error('WDQS answered 502');
+      ingestion.ingest.mockRejectedValue(retryable);
+      const discard = jest.fn();
+      const job = buildJob({
+        attemptsMade: 1,
+        opts: { attempts: 3 },
+        discard,
+      });
+
+      await expect(consumer.process(job)).rejects.toThrow(retryable);
+      expect(discard).not.toHaveBeenCalled();
+    });
+  });
+
   describe('onFailed', () => {
+    it('treats P2025 on attempt 1 as permanent, recording failure with null step and notifying admins', async () => {
+      const p2025 = prismaP2025();
+      await consumer.onFailed(
+        buildJob({ attemptsMade: 1, opts: { attempts: 3 } }),
+        p2025,
+      );
+
+      expect(ingestion.recordFailure).toHaveBeenCalledWith(
+        INGESTION_ID,
+        null,
+        p2025.message,
+      );
+      expect(events.emitToAdmins).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EVENT_TYPES.CITY_INGESTION_FAILED,
+          payload: { ingestionId: INGESTION_ID, step: null },
+        }),
+      );
+    });
+
     it('records the failure and tells the admins once retries are exhausted', async () => {
       await consumer.onFailed(buildJob(), new Error('WDQS answered 502'));
 
