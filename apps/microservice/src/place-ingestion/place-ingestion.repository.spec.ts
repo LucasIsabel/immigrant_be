@@ -7,7 +7,7 @@ jest.mock('@app/database', () => ({
 
 jest.mock('../../../../generated/prisma', () => ({
   PlaceCategory: { LANDMARK: 'LANDMARK' },
-  CityIngestionStatus: { PROCESSING: 'PROCESSING' },
+  CityIngestionStatus: { PROCESSING: 'PROCESSING', FAILED: 'FAILED' },
 }));
 
 import { PrismaService } from '@app/database';
@@ -54,6 +54,7 @@ type UpsertArgs = {
 describe('PlaceIngestionRepository', () => {
   let prisma: {
     place: { findMany: jest.Mock; upsert: jest.Mock };
+    cityIngestion: { updateMany: jest.Mock };
   };
   let repository: PlaceIngestionRepository;
 
@@ -66,6 +67,9 @@ describe('PlaceIngestionRepository', () => {
           .mockImplementation(({ create }: { create: { slug: string } }) =>
             Promise.resolve({ id: `id-${create.slug}` }),
           ),
+      },
+      cityIngestion: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
     repository = new PlaceIngestionRepository(
@@ -201,6 +205,48 @@ describe('PlaceIngestionRepository', () => {
         cityKey: 'povoa de varzim',
       });
       expect(args.update).toMatchObject({ cityKey: 'povoa de varzim' });
+    });
+  });
+
+  describe('markFailed', () => {
+    it('writes the failure onto the ingestion', async () => {
+      const recorded = await repository.markFailed(
+        'ingestion-1',
+        'discover',
+        'WDQS answered 502',
+      );
+
+      expect(recorded).toBe(true);
+      expect(prisma.cityIngestion.updateMany).toHaveBeenCalledWith({
+        where: { id: 'ingestion-1' },
+        data: {
+          status: 'FAILED',
+          errorMessage: 'WDQS answered 502',
+          step: 'discover',
+        },
+      });
+    });
+
+    it('keeps the step it had when none is given', async () => {
+      // The pipeline already marked where it got to, and a generic failure
+      // knows less about that than the mark does.
+      await repository.markFailed('ingestion-1', null, 'boom');
+
+      const [args] = prisma.cityIngestion.updateMany.mock.calls[0] as [
+        { data: Record<string, unknown> },
+      ];
+      expect(args.data).not.toHaveProperty('step');
+    });
+
+    it('answers false instead of throwing when the ingestion is gone', async () => {
+      // The row deleted while its job waited in Redis is exactly the row this
+      // writes to. With `update` this rejected with P2025 from a queue event
+      // handler nobody awaits, and the worker process died (#344).
+      prisma.cityIngestion.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        repository.markFailed('gone', 'discover', 'boom'),
+      ).resolves.toBe(false);
     });
   });
 });

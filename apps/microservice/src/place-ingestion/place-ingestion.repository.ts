@@ -148,9 +148,24 @@ export class PlaceIngestionRepository {
    * A `step` of null keeps whichever step the ingestion had reached — the
    * pipeline already recorded it on the way in, and a generic failure knows
    * less about where it happened than that mark does.
+   *
+   * **`updateMany`, and that is the whole point.** This runs from the queue's
+   * `failed` handler, and the row it writes to is exactly the one that may
+   * have been deleted while the job sat in Redis — which is how the job came
+   * to fail in the first place. `update` answers `P2025` there, the rejection
+   * escapes an event handler nobody awaits, and the worker process exits while
+   * the container stays healthy (#344). `updateMany` answers `count: 0`.
+   *
+   * The boolean is not decoration: `false` means the ingestion was gone before
+   * its own failure could be recorded, and saying so in the log is the only
+   * trace an orphaned job leaves. Same shape as `markReadyIfDone` below.
    */
-  markFailed(id: string, step: string | null, errorMessage: string) {
-    return this.prisma.cityIngestion.update({
+  async markFailed(
+    id: string,
+    step: string | null,
+    errorMessage: string,
+  ): Promise<boolean> {
+    const { count } = await this.prisma.cityIngestion.updateMany({
       where: { id },
       data: {
         status: CityIngestionStatus.FAILED,
@@ -158,6 +173,7 @@ export class PlaceIngestionRepository {
         ...(step ? { step } : {}),
       },
     });
+    return count === 1;
   }
 
   /**
