@@ -1,6 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import * as Sentry from '@sentry/nestjs';
 import {
   INGEST_CITY,
   PLACE_INGESTION_QUEUE,
@@ -123,6 +124,19 @@ export class PlaceIngestionConsumer extends WorkerHost {
     });
   }
 
+  /**
+   * Report a failed job, and never fail while doing it.
+   *
+   * This is a queue event handler: nobody awaits it, so a rejection here is an
+   * unhandled rejection and Node takes the process with it. That is not
+   * theoretical — deleting an ingestion row with its job still queued made
+   * `markFailed` answer `P2025` and killed the worker, while the container
+   * stayed healthy because `start.sh` runs the API in the foreground (#344).
+   *
+   * The `catch` is not swallowing anything: the reason is logged and sent to
+   * Sentry, which is the same pair `reportJobFailure` uses. What it refuses to
+   * do is let a bookkeeping failure end the process that does the work.
+   */
   @OnWorkerEvent('failed')
   async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(
@@ -130,8 +144,26 @@ export class PlaceIngestionConsumer extends WorkerHost {
       error.stack,
     );
 
-    reportJobFailure(PLACE_INGESTION_QUEUE, job, error);
+    try {
+      // Inside the guard on purpose: this reaches Sentry over the network, and
+      // a reporter that throws would be the very thing it exists to prevent.
+      reportJobFailure(PLACE_INGESTION_QUEUE, job, error);
+      await this.handleFailure(job, error);
+    } catch (handlerError) {
+      this.logger.error(
+        `Could not record the failure of job ${job.id} (${job.name}): ${
+          handlerError instanceof Error
+            ? handlerError.message
+            : String(handlerError)
+        }`,
+        handlerError instanceof Error ? handlerError.stack : undefined,
+      );
+      Sentry.captureException(handlerError);
+    }
+  }
 
+  /** What to write and whom to tell, once a job is known to have failed. */
+  private async handleFailure(job: Job, error: Error): Promise<void> {
     const permanent = error instanceof PermanentIngestionError;
     if (!permanent && !isFinalAttempt(job)) return;
 

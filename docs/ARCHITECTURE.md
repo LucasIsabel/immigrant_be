@@ -1298,6 +1298,45 @@ responder 500 porque uma migration aditiva ficou por aplicar.
 ver, portanto continuam a ser **aditivas**: expandir num deploy, contrair noutro.
 Uma que apague coluna corre sozinha, e não há passo humano onde reparar nela.
 
+**O worker tem de sobreviver a si próprio.** As duas últimas linhas do script são
+
+```sh
+node dist/apps/microservice/main.js &
+exec node dist/apps/immigrant_be/main.js
+```
+
+— ou seja, **a API é o processo principal do contentor e o worker corre atrás**.
+A consequência é contra-intuitiva e custou a #344: se o worker morre, o contentor
+**continua saudável**, o healthcheck responde, nada o reinicia, e a ingestão pára
+em silêncio. O que for despachado a seguir fica em `PROCESSING` para sempre, e
+descobre-se quando alguém repara numa cidade que nunca ficou pronta.
+
+Daí a regra: **o worker não pode contar com um reinício que não vem**. Em
+concreto, um handler de `@OnWorkerEvent('failed')` é chamado pelo BullMQ sem
+`await`, portanto uma rejeição lá dentro é uma *unhandled rejection* e o Node
+mata o processo. Foi assim que apagar uma linha de `city_ingestions` com o job
+ainda em fila derrubou o worker: `markFailed` respondeu `P2025` ao escrever na
+linha que já não existia.
+
+Três camadas, e a terceira é a que cobre os cinco consumers:
+
+1. **não produzir o erro** — as escritas do caminho de falha usam `updateMany`,
+   que responde `count: 0` em vez de lançar (`markFailed`, e já antes o
+   `markReadyIfDone` e o `recordTextFailure` em SQL cru);
+2. **não o deixar escapar** — o `onFailed` do `PlaceIngestionConsumer` guarda o
+   seu corpo num `try/catch` que **reporta** (log + Sentry) em vez de relançar;
+3. **uma rede por baixo** — `apps/microservice/src/main.ts` trata
+   `unhandledRejection`, reporta e mantém o processo vivo. É o que protege os
+   outros quatro consumers, que têm a mesma forma sem guarda.
+
+**`uncaughtException` não é tratado, de propósito.** Deixa o processo em estado
+indefinido, onde a resposta honesta é reportar e sair; mantê-lo vivo trocaria um
+worker morto por um worker mentiroso.
+
+Supervisionar o worker no próprio script — reiniciá-lo, ou derrubar o contentor
+com ele — continua por decidir: é mudança no arranque em produção, e um worker em
+ciclo de reinício passaria a levar a API à frente.
+
 ## 6.0.1. Destaques — um ato editorial, um módulo
 
 `apps/immigrant_be/src/featured/` expõe `PATCH /admin/featured/:entity/:id`, uma

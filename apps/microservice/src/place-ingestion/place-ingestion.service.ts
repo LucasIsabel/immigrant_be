@@ -561,7 +561,19 @@ export class PlaceIngestionService {
     step: string | null,
     message: string,
   ): Promise<void> {
-    await this.repository.markFailed(ingestionId, step, message);
+    const recorded = await this.repository.markFailed(
+      ingestionId,
+      step,
+      message,
+    );
+    if (!recorded) {
+      // The row went away before its own failure could be written. Nothing to
+      // repair — the job is already refused — but this line is the only trace
+      // the orphan leaves, and without it the failure is invisible twice over.
+      this.logger.warn(
+        `Ingestion ${ingestionId} no longer exists; its failure was not recorded: ${message}`,
+      );
+    }
   }
 
   private async resolveCity(
