@@ -1,3 +1,11 @@
+// The consumer pulls in the service, which reads `@app/config/env` at module
+// load — and that parses `process.env` with zod, so an unset key fails the
+// whole suite before a single test runs. CI has no `OPEN_ROUTER`; a developer
+// machine does, which is exactly how this passed locally and broke there.
+jest.mock('@app/config/env', () => ({
+  env: { INGESTION_USER_AGENT: 'aloravia-test/1.0', PLACES_PER_SWEEP: 3 },
+}));
+
 // Importing `@app/database` for the type alone would drag better-auth into the
 // suite. Same shortcut the other consumer specs take.
 jest.mock('@app/database', () => ({

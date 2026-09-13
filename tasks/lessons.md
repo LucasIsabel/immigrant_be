@@ -325,3 +325,27 @@ soma de tudo é.
 custa 141 MB contra mais de 1 GB do `next dev` — para E2E, subir sempre em
 produção. E no Chrome o frontend responde em `127.0.0.1:3002` mas dá página de
 erro em `localhost:3002`, com o `curl` a devolver 200 nos dois.
+
+## Um spec novo passa localmente e rebenta no CI: o `.env` (2026-09-13)
+
+**O que aconteceu.** O `place-ingestion.consumer.spec.ts` novo passou nos 1476
+testes locais e falhou no CI com `ZodError: OPEN_ROUTER — expected string,
+received undefined`, antes de correr um único caso. O consumer importa o
+serviço, que importa `@app/config/env`, e esse módulo faz
+`envSchema.parse(process.env)` **no import**. A máquina local tem `.env`; o
+runner do CI não, e o workflow só define `DATABASE_URL`.
+
+**A regra.** Um spec que importe qualquer coisa da cadeia do worker ou da API
+leva `jest.mock('@app/config/env', …)` no topo, antes dos imports — como já
+fazem o `place-ingestion.service.spec.ts` e os outros. Não é otimização, é a
+diferença entre passar e não passar no CI.
+
+**Como reproduzir a condição do CI sem mexer no `.env`.** O `findEnvFile` sobe a
+árvore a partir do `cwd`, portanto basta correr o jest de fora do repositório:
+
+```sh
+cd /private/tmp
+env -u OPEN_ROUTER npx --prefix "$R" jest --rootDir "$R" --config "$R/package.json" <spec>
+```
+
+Nada é renomeado nem apagado, e a verificação é real em vez de deduzida.
