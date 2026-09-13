@@ -41,6 +41,16 @@ export const envSchema = zod.object({
    * User-Agent genérico de biblioteca é motivo declarado de bloqueio. Tem
    * default para o boot não quebrar em quem não setou — o parse roda no import.
    */
+  /**
+   * Quantos lugares uma varredura de país guarda, pelos mais visitados.
+   *
+   * Variável e não constante porque "subir quando a revisão aguentar" é mexer
+   * aqui e reiniciar, não abrir uma PR. O corte por cidade (30) continua no
+   * código: é uma decisão de produto sobre a lista de uma cidade, não sobre o
+   * que uma corrida consegue rever.
+   */
+  PLACES_PER_SWEEP: zod.coerce.number().int().min(1).default(100),
+
   INGESTION_USER_AGENT: zod
     .string()
     .min(1)

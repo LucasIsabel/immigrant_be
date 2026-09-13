@@ -77,7 +77,7 @@ export class PlaceIngestionConsumer extends WorkerHost {
       case INGEST_CITY: {
         const { ingestionId } = job.data as IngestCityJob;
         this.logger.log(`Ingesting city for ${ingestionId} (job: ${job.id})`);
-        await this.ingestion.ingestCity(ingestionId);
+        await this.ingestion.ingest(ingestionId);
         break;
       }
 

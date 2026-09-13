@@ -872,18 +872,23 @@ SELECT DISTINCT ?item ?itemLabel ?coord ?article ?admin ?adminLabel WHERE {
     let lastError: Error = new Error('unreachable');
     for (let attempt = 1; attempt <= 3; attempt++) {
       let response: Response;
+      let text: string;
       try {
         await this.pace();
         response = await fetch(url, {
           headers: { 'User-Agent': env.INGESTION_USER_AGENT, Accept: accept },
           signal: AbortSignal.timeout(WDQS_TIMEOUT_MS),
         });
+        // The body is read inside the `try` on purpose: the timeout can fire
+        // while the response is still streaming, and the abort rejects *here*,
+        // not at the `fetch`. Outside, it was an unhandled DOMException that
+        // took the whole worker process down — measured sweeping Italy.
+        text = await response.text();
       } catch (error) {
         lastError = new WikidataUnavailableError(String(error));
         await this.wait(attempt * 5_000);
         continue;
       }
-      const text = await response.text();
       if (text.includes('SPARQL-QUERY: queryStr=')) {
         throw new WikidataUnavailableError(
           'WDQS timed out (query too expensive)',

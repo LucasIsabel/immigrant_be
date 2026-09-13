@@ -1049,6 +1049,14 @@ model Place {
   /// Média mensal de visitas ao artigo em inglês, de 12 meses. É de onde o
   /// `popularityScore` é derivado — guardado cru para a ordem ser auditável.
   wikipediaMonthlyViews Int?     @map("wikipedia_monthly_views")
+  /// Quão longe estava o município que respondeu pela cidade deste lugar.
+  ///
+  /// Não nulo **só** quando a cidade veio por proximidade (`NEAREST_MUNICIPALITY`,
+  /// #219): null quer dizer que o Wikidata a declarou (`P131`), ou que ninguém
+  /// inferiu nada — uma ingestão de cidade, um lugar curado à mão. É o mesmo
+  /// papel do `wikipediaMonthlyViews` acima: o número cru guardado para uma
+  /// decisão derivada — aqui, a própria `city` — poder ser auditada na revisão.
+  nearestMunicipalityKm Float?   @map("nearest_municipality_km")
   generatedByModel      String?  @map("generated_by_model")
   generationCostUsd     Decimal? @map("generation_cost_usd") @db.Decimal(10, 6)
 
@@ -1164,8 +1172,9 @@ model CityIngestion {
   /// anyone has verified. It used to reach the log and nothing else.
   cityWikidataId String?             @map("city_wikidata_id") @db.VarChar(20)
   status         CityIngestionStatus @default(PROCESSING)
-  /// Em que etapa está, ou em qual falhou: resolve_area | fetch_pois | rank |
-  /// write_texts. Sem isto, uma ingestão FAILED não diz o que tentar de novo.
+  /// Em que etapa está, ou em qual falhou: resolve_city (só no âmbito CITY) |
+  /// discover | rank | write_texts. Sem isto, uma ingestão FAILED não diz o que
+  /// tentar de novo. O frontend mostra esta string crua, sem mapa nem tradução.
   step           String?             @db.VarChar(30)
   errorMessage   String?             @map("error_message")
 

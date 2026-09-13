@@ -7,11 +7,7 @@ import {
   PlaceReviewStatus,
   Prisma,
 } from '../../../../generated/prisma';
-import {
-  normalizeCity,
-  normalizeState,
-  stateFilterKey,
-} from '@app/geo';
+import { normalizeCity, normalizeState, stateFilterKey } from '@app/geo';
 
 /** States where the city is still in play — neither approved nor discarded. */
 const IN_FLIGHT: CityIngestionStatus[] = [
@@ -41,6 +37,7 @@ const ADMIN_PLACE = {
   sourceUrl: true,
   wikidataId: true,
   wikipediaMonthlyViews: true,
+  nearestMunicipalityKm: true,
   generatedByModel: true,
   generationCostUsd: true,
   translations: {
@@ -193,7 +190,7 @@ export class PlacesAdminRepository {
       include: {
         places: {
           select: ADMIN_PLACE,
-          orderBy: { popularityScore: 'desc' },
+          orderBy: [{ city: 'asc' }, { popularityScore: 'desc' }],
         },
       },
     });

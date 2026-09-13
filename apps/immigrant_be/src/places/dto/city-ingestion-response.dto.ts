@@ -18,6 +18,13 @@ export class IngestionConflictDto {
   @ApiProperty({ example: 'torre-de-belem' })
   slug: string;
 
+  @ApiProperty({
+    description:
+      'Which city the slug belonged to. A country sweep can collide in two cities at once, and the two rows would otherwise read the same.',
+    example: 'Lisbon',
+  })
+  city: string;
+
   @ApiProperty({ example: 'Q215003' })
   wikidataId: string;
 
@@ -67,6 +74,66 @@ export class IngestionStatsDto {
 
   @ApiPropertyOptional({ type: [IngestionConflictDto] })
   conflicts?: IngestionConflictDto[];
+
+  /* What only a country sweep produces. */
+
+  @ApiPropertyOptional({
+    description:
+      'Candidates the class table vetoes — a prison that subclasses a castle',
+  })
+  droppedAsExcluded?: number;
+
+  @ApiPropertyOptional({
+    description: 'Places whose city Wikidata itself declared, through P131',
+  })
+  citiesFromP131?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Places whose city we inferred: the nearest municipality within 30 km',
+  })
+  citiesFromProximity?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Places left out because no city could be written for them — never invented. `unlabelled` is an entity with no English name, whose city would read as its QID.',
+  })
+  withoutCity?: { notFound: number; lookupFailed: number; unlabelled: number };
+
+  @ApiPropertyOptional({
+    description:
+      'A sample of those, to take back to Wikidata and fix at source',
+    type: [String],
+  })
+  withoutCitySample?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Wikidata classes whose own query never answered',
+    type: [String],
+  })
+  classesFailed?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Whole categories that failed; the sweep went on without them',
+    type: [String],
+  })
+  categoriesFailed?: string[];
+
+  @ApiPropertyOptional({
+    description: 'A class hit the row limit, so that slice came back cut',
+  })
+  truncated?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Items a second category also claimed; the first one asked for kept them',
+  })
+  claimedTwice?: number;
+
+  @ApiPropertyOptional({
+    description: 'How many distinct cities it wrote into',
+  })
+  cities?: number;
 
   @ApiPropertyOptional({
     description: 'Ids of places whose text failed for good',
@@ -130,7 +197,7 @@ export class CityIngestionResponseDto {
 
   @ApiPropertyOptional({
     description: 'Which step the ingestion is on, or stopped at',
-    example: 'fetch_pois',
+    example: 'discover',
     nullable: true,
   })
   step?: string | null;
@@ -270,6 +337,14 @@ export class AdminPlaceResponseDto {
 
   @ApiProperty({ type: [PlaceTranslationDto] })
   translations: PlaceTranslationDto[];
+  @ApiPropertyOptional({
+    description:
+      "How far the municipality that answered for this place's city was. Present only when the city was inferred by proximity (a country sweep); null when Wikidata declared it or a human named it.",
+    example: 3.9,
+    nullable: true,
+    type: Number,
+  })
+  nearestMunicipalityKm?: number | null;
 }
 
 export const PLACE_TEXTS_STATUS = [

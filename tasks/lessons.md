@@ -273,3 +273,34 @@ efeito visível que o caminho de sucesso lento (aqui, «vai para revisão
 humana»), o defeito não aparece sozinho — tem de haver um teste, uma métrica ou
 uma verificação manual que distinga «ninguém analisou» de «analisou e mandou
 rever».
+
+## 2026-09-13 — `AbortSignal.timeout` também rejeita a leitura do corpo
+
+A #219 pôs `signal: AbortSignal.timeout(60_000)` no `fetch` do
+`WikidataDiscoveryService` e deixou o `await response.text()` **fora** do
+`try/catch` que converte falhas de transporte em `WikidataUnavailableError`.
+Parecia inofensivo: o `fetch` já tinha resolvido.
+
+Não é. O tempo limite conta até ao **fim da resposta**, e numa consulta grande
+ele dispara enquanto o corpo ainda está a ser transmitido — e aí quem rejeita é
+o `response.text()`, não o `fetch`. A rejeição sai sem dono. Apanhado a medir
+uma varredura de Itália: `DOMException [TimeoutError]` não tratada, processo do
+worker abaixo, e a medição perdida a meio.
+
+**Regra:** com `AbortSignal`, tudo o que lê a resposta fica dentro do mesmo
+`try` que apanha o pedido. O `fetch` resolver não quer dizer que acabou.
+
+**Corolário:** uma rejeição não tratada num worker que corre em segundo plano
+(`node dist/apps/microservice/main.js &` no `start.sh`) mata o processo **sem
+derrubar o contentor** — a API continua a servir e ninguém dá por nada. É a
+mesma família do `P2025` da #344.
+
+## 2026-09-13 — `grep` ignora em silêncio um ficheiro que julga binário
+
+`apps/immigrant_be/src/countriesnow/countriesnow.service.ts` é detectado como
+binário (`file` diz `data`). Um `grep` sem `-a` **não o procura e não avisa**.
+A extrair a dobra de cidade para `@app/geo`, a lista de quem a importava saiu
+incompleta por causa disso, e o import partido só apareceu no `tsc`.
+
+**Regra:** em varreduras de imports ou de símbolos neste repo, `grep -a`. E
+confiar no compilador como segunda rede, não como primeira.
