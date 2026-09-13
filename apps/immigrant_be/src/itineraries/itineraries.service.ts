@@ -6,7 +6,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma';
-import { cityIdentity } from '../business/city-key';
+import { cityIdentity } from '@app/geo';
 import { ItineraryCityDto } from './dto/itinerary-city.dto';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';

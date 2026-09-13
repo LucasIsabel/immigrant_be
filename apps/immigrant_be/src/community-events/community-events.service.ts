@@ -12,7 +12,7 @@ import { StorageService } from '@app/storage';
 import { NotificationsService } from '@app/notifications/notifications.service';
 import { USER_NOTIFICATION_TYPES } from '@app/notifications/notification-types';
 import { CommunityEventStatus } from '../../../../generated/prisma';
-import { cityIdentity, normalizeCity } from '../business/city-key';
+import { cityIdentity, normalizeCity } from '@app/geo';
 import {
   ALLOWED_IMAGE_MIMES,
   COMMUNITY_EVENT_TERMS_VERSION,

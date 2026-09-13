@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as seedFold from '../../../../prisma/seeds/city-key';
-import { normalizeCity, normalizeState } from './city-key';
+import { normalizeCity, normalizeState } from '@app/geo';
 
 /**
  * The contract between the migrations that backfill a key and the fold the

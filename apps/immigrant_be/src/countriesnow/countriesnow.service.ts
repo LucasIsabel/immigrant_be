@@ -9,7 +9,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import type Redis from 'ioredis';
-import { normalizeCity, normalizeState } from '../business/city-key';
+import { normalizeCity, normalizeState } from '@app/geo';
 import { CountriesNowCityMatchDto } from './dto/countries-now-city-match.dto';
 import { CountriesNowCountryDto } from './dto/countries-now-country.dto';
 import { CountriesNowCurrencyDto } from './dto/countries-now-currency.dto';

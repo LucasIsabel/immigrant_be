@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma, PlaceReviewStatus } from '../../../../generated/prisma';
-import { normalizeCity, stateFilterKey } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '@app/geo';
 
 /**
  * What a stop needs to be rendered, from whichever side it points at.

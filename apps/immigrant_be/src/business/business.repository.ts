@@ -4,7 +4,7 @@ import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from './bounding-box';
 import { featuredSql, featuredWhere } from '../common/featured/featured';
 import { mergeCitySpellings } from './city-groups';
-import { normalizeCity, normalizeState, stateFilterKey } from './city-key';
+import { normalizeCity, normalizeState, stateFilterKey } from '@app/geo';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessListQueryDto } from './dto/business-list-query.dto';
