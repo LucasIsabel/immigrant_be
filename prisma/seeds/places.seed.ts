@@ -40,19 +40,40 @@ export async function seedPlaces() {
     };
     const countryId = idPorNome.get(countryName) ?? null;
 
-    const salvo = await prisma.place.upsert({
-      where: {
-        // Curated places name no state, and "no state" is the empty key — see
-        // `Place.stateKey` for why it is not null.
-        countryCode_city_stateKey_slug: {
-          countryCode: place.countryCode,
-          city: place.city,
-          stateKey: '',
-          slug: place.slug,
-        },
+    const where = {
+      // Curated places name no state, and "no state" is the empty key — see
+      // `Place.stateKey` for why it is not null.
+      countryCode_city_stateKey_slug: {
+        countryCode: place.countryCode,
+        city: place.city,
+        stateKey: '',
+        slug: place.slug,
       },
+    };
+
+    const existing = await prisma.place.findUnique({
+      where,
+      select: { imageUrl: true, imageLicense: true, imageAuthor: true },
+    });
+    // Never overwrite an image that was already migrated to R2 with a legacy Wikimedia hotlink.
+    const hasR2Image =
+      existing?.imageUrl && !existing.imageUrl.includes('wikimedia.org');
+    const updateData = {
+      ...dados,
+      countryId,
+      ...(hasR2Image
+        ? {
+            imageUrl: existing.imageUrl,
+            imageLicense: existing.imageLicense,
+            imageAuthor: existing.imageAuthor,
+          }
+        : {}),
+    };
+
+    const salvo = await prisma.place.upsert({
+      where,
       create: { ...dados, countryId },
-      update: { ...dados, countryId },
+      update: updateData,
       select: { id: true },
     });
 
