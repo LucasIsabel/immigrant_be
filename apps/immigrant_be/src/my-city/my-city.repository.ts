@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { boundingBox } from '../business/bounding-box';
-import { normalizeCity, stateFilterKey } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '@app/geo';
 
 interface CountArgs {
   country?: string;

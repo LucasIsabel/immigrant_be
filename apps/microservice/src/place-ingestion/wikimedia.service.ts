@@ -17,6 +17,14 @@ export interface SinalDePopularidade {
   commonsFile: string | null;
 }
 
+/** What `wbgetentities` gives back for one entity, per batch of fifty. */
+interface EntidadeEmIngles {
+  title: string;
+  commonsFile: string | null;
+  /** How many language Wikipedias carry an article about it. */
+  sitelinks: number;
+}
+
 /** What Commons knows about one image: where to get it, and whom to credit. */
 export interface CommonsImage {
   /** Direct URL of the 800px-wide rendition. */
@@ -62,13 +70,13 @@ export class WikimediaService {
      * descartado: numa cidade com ~100 candidatos, 90 chamadas jogadas fora,
      * contra uma API de cortesia. Quem ranqueia passa `false`.
      */
-    opcoes: { withExtract?: boolean } = {},
+    opcoes: { withExtract?: boolean; preCutTo?: number } = {},
   ): Promise<SinalDePopularidade[]> {
-    const { withExtract = true } = opcoes;
+    const { withExtract = true, preCutTo } = opcoes;
     const titulos = await this.titulosEmIngles(wikidataIds);
     const sinais: SinalDePopularidade[] = [];
 
-    for (const [wikidataId, entidade] of titulos) {
+    for (const [wikidataId, entidade] of this.preCortar(titulos, preCutTo)) {
       const monthlyViews = await this.mediaMensal(entidade.title);
       if (monthlyViews === null) continue;
       sinais.push({
@@ -81,6 +89,36 @@ export class WikimediaService {
     }
 
     return sinais;
+  }
+
+  /**
+   * Keep only the most-linked candidates, when there are far too many.
+   *
+   * Pageviews cost one request per candidate, in series. Measured on a real
+   * country sweep — Italy, `LANDMARK`, 8877 candidates — that leg alone is
+   * **26 minutes** at 178 ms a request, spent to keep the hundred the cap
+   * allows. The sitelink count is already in the `wbgetentities` response the
+   * titles came from, so ranking by it costs nothing and throws the long tail
+   * away before it is paid for.
+   *
+   * It is a coarse proxy and it does not decide the order — pageviews still
+   * do. That is why the caller asks for several times the cap: enough room for
+   * the real signal to reorder, without paying for the eight thousand that no
+   * cut would ever reach. A city ingestion passes nothing and is untouched.
+   */
+  private preCortar(
+    titulos: Map<string, EntidadeEmIngles>,
+    preCutTo: number | undefined,
+  ): [string, EntidadeEmIngles][] {
+    const entradas = [...titulos];
+    if (preCutTo === undefined || entradas.length <= preCutTo) return entradas;
+
+    this.logger.log(
+      `Pre-cut by sitelinks: ${entradas.length} candidates down to ${preCutTo}`,
+    );
+    return entradas
+      .sort(([, a], [, b]) => b.sitelinks - a.sitelinks)
+      .slice(0, preCutTo);
   }
 
   /**
@@ -147,11 +185,8 @@ export class WikimediaService {
    */
   private async titulosEmIngles(
     wikidataIds: string[],
-  ): Promise<Map<string, { title: string; commonsFile: string | null }>> {
-    const encontrados = new Map<
-      string,
-      { title: string; commonsFile: string | null }
-    >();
+  ): Promise<Map<string, EntidadeEmIngles>> {
+    const encontrados = new Map<string, EntidadeEmIngles>();
 
     for (let i = 0; i < wikidataIds.length; i += LOTE) {
       const lote = wikidataIds.slice(i, i + LOTE);
@@ -160,7 +195,7 @@ export class WikimediaService {
         entities?: Record<
           string,
           {
-            sitelinks?: { enwiki?: { title?: string } };
+            sitelinks?: Record<string, { title?: string }>;
             claims?: {
               P18?: { mainsnak?: { datavalue?: { value?: string } } }[];
             };
@@ -175,6 +210,10 @@ export class WikimediaService {
           title,
           commonsFile:
             entidade.claims?.P18?.[0]?.mainsnak?.datavalue?.value ?? null,
+          // Already in this response — `props=sitelinks` returns every
+          // language, and the code only ever read `enwiki`. Counting them
+          // costs nothing and is what the pre-cut ranks by.
+          sitelinks: Object.keys(entidade.sitelinks ?? {}).length,
         });
       }
     }

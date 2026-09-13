@@ -1754,15 +1754,88 @@ Três decisões que não são óbvias no código:
   lança em `BigInt`: sem a conversão a rota devolveria 500 na primeira cidade que
   resolvesse a área.
 
-**O worker ainda não corre varreduras (#220).** O âmbito `COUNTRY` está modelado
-— a coluna, a guarda, o DTO e o 409 —, mas `ingestCity` recusa-o logo à entrada
-com `PermanentIngestionError`, antes do primeiro `markStep`: a linha vai a
-`FAILED` com mensagem e os admins são notificados, em vez de ficar presa em
-`PROCESSING` durante três tentativas iguais. Correr a varredura exige cidade por
-lugar em `persistDrafts` (o `discoverInCountry` da #219 já a sabe achar) e um
-corte que não assuma uma cidade — é issue à parte. A UI de disparo, essa, é a
-FE#322; o formulário actual continua a exigir cidade, logo não consegue criar
-uma varredura.
+**A varredura de país, a correr (#343).** `ingest` tem uma entrada e duas pernas:
+uma ingestão de cidade resolve a cidade que lhe deram e pergunta ao Wikidata o que
+está lá dentro; uma varredura pergunta por uma classe num país e **cada lugar traz
+a sua própria cidade**. As duas pernas respondem na mesma forma (`LocatedCandidate`),
+e é isso que impede a perda silenciosa que o tipo permitia: um
+`DiscoveredPlaceInCountry` é estruturalmente atribuível a `DiscoveredPlace`, logo
+sem esse tipo o `rank` aceitaria a lista de país e deitaria a cidade fora sem uma
+queixa do compilador. O que vem depois — rankear, persistir, textos, imagens — não
+sabe de que perna veio.
+
+**Uma consulta por categoria, em série, e a primeira a reclamar fica com o item.**
+`categories` vazio significa todas. O ritmo de 600 ms do serviço de descoberta é
+global à instância, portanto paralelizar categorias reproduziria o 502-depois-de-cinco
+que a #219 mediu. Uma praia que também é reserva natural entra **uma** vez, na
+categoria que o admin listou primeiro, e `stats.claimedTwice` conta-o. Uma categoria
+que não responde entra em `stats.categoriesFailed` e a varredura segue; todas a
+falhar é erro retentável; um país fora do `COUNTRY_QID` é permanente.
+
+**A cidade de cada lugar, e o que fica por escrever.** `P131` quando o Wikidata o
+declara, senão o município mais próximo em 30 km (#219). O rótulo é canonizado **por
+QID** antes de rankear — duas grafias do mesmo município criariam duas cidades — e a
+chave é dobrada no worker com `@app/geo`, a biblioteca para onde a dobra passou
+precisamente porque deixou de haver uma cidade só por corrida. Um lugar sem cidade,
+ou cuja cidade só tem QID por rótulo (`Q12345` é texto que chegaria ao ecrã), **não é
+escrito**: vai para `stats.withoutCity` com uma amostra de QIDs para corrigir na
+fonte. O estado não vem da descoberta, portanto `stateKey` fica `''` — e isso permite
+duas linhas para a mesma cidade quando também existe uma ingestão com estado (Campo
+Grande varrido e Campo Grande/Alagoas ingerido). Resolver isso exige subir a cadeia
+`P131` até à unidade federativa e é issue à parte.
+
+**O tecto é de revisão, não de tempo.** `PLACES_PER_SWEEP` (variável de ambiente,
+100 por omissão) corta pelos mais visitados **depois** da perna de popularidade,
+porque é ela que mede popularidade. O que ele **não** poupa é tempo: a descoberta
+corre sobre tudo o que existe no país, não sobre os 100 que ficam.
+
+**O que uma varredura custa, medido.** Itália, `LANDMARK`, a 2026-09-13, pelo
+`pnpm places:discover-country`:
+
+| perna | tempo | o que a domina |
+| --- | --- | --- |
+| classes (SPARQL) | ~23 min | 41 classes, uma consulta por classe |
+| entidades + cidade por proximidade | ~38 min | 225 consultas `wikibase:around` a ~8 s |
+| visitas (pageviews) | ~26 min | uma requisição por candidato, em série, a 178 ms |
+| **total** | **~87 min** | para ficar com **100** lugares |
+
+Resultado: **8877 candidatos**, 8350 depois do veto de classes, e a cidade veio do
+`P131` em **8116** deles — a proximidade só respondeu por 225, que é o que a torna
+suportável apesar dos 8 s por consulta. Quatro sem município a 30 km (Pantelleria,
+o canal de Malta, as Égadas — pontos genuinamente ao largo) e cinco não perguntados
+pelo corta-circuito. Nenhuma classe ficou por responder; uma bateu no tecto de 5000
+linhas, logo essa fatia veio truncada.
+
+**O pré-corte por sitelinks, que essa medição justificou.** As visitas são uma
+requisição por candidato **em série** — 26 minutos sobre 8877, para ficar com 100.
+Uma varredura pede visitas para `PLACES_PER_SWEEP × 5` candidatos apenas (500 por
+omissão), escolhidos pelo **número de sitelinks**, que já vem na resposta do
+`wbgetentities` de onde saem os títulos e portanto não custa uma chamada a mais.
+É um sinal grosseiro e **não decide a ordem** — as visitas continuam a decidir,
+dentro da lista curta; o múltiplo existe para lhes deixar espaço de manobra. Uma
+ingestão de cidade **não pede lista curta**: Porto ofereceu 174 candidatos para um
+tecto de 30, e cortar aos 150 começaria a perder candidatos reais. As `stats`
+guardam `preCut: { askedFor, of }` — o tecto e quantos existiam, não um evento:
+o corte ordena os que **têm artigo em inglês**, que são menos do que `of`, e é o
+`withEnwiki` (contado já depois do corte) que diz quantos foram.
+
+Com `concurrency: 1`, nenhum outro trabalho de lugares corre enquanto uma varredura
+grande decorre. O `popularityScore` passa a ser calculado **dentro de cada cidade**:
+global, uma aldeia com um lugar receberia 3 em 100 e ficaria a par dos curados de
+Lisboa, misturando duas escalas na mesma tabela.
+
+**Slug e foto, por cidade e por QID.** O slug é único dentro de `(país, cidade,
+stateKey)` — o tuplo da unique —, portanto duas praias homónimas em municípios
+diferentes ficam ambas com o slug limpo e só a segunda **da mesma** cidade leva o
+sufixo do QID. E `persistDrafts` devolve `{id, wikidataId}` em vez de `{id, slug}`:
+emparelhar as imagens por slug daria à Sé do Porto a fotografia da Sé de Lisboa.
+
+**Proveniência da cidade.** `Place.nearestMunicipalityKm` guarda a distância quando a
+cidade foi inferida, e fica nulo quando o `P131` a declarou ou quando um humano a
+nomeou. É o mesmo papel do `wikipediaMonthlyViews` ao lado: o número cru que torna
+auditável uma decisão derivada — aqui, a própria `city`. Não é registo de corrida
+(que iria para `stats`): qualifica uma coluna da mesma linha, e o lugar sobrevive à
+ingestão, porque `ingestionId` é `onDelete: SetNull`.
 
 O motivo de uma recusa individual vai para `stats.placeRejections[]` (mesmo
 `jsonb ||` atômico do `textFailures`) em vez de uma coluna nova em `Place`: é

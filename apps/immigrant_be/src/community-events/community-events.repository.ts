@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CommunityEventStatus, Prisma } from '../../../../generated/prisma';
 import { boundingBox } from '../business/bounding-box';
-import { normalizeCity, stateFilterKey } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '@app/geo';
 import { CommunityEventWhen } from './dto/list-public-community-events-query.dto';
 
 /** What the owner and the admin see: every column plus the report tally. */

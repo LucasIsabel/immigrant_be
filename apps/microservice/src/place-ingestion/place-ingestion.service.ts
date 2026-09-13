@@ -9,13 +9,22 @@ import {
   PermanentIngestionError,
   RetryableIngestionError,
 } from '@app/ingestion';
-import { CityIngestionScope } from '../../../../generated/prisma';
+import { env } from '@app/config/env';
+import { normalizeCity } from '@app/geo';
+import {
+  CityIngestionScope,
+  PlaceCategory,
+} from '../../../../generated/prisma';
 import {
   CityNotResolvedError,
+  CountryNotSupportedError,
   type DiscoveredPlace,
+  type DiscoveredPlaceInCountry,
   WikidataDiscoveryService,
 } from './wikidata-discovery.service';
 import {
+  type CityLocation,
+  type IngestionStats,
   PlaceIngestionRepository,
   type PlaceToPersist,
 } from './place-ingestion.repository';
@@ -45,6 +54,59 @@ const PLACES_PER_CITY = 30;
 const scoreFor = (index: number, total: number) =>
   Math.max(1, Math.round((100 * (total - index)) / total));
 
+/** Every category, for a sweep that named none — empty means all. */
+const ALL_CATEGORIES = Object.values(PlaceCategory);
+
+/**
+ * How many candidates a sweep pays pageviews for, as a multiple of its cap.
+ *
+ * Pageviews are one request per candidate, in series: measured over Italy's
+ * 8877 `LANDMARK` candidates, that leg is 26 minutes on its own, to keep a
+ * hundred. The sitelink count that pre-cuts them is free — it already rides on
+ * the `wbgetentities` call the titles come from — but it is a coarser signal,
+ * so the cut leaves room rather than trusting it with the final order. Five
+ * times the cap puts Italy at 500 requests, a minute and a half, and still
+ * lets pageviews reorder freely inside the shortlist.
+ */
+const PRE_CUT_HEADROOM = 5;
+
+/** The row `findIngestion` hands back, named once instead of restated. */
+type IngestionRow = NonNullable<
+  Awaited<ReturnType<PlaceIngestionRepository['findIngestion']>>
+>;
+
+/**
+ * A candidate that already knows where it is.
+ *
+ * Both gathering legs answer in this shape and `rank` accepts nothing else:
+ * a `DiscoveredPlaceInCountry` is structurally assignable to `DiscoveredPlace`,
+ * so without this the sweep's city would be dropped on the floor and the
+ * compiler would not say a word.
+ */
+interface LocatedCandidate {
+  poi: DiscoveredPlace;
+  location: CityLocation;
+  /** Set only when the city was inferred from distance (#219). */
+  nearestMunicipalityKm: number | null;
+}
+
+/** What one gathering leg found, and how much of it this run may keep. */
+interface Gathered {
+  countryCode: string;
+  candidates: LocatedCandidate[];
+  stats: Partial<IngestionStats>;
+  cap: number;
+  /**
+   * How many candidates may reach the pageviews call. Absent on a city
+   * ingestion, whose whole list is smaller than the shortlist would be.
+   */
+  preCutTo?: number;
+}
+
+/** The tuple a slug is unique inside — the unique index's own key. */
+const bucketOf = (location: CityLocation) =>
+  `${location.countryCode}|${location.city}|${location.stateKey ?? ''}`;
+
 @Injectable()
 export class PlaceIngestionService {
   private readonly logger = new Logger(PlaceIngestionService.name);
@@ -60,76 +122,259 @@ export class PlaceIngestionService {
   ) {}
 
   /**
-   * Gather the facts for one city and queue the writing.
+   * Gather the facts for one reach and queue the writing.
    *
    * Every step is idempotent, so this is safe to run again: the resolved area
    * is cached, and persistence upserts on a unique key. That is what lets the
    * adapter retry without asking whether it already half-succeeded.
+   *
+   * Two legs, one shape. A city ingestion resolves the city it was handed and
+   * asks Wikidata what is inside it; a country sweep asks for a class across a
+   * country and every place brings its own city back (#343). What comes after —
+   * rank, persist, texts, images — never learns which leg it came from.
    */
-  async ingestCity(ingestionId: string): Promise<void> {
+  async ingest(ingestionId: string): Promise<void> {
     const ingestion = await this.repository.findIngestion(ingestionId);
     if (!ingestion) {
       throw new PermanentIngestionError(
         `Ingestion ${ingestionId} no longer exists`,
-        'resolve_area',
+        'discover',
       );
     }
 
-    // The scope was modelled in #220; running the sweep — a city per place in
-    // `persistDrafts`, and a cut that does not assume one city — is its own
-    // issue. Permanent on purpose: three attempts at what does not exist yet
-    // are three identical failures and half an hour of backoff, and the row
-    // would sit in PROCESSING for all of it. Refused here, before the first
-    // `markStep`, it goes to FAILED with a message and the admins are told.
-    if (ingestion.scope === CityIngestionScope.COUNTRY) {
-      throw new PermanentIngestionError(
-        `Varredura por país (${ingestion.countryCode}) ainda não é executada pelo worker`,
-        'resolve_city',
-      );
-    }
+    const gathered =
+      ingestion.scope === CityIngestionScope.COUNTRY
+        ? await this.sweepCountry(ingestion)
+        : await this.ingestOneCity(ingestion);
 
-    const { countryCode, city, cityKey, state, stateKey } = ingestion;
+    await this.finish(ingestionId, gathered);
+  }
+
+  /** The city the admin named: resolve it, then ask what is inside it. */
+  private async ingestOneCity(ingestion: IngestionRow): Promise<Gathered> {
+    const { id, countryCode, city, cityKey, state, stateKey } = ingestion;
     // The CHECK in the migration makes this unreachable through the API. It is
-    // here because the columns are nullable now, and a null that slipped in by
-    // another door would reach `persistDrafts` as a city named "null".
+    // here because the columns are nullable since #220, and a null that slipped
+    // in by another door would reach `persistDrafts` as a city named "null".
     if (city === null || cityKey === null) {
       throw new PermanentIngestionError(
-        `Ingestão ${ingestionId} é de cidade e não tem cidade`,
+        `Ingestão ${id} é de cidade e não tem cidade`,
         'resolve_city',
       );
     }
 
-    await this.repository.markStep(ingestionId, 'resolve_city');
+    await this.repository.markStep(id, 'resolve_city');
     const cityRef = await this.resolveCity(countryCode, city, state);
-    await this.repository.saveCityWikidataId(ingestionId, cityRef.wikidataId);
+    await this.repository.saveCityWikidataId(id, cityRef.wikidataId);
 
-    await this.repository.markStep(ingestionId, 'discover');
+    await this.repository.markStep(id, 'discover');
     const discovered = await this.discover(cityRef.wikidataId);
 
-    await this.repository.markStep(ingestionId, 'rank');
-    const ranked = await this.rank(discovered.places);
+    // One location for the whole run: the admin named the city and the API
+    // folded its keys when the row was created.
+    const location: CityLocation = {
+      countryCode,
+      city,
+      cityKey,
+      state,
+      stateKey,
+    };
 
-    const countryId = await this.resolveCountryId(countryCode);
+    return {
+      countryCode,
+      candidates: discovered.places.map((poi) => ({
+        poi,
+        location,
+        nearestMunicipalityKm: null,
+      })),
+      stats: {
+        rawElements: discovered.rawCount,
+        droppedAsUnmapped: discovered.droppedAsUnmapped,
+      },
+      cap: PLACES_PER_CITY,
+    };
+  }
+
+  /**
+   * One country, one category at a time, each place carrying its own city.
+   *
+   * In series on purpose: the discovery service paces itself by comparing
+   * against its own last request, so two callers at once compute the same gap
+   * and fire together — which is the 502-after-five that #219 measured.
+   */
+  private async sweepCountry(ingestion: IngestionRow): Promise<Gathered> {
+    const { id, countryCode } = ingestion;
+    const categories = ingestion.categories.length
+      ? ingestion.categories
+      : ALL_CATEGORIES;
+
+    await this.repository.markStep(id, 'discover');
+
+    const found = new Map<string, DiscoveredPlaceInCountry>();
+    const classesFailed = new Set<string>();
+    const categoriesFailed: PlaceCategory[] = [];
+    let rawElements = 0;
+    let droppedAsExcluded = 0;
+    let cityNotFound = 0;
+    let cityLookupFailed = 0;
+    let claimedTwice = 0;
+    let truncated = false;
+
+    for (const category of categories) {
+      let discovery;
+      try {
+        discovery = await this.discovery.discoverInCountry(
+          countryCode,
+          category,
+        );
+      } catch (error) {
+        // Three attempts will not put the country on Wikidata's map.
+        if (error instanceof CountryNotSupportedError) {
+          throw new PermanentIngestionError(error.message, 'discover');
+        }
+        // One category short is a thinner sweep; the whole run lost is nothing.
+        categoriesFailed.push(category);
+        this.logger.warn(
+          `Sweep ${countryCode}: category ${category} did not answer (${String(error)})`,
+        );
+        continue;
+      }
+
+      rawElements += discovery.rawCount;
+      droppedAsExcluded += discovery.droppedAsExcluded;
+      cityNotFound += discovery.cityNotFound;
+      cityLookupFailed += discovery.cityLookupFailed;
+      truncated = truncated || discovery.truncated;
+      for (const qid of discovery.classesFailed) classesFailed.add(qid);
+
+      for (const place of discovery.places) {
+        // The first category asked for keeps the item: a beach that is also a
+        // nature reserve is one place, filed under what the admin listed first.
+        if (found.has(place.wikidataId)) {
+          claimedTwice += 1;
+          continue;
+        }
+        found.set(place.wikidataId, place);
+      }
+    }
+
+    if (categoriesFailed.length === categories.length) {
+      throw new RetryableIngestionError(
+        `Wikidata answered for none of the ${categories.length} categories of ${countryCode}`,
+      );
+    }
+
+    // A place we cannot name a city for is not written: `Place.city` is NOT
+    // NULL, and an invented city travels the whole pipeline with nothing to
+    // give it away. Counted instead, with a sample to take back to the source.
+    const withoutCitySample: string[] = [];
+    const usable: DiscoveredPlaceInCountry[] = [];
+    let unlabelled = 0;
+    for (const place of found.values()) {
+      const city = place.city;
+      // No English label: the city would read "Q12345" on a public screen.
+      if (!city || city.label === city.wikidataId) {
+        if (city) unlabelled += 1;
+        if (withoutCitySample.length < 50)
+          withoutCitySample.push(place.wikidataId);
+        continue;
+      }
+      usable.push(place);
+    }
+
+    // The label is derived, so two spellings of one municipality would become
+    // two cities. The QID decides, and the first label to arrive is the one.
+    const byCityQid = new Map<string, CityLocation>();
+    const candidates: LocatedCandidate[] = usable.map((place) => {
+      const city = place.city as NonNullable<DiscoveredPlaceInCountry['city']>;
+      let location = byCityQid.get(city.wikidataId);
+      if (!location) {
+        location = {
+          countryCode,
+          city: city.label,
+          cityKey: normalizeCity(city.label),
+          // The discovery carries no state. `stateKey` becomes `''` on the
+          // row, which is what the unique index means by "none".
+          state: null,
+          stateKey: null,
+        };
+        byCityQid.set(city.wikidataId, location);
+      }
+      return {
+        poi: place,
+        location,
+        nearestMunicipalityKm:
+          city.source === 'NEAREST_MUNICIPALITY' ? city.distanceKm : null,
+      };
+    });
+
+    this.logger.log(
+      `Sweep ${countryCode} [${categories.join(', ')}]: ${found.size} found, ` +
+        `${candidates.length} usable across ${byCityQid.size} cities, ` +
+        `${categoriesFailed.length} categories short`,
+    );
+
+    const byProximity = candidates.filter(
+      (candidate) => candidate.nearestMunicipalityKm !== null,
+    ).length;
+
+    return {
+      countryCode,
+      candidates,
+      stats: {
+        rawElements,
+        droppedAsExcluded,
+        citiesFromP131: candidates.length - byProximity,
+        citiesFromProximity: byProximity,
+        withoutCity: {
+          notFound: cityNotFound,
+          lookupFailed: cityLookupFailed,
+          unlabelled,
+        },
+        ...(withoutCitySample.length && { withoutCitySample }),
+        ...(classesFailed.size && { classesFailed: [...classesFailed] }),
+        ...(categoriesFailed.length && { categoriesFailed }),
+        ...(truncated && { truncated }),
+        ...(claimedTwice && { claimedTwice }),
+      },
+      cap: env.PLACES_PER_SWEEP,
+      preCutTo: env.PLACES_PER_SWEEP * PRE_CUT_HEADROOM,
+    };
+  }
+
+  /** Rank, persist and queue the writing — the half both legs share. */
+  private async finish(ingestionId: string, gathered: Gathered): Promise<void> {
+    await this.repository.markStep(ingestionId, 'rank');
+    const ranked = await this.rank(
+      gathered.candidates,
+      gathered.cap,
+      gathered.preCutTo,
+    );
+
+    const countryId = await this.resolveCountryId(gathered.countryCode);
     const { created, conflicts } = await this.repository.persistDrafts(
       ingestionId,
-      { countryCode, city, cityKey, state, stateKey },
       countryId,
       ranked.places,
     );
 
     await this.repository.saveStats(ingestionId, {
-      rawElements: discovered.rawCount,
-      droppedAsUnmapped: discovered.droppedAsUnmapped,
+      rawElements: 0,
+      droppedAsUnmapped: 0,
+      ...gathered.stats,
       withEnwiki: ranked.withEnwiki,
       kept: ranked.places.length,
       created: created.length,
       conflicts,
+      cities: new Set(ranked.places.map((place) => bucketOf(place.location)))
+        .size,
+      ...(ranked.preCut && { preCut: ranked.preCut }),
     });
 
     if (!created.length) {
-      // Nothing new to write about. Either the city is genuinely empty or every
-      // place there was already curated — both are a finished ingestion, not a
-      // failure, and the review screen will say which.
+      // Nothing new to write about. Either the reach is genuinely empty or
+      // every place in it was already curated — both are a finished ingestion,
+      // not a failure, and the review screen will say which.
       await this.repository.markReadyIfDone(ingestionId);
       return;
     }
@@ -139,15 +384,17 @@ export class PlaceIngestionService {
       created.map(({ id }) => ({ placeId: id, ingestionId })),
     );
 
-    // Images ride outside the convergence: the city is READY when its texts
+    // Images ride outside the convergence: the reach is READY when its texts
     // are, and a photo that never lands degrades to the category tone. Only
     // places whose Wikidata entity carries a P18 get a job — measured on
-    // Porto's set, that is about 85% of them.
+    // Porto's set, that is about 85% of them. Paired by QID and not by slug:
+    // a sweep can hold a `se` in Lisbon and another in Porto, and pairing by
+    // slug would hand both the same photograph.
     const imageJobs = created
-      .map(({ id, slug }) => ({
+      .map(({ id, wikidataId }) => ({
         placeId: id,
         ingestionId,
-        commonsFile: ranked.imagesBySlug.get(slug),
+        commonsFile: ranked.imagesByQid.get(wikidataId),
       }))
       .filter(
         (
@@ -353,65 +600,104 @@ export class PlaceIngestionService {
     }
   }
 
-  private async rank(pois: DiscoveredPlace[]): Promise<{
+  private async rank(
+    candidates: LocatedCandidate[],
+    cap: number,
+    preCutTo?: number,
+  ): Promise<{
     places: PlaceToPersist[];
     withEnwiki: number;
-    /** slug → Commons file for the kept places that have a P18 image. */
-    imagesBySlug: Map<string, string>;
+    /** QID → Commons file for the kept places that have a P18 image. */
+    imagesByQid: Map<string, string>;
+    /** Set only when a shortlist was asked for, for the stats to record. */
+    preCut?: { askedFor: number; of: number };
   }> {
-    if (!pois.length)
-      return { places: [], withEnwiki: 0, imagesBySlug: new Map() };
+    if (!candidates.length)
+      return { places: [], withEnwiki: 0, imagesByQid: new Map() };
 
     const signals = await this.wikimedia.popularity(
-      pois.map((poi) => poi.wikidataId),
+      candidates.map(({ poi }) => poi.wikidataId),
       // The summary is fetched later, for the ones that survive the cut.
-      { withExtract: false },
+      { withExtract: false, preCutTo },
     );
     const byWikidata = new Map(signals.map((s) => [s.wikidataId, s]));
 
-    const scored = pois
-      .map((poi) => ({ poi, signal: byWikidata.get(poi.wikidataId) }))
+    const scored = candidates
+      .map((candidate) => ({
+        candidate,
+        signal: byWikidata.get(candidate.poi.wikidataId),
+      }))
       .filter(
         (
           row,
-        ): row is { poi: DiscoveredPlace; signal: (typeof signals)[number] } =>
-          row.signal !== undefined,
+        ): row is {
+          candidate: LocatedCandidate;
+          signal: (typeof signals)[number];
+        } => row.signal !== undefined,
       )
       .sort((a, b) => b.signal.monthlyViews - a.signal.monthlyViews);
 
-    const kept = scored.slice(0, PLACES_PER_CITY);
-    const slugs = uniqueSlugs(kept.map(({ poi }) => poi));
+    const kept = scored.slice(0, cap);
+    const slugs = uniqueSlugs(kept.map(({ candidate }) => candidate));
 
-    const imagesBySlug = new Map<string, string>();
-    for (const { poi, signal } of kept) {
-      if (signal.commonsFile) {
-        imagesBySlug.set(
-          slugs.get(poi.wikidataId) as string,
-          signal.commonsFile,
-        );
-      }
+    const imagesByQid = new Map<string, string>();
+    for (const { candidate, signal } of kept) {
+      if (signal.commonsFile)
+        imagesByQid.set(candidate.poi.wikidataId, signal.commonsFile);
     }
 
-    const places = kept.map(({ poi, signal }, index) => ({
-      name: poi.name,
-      slug: slugs.get(poi.wikidataId) as string,
-      category: poi.category,
-      lat: poi.lat,
-      lng: poi.lng,
-      address: poi.address,
-      website: poi.website,
-      // Wikidata rarely records admission fees; "unknown" renders as paid,
-      // which the writing prompt already treats as "say nothing about price".
-      isFree: false,
-      wikidataId: poi.wikidataId,
-      wikipediaMonthlyViews: signal.monthlyViews,
-      popularityScore: scoreFor(index, kept.length),
-      // Provenance per record. CC0, so no attribution obligation — but the
-      // link is how a reviewer audits where a place came from.
-      sourceUrl: `https://www.wikidata.org/wiki/${poi.wikidataId}`,
-    }));
+    // The score orders one city's list, so it is measured inside that city.
+    // Global, a village with a single place would score 3 and sit beside the
+    // curated hundreds of Lisbon, mixing two scales in one table. The raw
+    // number that keeps the order auditable is `wikipediaMonthlyViews`, which
+    // stays global and honest.
+    const sizeOf = new Map<string, number>();
+    for (const { candidate } of kept) {
+      const bucket = bucketOf(candidate.location);
+      sizeOf.set(bucket, (sizeOf.get(bucket) ?? 0) + 1);
+    }
+    const placed = new Map<string, number>();
 
-    return { places, withEnwiki: scored.length, imagesBySlug };
+    const places = kept.map(({ candidate, signal }) => {
+      const bucket = bucketOf(candidate.location);
+      const index = placed.get(bucket) ?? 0;
+      placed.set(bucket, index + 1);
+
+      return {
+        location: candidate.location,
+        nearestMunicipalityKm: candidate.nearestMunicipalityKm,
+        name: candidate.poi.name,
+        slug: slugs.get(candidate.poi.wikidataId) as string,
+        category: candidate.poi.category,
+        lat: candidate.poi.lat,
+        lng: candidate.poi.lng,
+        address: candidate.poi.address,
+        website: candidate.poi.website,
+        // Wikidata rarely records admission fees; "unknown" renders as paid,
+        // which the writing prompt already treats as "say nothing about price".
+        isFree: false,
+        wikidataId: candidate.poi.wikidataId,
+        wikipediaMonthlyViews: signal.monthlyViews,
+        popularityScore: scoreFor(index, sizeOf.get(bucket) as number),
+        // Provenance per record. CC0, so no attribution obligation — but the
+        // link is how a reviewer audits where a place came from.
+        sourceUrl: `https://www.wikidata.org/wiki/${candidate.poi.wikidataId}`,
+      };
+    });
+
+    return {
+      places,
+      withEnwiki: scored.length,
+      imagesByQid,
+      // The ceiling, not the event: the cut ranks the candidates that have an
+      // English article, which is fewer than these. Read together with
+      // `withEnwiki` — itself counted after the cut — the two say what
+      // happened without claiming more than is known.
+      ...(preCutTo !== undefined &&
+        candidates.length > preCutTo && {
+          preCut: { askedFor: preCutTo, of: candidates.length },
+        }),
+    };
   }
 
   private async resolveCountryId(countryCode: string): Promise<string | null> {
@@ -440,35 +726,35 @@ const COUNTRY_NAMES: Record<string, string> = {
 };
 
 /**
- * A slug per place, where two different places can share a name.
+ * A slug for each place, unique **inside its own city**.
  *
- * `[countryCode, city, slug]` is the unique key, so two distinct places
- * colliding on it means the second upsert silently overwrites the first — one
- * place lost, and the run still reporting both as created. At ten places this
- * was theoretical; measured across Porto's full set it is not: **Forte de São
- * João Baptista** is two different forts (Q10283826 and Q10284015), and **São
- * Nicolau** two different things.
- *
- * The loser of a collision is suffixed with its Wikidata id rather than a
- * counter, because the id is stable: a counter would depend on ordering, and a
- * re-run that reordered would mint a new slug and a duplicate row — the exact
- * outcome this function exists to prevent. The most-visited one keeps the clean
- * slug, so the URL that matters stays readable.
+ * The uniqueness that matters is the one the database enforces:
+ * `(countryCode, city, stateKey, slug)`. Two beaches called "Praia da Rocha"
+ * in different municipalities are two rows and both keep the clean slug; two
+ * in the same one is where the loser takes the QID as a suffix — ugly, stable,
+ * and never a counter, which would move when a run finds one place more.
  */
-function uniqueSlugs(pois: DiscoveredPlace[]): Map<string, string> {
-  const taken = new Set<string>();
-  const assigned = new Map<string, string>();
+function uniqueSlugs(candidates: LocatedCandidate[]): Map<string, string> {
+  const slugs = new Map<string, string>();
+  const taken = new Map<string, Set<string>>();
 
-  for (const poi of pois) {
+  for (const { poi, location } of candidates) {
+    const bucket = bucketOf(location);
+    let used = taken.get(bucket);
+    if (!used) {
+      used = new Set<string>();
+      taken.set(bucket, used);
+    }
+
     const base = slugify(poi.name);
-    const slug = taken.has(base)
+    const slug = used.has(base)
       ? `${base}-${poi.wikidataId.toLowerCase()}`
       : base;
-    taken.add(slug);
-    assigned.set(poi.wikidataId, slug);
+    used.add(slug);
+    slugs.set(poi.wikidataId, slug);
   }
 
-  return assigned;
+  return slugs;
 }
 
 function slugify(name: string): string {

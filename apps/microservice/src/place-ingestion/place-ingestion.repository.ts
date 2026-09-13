@@ -6,6 +6,17 @@ import {
 } from '../../../../generated/prisma';
 
 export interface PlaceToPersist {
+  /**
+   * The city *this* place belongs to. In a city ingestion it is the same
+   * object for every place; in a country sweep each one brings its own, found
+   * by `P131` or by the nearest municipality (#219).
+   */
+  location: CityLocation;
+  /**
+   * How far the municipality that answered for the city was. Null when
+   * Wikidata declared it, and null for every city ingestion.
+   */
+  nearestMunicipalityKm: number | null;
   name: string;
   slug: string;
   category: PlaceCategory;
@@ -28,6 +39,8 @@ export interface PlaceToPersist {
  */
 export type Conflict = {
   slug: string;
+  /** Which city's slug it was: a sweep can collide in two cities at once. */
+  city: string;
   wikidataId: string;
   rank: number;
   monthlyViews: number;
@@ -42,6 +55,44 @@ export type IngestionStats = {
   kept: number;
   created: number;
   conflicts: Conflict[];
+
+  /* What only a country sweep produces; absent on a city ingestion. */
+
+  /** Candidates the class table vetoes (a prison that subclasses a castle). */
+  droppedAsExcluded?: number;
+  citiesFromP131?: number;
+  citiesFromProximity?: number;
+  /** Kept out because no city could be written for them — never invented. */
+  withoutCity?: {
+    notFound: number;
+    lookupFailed: number;
+    /** The entity has no English label, so the city would read `Q12345`. */
+    unlabelled: number;
+  };
+  /** A sample of those, to take back to Wikidata and fix at the source. */
+  withoutCitySample?: string[];
+  /** Wikidata classes whose own query never answered: a thinner sweep. */
+  classesFailed?: string[];
+  /** Whole categories that failed; the sweep went on without them. */
+  categoriesFailed?: PlaceCategory[];
+  /** A class hit the row limit, so that slice came back cut. */
+  truncated?: boolean;
+  /** Items a second category also claimed; the first one asked for kept them. */
+  claimedTwice?: number;
+  /** How many distinct cities the sweep wrote into. */
+  cities?: number;
+  /**
+   * The pageviews ceiling: **at most** `askedFor` of `of` candidates were
+   * asked for, ranked by sitelink count.
+   *
+   * A sweep does not pay pageviews for everything it finds — one request per
+   * candidate in series is 26 minutes over Italy's 8877, to keep a hundred.
+   * `askedFor` is the ceiling and not a count: the ranking runs over the
+   * candidates that have an English article, which is fewer than `of`.
+   * `withEnwiki` says how many that was. Recorded so a thin review is
+   * explainable without re-running anything.
+   */
+  preCut?: { askedFor: number; of: number };
 };
 
 /** Which city the places belong to: the name alone does not say. */
@@ -59,8 +110,12 @@ export interface CityLocation {
 }
 
 export interface PersistResult {
-  /** Id and slug together: the caller pairs the row with per-slug side data. */
-  created: { id: string; slug: string }[];
+  /**
+   * Id and QID together. Not the slug: a slug is unique inside one city, so a
+   * sweep that wrote a `se` in Lisbon and another in Porto would hand both the
+   * same Commons file if the caller paired by slug.
+   */
+  created: { id: string; wikidataId: string }[];
   conflicts: Conflict[];
 }
 
@@ -152,32 +207,43 @@ export class PlaceIngestionRepository {
    */
   async persistDrafts(
     ingestionId: string,
-    location: CityLocation,
     countryId: string | null,
     places: PlaceToPersist[],
   ): Promise<PersistResult> {
-    const { countryCode, city, cityKey, state } = location;
-    const stateKey = location.stateKey ?? '';
+    // One query for the whole run rather than one per city: a sweep touches
+    // many, and the comparison is the unique key's own tuple. It also mends a
+    // narrowness a city run could never show — a curated `sé` in Lisbon must
+    // not keep the `sé` of Porto from being written.
+    const countryCode = places[0]?.location.countryCode;
+    const existing = countryCode
+      ? await this.prisma.place.findMany({
+          where: {
+            countryCode,
+            slug: { in: places.map((place) => place.slug) },
+            reviewStatus: { not: 'DRAFT' },
+          },
+          select: { city: true, stateKey: true, slug: true },
+        })
+      : [];
+    const keyOf = (city: string, stateKey: string, slug: string) =>
+      `${city}|${stateKey}|${slug}`;
+    const untouchable = new Set(
+      existing.map((row) => keyOf(row.city, row.stateKey, row.slug)),
+    );
 
-    const existing = await this.prisma.place.findMany({
-      where: {
-        countryCode,
-        city,
-        stateKey,
-        slug: { in: places.map((place) => place.slug) },
-        reviewStatus: { not: 'DRAFT' },
-      },
-      select: { slug: true },
-    });
-    const untouchable = new Set(existing.map((row) => row.slug));
-
-    const created: { id: string; slug: string }[] = [];
+    const created: { id: string; wikidataId: string }[] = [];
     const conflicts: Conflict[] = [];
 
     for (const [index, place] of places.entries()) {
-      if (untouchable.has(place.slug)) {
+      const { location, ...fields } = place;
+      // `''` and not null: NULL is not equal to NULL in a unique index, and
+      // two stateless places would stop colliding.
+      const stateKey = location.stateKey ?? '';
+
+      if (untouchable.has(keyOf(location.city, stateKey, place.slug))) {
         conflicts.push({
           slug: place.slug,
+          city: location.city,
           wikidataId: place.wikidataId,
           rank: index + 1,
           monthlyViews: place.wikipediaMonthlyViews,
@@ -186,11 +252,11 @@ export class PlaceIngestionRepository {
       }
 
       const data = {
-        ...place,
-        countryCode,
-        city,
-        cityKey,
-        state,
+        ...fields,
+        countryCode: location.countryCode,
+        city: location.city,
+        cityKey: location.cityKey,
+        state: location.state,
         stateKey,
         countryId,
         ingestionId,
@@ -203,8 +269,8 @@ export class PlaceIngestionRepository {
       const saved = await this.prisma.place.upsert({
         where: {
           countryCode_city_stateKey_slug: {
-            countryCode,
-            city,
+            countryCode: location.countryCode,
+            city: location.city,
             stateKey,
             slug: place.slug,
           },
@@ -213,7 +279,7 @@ export class PlaceIngestionRepository {
         update: data,
         select: { id: true },
       });
-      created.push({ id: saved.id, slug: place.slug });
+      created.push({ id: saved.id, wikidataId: place.wikidataId });
     }
 
     return { created, conflicts };

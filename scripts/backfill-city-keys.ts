@@ -18,7 +18,7 @@
  * neither `scripts/` nor the `apps/` sources this imports the fold from.
  */
 import { CityIngestionScope, PrismaClient } from '../generated/prisma';
-import { cityIdentity } from '../apps/immigrant_be/src/business/city-key';
+import { cityIdentity } from '@app/geo';
 
 interface KeyedRow {
   id: string;

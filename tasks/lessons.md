@@ -273,3 +273,55 @@ efeito visível que o caminho de sucesso lento (aqui, «vai para revisão
 humana»), o defeito não aparece sozinho — tem de haver um teste, uma métrica ou
 uma verificação manual que distinga «ninguém analisou» de «analisou e mandou
 rever».
+
+## 2026-09-13 — `AbortSignal.timeout` também rejeita a leitura do corpo
+
+A #219 pôs `signal: AbortSignal.timeout(60_000)` no `fetch` do
+`WikidataDiscoveryService` e deixou o `await response.text()` **fora** do
+`try/catch` que converte falhas de transporte em `WikidataUnavailableError`.
+Parecia inofensivo: o `fetch` já tinha resolvido.
+
+Não é. O tempo limite conta até ao **fim da resposta**, e numa consulta grande
+ele dispara enquanto o corpo ainda está a ser transmitido — e aí quem rejeita é
+o `response.text()`, não o `fetch`. A rejeição sai sem dono. Apanhado a medir
+uma varredura de Itália: `DOMException [TimeoutError]` não tratada, processo do
+worker abaixo, e a medição perdida a meio.
+
+**Regra:** com `AbortSignal`, tudo o que lê a resposta fica dentro do mesmo
+`try` que apanha o pedido. O `fetch` resolver não quer dizer que acabou.
+
+**Corolário:** uma rejeição não tratada num worker que corre em segundo plano
+(`node dist/apps/microservice/main.js &` no `start.sh`) mata o processo **sem
+derrubar o contentor** — a API continua a servir e ninguém dá por nada. É a
+mesma família do `P2025` da #344.
+
+## 2026-09-13 — `grep` ignora em silêncio um ficheiro que julga binário
+
+`apps/immigrant_be/src/countriesnow/countriesnow.service.ts` é detectado como
+binário (`file` diz `data`). Um `grep` sem `-a` **não o procura e não avisa**.
+A extrair a dobra de cidade para `@app/geo`, a lista de quem a importava saiu
+incompleta por causa disso, e o import partido só apareceu no `tsc`.
+
+**Regra:** em varreduras de imports ou de símbolos neste repo, `grep -a`. E
+confiar no compilador como segunda rede, não como primeira.
+
+## Memória da máquina antes de culpar o código (2026-09-13)
+
+**O que aconteceu.** Seis tarefas em segundo plano morreram sem deixar saída —
+a medição de Itália, duas tentativas de `prisma migrate status`, o rebuild dos
+dois apps. Atribuí a lentidão a um `jest --watch` do Cursor. Estava errado: esse
+processo ocupava 10 MB. A máquina tem 8 GB e estava com 0,05 GB livres e 6 GB de
+swap; o guarda de memória do harness mata tarefas em segundo plano quando isso
+acontece, seja qual for o seu tamanho. O mesmo voltou a matar API, worker e
+frontend do E2E, que juntos somavam menos de 400 MB.
+
+**A regra.** Perante tarefas que morrem sem saída, ficheiros de 0 bytes ou um
+build que leva 23 minutos quando costuma levar 4 segundos, verificar
+`vm_stat` e `sysctl vm.swapusage` **antes** de procurar culpado no código ou
+noutro processo. Um processo pequeno não é culpado de pressão de memória; a
+soma de tudo é.
+
+**De passagem, duas medições que ficam:** `next start` sobre build de produção
+custa 141 MB contra mais de 1 GB do `next dev` — para E2E, subir sempre em
+produção. E no Chrome o frontend responde em `127.0.0.1:3002` mas dá página de
+erro em `localhost:3002`, com o `curl` a devolver 200 nos dois.

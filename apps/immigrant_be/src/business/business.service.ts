@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { BusinessType } from '../../../../generated/prisma';
 import { CountriesNowService } from '../countriesnow/countriesnow.service';
 import { BusinessRepository } from './business.repository';
-import { normalizeCity, normalizeState } from './city-key';
+import { normalizeCity, normalizeState } from '@app/geo';
 import { BusinessCitiesQueryDto } from './dto/business-cities-query.dto';
 import { validateOpeningHours } from './opening-hours.schema';
 

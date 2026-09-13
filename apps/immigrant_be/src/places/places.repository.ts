@@ -3,7 +3,7 @@ import { PrismaService } from '@app/database';
 import { Prisma } from '../../../../generated/prisma';
 import { featuredWhere } from '../common/featured/featured';
 import { mergeCitySpellings } from '../business/city-groups';
-import { normalizeCity, stateFilterKey } from '../business/city-key';
+import { normalizeCity, stateFilterKey } from '@app/geo';
 import {
   PlaceCitiesQueryDto,
   PlacesListQueryDto,

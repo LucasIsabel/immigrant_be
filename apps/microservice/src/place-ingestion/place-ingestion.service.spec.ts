@@ -1,5 +1,10 @@
 jest.mock('@app/config/env', () => ({
-  env: { INGESTION_USER_AGENT: 'aloravia-test/1.0' },
+  env: {
+    INGESTION_USER_AGENT: 'aloravia-test/1.0',
+    // Small on purpose: the cut is provable with five candidates instead of
+    // a hundred and one.
+    PLACES_PER_SWEEP: 3,
+  },
 }));
 
 jest.mock('@app/database', () => ({
@@ -8,7 +13,18 @@ jest.mock('@app/database', () => ({
 }));
 
 jest.mock('../../../../generated/prisma', () => ({
-  PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM' },
+  // All eight, not a sample: "empty means all" has to prove eight discovery
+  // calls, and a two-value mock would let it pass proving two.
+  PlaceCategory: {
+    LANDMARK: 'LANDMARK',
+    MUSEUM: 'MUSEUM',
+    NATURE: 'NATURE',
+    BEACH: 'BEACH',
+    VIEWPOINT: 'VIEWPOINT',
+    FOOD_MARKET: 'FOOD_MARKET',
+    NIGHTLIFE: 'NIGHTLIFE',
+    NEIGHBORHOOD: 'NEIGHBORHOOD',
+  },
   // The factory replaces the module whole: without this the service imports
   // `CityIngestionScope` as undefined and every test here dies on the scope
   // check, not on what it meant to prove.
@@ -31,6 +47,7 @@ import { PlaceIngestionRepository } from './place-ingestion.repository';
 import { PlaceIngestionService } from './place-ingestion.service';
 import {
   CityNotResolvedError,
+  CountryNotSupportedError,
   type DiscoveredPlace,
   type WikidataDiscoveryService,
 } from './wikidata-discovery.service';
@@ -72,6 +89,44 @@ const signal = (
   commonsFile,
 });
 
+/** A place as `discoverInCountry` answers it: with a city of its own. */
+const inCountry = (
+  name: string,
+  qid: string,
+  city: { qid: string; label: string; km?: number } = {
+    qid: 'Q597',
+    label: 'Lisbon',
+  },
+) => ({
+  ...poi(name, qid),
+  city:
+    city.km === undefined
+      ? { wikidataId: city.qid, label: city.label, source: 'WIKIDATA_P131' }
+      : {
+          wikidataId: city.qid,
+          label: city.label,
+          source: 'NEAREST_MUNICIPALITY',
+          distanceKm: city.km,
+        },
+});
+
+/** The full `CountryDiscovery` shape, zeroed except for what a test cares about. */
+const countryDiscovered = (
+  places: ReturnType<typeof inCountry>[],
+  over: Record<string, unknown> = {},
+) => ({
+  places,
+  rawCount: places.length,
+  droppedAsExcluded: 0,
+  fromP131: 0,
+  fromProximity: 0,
+  cityNotFound: 0,
+  cityLookupFailed: 0,
+  classesFailed: [],
+  truncated: false,
+  ...over,
+});
+
 /**
  * A repository that behaves like the database rather than like a mock.
  *
@@ -89,7 +144,12 @@ class FakeRepository {
   findIngestion = jest.fn().mockResolvedValue({
     id: INGESTION_ID,
     countryCode: 'PT',
+    scope: 'CITY',
+    categories: [],
     city: 'Lisbon',
+    cityKey: 'lisbon',
+    state: null,
+    stateKey: null,
   });
 
   savePlaceImage = jest.fn().mockResolvedValue(undefined);
@@ -124,9 +184,9 @@ class FakeRepository {
     }
     return Promise.resolve({
       created: [
-        { id: 'place-1', slug: 'place-0' },
-        { id: 'place-2', slug: 'place-1' },
-        { id: 'place-3', slug: 'place-2' },
+        { id: 'place-1', wikidataId: 'Q1' },
+        { id: 'place-2', wikidataId: 'Q2' },
+        { id: 'place-3', wikidataId: 'Q3' },
       ],
       conflicts: [],
     });
@@ -165,7 +225,11 @@ describe('PlaceIngestionService', () => {
     dispatchPlaceTexts: jest.Mock;
     dispatchPlaceImages: jest.Mock;
   };
-  let discovery: { resolveCity: jest.Mock; discover: jest.Mock };
+  let discovery: {
+    resolveCity: jest.Mock;
+    discover: jest.Mock;
+    discoverInCountry: jest.Mock;
+  };
   let wikimedia: {
     popularity: jest.Mock;
     imageInfo: jest.Mock;
@@ -191,6 +255,7 @@ describe('PlaceIngestionService', () => {
         .mockResolvedValue(
           discovered([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')]),
         ),
+      discoverInCountry: jest.fn().mockResolvedValue(countryDiscovered([])),
     };
     wikimedia = {
       imageInfo: jest.fn().mockResolvedValue({
@@ -244,7 +309,7 @@ describe('PlaceIngestionService', () => {
 
   describe('ingestCity', () => {
     it('fans out one text job per place it created', async () => {
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(dispatcher.dispatchPlaceTexts).toHaveBeenCalledTimes(1);
       expect(dispatcher.dispatchPlaceTexts).toHaveBeenCalledWith([
@@ -256,7 +321,7 @@ describe('PlaceIngestionService', () => {
 
     it('keeps the entity the city resolved to', async () => {
       // It used to reach the log and nothing else.
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(repository.saveCityWikidataId).toHaveBeenCalledWith(
         INGESTION_ID,
@@ -270,50 +335,39 @@ describe('PlaceIngestionService', () => {
       repository.findIngestion.mockResolvedValue({
         id: INGESTION_ID,
         countryCode: 'BR',
+        scope: 'CITY',
+        categories: [],
         city: 'Campo Grande',
         cityKey: 'campo grande',
         state: 'Alagoas',
         stateKey: 'alagoas',
       });
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(discovery.resolveCity).toHaveBeenCalledWith(
         'BR',
         'Campo Grande',
         'Alagoas',
       );
+      // The location travels on each place now, the same object for all of
+      // them: one city was asked for, and the API folded its keys.
       expect(repository.persistDrafts).toHaveBeenCalledWith(
         INGESTION_ID,
-        {
-          countryCode: 'BR',
-          city: 'Campo Grande',
-          cityKey: 'campo grande',
-          state: 'Alagoas',
-          stateKey: 'alagoas',
-        },
         'country-1',
-        expect.any(Array),
+        expect.arrayContaining([
+          expect.objectContaining({
+            location: {
+              countryCode: 'BR',
+              city: 'Campo Grande',
+              cityKey: 'campo grande',
+              state: 'Alagoas',
+              stateKey: 'alagoas',
+            },
+            nearestMunicipalityKm: null,
+          }),
+        ]),
       );
-    });
-
-    it('refuses a country sweep rather than half-running it', async () => {
-      // The scope was modelled in #220 and running it is another issue.
-      // Permanent, so the row reaches FAILED with a message instead of sitting
-      // in PROCESSING through three identical retries.
-      repository.findIngestion.mockResolvedValue({
-        id: INGESTION_ID,
-        countryCode: 'PT',
-        scope: 'COUNTRY',
-        city: null,
-        cityKey: null,
-      });
-
-      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
-        PermanentIngestionError,
-      );
-      expect(repository.markStep).not.toHaveBeenCalled();
-      expect(discovery.resolveCity).not.toHaveBeenCalled();
     });
 
     it('fails for good when the city is not on Wikidata — never guesses', async () => {
@@ -322,7 +376,7 @@ describe('PlaceIngestionService', () => {
         new CityNotResolvedError('XX', 'Nowhere'),
       );
 
-      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
+      await expect(service.ingest(INGESTION_ID)).rejects.toThrow(
         PermanentIngestionError,
       );
       expect(discovery.discover).not.toHaveBeenCalled();
@@ -331,7 +385,7 @@ describe('PlaceIngestionService', () => {
     it('treats a Wikidata outage as retryable, not as a verdict', async () => {
       discovery.discover.mockRejectedValue(new Error('WDQS answered 502'));
 
-      await expect(service.ingestCity(INGESTION_ID)).rejects.toThrow(
+      await expect(service.ingest(INGESTION_ID)).rejects.toThrow(
         RetryableIngestionError,
       );
     });
@@ -343,7 +397,7 @@ describe('PlaceIngestionService', () => {
         discovered([poi('Torre de Belém', 'Q1'), poi('Sé', 'Q2')], 223),
       );
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(repository.savedStats).toMatchObject({
         rawElements: 225,
@@ -365,27 +419,416 @@ describe('PlaceIngestionService', () => {
         ],
       });
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(dispatcher.dispatchPlaceTexts).not.toHaveBeenCalled();
       expect(repository.status).toBe('READY_FOR_REVIEW');
     });
   });
 
+  describe('country sweep', () => {
+    /** What the sweep handed the repository, in the order it handed it. */
+    const persisted = () =>
+      repository.persistDrafts.mock.calls[0][2] as {
+        slug: string;
+        wikidataId: string;
+        category: string;
+        popularityScore: number;
+        nearestMunicipalityKm: number | null;
+        location: {
+          countryCode: string;
+          city: string;
+          cityKey: string;
+          state: string | null;
+          stateKey: string | null;
+        };
+      }[];
+
+    const sweep = (categories: string[] = ['BEACH']) => {
+      repository.findIngestion.mockResolvedValue({
+        id: INGESTION_ID,
+        countryCode: 'PT',
+        scope: 'COUNTRY',
+        categories,
+        city: null,
+        cityKey: null,
+        state: null,
+        stateKey: null,
+      });
+    };
+
+    it('asks Wikidata once per category, in the order the admin listed', async () => {
+      sweep(['BEACH', 'MUSEUM']);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(discovery.discoverInCountry).toHaveBeenCalledTimes(2);
+      const asked = (
+        discovery.discoverInCountry.mock.calls as [string, string][]
+      ).map((call) => call[1]);
+      expect(asked).toEqual(['BEACH', 'MUSEUM']);
+      expect(discovery.resolveCity).not.toHaveBeenCalled();
+    });
+
+    it('reads an empty list of categories as all of them', async () => {
+      sweep([]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(discovery.discoverInCountry).toHaveBeenCalledTimes(8);
+    });
+
+    it('gives an item claimed by two categories to the first one asked for', async () => {
+      sweep(['BEACH', 'NATURE']);
+      // The real discovery stamps each place with the class it was asked for,
+      // so the same beach comes back as BEACH from one query and as NATURE
+      // from the other. Which copy survives is the whole point.
+      discovery.discoverInCountry
+        .mockResolvedValueOnce(
+          countryDiscovered([
+            { ...inCountry('Benagil', 'Q1'), category: 'BEACH' },
+          ] as ReturnType<typeof inCountry>[]),
+        )
+        .mockResolvedValueOnce(
+          countryDiscovered([
+            { ...inCountry('Benagil', 'Q1'), category: 'NATURE' },
+          ] as ReturnType<typeof inCountry>[]),
+        );
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 900)]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(persisted()).toHaveLength(1);
+      expect(persisted()[0].category).toBe('BEACH');
+      expect(repository.savedStats).toMatchObject({ claimedTwice: 1 });
+    });
+
+    it('goes on without a category that failed, and says which', async () => {
+      sweep(['BEACH', 'MUSEUM']);
+      discovery.discoverInCountry
+        .mockRejectedValueOnce(new Error('WDQS answered 502'))
+        .mockResolvedValueOnce(countryDiscovered([inCountry('MAAT', 'Q2')]));
+      wikimedia.popularity.mockResolvedValue([signal('Q2', 500)]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(persisted()).toHaveLength(1);
+      expect(repository.savedStats).toMatchObject({
+        categoriesFailed: ['BEACH'],
+      });
+    });
+
+    it('treats every category failing as an outage, not as an empty country', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockRejectedValue(new Error('WDQS 502'));
+
+      await expect(service.ingest(INGESTION_ID)).rejects.toThrow(
+        RetryableIngestionError,
+      );
+    });
+
+    it('fails for good on a country Wikidata cannot name', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockRejectedValue(
+        new CountryNotSupportedError('ZZ'),
+      );
+
+      await expect(service.ingest(INGESTION_ID)).rejects.toThrow(
+        PermanentIngestionError,
+      );
+      expect(repository.persistDrafts).not.toHaveBeenCalled();
+    });
+
+    it('never writes a place it cannot name a city for', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered(
+          [
+            inCountry('Praia com cidade', 'Q1'),
+            // No city at all, and a city whose label is its own QID: both
+            // would reach a public screen as nonsense.
+            { ...poi('Praia sem cidade', 'Q2') },
+            inCountry('Praia sem rótulo', 'Q3', {
+              qid: 'Q9999',
+              label: 'Q9999',
+            }),
+          ] as ReturnType<typeof inCountry>[],
+          { cityNotFound: 1 },
+        ),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900),
+        signal('Q2', 800),
+        signal('Q3', 700),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(persisted().map((place) => place.wikidataId)).toEqual(['Q1']);
+      expect(repository.savedStats).toMatchObject({
+        withoutCity: { notFound: 1, lookupFailed: 0, unlabelled: 1 },
+      });
+    });
+
+    it('folds the city of each place, and leaves the state to the review', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Praia da Rocha', 'Q1', {
+            qid: 'Q2',
+            label: 'Póvoa de Varzim',
+          }),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 900)]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(persisted()[0].location).toEqual({
+        countryCode: 'PT',
+        city: 'Póvoa de Varzim',
+        cityKey: 'povoa de varzim',
+        state: null,
+        stateKey: null,
+      });
+    });
+
+    it('keeps the distance only for the cities it had to infer', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Declarada', 'Q1', { qid: 'Q10', label: 'Machico' }),
+          inCountry('Inferida', 'Q2', {
+            qid: 'Q11',
+            label: 'Albufeira',
+            km: 3.9,
+          }),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900),
+        signal('Q2', 800),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      const byQid = new Map(persisted().map((p) => [p.wikidataId, p]));
+      expect(byQid.get('Q1')?.nearestMunicipalityKm).toBeNull();
+      expect(byQid.get('Q2')?.nearestMunicipalityKm).toBe(3.9);
+      expect(repository.savedStats).toMatchObject({
+        citiesFromP131: 1,
+        citiesFromProximity: 1,
+      });
+    });
+
+    it('cuts at the sweep ceiling, keeping the most visited', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('A', 'Q1'),
+          inCountry('B', 'Q2'),
+          inCountry('C', 'Q3'),
+          inCountry('D', 'Q4'),
+          inCountry('E', 'Q5'),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 100),
+        signal('Q2', 900),
+        signal('Q3', 500),
+        signal('Q4', 50),
+        signal('Q5', 700),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      // PLACES_PER_SWEEP is 3 in this suite's env mock.
+      expect(persisted().map((p) => p.wikidataId)).toEqual(['Q2', 'Q5', 'Q3']);
+    });
+
+    it('lets two cities hold the same slug, and only collides inside one', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Sé', 'Q1', { qid: 'Q10', label: 'Lisbon' }),
+          inCountry('Sé', 'Q2', { qid: 'Q11', label: 'Porto' }),
+          inCountry('Sé', 'Q3', { qid: 'Q11', label: 'Porto' }),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900),
+        signal('Q2', 800),
+        signal('Q3', 700),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      const slugs = new Map(persisted().map((p) => [p.wikidataId, p.slug]));
+      expect(slugs.get('Q1')).toBe('se');
+      expect(slugs.get('Q2')).toBe('se');
+      expect(slugs.get('Q3')).toBe('se-q3');
+    });
+
+    it('scores each place inside its own city, not against the country', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Muito visitada', 'Q1', { qid: 'Q10', label: 'Lisbon' }),
+          inCountry('Pouco visitada', 'Q2', { qid: 'Q11', label: 'Aljezur' }),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 9000),
+        signal('Q2', 12),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      // Alone in its city, the quiet one is that city's first place — not a 3
+      // out of 100 sitting beside another city's curated hundreds.
+      const scores = new Map(
+        persisted().map((p) => [p.wikidataId, p.popularityScore]),
+      );
+      expect(scores.get('Q1')).toBe(100);
+      expect(scores.get('Q2')).toBe(100);
+    });
+
+    it('sends each photograph to the place it belongs to', async () => {
+      // Pairing by slug would hand Porto's `sé` the photograph of Lisbon's.
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Sé', 'Q1', { qid: 'Q10', label: 'Lisbon' }),
+          inCountry('Sé', 'Q2', { qid: 'Q11', label: 'Porto' }),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900, null),
+        signal('Q2', 800, 'Sé do Porto.jpg'),
+      ]);
+      repository.persistDrafts.mockResolvedValue({
+        created: [
+          { id: 'place-lisboa', wikidataId: 'Q1' },
+          { id: 'place-porto', wikidataId: 'Q2' },
+        ],
+        conflicts: [],
+      });
+
+      await service.ingest(INGESTION_ID);
+
+      expect(dispatcher.dispatchPlaceImages).toHaveBeenCalledWith([
+        {
+          placeId: 'place-porto',
+          ingestionId: INGESTION_ID,
+          commonsFile: 'Sé do Porto.jpg',
+        },
+      ]);
+    });
+
+    it('walks the steps a sweep has, and none it does not', async () => {
+      sweep(['BEACH']);
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([inCountry('Benagil', 'Q1')]),
+      );
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 900)]);
+
+      await service.ingest(INGESTION_ID);
+
+      const steps = (repository.markStep.mock.calls as [string, string][]).map(
+        (call) => call[1],
+      );
+      expect(steps).toEqual(['discover', 'rank', 'write_texts']);
+      expect(steps).not.toContain('resolve_city');
+    });
+
+    it('caps the pageviews call at a multiple of the cap', async () => {
+      // Pageviews are one request per candidate, in series: over Italy's 8877
+      // that is 26 minutes, to keep a hundred. The shortlist is what makes a
+      // sweep affordable, and it leaves headroom so pageviews still decide.
+      sweep();
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([inCountry('Benagil', 'Q1')]),
+      );
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 900)]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(wikimedia.popularity).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ preCutTo: 15 }),
+      );
+    });
+
+    it('records the ceiling in the stats when more candidates were found', async () => {
+      sweep();
+      const many = Array.from({ length: 16 }, (_, i) =>
+        inCountry(`Praia ${i}`, `Q${i + 1}`),
+      );
+      discovery.discoverInCountry.mockResolvedValue(countryDiscovered(many));
+      wikimedia.popularity.mockResolvedValue(
+        many.slice(0, 15).map((place, i) => signal(place.wikidataId, 900 - i)),
+      );
+
+      await service.ingest(INGESTION_ID);
+
+      expect(repository.saveStats).toHaveBeenCalledWith(
+        INGESTION_ID,
+        expect.objectContaining({ preCut: { askedFor: 15, of: 16 } }),
+      );
+    });
+
+    it('leaves the ceiling out of the stats when it could not have bitten', async () => {
+      // Two candidates and a ceiling of fifteen: reporting a cut would invent
+      // an event. Absent means "everything found was asked about".
+      sweep();
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Benagil', 'Q1'),
+          inCountry('Marinha', 'Q2'),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900),
+        signal('Q2', 500),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(repository.saveStats).toHaveBeenCalledWith(
+        INGESTION_ID,
+        expect.not.objectContaining({ preCut: expect.anything() }),
+      );
+    });
+  });
+
   describe('ranking', () => {
     /** Persisted places, whatever the fake repository was told to create. */
     const persisted = () =>
-      repository.persistDrafts.mock.calls[0][3] as {
+      repository.persistDrafts.mock.calls[0][2] as {
         slug: string;
         wikidataId: string;
         popularityScore: number;
         sourceUrl: string;
+        nearestMunicipalityKm: number | null;
+        location: { city: string; cityKey: string; stateKey: string | null };
       }[];
+
+    it('asks for no shortlist on a city ingestion', async () => {
+      // Porto offered 174 candidates and the cap is 30 — a shortlist of five
+      // times the cap would start dropping real ones. The city leg pays
+      // pageviews for everything it found, as it always has.
+      await service.ingest(INGESTION_ID);
+
+      expect(wikimedia.popularity).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ preCutTo: undefined }),
+      );
+    });
 
     it('points sourceUrl at the Wikidata entity', async () => {
       // CC0, so no attribution obligation — but the link is how a reviewer
       // audits where a place came from.
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(persisted()[0].sourceUrl).toBe('https://www.wikidata.org/wiki/Q1');
     });
@@ -405,7 +848,7 @@ describe('PlaceIngestionService', () => {
         signal('Q10284015', 500),
       ]);
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       const slugs = persisted().map((place) => place.slug);
       expect(new Set(slugs).size).toBe(2);
@@ -426,7 +869,7 @@ describe('PlaceIngestionService', () => {
         many.map((place, i) => signal(place.wikidataId, 10_000 - i)),
       );
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       const scores = persisted().map((place) => place.popularityScore);
       expect(scores).toHaveLength(30);
@@ -445,7 +888,7 @@ describe('PlaceIngestionService', () => {
         ten.map((place, i) => signal(place.wikidataId, 10_000 - i)),
       );
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(persisted().map((place) => place.popularityScore)).toEqual([
         100, 90, 80, 70, 60, 50, 40, 30, 20, 10,
@@ -464,13 +907,13 @@ describe('PlaceIngestionService', () => {
       ]);
       repository.persistDrafts.mockResolvedValue({
         created: [
-          { id: 'place-1', slug: 'torre-de-belem' },
-          { id: 'place-2', slug: 'se-de-lisboa' },
+          { id: 'place-1', wikidataId: 'Q1' },
+          { id: 'place-2', wikidataId: 'Q2' },
         ],
         conflicts: [],
       });
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       expect(dispatcher.dispatchPlaceImages).toHaveBeenCalledWith([
         {
@@ -545,7 +988,7 @@ describe('PlaceIngestionService', () => {
 
   describe('convergence', () => {
     it('lets exactly one finishing job declare the city ready', async () => {
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       const outcomes: boolean[] = [];
       for (const placeId of ['place-1', 'place-2', 'place-3']) {
@@ -560,7 +1003,7 @@ describe('PlaceIngestionService', () => {
     });
 
     it('does not declare the city ready twice when a job is replayed', async () => {
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
       for (const placeId of ['place-1', 'place-2', 'place-3']) {
         await service.writePlaceTexts(placeId, INGESTION_ID);
       }
@@ -571,7 +1014,7 @@ describe('PlaceIngestionService', () => {
     });
 
     it('a text that failed for good still lets the city finish', async () => {
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
       await service.writePlaceTexts('place-1', INGESTION_ID);
       await service.writePlaceTexts('place-2', INGESTION_ID);
 
@@ -590,7 +1033,7 @@ describe('PlaceIngestionService', () => {
       // The number the admin is told when the city is announced ready. It was
       // recorded from the first day and read by nobody, which is how a place
       // with no description sat in a city that called itself reviewable.
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
       await service.abandonPlaceTexts(INGESTION_ID, 'place-3');
 
       await expect(service.countTextFailures(INGESTION_ID)).resolves.toBe(1);
@@ -604,7 +1047,7 @@ describe('PlaceIngestionService', () => {
         result: { model: 'deepseek/deepseek-v4-flash', usage: {} },
       });
 
-      await service.ingestCity(INGESTION_ID);
+      await service.ingest(INGESTION_ID);
 
       await expect(
         service.writePlaceTexts('place-1', INGESTION_ID),
