@@ -740,6 +740,65 @@ describe('PlaceIngestionService', () => {
       expect(steps).toEqual(['discover', 'rank', 'write_texts']);
       expect(steps).not.toContain('resolve_city');
     });
+
+    it('caps the pageviews call at a multiple of the cap', async () => {
+      // Pageviews are one request per candidate, in series: over Italy's 8877
+      // that is 26 minutes, to keep a hundred. The shortlist is what makes a
+      // sweep affordable, and it leaves headroom so pageviews still decide.
+      sweep();
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([inCountry('Benagil', 'Q1')]),
+      );
+      wikimedia.popularity.mockResolvedValue([signal('Q1', 900)]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(wikimedia.popularity).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ preCutTo: 15 }),
+      );
+    });
+
+    it('records the ceiling in the stats when more candidates were found', async () => {
+      sweep();
+      const many = Array.from({ length: 16 }, (_, i) =>
+        inCountry(`Praia ${i}`, `Q${i + 1}`),
+      );
+      discovery.discoverInCountry.mockResolvedValue(countryDiscovered(many));
+      wikimedia.popularity.mockResolvedValue(
+        many.slice(0, 15).map((place, i) => signal(place.wikidataId, 900 - i)),
+      );
+
+      await service.ingest(INGESTION_ID);
+
+      expect(repository.saveStats).toHaveBeenCalledWith(
+        INGESTION_ID,
+        expect.objectContaining({ preCut: { askedFor: 15, of: 16 } }),
+      );
+    });
+
+    it('leaves the ceiling out of the stats when it could not have bitten', async () => {
+      // Two candidates and a ceiling of fifteen: reporting a cut would invent
+      // an event. Absent means "everything found was asked about".
+      sweep();
+      discovery.discoverInCountry.mockResolvedValue(
+        countryDiscovered([
+          inCountry('Benagil', 'Q1'),
+          inCountry('Marinha', 'Q2'),
+        ]),
+      );
+      wikimedia.popularity.mockResolvedValue([
+        signal('Q1', 900),
+        signal('Q2', 500),
+      ]);
+
+      await service.ingest(INGESTION_ID);
+
+      expect(repository.saveStats).toHaveBeenCalledWith(
+        INGESTION_ID,
+        expect.not.objectContaining({ preCut: expect.anything() }),
+      );
+    });
   });
 
   describe('ranking', () => {
@@ -753,6 +812,18 @@ describe('PlaceIngestionService', () => {
         nearestMunicipalityKm: number | null;
         location: { city: string; cityKey: string; stateKey: string | null };
       }[];
+
+    it('asks for no shortlist on a city ingestion', async () => {
+      // Porto offered 174 candidates and the cap is 30 — a shortlist of five
+      // times the cap would start dropping real ones. The city leg pays
+      // pageviews for everything it found, as it always has.
+      await service.ingest(INGESTION_ID);
+
+      expect(wikimedia.popularity).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ preCutTo: undefined }),
+      );
+    });
 
     it('points sourceUrl at the Wikidata entity', async () => {
       // CC0, so no attribution obligation — but the link is how a reviewer

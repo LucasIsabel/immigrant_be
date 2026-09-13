@@ -1786,10 +1786,40 @@ Grande varrido e Campo Grande/Alagoas ingerido). Resolver isso exige subir a cad
 
 **O tecto é de revisão, não de tempo.** `PLACES_PER_SWEEP` (variável de ambiente,
 100 por omissão) corta pelos mais visitados **depois** da perna de popularidade,
-porque é ela que mede popularidade. O que ele **não** poupa é tempo: as duas pernas
-caras — a cidade por proximidade e as visitas, ambas uma chamada por candidato —
-correm sobre tudo o que a descoberta encontrou, não sobre os 100 que ficam. Com
-`concurrency: 1`, nenhum outro trabalho de lugares corre enquanto uma varredura
+porque é ela que mede popularidade. O que ele **não** poupa é tempo: a descoberta
+corre sobre tudo o que existe no país, não sobre os 100 que ficam.
+
+**O que uma varredura custa, medido.** Itália, `LANDMARK`, a 2026-09-13, pelo
+`pnpm places:discover-country`:
+
+| perna | tempo | o que a domina |
+| --- | --- | --- |
+| classes (SPARQL) | ~23 min | 41 classes, uma consulta por classe |
+| entidades + cidade por proximidade | ~38 min | 225 consultas `wikibase:around` a ~8 s |
+| visitas (pageviews) | ~26 min | uma requisição por candidato, em série, a 178 ms |
+| **total** | **~87 min** | para ficar com **100** lugares |
+
+Resultado: **8877 candidatos**, 8350 depois do veto de classes, e a cidade veio do
+`P131` em **8116** deles — a proximidade só respondeu por 225, que é o que a torna
+suportável apesar dos 8 s por consulta. Quatro sem município a 30 km (Pantelleria,
+o canal de Malta, as Égadas — pontos genuinamente ao largo) e cinco não perguntados
+pelo corta-circuito. Nenhuma classe ficou por responder; uma bateu no tecto de 5000
+linhas, logo essa fatia veio truncada.
+
+**O pré-corte por sitelinks, que essa medição justificou.** As visitas são uma
+requisição por candidato **em série** — 26 minutos sobre 8877, para ficar com 100.
+Uma varredura pede visitas para `PLACES_PER_SWEEP × 5` candidatos apenas (500 por
+omissão), escolhidos pelo **número de sitelinks**, que já vem na resposta do
+`wbgetentities` de onde saem os títulos e portanto não custa uma chamada a mais.
+É um sinal grosseiro e **não decide a ordem** — as visitas continuam a decidir,
+dentro da lista curta; o múltiplo existe para lhes deixar espaço de manobra. Uma
+ingestão de cidade **não pede lista curta**: Porto ofereceu 174 candidatos para um
+tecto de 30, e cortar aos 150 começaria a perder candidatos reais. As `stats`
+guardam `preCut: { askedFor, of }` — o tecto e quantos existiam, não um evento:
+o corte ordena os que **têm artigo em inglês**, que são menos do que `of`, e é o
+`withEnwiki` (contado já depois do corte) que diz quantos foram.
+
+Com `concurrency: 1`, nenhum outro trabalho de lugares corre enquanto uma varredura
 grande decorre. O `popularityScore` passa a ser calculado **dentro de cada cidade**:
 global, uma aldeia com um lugar receberia 3 em 100 e ficaria a par dos curados de
 Lisboa, misturando duas escalas na mesma tabela.

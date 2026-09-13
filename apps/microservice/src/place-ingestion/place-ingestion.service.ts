@@ -57,6 +57,19 @@ const scoreFor = (index: number, total: number) =>
 /** Every category, for a sweep that named none — empty means all. */
 const ALL_CATEGORIES = Object.values(PlaceCategory);
 
+/**
+ * How many candidates a sweep pays pageviews for, as a multiple of its cap.
+ *
+ * Pageviews are one request per candidate, in series: measured over Italy's
+ * 8877 `LANDMARK` candidates, that leg is 26 minutes on its own, to keep a
+ * hundred. The sitelink count that pre-cuts them is free — it already rides on
+ * the `wbgetentities` call the titles come from — but it is a coarser signal,
+ * so the cut leaves room rather than trusting it with the final order. Five
+ * times the cap puts Italy at 500 requests, a minute and a half, and still
+ * lets pageviews reorder freely inside the shortlist.
+ */
+const PRE_CUT_HEADROOM = 5;
+
 /** The row `findIngestion` hands back, named once instead of restated. */
 type IngestionRow = NonNullable<
   Awaited<ReturnType<PlaceIngestionRepository['findIngestion']>>
@@ -83,6 +96,11 @@ interface Gathered {
   candidates: LocatedCandidate[];
   stats: Partial<IngestionStats>;
   cap: number;
+  /**
+   * How many candidates may reach the pageviews call. Absent on a city
+   * ingestion, whose whole list is smaller than the shortlist would be.
+   */
+  preCutTo?: number;
 }
 
 /** The tuple a slug is unique inside — the unique index's own key. */
@@ -320,13 +338,18 @@ export class PlaceIngestionService {
         ...(claimedTwice && { claimedTwice }),
       },
       cap: env.PLACES_PER_SWEEP,
+      preCutTo: env.PLACES_PER_SWEEP * PRE_CUT_HEADROOM,
     };
   }
 
   /** Rank, persist and queue the writing — the half both legs share. */
   private async finish(ingestionId: string, gathered: Gathered): Promise<void> {
     await this.repository.markStep(ingestionId, 'rank');
-    const ranked = await this.rank(gathered.candidates, gathered.cap);
+    const ranked = await this.rank(
+      gathered.candidates,
+      gathered.cap,
+      gathered.preCutTo,
+    );
 
     const countryId = await this.resolveCountryId(gathered.countryCode);
     const { created, conflicts } = await this.repository.persistDrafts(
@@ -345,6 +368,7 @@ export class PlaceIngestionService {
       conflicts,
       cities: new Set(ranked.places.map((place) => bucketOf(place.location)))
         .size,
+      ...(ranked.preCut && { preCut: ranked.preCut }),
     });
 
     if (!created.length) {
@@ -579,11 +603,14 @@ export class PlaceIngestionService {
   private async rank(
     candidates: LocatedCandidate[],
     cap: number,
+    preCutTo?: number,
   ): Promise<{
     places: PlaceToPersist[];
     withEnwiki: number;
     /** QID → Commons file for the kept places that have a P18 image. */
     imagesByQid: Map<string, string>;
+    /** Set only when a shortlist was asked for, for the stats to record. */
+    preCut?: { askedFor: number; of: number };
   }> {
     if (!candidates.length)
       return { places: [], withEnwiki: 0, imagesByQid: new Map() };
@@ -591,7 +618,7 @@ export class PlaceIngestionService {
     const signals = await this.wikimedia.popularity(
       candidates.map(({ poi }) => poi.wikidataId),
       // The summary is fetched later, for the ones that survive the cut.
-      { withExtract: false },
+      { withExtract: false, preCutTo },
     );
     const byWikidata = new Map(signals.map((s) => [s.wikidataId, s]));
 
@@ -658,7 +685,19 @@ export class PlaceIngestionService {
       };
     });
 
-    return { places, withEnwiki: scored.length, imagesByQid };
+    return {
+      places,
+      withEnwiki: scored.length,
+      imagesByQid,
+      // The ceiling, not the event: the cut ranks the candidates that have an
+      // English article, which is fewer than these. Read together with
+      // `withEnwiki` — itself counted after the cut — the two say what
+      // happened without claiming more than is known.
+      ...(preCutTo !== undefined &&
+        candidates.length > preCutTo && {
+          preCut: { askedFor: preCutTo, of: candidates.length },
+        }),
+    };
   }
 
   private async resolveCountryId(countryCode: string): Promise<string | null> {

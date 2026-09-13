@@ -81,6 +81,18 @@ export type IngestionStats = {
   claimedTwice?: number;
   /** How many distinct cities the sweep wrote into. */
   cities?: number;
+  /**
+   * The pageviews ceiling: **at most** `askedFor` of `of` candidates were
+   * asked for, ranked by sitelink count.
+   *
+   * A sweep does not pay pageviews for everything it finds — one request per
+   * candidate in series is 26 minutes over Italy's 8877, to keep a hundred.
+   * `askedFor` is the ceiling and not a count: the ranking runs over the
+   * candidates that have an English article, which is fewer than `of`.
+   * `withEnwiki` says how many that was. Recorded so a thin review is
+   * explainable without re-running anything.
+   */
+  preCut?: { askedFor: number; of: number };
 };
 
 /** Which city the places belong to: the name alone does not say. */
