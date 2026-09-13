@@ -16,7 +16,27 @@ import {
 import { EVENT_TYPES, isFinalAttempt } from '../events/event-types';
 import { EventsService } from '../events/events.service';
 import { PermanentIngestionError } from '@app/ingestion';
+import { Prisma } from '../../../../generated/prisma';
 import { PlaceIngestionService } from './place-ingestion.service';
+
+/**
+ * True when the error is Prisma's P2025 ("Record to update not found").
+ *
+ * This happens when an ingestion row is deleted while the job is already
+ * running in Redis. No retry can bring a deleted row back (#347).
+ */
+function isPrismaP2025(error: unknown): boolean {
+  if (
+    typeof Prisma?.PrismaClientKnownRequestError === 'function' &&
+    error instanceof Prisma.PrismaClientKnownRequestError
+  ) {
+    return error.code === 'P2025';
+  }
+  return (
+    error instanceof Error &&
+    (error as Error & { code?: string }).code === 'P2025'
+  );
+}
 
 interface IngestCityJob {
   ingestionId: string;
@@ -62,11 +82,12 @@ export class PlaceIngestionConsumer extends WorkerHost {
         this.handle(job),
       );
     } catch (error) {
-      if (error instanceof PermanentIngestionError) {
+      if (error instanceof PermanentIngestionError || isPrismaP2025(error)) {
         // Three attempts at a city OpenStreetMap does not have is three
-        // identical failures and half an hour of backoff. `discard` ends it
-        // now, and keeps the real reason in the admin's message instead of
-        // "failed after 3 attempts".
+        // identical failures and half an hour of backoff. A deleted ingestion
+        // row (P2025) is another: no retry can bring it back (#347). `discard`
+        // ends it now, and keeps the real reason in the admin's message instead
+        // of "failed after 3 attempts".
         job.discard();
       }
       throw error;
@@ -164,7 +185,8 @@ export class PlaceIngestionConsumer extends WorkerHost {
 
   /** What to write and whom to tell, once a job is known to have failed. */
   private async handleFailure(job: Job, error: Error): Promise<void> {
-    const permanent = error instanceof PermanentIngestionError;
+    const permanent =
+      error instanceof PermanentIngestionError || isPrismaP2025(error);
     if (!permanent && !isFinalAttempt(job)) return;
 
     if (job.name === WRITE_PLACE_IMAGE) {
@@ -193,7 +215,7 @@ export class PlaceIngestionConsumer extends WorkerHost {
     }
 
     const { ingestionId } = job.data as IngestCityJob;
-    const step = permanent ? error.step : null;
+    const step = error instanceof PermanentIngestionError ? error.step : null;
     await this.ingestion.recordFailure(ingestionId, step, error.message);
 
     await this.events.emitToAdmins({
