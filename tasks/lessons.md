@@ -304,3 +304,24 @@ incompleta por causa disso, e o import partido só apareceu no `tsc`.
 
 **Regra:** em varreduras de imports ou de símbolos neste repo, `grep -a`. E
 confiar no compilador como segunda rede, não como primeira.
+
+## Memória da máquina antes de culpar o código (2026-09-13)
+
+**O que aconteceu.** Seis tarefas em segundo plano morreram sem deixar saída —
+a medição de Itália, duas tentativas de `prisma migrate status`, o rebuild dos
+dois apps. Atribuí a lentidão a um `jest --watch` do Cursor. Estava errado: esse
+processo ocupava 10 MB. A máquina tem 8 GB e estava com 0,05 GB livres e 6 GB de
+swap; o guarda de memória do harness mata tarefas em segundo plano quando isso
+acontece, seja qual for o seu tamanho. O mesmo voltou a matar API, worker e
+frontend do E2E, que juntos somavam menos de 400 MB.
+
+**A regra.** Perante tarefas que morrem sem saída, ficheiros de 0 bytes ou um
+build que leva 23 minutos quando costuma levar 4 segundos, verificar
+`vm_stat` e `sysctl vm.swapusage` **antes** de procurar culpado no código ou
+noutro processo. Um processo pequeno não é culpado de pressão de memória; a
+soma de tudo é.
+
+**De passagem, duas medições que ficam:** `next start` sobre build de produção
+custa 141 MB contra mais de 1 GB do `next dev` — para E2E, subir sempre em
+produção. E no Chrome o frontend responde em `127.0.0.1:3002` mas dá página de
+erro em `localhost:3002`, com o `curl` a devolver 200 nos dois.
