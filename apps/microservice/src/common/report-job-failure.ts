@@ -16,6 +16,11 @@ export function jobCorrelationId(job: Job<CorrelatedJobData>): string {
  * Reports a failed job to Sentry, but only once the retries are exhausted —
  * `@OnWorkerEvent('failed')` fires on every attempt, so reporting eagerly would
  * turn one failure into three alerts.
+ *
+ * BullMQ auto-instrumentation is excluded in the worker (`initSentry('microservice')`)
+ * so this function is the sole reporter of worker job errors in Sentry.
+ * Any previous `__sentry_captured__` tag on the error object is cleared defensibly,
+ * and a dedicated fingerprint is attached to avoid deduplication issues.
  */
 export function reportJobFailure(
   queue: string,
@@ -24,6 +29,11 @@ export function reportJobFailure(
 ): void {
   if (!isFinalAttempt(job)) return;
 
+  if (error && typeof error === 'object') {
+    delete (error as unknown as { __sentry_captured__?: boolean })
+      .__sentry_captured__;
+  }
+
   Sentry.withScope((scope) => {
     scope.setTags({
       queue,
@@ -31,6 +41,14 @@ export function reportJobFailure(
       job_id: String(job.id),
       correlation_id: jobCorrelationId(job),
     });
+    if (typeof scope.setFingerprint === 'function') {
+      scope.setFingerprint([
+        'bullmq-job-failure',
+        queue,
+        job.name,
+        '{{ default }}',
+      ]);
+    }
     Sentry.captureException(error);
   });
 }

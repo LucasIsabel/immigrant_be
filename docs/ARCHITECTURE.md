@@ -2404,7 +2404,13 @@ Sentry compartilham o mesmo identificador.
   build é bundlado por webpack, onde os hooks de `require-in-the-middle` não são
   confiáveis. Sem `SENTRY_DSN` o SDK sobe desabilitado.
 - **Falha de job** só é reportada na tentativa final (`isFinalAttempt`), senão
-  uma falha com `attempts: 3` viraria três alertas.
+  uma falha com `attempts: 3` viraria três alertas. Para garantir isso e evitar
+  eventos anônimos sem tags, a integração automática `Nest` do `@sentry/nestjs`
+  (que intercepta `@Processor` via BullMQ) é desabilitada no `microservice`
+  (`initSentry('microservice')`). O relato de falhas de jobs é responsabilidade
+  exclusiva do `reportJobFailure`, que preenche `queue`, `job_name`, `job_id`,
+  `correlation_id` e fingerprint `['bullmq-job-failure', queue, job.name, '{{ default }}']`,
+  removendo defensivamente qualquer flag `__sentry_captured__` prévia.
 - **Bull Board** fica em `GET /api/v1/admin/queues-board` — o `setGlobalPrefix`
   se aplica à rota montada por middleware. É protegido por basic auth
   (`BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`) e não pelo `RolesGuard`, que não
