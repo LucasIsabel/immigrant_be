@@ -526,6 +526,70 @@ describe('CommunityEventsService', () => {
         photo(2),
         photo(1),
       ]);
+      expect(storage.deleteFile).not.toHaveBeenCalled();
+    });
+
+    it('deletes from the bucket the photos a reorder to a subset dropped', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2), photo(3)] }),
+      );
+
+      await service.update('event-1', 'user-1', {
+        images: [photo(3), photo(1)],
+      });
+
+      expect(repository.update.mock.calls[0][1].images).toEqual([
+        photo(3),
+        photo(1),
+      ]);
+      expect(storage.deleteFile).toHaveBeenCalledTimes(1);
+      expect(storage.deleteFile).toHaveBeenCalledWith(
+        'community-events/event-1/gallery/2.jpg',
+      );
+    });
+
+    it('deletes nothing when the gallery is left out of the edit', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+
+      await service.update('event-1', 'user-1', { title: 'Novo título' });
+
+      expect(storage.deleteFile).not.toHaveBeenCalled();
+    });
+
+    it('keeps the objects when the row could not be written', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+      repository.update.mockRejectedValue(new Error('database down'));
+
+      await expect(
+        service.update('event-1', 'user-1', { images: [photo(1)] }),
+      ).rejects.toThrow('database down');
+      expect(storage.deleteFile).not.toHaveBeenCalled();
+    });
+
+    it('keeps the edit when the bucket refuses to delete a dropped photo', async () => {
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), photo(2)] }),
+      );
+      storage.deleteFile.mockRejectedValue(new Error('R2 down'));
+
+      await expect(
+        service.update('event-1', 'user-1', { images: [photo(2)] }),
+      ).resolves.toBeDefined();
+    });
+
+    it('never deletes a dropped object outside the gallery of this event', async () => {
+      const foreign = 'https://cdn.test/business-pages/other/logo.jpg';
+      repository.findByIdAndOrganizer.mockResolvedValue(
+        eventWith({ images: [photo(1), foreign] }),
+      );
+
+      await service.update('event-1', 'user-1', { images: [photo(1)] });
+
+      expect(storage.deleteFile).not.toHaveBeenCalled();
     });
 
     it('refuses a gallery carrying a URL the event never stored', async () => {
