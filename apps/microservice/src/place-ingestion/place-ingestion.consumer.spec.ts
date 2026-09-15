@@ -17,8 +17,9 @@ jest.mock('@app/database', () => ({
 // `withScope` runs its callback so `reportJobFailure` behaves as it really does.
 jest.mock('@sentry/nestjs', () => ({
   captureException: jest.fn(),
-  withScope: jest.fn((run: (scope: { setTags: jest.Mock }) => void) =>
-    run({ setTags: jest.fn() }),
+  withScope: jest.fn(
+    (run: (scope: { setTags: jest.Mock; setFingerprint: jest.Mock }) => void) =>
+      run({ setTags: jest.fn(), setFingerprint: jest.fn() }),
   ),
 }));
 
