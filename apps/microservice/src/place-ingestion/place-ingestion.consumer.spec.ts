@@ -18,12 +18,8 @@ jest.mock('@app/database', () => ({
 jest.mock('@sentry/nestjs', () => ({
   captureException: jest.fn(),
   withScope: jest.fn(
-    (
-      run: (scope: {
-        setTags: jest.Mock;
-        setFingerprint: jest.Mock;
-      }) => void,
-    ) => run({ setTags: jest.fn(), setFingerprint: jest.fn() }),
+    (run: (scope: { setTags: jest.Mock; setFingerprint: jest.Mock }) => void) =>
+      run({ setTags: jest.fn(), setFingerprint: jest.fn() }),
   ),
 }));
 
