@@ -271,6 +271,15 @@ export class CommunityEventsService {
       ...this.backToReviewPatch(event.status),
     });
 
+    // A reorder to a subset is a removal too. Only once the row no longer
+    // points at them: deleting first would break the page if the write failed.
+    const kept = new Set(images);
+    await Promise.all(
+      event.images
+        .filter((url) => !kept.has(url))
+        .map((url) => this.deleteGalleryObject(event.id, url)),
+    );
+
     return this.toOwnerResponse(updated);
   }
 
