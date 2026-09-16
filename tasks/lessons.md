@@ -349,3 +349,23 @@ env -u OPEN_ROUTER npx --prefix "$R" jest --rootDir "$R" --config "$R/package.js
 ```
 
 Nada é renomeado nem apagado, e a verificação é real em vez de deduzida.
+
+## O browser do MCP não é o browser do utilizador (2026-09-16)
+
+O E2E da #176 parou três vezes no mesmo sítio: eu pedia o login, o Lucas dizia
+«já está», e a página do Playwright continuava em `/login`. O Playwright MCP abre
+um Chrome com perfil próprio; ele entrava no Chrome dele. Havia sessão nova na
+tabela `sessions` e nenhum cookie no contexto do MCP — as duas coisas eram
+verdade ao mesmo tempo e não se contradiziam.
+
+Antes disso perdi uma ronda com `127.0.0.1:3002`: a API está em `localhost:3000`,
+o cookie do better-auth é `SameSite=Lax`, e o browser descarta o `Set-Cookie` de
+um pedido que considera cross-site. O sign-in respondia 200, a sessão era criada,
+e o `proxy.ts` mandava para `/login` à mesma. O Lucas chegou a pedir seed de
+utilizadores e mexer no auth por causa disto; nada disso era a causa.
+
+**Regra:** perante «não entra», não repetir o pedido — provar de que lado está o
+problema. `page.context().cookies()` vazio depois de um sign-in 200 separa as
+duas hipóteses em segundos: cookie rejeitado (host errado) ou login noutro
+browser (janela errada). E ao terceiro pedido igual, mudar de ferramenta:
+`orca computer … --restore-window` traz a janela certa à frente do utilizador.
