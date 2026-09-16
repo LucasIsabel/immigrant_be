@@ -17,6 +17,16 @@ export class CountryDto {
   name: string;
 
   @ApiProperty({
+    description:
+      'ISO 3166-1 alpha-2 code. `name` is English-only, so clients localize ' +
+      'the country name from this code. Null for a country seeded without one.',
+    example: 'CA',
+    type: String,
+    nullable: true,
+  })
+  iso2: string | null;
+
+  @ApiProperty({
     description: 'URL or path to the country flag image',
     example: '/flags/canada.png',
     type: String,
