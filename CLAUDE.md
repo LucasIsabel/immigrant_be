@@ -87,6 +87,35 @@ o envio falha, é registado, e o resto do fluxo corre igual.
 •⁠ ⁠Zero context switching required from the user
 •⁠ ⁠Go fix failing CI tests without being told how
 
+### 7. Divisão de Modelos: escolhida pelo tamanho da task
+
+Antes de começar qualquer task, avalie o tamanho e a complexidade dela, entenda a parte do
+projeto envolvida e escolha o modelo e o effort de cada fase por estas regras:
+
+**Planejamento** (investigação, leitura de código, desenho da solução, plano em `plans/`):
+
+- **Complexidade normal** → **Opus 5.5** (`claude-opus-5-5`), effort **alto**.
+- **Muito complexa** — arquitetura, decisões difíceis de reverter, mudanças que atravessam
+  várias partes do sistema → **Fable 5.1** (`claude-fable-5-1`), effort **alto**.
+
+**Escrita de código** (edição, testes, commits, PR):
+
+- Sempre **Sonnet 5.5** (`claude-sonnet-5-5`).
+- Effort **médio** para tasks bem definidas e simples; effort **alto** para lógica complexa,
+  bugs difíceis ou mudanças em várias partes do código.
+
+**Regras de aplicação:**
+
+- **Antes de começar cada task, diga em uma ou duas linhas** o modelo e o effort escolhidos
+  para o planejamento e para o código, e por quê.
+- Sub-agentes seguem a fase que servem: pesquisa/exploração que alimenta o plano usa o modelo
+  do planejamento; sub-agentes que escrevem código usam Sonnet 5.5.
+- Se uma task exigir replanejamento no meio da execução (regra 1: "STOP and re-plan"), o
+  replanejamento volta ao modelo de planejamento antes de a escrita de código retomar — e,
+  se a task se revelou maior do que parecia, reavalie se ela passou a pedir o Fable.
+- Na prática: `/model` e `/effort` na sessão principal; em `Agent`/`Workflow`, `model:
+  "opus" | "fable" | "sonnet"`.
+
 ## Task Management
 
 1.⁠ ⁠*Plan First*: Write plan to ⁠ tasks/todo.md ⁠ with checkable items
