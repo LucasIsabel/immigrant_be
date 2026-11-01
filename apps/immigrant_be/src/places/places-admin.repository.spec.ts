@@ -458,3 +458,88 @@ describe('PlacesAdminRepository and the spelling of a city', () => {
     expect(client.place.count).toHaveBeenCalledWith({ where });
   });
 });
+
+describe('PlacesAdminRepository bulk deletes and city reset', () => {
+  let repository: PlacesAdminRepository;
+
+  const client = {
+    cityIngestion: { findFirst: jest.fn() },
+    place: { deleteMany: jest.fn(), count: jest.fn() },
+    $transaction: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    client.place.deleteMany.mockReturnValue('delete-op');
+    client.place.count.mockReturnValue('count-op');
+    client.$transaction.mockResolvedValue([{ count: 4 }, 2]);
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        PlacesAdminRepository,
+        { provide: PrismaService, useValue: client },
+      ],
+    }).compile();
+
+    repository = moduleRef.get(PlacesAdminRepository);
+  });
+
+  it('deletes places by id and returns the count', async () => {
+    client.place.deleteMany.mockResolvedValue({ count: 2 });
+
+    await expect(repository.deletePlaces(['a', 'b', 'c'])).resolves.toBe(2);
+    expect(client.place.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ['a', 'b', 'c'] } },
+    });
+  });
+
+  it('keeps REJECTED places and filters the state only when one is given', async () => {
+    await expect(
+      repository.deleteCityPlaces({
+        countryCode: 'PT',
+        city: 'Póvoa de Varzim',
+        state: 'Porto',
+      }),
+    ).resolves.toEqual({ deleted: 4, keptRejected: 2 });
+
+    expect(client.place.deleteMany).toHaveBeenCalledWith({
+      where: {
+        countryCode: 'PT',
+        cityKey: 'povoa de varzim',
+        stateKey: 'porto',
+        reviewStatus: { not: 'REJECTED' },
+      },
+    });
+    expect(client.place.count).toHaveBeenCalledWith({
+      where: {
+        countryCode: 'PT',
+        cityKey: 'povoa de varzim',
+        stateKey: 'porto',
+        reviewStatus: 'REJECTED',
+      },
+    });
+
+    await repository.deleteCityPlaces({ countryCode: 'PT', city: 'Lisbon' });
+    const [{ where }] = client.place.deleteMany.mock.calls[1] as [
+      { where: Record<string, unknown> },
+    ];
+    expect(where).not.toHaveProperty('stateKey');
+  });
+
+  it('finds the latest CITY ingestion of a city, newest first', async () => {
+    await repository.findLatestCityIngestion({
+      countryCode: 'PT',
+      city: 'Lisbon',
+    });
+
+    expect(client.cityIngestion.findFirst).toHaveBeenCalledWith({
+      where: {
+        countryCode: 'PT',
+        scope: CityIngestionScope.CITY,
+        cityKey: 'lisbon',
+        stateKey: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  });
+});

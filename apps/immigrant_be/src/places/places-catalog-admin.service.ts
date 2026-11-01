@@ -1,9 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CityIngestionScope } from '../../../../generated/prisma';
 import { AdminPlaceResponseDto } from './dto/city-ingestion-response.dto';
+import { CreateCityIngestionDto } from './dto/create-city-ingestion.dto';
+import {
+  ResetCityPlacesDto,
+  ResetCityPlacesResponseDto,
+} from './dto/reset-city-places.dto';
 import { ListCatalogPlacesQueryDto } from './dto/list-catalog-places-query.dto';
 import { PaginatedCatalogPlacesResponseDto } from './dto/catalog-places-response.dto';
 import { UpdateCatalogPlaceDto } from './dto/update-catalog-place.dto';
 import { PlacesAdminRepository } from './places-admin.repository';
+import { PlacesAdminService } from './places-admin.service';
 
 /**
  * The live catalogue: every place, curated or ingested, whatever its status.
@@ -16,7 +27,10 @@ import { PlacesAdminRepository } from './places-admin.repository';
  */
 @Injectable()
 export class PlacesCatalogAdminService {
-  constructor(private readonly repository: PlacesAdminRepository) {}
+  constructor(
+    private readonly repository: PlacesAdminRepository,
+    private readonly placesAdminService: PlacesAdminService,
+  ) {}
 
   async list(
     query: ListCatalogPlacesQueryDto,
@@ -72,6 +86,68 @@ export class PlacesCatalogAdminService {
   async remove(placeId: string): Promise<void> {
     await this.require(placeId);
     await this.repository.deletePlace(placeId);
+  }
+
+  /** Hard delete of several places; ids that no longer exist are ignored. */
+  async removeMany(ids: string[]): Promise<number> {
+    return this.repository.deletePlaces(ids);
+  }
+
+  /**
+   * Delete a city's places and, optionally, ingest it again.
+   *
+   * The city is matched exactly as the catalogue list matches it — country,
+   * folded city, and the state only when one is given — so what the admin sees
+   * filtered is what gets deleted. With no state, every namesake of the city
+   * name in that country goes.
+   *
+   * REJECTED places stay: they are the memory that keeps a re-ingestion from
+   * recreating a place somebody refused.
+   *
+   * With `reingest`, the in-flight check runs BEFORE anything is deleted, so a
+   * 409 leaves the catalogue untouched. The new ingestion reuses the categories,
+   * OSM area and spelling of the city's latest one, when there is one.
+   */
+  async resetCity(
+    dto: ResetCityPlacesDto,
+    adminId: string,
+  ): Promise<ResetCityPlacesResponseDto> {
+    if (!dto.reingest) {
+      const result = await this.repository.deleteCityPlaces(dto);
+      return { ...result, ingestion: null };
+    }
+
+    const latest = await this.repository.findLatestCityIngestion(dto);
+    const input: CreateCityIngestionDto = {
+      countryCode: dto.countryCode,
+      scope: CityIngestionScope.CITY,
+      city: latest?.city ?? dto.city,
+      state: latest?.state ?? dto.state,
+      categories: latest?.categories ?? [],
+      // BigInt column; OSM area ids stay far below 2^53, and the DTO is a number.
+      osmAreaId:
+        latest?.osmAreaId == null ? undefined : Number(latest.osmAreaId),
+    };
+
+    const active = await this.repository.findActiveOverlapping({
+      countryCode: input.countryCode,
+      scope: CityIngestionScope.CITY,
+      city: input.city,
+      state: input.state,
+      categories: input.categories ?? [],
+    });
+    if (active) {
+      throw new ConflictException(
+        `Já existe uma ingestão ${active.status} para esta cidade; nada foi apagado`,
+      );
+    }
+
+    const result = await this.repository.deleteCityPlaces(dto);
+    const ingestion = await this.placesAdminService.createIngestion(
+      input,
+      adminId,
+    );
+    return { ...result, ingestion };
   }
 
   private async require(placeId: string) {
