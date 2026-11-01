@@ -5,6 +5,7 @@ jest.mock('@app/database', () => ({
 
 jest.mock('../../../../generated/prisma', () => ({
   CityIngestionStatus: { PROCESSING: 'PROCESSING' },
+  CityIngestionScope: { CITY: 'CITY', COUNTRY: 'COUNTRY' },
   PlaceReviewStatus: {
     DRAFT: 'DRAFT',
     APPROVED: 'APPROVED',
@@ -13,8 +14,9 @@ jest.mock('../../../../generated/prisma', () => ({
   PlaceCategory: { LANDMARK: 'LANDMARK', MUSEUM: 'MUSEUM' },
 }));
 
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { PlacesAdminRepository } from './places-admin.repository';
+import { PlacesAdminService } from './places-admin.service';
 import { PlacesCatalogAdminService } from './places-catalog-admin.service';
 
 const PLACE_ID = '22222222-2222-4222-8222-222222222222';
@@ -46,6 +48,7 @@ const place = (over: Record<string, unknown> = {}) => ({
 
 describe('PlacesCatalogAdminService', () => {
   let repository: Record<string, jest.Mock>;
+  let placesAdminService: Record<string, jest.Mock>;
   let service: PlacesCatalogAdminService;
 
   beforeEach(() => {
@@ -55,9 +58,19 @@ describe('PlacesCatalogAdminService', () => {
       updateCatalogPlace: jest.fn().mockResolvedValue(place()),
       setPlaceActive: jest.fn().mockResolvedValue(place({ isActive: false })),
       deletePlace: jest.fn().mockResolvedValue(undefined),
+      deletePlaces: jest.fn().mockResolvedValue(2),
+      deleteCityPlaces: jest
+        .fn()
+        .mockResolvedValue({ deleted: 5, keptRejected: 1 }),
+      findLatestCityIngestion: jest.fn().mockResolvedValue(null),
+      findActiveOverlapping: jest.fn().mockResolvedValue(null),
+    };
+    placesAdminService = {
+      createIngestion: jest.fn().mockResolvedValue({ id: 'ing-new' }),
     };
     service = new PlacesCatalogAdminService(
       repository as unknown as PlacesAdminRepository,
+      placesAdminService as unknown as PlacesAdminService,
     );
   });
 
@@ -127,6 +140,112 @@ describe('PlacesCatalogAdminService', () => {
     it('hard deletes only after confirming the place exists', async () => {
       await service.remove(PLACE_ID);
       expect(repository.deletePlace).toHaveBeenCalledWith(PLACE_ID);
+    });
+  });
+
+  describe('removeMany', () => {
+    it('returns how many places the repository actually deleted', async () => {
+      await expect(service.removeMany(['a', 'b', 'gone'])).resolves.toBe(2);
+      expect(repository.deletePlaces).toHaveBeenCalledWith(['a', 'b', 'gone']);
+    });
+  });
+
+  describe('resetCity', () => {
+    const dto = { countryCode: 'PT', city: 'Lisbon' };
+
+    it('only deletes when reingest is off, handing the city and state through', async () => {
+      const withState = { ...dto, state: 'Lisboa' };
+
+      await expect(service.resetCity(withState, 'admin-1')).resolves.toEqual({
+        deleted: 5,
+        keptRejected: 1,
+        ingestion: null,
+      });
+      await service.resetCity(dto, 'admin-1');
+
+      expect(repository.deleteCityPlaces).toHaveBeenNthCalledWith(1, withState);
+      expect(repository.deleteCityPlaces).toHaveBeenNthCalledWith(2, dto);
+      expect(repository.findLatestCityIngestion).not.toHaveBeenCalled();
+      expect(placesAdminService.createIngestion).not.toHaveBeenCalled();
+    });
+
+    it('answers zeros, not 404, when nothing matched', async () => {
+      repository.deleteCityPlaces.mockResolvedValue({
+        deleted: 0,
+        keptRejected: 0,
+      });
+
+      await expect(service.resetCity(dto, 'admin-1')).resolves.toEqual({
+        deleted: 0,
+        keptRejected: 0,
+        ingestion: null,
+      });
+    });
+
+    it('reuses the spelling, categories and OSM area of the latest ingestion', async () => {
+      repository.findLatestCityIngestion.mockResolvedValue({
+        city: 'Lisboa',
+        state: 'Lisboa District',
+        categories: ['MUSEUM'],
+        osmAreaId: 3600000001,
+      });
+
+      const result = await service.resetCity(
+        { ...dto, reingest: true },
+        'admin-1',
+      );
+
+      const input = {
+        countryCode: 'PT',
+        scope: 'CITY',
+        city: 'Lisboa',
+        state: 'Lisboa District',
+        categories: ['MUSEUM'],
+        osmAreaId: 3600000001,
+      };
+      expect(repository.findActiveOverlapping).toHaveBeenCalledWith({
+        countryCode: 'PT',
+        scope: 'CITY',
+        city: 'Lisboa',
+        state: 'Lisboa District',
+        categories: ['MUSEUM'],
+      });
+      expect(placesAdminService.createIngestion).toHaveBeenCalledWith(
+        input,
+        'admin-1',
+      );
+      expect(result.ingestion).toEqual({ id: 'ing-new' });
+      expect(result.deleted).toBe(5);
+    });
+
+    it('falls back to the request when the city was never ingested', async () => {
+      await service.resetCity({ ...dto, reingest: true }, 'admin-1');
+
+      expect(placesAdminService.createIngestion).toHaveBeenCalledWith(
+        {
+          countryCode: 'PT',
+          scope: 'CITY',
+          city: 'Lisbon',
+          state: undefined,
+          categories: [],
+          osmAreaId: undefined,
+        },
+        'admin-1',
+      );
+    });
+
+    it('answers 409 and deletes nothing when an ingestion is already in flight', async () => {
+      repository.findActiveOverlapping.mockResolvedValue({
+        id: 'ing-1',
+        status: 'PROCESSING',
+      });
+
+      await expect(
+        service.resetCity({ ...dto, reingest: true }, 'admin-1'),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repository.deleteCityPlaces).not.toHaveBeenCalled();
+      expect(placesAdminService.createIngestion).not.toHaveBeenCalled();
     });
   });
 });

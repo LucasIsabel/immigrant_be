@@ -1905,6 +1905,15 @@ fluxo de ingestões. A divisão é deliberada:
   — a lista carrega tudo, e um `:id` na raiz ficaria a um erro de ordem de
   engolir `/ingestions`.
 
+- **Ações em lote**: `POST bulk-delete` (1..100 ids, ids inexistentes são
+  ignorados) e `POST city-reset`. O reset usa o mesmo filtro da listagem
+  (`cityKey` dobrado; `stateKey` só quando há estado) e **mantém os `REJECTED`**,
+  a memória que impede a nova ingestão de recriar o que alguém recusou. Com
+  `reingest`, a checagem de ingestão em curso roda *antes* de apagar (409 não
+  apaga nada) e a nova ingestão reaproveita categorias, `osmAreaId` e a grafia da
+  última ingestão `CITY`. `ItineraryStop.place` é `onDelete: Cascade`: paradas de
+  roteiros que apontam para lugares apagados somem junto.
+
 ### API admin das filas
 
 `GET/POST/DELETE /admin/queues` (módulo `queues/`) é a API JSON que o painel
@@ -2007,6 +2016,8 @@ passou a ser a API JSON, atrás do `RolesGuard`.
 | `POST /admin/places/:id/activate`            | Places (catálogo)         | ADMIN — volta ao explorador público        |
 | `POST /admin/places/:id/deactivate`          | Places (catálogo)         | ADMIN — esconde sem apagar                 |
 | `DELETE /admin/places/:id`                   | Places (catálogo)         | ADMIN — hard delete                        |
+| `POST /admin/places/bulk-delete`             | Places (catálogo)         | ADMIN — apaga até 100 lugares por id; devolve `{ deleted }` |
+| `POST /admin/places/city-reset`              | Places (catálogo)         | ADMIN — apaga os lugares da cidade (menos `REJECTED`) e, com `reingest`, refaz a ingestão; 409 sem apagar se já há uma em curso |
 | `/storage/upload`                            | Storage                   | Autenticado                                |
 | `POST /event-interest`                       | EventInterest             | Público — captura de interesse (fase 0 de eventos) |
 | `/health`                                    | Health                    | Público                                    |

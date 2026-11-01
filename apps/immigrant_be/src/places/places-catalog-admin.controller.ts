@@ -12,6 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiConflictResponse,
   ApiCookieAuth,
   ApiForbiddenResponse,
   ApiNoContentResponse,
@@ -21,9 +22,18 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { AdminPlaceResponseDto } from './dto/city-ingestion-response.dto';
+import {
+  BulkDeletePlacesDto,
+  BulkDeletePlacesResponseDto,
+} from './dto/bulk-delete-places.dto';
+import {
+  ResetCityPlacesDto,
+  ResetCityPlacesResponseDto,
+} from './dto/reset-city-places.dto';
 import { ListCatalogPlacesQueryDto } from './dto/list-catalog-places-query.dto';
 import { PaginatedCatalogPlacesResponseDto } from './dto/catalog-places-response.dto';
 import { UpdateCatalogPlaceDto } from './dto/update-catalog-place.dto';
@@ -60,6 +70,38 @@ export class PlacesCatalogAdminController {
     @Query() query: ListCatalogPlacesQueryDto,
   ): Promise<PaginatedCatalogPlacesResponseDto> {
     return this.service.list(query);
+  }
+
+  @Post('bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Hard delete up to 100 places at once',
+    description:
+      'Ids that no longer exist are ignored. Itinerary stops that point at a deleted place are removed with it (cascade).',
+  })
+  @ApiOkResponse({ type: BulkDeletePlacesResponseDto })
+  async bulkDelete(
+    @Body() dto: BulkDeletePlacesDto,
+  ): Promise<BulkDeletePlacesResponseDto> {
+    return { deleted: await this.service.removeMany(dto.ids) };
+  }
+
+  @Post('city-reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Delete a city's places and optionally ingest it again",
+    description:
+      'REJECTED places are kept. With `reingest`, answers 409 and deletes nothing when an ingestion for the city is already in flight. Itinerary stops that point at a deleted place are removed with it (cascade).',
+  })
+  @ApiOkResponse({ type: ResetCityPlacesResponseDto })
+  @ApiConflictResponse({
+    description: 'An ingestion for this city is already in flight',
+  })
+  resetCity(
+    @Body() dto: ResetCityPlacesDto,
+    @Session() session: UserSession,
+  ): Promise<ResetCityPlacesResponseDto> {
+    return this.service.resetCity(dto, session.user.id);
   }
 
   @Patch(':id')

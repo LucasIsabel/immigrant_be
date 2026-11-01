@@ -103,7 +103,7 @@ describe('OpenAPI contract — Places Admin', () => {
       ),
     );
 
-  it('registers the fourteen operations of the ingestion and catalogue flows', () => {
+  it('registers the sixteen operations of the ingestion and catalogue flows', () => {
     const operations = Object.entries(document.paths)
       .flatMap(([route, item]) =>
         Object.keys(item as Record<string, unknown>).map(
@@ -119,6 +119,8 @@ describe('OpenAPI contract — Places Admin', () => {
       'GET /admin/places/ingestions/{id}',
       'PATCH /admin/places/ingestions/{id}/places/{placeId}',
       'PATCH /admin/places/{id}',
+      'POST /admin/places/bulk-delete',
+      'POST /admin/places/city-reset',
       'POST /admin/places/ingestions',
       'POST /admin/places/ingestions/{id}/approve',
       'POST /admin/places/ingestions/{id}/places/{placeId}/reject',
@@ -178,6 +180,10 @@ describe('OpenAPI contract — Places Admin', () => {
         // only bodies and responses are asserted here.
         'PaginatedCatalogPlacesResponseDto',
         'UpdateCatalogPlaceDto',
+        'BulkDeletePlacesDto',
+        'BulkDeletePlacesResponseDto',
+        'ResetCityPlacesDto',
+        'ResetCityPlacesResponseDto',
       ]),
     );
   });

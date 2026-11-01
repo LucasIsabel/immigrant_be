@@ -501,6 +501,66 @@ export class PlacesAdminRepository {
     return this.prisma.place.delete({ where: { id: placeId } });
   }
 
+  /** Hard delete of several places at once; unknown ids are simply ignored. */
+  async deletePlaces(ids: string[]): Promise<number> {
+    const { count } = await this.prisma.place.deleteMany({
+      where: { id: { in: ids } },
+    });
+    return count;
+  }
+
+  /**
+   * Delete every place of a city except the REJECTED ones, and count the
+   * rejected ones left behind.
+   *
+   * The city is matched the way `listCatalog` matches it: country and folded
+   * `cityKey`, plus `stateKey` only when a state is given. REJECTED places are
+   * kept because they are the memory that stops a re-ingestion from recreating
+   * a place somebody refused (see `Place.reviewStatus` in the schema).
+   */
+  async deleteCityPlaces(city: {
+    countryCode: string;
+    city: string;
+    state?: string;
+  }): Promise<{ deleted: number; keptRejected: number }> {
+    const stateKey = stateFilterKey(city);
+    const inCity: Prisma.PlaceWhereInput = {
+      countryCode: city.countryCode,
+      cityKey: normalizeCity(city.city),
+      ...(stateKey && { stateKey }),
+    };
+
+    const [deleted, keptRejected] = await this.prisma.$transaction([
+      this.prisma.place.deleteMany({
+        where: {
+          ...inCity,
+          reviewStatus: { not: PlaceReviewStatus.REJECTED },
+        },
+      }),
+      this.prisma.place.count({
+        where: { ...inCity, reviewStatus: PlaceReviewStatus.REJECTED },
+      }),
+    ]);
+    return { deleted: deleted.count, keptRejected };
+  }
+
+  /** The most recent CITY ingestion of a city, whatever its status. */
+  findLatestCityIngestion(city: {
+    countryCode: string;
+    city: string;
+    state?: string;
+  }) {
+    return this.prisma.cityIngestion.findFirst({
+      where: {
+        countryCode: city.countryCode,
+        scope: CityIngestionScope.CITY,
+        cityKey: normalizeCity(city.city),
+        stateKey: normalizeState(city.state),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   /** Hand the ingestion back to PROCESSING for another attempt. */
   reopen(id: string) {
     return this.prisma.cityIngestion.update({
